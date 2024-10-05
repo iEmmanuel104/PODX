@@ -1,10 +1,11 @@
-// src/socket/helpers/PodManager.ts
 import { generateRoomId } from '../socket-helper/generateRoomId';
 
 interface PodMember {
     userId: string;
     socketId: string;
 }
+
+export type PodType = 'open' | 'trusted';
 
 export interface Pod {
     id: string;
@@ -13,6 +14,8 @@ export interface Pod {
     members: PodMember[];
     ipfsContentHash: string;
     coHostRequests: string[];
+    type: PodType;
+    joinRequests: string[];
 }
 
 export class PodManager {
@@ -27,18 +30,25 @@ export class PodManager {
             members: [{ userId, socketId }],
             ipfsContentHash,
             coHostRequests: [],
+            type: 'open',
+            joinRequests: [],
         };
         this.pods.set(podId, newPod);
         return newPod;
     }
 
-    joinPod(podId: string, userId: string, socketId: string): Pod | null {
+    joinPod(podId: string, userId: string, socketId: string): 'joined' | 'requested' | null {
         const pod = this.pods.get(podId);
         if (pod) {
-            if (!pod.members.some(member => member.userId === userId)) {
-                pod.members.push({ userId, socketId });
+            if (pod.type === 'open' || pod.hosts.includes(userId)) {
+                if (!pod.members.some(member => member.userId === userId)) {
+                    pod.members.push({ userId, socketId });
+                }
+                return 'joined';
+            } else if (pod.type === 'trusted' && !pod.joinRequests.includes(userId)) {
+                pod.joinRequests.push(userId);
+                return 'requested';
             }
-            return pod;
         }
         return null;
     }
@@ -49,6 +59,7 @@ export class PodManager {
             pod.members = pod.members.filter(member => member.userId !== userId);
             pod.hosts = pod.hosts.filter(hostId => hostId !== userId);
             pod.coHostRequests = pod.coHostRequests.filter(requesterId => requesterId !== userId);
+            pod.joinRequests = pod.joinRequests.filter(requesterId => requesterId !== userId);
 
             if (pod.members.length === 0) {
                 this.pods.delete(podId);
@@ -90,6 +101,30 @@ export class PodManager {
                 pod.coHostRequests.splice(requestIndex, 1);
                 if (!pod.hosts.includes(coHostUserId)) {
                     pod.hosts.push(coHostUserId);
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    changePodType(podId: string, userId: string, newType: PodType): boolean {
+        const pod = this.pods.get(podId);
+        if (pod && pod.owner === userId) {
+            pod.type = newType;
+            return true;
+        }
+        return false;
+    }
+
+    approveJoinRequest(podId: string, approverUserId: string, joinUserId: string): boolean {
+        const pod = this.pods.get(podId);
+        if (pod && pod.type === 'trusted' && (pod.owner === approverUserId || pod.hosts.includes(approverUserId))) {
+            const requestIndex = pod.joinRequests.indexOf(joinUserId);
+            if (requestIndex !== -1) {
+                pod.joinRequests.splice(requestIndex, 1);
+                if (!pod.members.some(member => member.userId === joinUserId)) {
+                    pod.members.push({ userId: joinUserId, socketId: '' }); // Socket ID will be updated when the user actually joins
                 }
                 return true;
             }
