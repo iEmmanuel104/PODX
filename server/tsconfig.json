@@ -10,6 +10,7 @@
         "forceConsistentCasingInFileNames": true,
         "strict": true,
         "strictPropertyInitialization": false,
+        "resolveJsonModule": true,
         "skipLibCheck": true
     },
     "include": ["src/**/*", "src/global.d.ts", "migrations", "src/models/.model.ts", "src/middlewares/**/*"]
