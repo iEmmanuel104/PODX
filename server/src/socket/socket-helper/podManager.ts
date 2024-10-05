@@ -108,13 +108,18 @@ export class PodManager {
         return false;
     }
 
-    changePodType(podId: string, userId: string, newType: PodType): boolean {
+    changePodType(podId: string, userId: string, newType: PodType): string[] {
         const pod = this.pods.get(podId);
         if (pod && pod.owner === userId) {
             pod.type = newType;
-            return true;
+            if (newType === 'open') {
+                const admittedUsers = [...pod.joinRequests];
+                pod.members.push(...admittedUsers.map(userId => ({ userId, socketId: '' })));
+                pod.joinRequests = [];
+                return admittedUsers;
+            }
         }
-        return false;
+        return [];
     }
 
     approveJoinRequest(podId: string, approverUserId: string, joinUserId: string): boolean {
@@ -130,5 +135,16 @@ export class PodManager {
             }
         }
         return false;
+    }
+
+    approveAllJoinRequests(podId: string, approverUserId: string): string[] {
+        const pod = this.pods.get(podId);
+        if (pod && (pod.owner === approverUserId || pod.hosts.includes(approverUserId))) {
+            const approvedUsers = [...pod.joinRequests];
+            pod.members.push(...approvedUsers.map(userId => ({ userId, socketId: '' })));
+            pod.joinRequests = [];
+            return approvedUsers;
+        }
+        return [];
     }
 }
