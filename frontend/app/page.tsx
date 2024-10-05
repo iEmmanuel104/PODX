@@ -2,9 +2,11 @@
 
 import { useState } from 'react'
 import { Mail, Phone, Wallet } from 'lucide-react'
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const [selectedMethod, setSelectedMethod] = useState<'email' | 'phone' | 'wallet' | null>(null)
+  const router = useRouter()
 
   return (
     <div className="min-h-screen bg-[#121212] text-white flex flex-col items-center justify-center p-4">
@@ -20,7 +22,7 @@ export default function Home() {
         </p>
 
         <div className="w-full space-y-4">
-          <button
+          {/* <button
             className={`w-full py-3 px-4 rounded-md flex items-center justify-center transition-colors ${selectedMethod === 'email' ? 'bg-[#7C3AED]' : 'bg-[#2C2C2C] hover:bg-[#3C3C3C]'
               }`}
             onClick={() => setSelectedMethod('email')}
@@ -36,12 +38,15 @@ export default function Home() {
           >
             <Phone className="w-5 h-5 mr-2" />
             Continue with Phone
-          </button>
+          </button> */}
 
           <button
             className={`w-full py-3 px-4 rounded-md flex items-center justify-center transition-colors ${selectedMethod === 'wallet' ? 'bg-[#7C3AED]' : 'bg-[#2C2C2C] hover:bg-[#3C3C3C]'
               }`}
-            onClick={() => setSelectedMethod('wallet')}
+            onClick={() => {
+              router.push("/podcast")
+              setSelectedMethod('wallet')
+            }}
           >
             <Wallet className="w-5 h-5 mr-2" />
             Connect Wallet
