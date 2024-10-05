@@ -135,20 +135,20 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
         }
     });
 
-    socket.on('change-pod-type', async (podId: string, newType: PodType, callback: (response: { success: boolean; error?: string }) => void) => {
+    socket.on('change-pod-type', async (podId: string, newType: PodType, callback: (response: { success: boolean; admittedUsers?: string[]; error?: string }) => void) => {
         try {
-            const success = podManager.changePodType(podId, userId, newType);
-            if (success) {
-                const pod = podManager.getPod(podId);
-                if (pod) {
-                    io.to(podId).emit('pod-type-changed', { podId, newType });
-                    callback({ success: true });
-                    logger.info(`User ${userId} changed pod ${podId} type to ${newType}`);
-                } else {
-                    throw new Error('Pod not found');
+            const pod = podManager.getPod(podId);
+            if (pod && pod.owner === userId) {
+                const admittedUsers = podManager.changePodType(podId, userId, newType);
+                io.to(podId).emit('pod-type-changed', { podId, newType });
+                if (newType === 'open' && admittedUsers.length > 0) {
+                    io.to(podId).emit('users-admitted', { podId, admittedUsers });
+                    io.to(podId).emit('pod-members-updated', pod.members);
                 }
+                callback({ success: true, admittedUsers });
+                logger.info(`User ${userId} changed pod ${podId} type to ${newType}`);
             } else {
-                throw new Error('Failed to change pod type');
+                throw new Error('User not authorized to change pod type');
             }
         } catch (error) {
             logger.error(`Error changing pod type: ${error}`);
@@ -158,23 +158,46 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
 
     socket.on('approve-join-request', async (podId: string, joinUserId: string, callback: (response: { success: boolean; error?: string }) => void) => {
         try {
-            const success = podManager.approveJoinRequest(podId, userId, joinUserId);
-            if (success) {
-                const pod = podManager.getPod(podId);
-                if (pod) {
+            const pod = podManager.getPod(podId);
+            if (pod && (pod.owner === userId || pod.hosts.includes(userId))) {
+                const success = podManager.approveJoinRequest(podId, userId, joinUserId);
+                if (success) {
                     io.to(podId).emit('join-request-approved', { approvedUserId: joinUserId, podId });
                     io.to(podId).emit('pod-members-updated', pod.members);
                     callback({ success: true });
                     logger.info(`User ${userId} approved join request for ${joinUserId} in pod ${podId}`);
                 } else {
-                    throw new Error('Pod not found');
+                    throw new Error('Failed to approve join request');
                 }
             } else {
-                throw new Error('Failed to approve join request');
+                throw new Error('User not authorized to approve join requests');
             }
         } catch (error) {
             logger.error(`Error approving join request: ${error}`);
             callback({ success: false, error: 'Failed to approve join request' });
+        }
+    });
+
+    socket.on('approve-all-join-requests', async (podId: string, callback: (response: { success: boolean; approvedUsers?: string[]; error?: string }) => void) => {
+        try {
+            const pod = podManager.getPod(podId);
+            if (pod && (pod.owner === userId || pod.hosts.includes(userId))) {
+                const approvedUsers = podManager.approveAllJoinRequests(podId, userId);
+                if (approvedUsers.length > 0) {
+                    io.to(podId).emit('all-join-requests-approved', { podId, approvedUsers });
+                    io.to(podId).emit('pod-members-updated', pod.members);
+                    callback({ success: true, approvedUsers });
+                    logger.info(`User ${userId} approved all join requests for pod ${podId}`);
+                } else {
+                    callback({ success: true, approvedUsers: [] });
+                    logger.info(`No join requests to approve for pod ${podId}`);
+                }
+            } else {
+                throw new Error('User not authorized to approve join requests');
+            }
+        } catch (error) {
+            logger.error(`Error approving all join requests: ${error}`);
+            callback({ success: false, error: 'Failed to approve all join requests' });
         }
     });
 
