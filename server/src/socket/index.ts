@@ -10,7 +10,7 @@ let io: SocketIOServer;
 export function initializeSocketIO(server: Server): void {
     io = new SocketIOServer(server, {
         cors: {
-            origin: '*', // Adjust this to your needs
+            origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
             methods: ['GET', 'POST'],
         },
     });
