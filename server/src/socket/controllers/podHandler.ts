@@ -46,6 +46,7 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
                 socket.leave(podId);
                 socket.to(podId).emit('user-left', { userId, socketId: socket.id });
                 io.to(podId).emit('pod-members-updated', updatedPod.members);
+                io.to(podId).emit('pod-hosts-updated', updatedPod.hosts);
                 logger.info(`User ${userId} left pod ${podId}`);
             }
         } catch (error) {
@@ -53,10 +54,12 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
         }
     });
 
-    socket.on('get-pod-members', (podId: string, callback: (response: { success: boolean; members?: Pod['members']; error?: string }) => void) => {
+    socket.on('get-pod-info', (podId: string, callback: (response: { success: boolean; pod?: Omit<Pod, 'coHostRequests'>; error?: string }) => void) => {
         const pod = podManager.getPod(podId);
         if (pod) {
-            callback({ success: true, members: pod.members });
+            const { coHostRequests, ...podInfo } = pod;
+            console.log(coHostRequests);
+            callback({ success: true, pod: podInfo });
         } else {
             callback({ success: false, error: 'Pod not found' });
         }
@@ -64,17 +67,65 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
 
     socket.on('update-content', async (podId: string, newIpfsContentHash: string, callback: (response: { success: boolean; error?: string }) => void) => {
         try {
-            const success = podManager.updatePodContent(podId, newIpfsContentHash);
-            if (success) {
-                io.to(podId).emit('content-updated', { podId, newIpfsContentHash });
-                callback({ success: true });
-                logger.info(`User ${userId} updated content for pod ${podId}`);
+            const pod = podManager.getPod(podId);
+            if (pod && (pod.owner === userId || pod.hosts.includes(userId))) {
+                const success = podManager.updatePodContent(podId, newIpfsContentHash);
+                if (success) {
+                    io.to(podId).emit('content-updated', { podId, newIpfsContentHash });
+                    callback({ success: true });
+                    logger.info(`User ${userId} updated content for pod ${podId}`);
+                } else {
+                    throw new Error('Failed to update content');
+                }
             } else {
-                throw new Error('Pod not found');
+                throw new Error('User not authorized to update content');
             }
         } catch (error) {
             logger.error(`Error updating content: ${error}`);
             callback({ success: false, error: 'Failed to update content' });
+        }
+    });
+
+    socket.on('request-co-host', async (podId: string, callback: (response: { success: boolean; error?: string }) => void) => {
+        try {
+            const success = podManager.requestCoHost(podId, userId);
+            if (success) {
+                const pod = podManager.getPod(podId);
+                if (pod) {
+                    io.to(podId).emit('co-host-requested', { userId, podId });
+                    callback({ success: true });
+                    logger.info(`User ${userId} requested co-host for pod ${podId}`);
+                } else {
+                    throw new Error('Pod not found');
+                }
+            } else {
+                throw new Error('Failed to request co-host');
+            }
+        } catch (error) {
+            logger.error(`Error requesting co-host: ${error}`);
+            callback({ success: false, error: 'Failed to request co-host' });
+        }
+    });
+
+    socket.on('approve-co-host', async (podId: string, coHostUserId: string, callback: (response: { success: boolean; error?: string }) => void) => {
+        try {
+            const success = podManager.approveCoHost(podId, userId, coHostUserId);
+            if (success) {
+                const pod = podManager.getPod(podId);
+                if (pod) {
+                    io.to(podId).emit('co-host-approved', { approvedUserId: coHostUserId, podId });
+                    io.to(podId).emit('pod-hosts-updated', pod.hosts);
+                    callback({ success: true });
+                    logger.info(`User ${userId} approved co-host ${coHostUserId} for pod ${podId}`);
+                } else {
+                    throw new Error('Pod not found');
+                }
+            } else {
+                throw new Error('Failed to approve co-host');
+            }
+        } catch (error) {
+            logger.error(`Error approving co-host: ${error}`);
+            callback({ success: false, error: 'Failed to approve co-host' });
         }
     });
 
@@ -105,6 +156,7 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
                 if (updatedPod) {
                     io.to(podId).emit('user-left', { userId, socketId: socket.id });
                     io.to(podId).emit('pod-members-updated', updatedPod.members);
+                    io.to(podId).emit('pod-hosts-updated', updatedPod.hosts);
                 }
             }
         }
