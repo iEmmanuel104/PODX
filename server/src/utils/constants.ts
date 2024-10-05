@@ -76,3 +76,5 @@ export const ZOOM_ACCOUNT_ID = process.env.ZOOM_ACCOUNT_ID as string;
 export const ZOOM_CLIENT_ID = process.env.ZOOM_CLIENT_ID as string;
 
 export const ZOOM_CLIENT_SECRET = process.env.ZOOM_CLIENT_SECRET as string;
+
+export const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS as string;
