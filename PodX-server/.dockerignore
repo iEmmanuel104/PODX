@@ -1,0 +1,32 @@
+# Exclude node_modules
+node_modules
+
+# Exclude version control files
+.git
+.gitignore
+
+# Exclude development and environment files
+.env
+.env.*
+*.log
+npm-debug.log*
+
+# Exclude editor files
+.vscode
+.idea
+
+# Exclude test files
+__tests__
+*.test.js
+*.spec.js
+
+# Exclude documentation
+README.md
+docs
+
+# Exclude the dist folder (it will be built inside the Docker image)
+dist
+
+# Exclude other unnecessary files
+.DS_Store
+Thumbs.db
