@@ -3,7 +3,7 @@ import { JWT_SECRET, JWT_ACCESS_SECRET, JWT_ADMIN_ACCESS_SECRET, JWT_REFRESH_SEC
 import { v4 as uuidv4 } from 'uuid';
 import { redisClient } from './redis';
 import { UnauthorizedError, TokenExpiredError, JsonWebTokenError } from './customErrors';
-import { CompareTokenData, DecodedTokenData, ENCRYPTEDTOKEN, GenerateCodeData, GenerateTokenData, SaveTokenToCache, GenerateAdminTokenData } from './interface';
+import { CompareTokenData, DecodedTokenData, ENCRYPTEDTOKEN, GenerateCodeData, GenerateTokenData, SaveTokenToCache, GenerateAdminTokenData, CompareAdminTokenData } from './interface';
 import { ethers } from 'ethers';
 
 class TokenCacheUtil {
@@ -156,10 +156,10 @@ class AuthUtil {
     //     return TokenCacheUtil.compareToken(tokenKey, token);
     // }
 
-    // static compareAdminCode({ identifier, tokenType, token }: CompareAdminTokenData) {
-    //     const tokenKey = `${tokenType}_code:${identifier}`;
-    //     return TokenCacheUtil.compareToken(tokenKey, token);
-    // }
+    static compareAdminCode({ identifier, tokenType, token }: CompareAdminTokenData) {
+        const tokenKey = `${tokenType}_code:${identifier}`;
+        return TokenCacheUtil.compareToken(tokenKey, token);
+    }
 
     static verifyToken(token: string, walletAddress: string) {
         try {

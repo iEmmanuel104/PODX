@@ -1,28 +1,12 @@
 /* eslint-disable no-unused-vars */
 import {
-    Table, Column, Model, DataType, HasOne, Default, BeforeFind, Scopes,
-    IsEmail, IsUUID, PrimaryKey, Index, BeforeCreate, BeforeUpdate,
+    Table, Column, Model, DataType, HasOne, Default, BeforeFind,
+    IsUUID, PrimaryKey, Index, BeforeCreate, BeforeUpdate,
     Unique,
 } from 'sequelize-typescript';
 import UserSettings from './userSettings.model';
 import { FindOptions } from 'sequelize';
 
-export enum UserType {
-    INVESTOR = 'investor',
-    PROJECT_OWNER = 'project_owner',
-}
-
-@Scopes(() => ({
-    withSettings: {
-        include: [
-            {
-                model: UserSettings,
-                as: 'settings',
-                attributes: ['joinDate', 'isBlocked', 'isDeactivated', 'lastLogin', 'meta'],
-            },
-        ],
-    },
-}))
 @Table
 export default class User extends Model<User | IUser> {
     @IsUUID(4)
@@ -42,18 +26,6 @@ export default class User extends Model<User | IUser> {
     })
         walletAddress: string;
     
-    @IsEmail
-    @Index
-    @Column({
-        type: DataType.STRING, allowNull: false,
-        get() {
-            return this.getDataValue('email').trim().toLowerCase();
-        },
-        set(value: string) {
-            this.setDataValue('email', value.trim().toLowerCase());
-        },
-    })
-        email: string;
 
     @Index
     @Column({
@@ -86,9 +58,6 @@ export default class User extends Model<User | IUser> {
         otherName: string;
 
     @Column({ type: DataType.STRING })
-        gender: string;
-
-    @Column({ type: DataType.STRING })
         displayImage: string;
 
     @Unique
@@ -101,13 +70,6 @@ export default class User extends Model<User | IUser> {
         },
     })
         username: string;
-    
-    @Column({ type: DataType.JSONB, allowNull: false, defaultValue: { activated: false, emailVerified: false } })
-        status: {
-        activated: boolean;
-        emailVerified: boolean;
-        walletVerified: boolean;
-    };
 
     @Column({
         type: DataType.VIRTUAL,
@@ -125,44 +87,6 @@ export default class User extends Model<User | IUser> {
         },
     })
         fullName: string;
-
-    @Column({ type: DataType.JSONB })
-        phone: {
-        countryCode: string;
-        number: string;
-    };
-
-    @Column({
-        type: DataType.DATEONLY,
-        validate: {
-            isDate: true,
-            isValidDate(value: string | Date) {
-                if (new Date(value) > new Date()) {
-                    throw new Error('Date of birth cannot be in the future');
-                }
-            },
-        },
-    })
-        dob: Date;
-    
-    @Column({ type: DataType.JSONB })
-        address: {
-        street: string;
-        city: string;
-        state: string;
-        country: string;
-    };
-
-    @Column({
-        type: DataType.ENUM,
-        values: Object.values(UserType),
-        allowNull: false,
-        defaultValue: UserType.INVESTOR,
-    })
-        type: UserType;
-    
-    @Column({ type: DataType.STRING })
-        referralBonus: string;
 
     // Associations
     @HasOne(() => UserSettings)
@@ -206,24 +130,7 @@ export interface IUser {
     lastName: string;
     otherName?: string;
     username: string;
-    status: {
-        activated: boolean;
-        emailVerified: boolean;
-        walletVerified: boolean;
-    };
     displayImage?: string;
     fullName?: string;
-    phone?: {
-        countryCode: string;
-        number: string
-    };
-    dob?: Date;
-    address?: {
-        street: string;
-        city: string;
-        state: string;
-        country: string;
-    };
-    type: UserType;
-    referralBonus?: string;
+
 }

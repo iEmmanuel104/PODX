@@ -37,13 +37,6 @@ export default class UserSettings extends Model<UserSettings | IUserSettings> {
         defaultValue: false,
         allowNull: false,
     })
-        isKycVerified: boolean;
-
-    @Column({
-        type: DataType.BOOLEAN,
-        defaultValue: false,
-        allowNull: false,
-    })
         isBlocked: boolean;
 
     @Column({
@@ -69,13 +62,11 @@ export default class UserSettings extends Model<UserSettings | IUserSettings> {
     @BelongsTo(() => User)
         user: User;
 }
-
 export interface IUserSettings {
     userId: string;
     lastLogin?: Date;
     joinDate: string;
     isBlocked?: boolean;
     isDeactivated?: boolean;
-    isKycVerified?: boolean;
     meta?: IBlockMeta | null;
 }
