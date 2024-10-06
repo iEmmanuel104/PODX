@@ -42,14 +42,14 @@ export default class EmailService {
 
     constructor(service: string) {
         switch (service) {
-            case 'nodemailer':
-                this.sendEmail = this.createNodemailerEmail();
-                break;
+        case 'nodemailer':
+            this.sendEmail = this.createNodemailerEmail();
+            break;
             // case 'postmark':
             //     this.sendEmail = this.createPostmarkEmail();
             //     break;
-            default:
-                throw new Error('Invalid email service specified');
+        default:
+            throw new Error('Invalid email service specified');
         }
     }
     private createNodemailerEmail(): SendEmailFunction {
