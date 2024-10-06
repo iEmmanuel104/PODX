@@ -81,7 +81,7 @@ export default class UserController {
         if (isDeactivated !== undefined && isDeactivated === 'true') {
             const state: boolean = isDeactivated === 'true';
             settingsData = {
-                ...(state === req.user.settings.isDeactivated ? {} : { isDeactivated: state }),
+                ...(req.user.settings && state === req.user.settings.isDeactivated ? {} : { isDeactivated: state }),
             };
         }
 
@@ -99,7 +99,7 @@ export default class UserController {
 
         // Update user profile data if necessary
         const updatedUser = dataKeys.length > 0
-            ? await UserService.updateUser(req.user, updateData)
+            ? await UserService.updateUser(req.user.id, updateData)
             : req.user;
 
         res.status(200).json({
