@@ -4,16 +4,25 @@ import { AuthenticatedSocket } from '../middlewares/socketAuthAccess';
 import { logger } from '../../utils/logger';
 import { PodManager } from '../socket-helper/podManager';
 import { Pod, PodType, PodMember, JoinRequest } from '../socket-helper/interface';
+import { ethers } from 'ethers';
+import { getPodXContractInstance, getSignerForAddress } from '../socket-helper/contractInstance';
 
 
 export default function attachPodHandlers(io: Server, socket: AuthenticatedSocket) {
     const userId = socket.userId;
+    const userWallet = socket.user.walletAddress;
     const user = socket.user;
     const podManager = new PodManager();
 
     socket.on('create-pod', async (ipfsContentHash: string, callback: (response: { success: boolean; podId?: string; error?: string }) => void) => {
         try {
             const newPod = await podManager.createPod(user, socket.id, ipfsContentHash);
+            const signer = await getSignerForAddress(userWallet);
+            const connectedContract = getPodXContractInstance(signer);
+
+            const tx = await connectedContract.createPodcast(ethers.encodeBytes32String(newPod.id), ipfsContentHash);
+            await tx.wait();
+
             socket.join(newPod.id);
             callback({ success: true, podId: newPod.id });
             logger.info(`User ${userId} created pod ${newPod.id}`);
@@ -27,6 +36,12 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
         try {
             const joinStatus = await podManager.joinPod(podId, user, socket.id);
             if (joinStatus === 'joined') {
+                const signer = await getSignerForAddress(userWallet);
+                const connectedContract = getPodXContractInstance(signer);
+
+                const tx = await connectedContract.joinPodcast(ethers.encodeBytes32String(podId));
+                await tx.wait();
+
                 socket.join(podId);
                 const pod = podManager.getPod(podId);
                 if (pod) {
@@ -51,6 +66,12 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
         try {
             const updatedPod = podManager.leavePod(podId, userId);
             if (updatedPod) {
+                const signer = await getSignerForAddress(userWallet);
+                const connectedContract = getPodXContractInstance(signer);
+
+                const tx = await connectedContract.leavePodcast(ethers.encodeBytes32String(podId));
+                await tx.wait();
+
                 socket.leave(podId);
                 socket.to(podId).emit('user-left', { userId, socketId: socket.id });
                 io.to(podId).emit('pod-stats-updated', updatedPod.stats);
@@ -120,6 +141,12 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
         try {
             const pod = podManager.getPod(podId);
             if (pod && (pod.owner === userId || pod.hosts.includes(userId))) {
+                const signer = await getSignerForAddress(userWallet);
+                const connectedContract = getPodXContractInstance(signer);
+
+                const tx = await connectedContract.updatePodcastContent(ethers.encodeBytes32String(podId), newIpfsContentHash);
+                await tx.wait();
+
                 const success = podManager.updatePodContent(podId, newIpfsContentHash);
                 if (success) {
                     io.to(podId).emit('content-updated', { podId, newIpfsContentHash });
@@ -141,6 +168,12 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
         try {
             const success = podManager.requestCoHost(podId, userId);
             if (success) {
+                const signer = await getSignerForAddress(userWallet);
+                const connectedContract = getPodXContractInstance(signer);
+
+                const tx = await connectedContract.requestCoHost(ethers.encodeBytes32String(podId));
+                await tx.wait();
+
                 const pod = podManager.getPod(podId);
                 if (pod) {
                     io.to(podId).emit('co-host-requested', { userId, podId });
@@ -162,6 +195,12 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
         try {
             const success = podManager.approveCoHost(podId, userId, coHostUserId);
             if (success) {
+                const signer = await getSignerForAddress(userWallet);
+                const connectedContract = getPodXContractInstance(signer);
+
+                const tx = await connectedContract.approveCoHost(ethers.encodeBytes32String(podId), coHostUserId);
+                await tx.wait();
+
                 const pod = podManager.getPod(podId);
                 if (pod) {
                     io.to(podId).emit('co-host-approved', { approvedUserId: coHostUserId, podId });
@@ -243,6 +282,60 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
         } catch (error) {
             logger.error(`Error approving all join requests: ${error}`);
             callback({ success: false, error: 'Failed to approve all join requests' });
+        }
+    });
+
+    socket.on('send-tip', async (podId: string, recipientId: string, amount: string, callback: (response: { success: boolean; transactionHash?: string; error?: string }) => void) => {
+        try {
+            const signer = await getSignerForAddress(userWallet);
+            const connectedContract = getPodXContractInstance(signer);
+
+            // Convert amount to wei (assuming the contract expects wei)
+            const amountInWei = ethers.parseEther(amount);
+
+            // Send the transaction
+            const tx = await connectedContract.sendTip(ethers.encodeBytes32String(podId), recipientId, amountInWei);
+
+            // Notify the client that the transaction is pending
+            socket.emit('tip-pending', { transactionHash: tx.hash });
+
+            // Wait for the transaction to be mined
+            const receipt = await tx.wait();
+
+            if (receipt.status === 1) { // 1 indicates success
+                // Check if the TipSent event was emitted
+                const tipSentEvent = receipt.logs.find(
+                    log => log.topics[0] === ethers.id('TipSent(bytes32,address,address,uint256)')
+                );
+
+                if (tipSentEvent) {
+                    const decodedEvent = connectedContract.interface.parseLog(tipSentEvent);
+                    logger.info(`Tip sent successfully. Event data: ${JSON.stringify(decodedEvent)}`);
+
+                    // Notify all clients in the pod about the successful tip
+                    io.to(podId).emit('tip-sent', {
+                        from: userId,
+                        to: recipientId,
+                        amount: amount,
+                        transactionHash: tx.hash,
+                    });
+
+                    callback({ success: true, transactionHash: tx.hash });
+                } else {
+                    logger.warn(`Transaction successful but TipSent event not found. TX Hash: ${tx.hash}`);
+                    callback({ success: true, transactionHash: tx.hash });
+                }
+            } else {
+                throw new Error('Transaction failed');
+            }
+
+            logger.info(`User ${userId} sent tip of ${amount} to ${recipientId} in pod ${podId}. TX Hash: ${tx.hash}`);
+        } catch (error) {
+            logger.error(`Error sending tip: ${error}`);
+            callback({ success: false, error: 'Failed to send tip' });
+
+            // Notify the client about the failed transaction
+            socket.emit('tip-failed', { error: 'Failed to send tip' });
         }
     });
 
