@@ -2,16 +2,17 @@
 import { Server } from 'socket.io';
 import { AuthenticatedSocket } from '../middlewares/socketAuthAccess';
 import { logger } from '../../utils/logger';
-import { PodManager, Pod, PodType } from '../socket-helper/podManager';
+import { PodManager, Pod, PodType, PodMember, JoinRequest } from '../socket-helper/podManager';
 
-const podManager = new PodManager();
 
 export default function attachPodHandlers(io: Server, socket: AuthenticatedSocket) {
     const userId = socket.userId;
+    const user = socket.user;
+    const podManager = new PodManager();
 
     socket.on('create-pod', async (ipfsContentHash: string, callback: (response: { success: boolean; podId?: string; error?: string }) => void) => {
         try {
-            const newPod = podManager.createPod(userId, socket.id, ipfsContentHash);
+            const newPod = await podManager.createPod(user, socket.id, ipfsContentHash);
             socket.join(newPod.id);
             callback({ success: true, podId: newPod.id });
             logger.info(`User ${userId} created pod ${newPod.id}`);
@@ -23,13 +24,13 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
 
     socket.on('join-pod', async (podId: string, callback: (response: { success: boolean; status?: 'joined' | 'requested'; error?: string }) => void) => {
         try {
-            const joinStatus = podManager.joinPod(podId, userId, socket.id);
+            const joinStatus = await podManager.joinPod(podId, user, socket.id);
             if (joinStatus === 'joined') {
                 socket.join(podId);
                 const pod = podManager.getPod(podId);
                 if (pod) {
                     socket.to(podId).emit('user-joined', { userId, socketId: socket.id });
-                    io.to(podId).emit('pod-members-updated', pod.members);
+                    io.to(podId).emit('pod-stats-updated', pod.stats);
                 }
                 callback({ success: true, status: 'joined' });
                 logger.info(`User ${userId} joined pod ${podId}`);
@@ -45,29 +46,72 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
         }
     });
 
-    socket.on('leave-pod', async (podId: string) => {
+    socket.on('leave-pod', async (podId: string, callback: (response: { success: boolean; error?: string }) => void) => {
         try {
             const updatedPod = podManager.leavePod(podId, userId);
             if (updatedPod) {
                 socket.leave(podId);
                 socket.to(podId).emit('user-left', { userId, socketId: socket.id });
-                io.to(podId).emit('pod-members-updated', updatedPod.members);
-                io.to(podId).emit('pod-hosts-updated', updatedPod.hosts);
+                io.to(podId).emit('pod-stats-updated', updatedPod.stats);
+                if (updatedPod.owner !== userId) {
+                    io.to(podId).emit('pod-owner-changed', { podId, newOwnerId: updatedPod.owner });
+                }
+                callback({ success: true });
                 logger.info(`User ${userId} left pod ${podId}`);
+            } else {
+                throw new Error('Failed to leave pod');
             }
         } catch (error) {
             logger.error(`Error leaving pod: ${error}`);
+            callback({ success: false, error: 'Failed to leave pod' });
         }
     });
 
-    socket.on('get-pod-info', (podId: string, callback: (response: { success: boolean; pod?: Omit<Pod, 'coHostRequests' | 'joinRequests'>; error?: string }) => void) => {
+    socket.on('get-pod-info', (podId: string, callback: (response: { success: boolean; pod?: Pod; error?: string }) => void) => {
         const pod = podManager.getPod(podId);
         if (pod) {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { coHostRequests, joinRequests, ...podInfo } = pod;
-            callback({ success: true, pod: podInfo });
+            callback({ success: true, pod });
         } else {
             callback({ success: false, error: 'Pod not found' });
+        }
+    });
+
+    socket.on('get-pod-members', (podId: string, callback: (response: { success: boolean; members?: PodMember[]; error?: string }) => void) => {
+        const members = podManager.getPodMembers(podId);
+        if (members) {
+            callback({ success: true, members });
+        } else {
+            callback({ success: false, error: 'Pod not found' });
+        }
+    });
+
+    socket.on('get-join-requests', async (podId: string, callback: (response: { success: boolean; requests?: JoinRequest[]; error?: string }) => void) => {
+        try {
+            const joinRequests = await podManager.getJoinRequests(podId, userId);
+            if (joinRequests !== null) {
+                callback({ success: true, requests: joinRequests });
+                logger.info(`User ${userId} fetched join requests for pod ${podId}`);
+            } else {
+                throw new Error('Not authorized or pod not found');
+            }
+        } catch (error) {
+            logger.error(`Error fetching join requests: ${error}`);
+            callback({ success: false, error: 'Failed to fetch join requests' });
+        }
+    });
+
+    socket.on('get-co-host-requests', async (podId: string, callback: (response: { success: boolean; requests?: PodMember[]; error?: string }) => void) => {
+        try {
+            const coHostRequests = await podManager.getCoHostRequests(podId, userId);
+            if (coHostRequests !== null) {
+                callback({ success: true, requests: coHostRequests });
+                logger.info(`User ${userId} fetched co-host requests for pod ${podId}`);
+            } else {
+                throw new Error('Not authorized or pod not found');
+            }
+        } catch (error) {
+            logger.error(`Error fetching co-host requests: ${error}`);
+            callback({ success: false, error: 'Failed to fetch co-host requests' });
         }
     });
 
@@ -120,7 +164,7 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
                 const pod = podManager.getPod(podId);
                 if (pod) {
                     io.to(podId).emit('co-host-approved', { approvedUserId: coHostUserId, podId });
-                    io.to(podId).emit('pod-hosts-updated', pod.hosts);
+                    io.to(podId).emit('pod-stats-updated', pod.stats);
                     callback({ success: true });
                     logger.info(`User ${userId} approved co-host ${coHostUserId} for pod ${podId}`);
                 } else {
@@ -143,7 +187,7 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
                 io.to(podId).emit('pod-type-changed', { podId, newType });
                 if (newType === 'open' && admittedUsers.length > 0) {
                     io.to(podId).emit('users-admitted', { podId, admittedUsers });
-                    io.to(podId).emit('pod-members-updated', pod.members);
+                    io.to(podId).emit('pod-stats-updated', pod.stats);
                 }
                 callback({ success: true, admittedUsers });
                 logger.info(`User ${userId} changed pod ${podId} type to ${newType}`);
@@ -158,19 +202,19 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
 
     socket.on('approve-join-request', async (podId: string, joinUserId: string, callback: (response: { success: boolean; error?: string }) => void) => {
         try {
-            const pod = podManager.getPod(podId);
-            if (pod && (pod.owner === userId || pod.hosts.includes(userId))) {
-                const success = podManager.approveJoinRequest(podId, userId, joinUserId);
-                if (success) {
+            const success = await podManager.approveJoinRequest(podId, userId, joinUserId);
+            if (success) {
+                const pod = podManager.getPod(podId);
+                if (pod) {
                     io.to(podId).emit('join-request-approved', { approvedUserId: joinUserId, podId });
-                    io.to(podId).emit('pod-members-updated', pod.members);
+                    io.to(podId).emit('pod-stats-updated', pod.stats);
                     callback({ success: true });
                     logger.info(`User ${userId} approved join request for ${joinUserId} in pod ${podId}`);
                 } else {
-                    throw new Error('Failed to approve join request');
+                    throw new Error('Pod not found');
                 }
             } else {
-                throw new Error('User not authorized to approve join requests');
+                throw new Error('Failed to approve join request');
             }
         } catch (error) {
             logger.error(`Error approving join request: ${error}`);
@@ -180,20 +224,20 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
 
     socket.on('approve-all-join-requests', async (podId: string, callback: (response: { success: boolean; approvedUsers?: string[]; error?: string }) => void) => {
         try {
-            const pod = podManager.getPod(podId);
-            if (pod && (pod.owner === userId || pod.hosts.includes(userId))) {
-                const approvedUsers = podManager.approveAllJoinRequests(podId, userId);
-                if (approvedUsers.length > 0) {
+            const approvedUsers = await podManager.approveAllJoinRequests(podId, userId);
+            if (approvedUsers.length > 0) {
+                const pod = podManager.getPod(podId);
+                if (pod) {
                     io.to(podId).emit('all-join-requests-approved', { podId, approvedUsers });
-                    io.to(podId).emit('pod-members-updated', pod.members);
+                    io.to(podId).emit('pod-stats-updated', pod.stats);
                     callback({ success: true, approvedUsers });
                     logger.info(`User ${userId} approved all join requests for pod ${podId}`);
                 } else {
-                    callback({ success: true, approvedUsers: [] });
-                    logger.info(`No join requests to approve for pod ${podId}`);
+                    throw new Error('Pod not found');
                 }
             } else {
-                throw new Error('User not authorized to approve join requests');
+                callback({ success: true, approvedUsers: [] });
+                logger.info(`No join requests to approve for pod ${podId}`);
             }
         } catch (error) {
             logger.error(`Error approving all join requests: ${error}`);
@@ -201,12 +245,13 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
         }
     });
 
-    // Existing WebRTC and audio/video toggle handlers...
     socket.on('toggle-audio', ({ podId, isAudioEnabled }: { podId: string; isAudioEnabled: boolean }) => {
+        podManager.updateUserInfo(podId, userId, { isAudioEnabled });
         socket.to(podId).emit('user-audio-toggle', { userId, isAudioEnabled });
     });
 
     socket.on('toggle-video', ({ podId, isVideoEnabled }: { podId: string; isVideoEnabled: boolean }) => {
+        podManager.updateUserInfo(podId, userId, { isVideoEnabled });
         socket.to(podId).emit('user-video-toggle', { userId, isVideoEnabled });
     });
 
@@ -221,18 +266,20 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
 
     // Handle disconnection
     socket.on('disconnect', () => {
-        const pods = Array.from(podManager['pods'].entries());
-        for (const [podId, pod] of pods) {
-            if (pod.members.some(member => member.userId === userId)) {
-                const updatedPod = podManager.leavePod(podId, userId);
-                if (updatedPod) {
-                    io.to(podId).emit('user-left', { userId, socketId: socket.id });
-                    io.to(podId).emit('pod-members-updated', updatedPod.members);
-                    io.to(podId).emit('pod-hosts-updated', updatedPod.hosts);
-                    logger.info(`User ${userId} disconnected from pod ${podId}`);
+        const userPods = podManager.getUserPods(userId);
+
+        userPods.forEach(podId => {
+            const updatedPod = podManager.leavePod(podId, userId);
+            if (updatedPod) {
+                io.to(podId).emit('user-left', { userId, socketId: socket.id });
+                io.to(podId).emit('pod-stats-updated', updatedPod.stats);
+                if (updatedPod.owner !== userId && updatedPod.owner !== socket.user.id) {
+                    io.to(podId).emit('pod-owner-changed', { podId, newOwnerId: updatedPod.owner });
                 }
+                logger.info(`User ${userId} disconnected from pod ${podId}`);
             }
-        }
+        });
+
         logger.info(`WebSocket disconnected: ${socket.id} for user: ${userId}`);
     });
 }
