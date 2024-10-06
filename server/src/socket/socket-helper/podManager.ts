@@ -332,19 +332,6 @@ export class PodManager {
         return false;
     }
 
-    async updateJoinRequestSocketId(podId: string, userId: string, socketId: string): Promise<boolean> {
-        const joinRequests = this.podJoinRequests.get(podId);
-        if (joinRequests) {
-            const requestIndex = joinRequests.findIndex(r => r.userId === userId);
-            if (requestIndex !== -1) {
-                joinRequests[requestIndex].socketId = socketId;
-                this.podJoinRequests.set(podId, joinRequests);
-                return true;
-            }
-        }
-        return false;
-    }
-
     getUserPods(userId: string): string[] {
         const userPods: string[] = [];
         for (const [podId, members] of this.podMembers.entries()) {
