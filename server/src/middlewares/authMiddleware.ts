@@ -1,24 +1,23 @@
 import { DecodedTokenData, ENCRYPTEDTOKEN } from '../utils/interface';
 import { Request, Response, NextFunction } from 'express';
 import { UnauthorizedError, NotFoundError, ForbiddenError } from '../utils/customErrors';
-import User from '../models/Postgres/user.model';
+import { IUser } from '../models/Mongodb/user.model';
 import UserService from '../services/user.service';
 import { logger } from '../utils/logger';
 import { AuthUtil } from '../utils/token';
 // import { AuthUtil, TokenCacheUtil } from '../utils/token';
-import Admin from '../models/Postgres/admin.model';
+import { IAdmin } from '../models/Mongodb/admin.model';
 import { ADMIN_EMAIL } from '../utils/constants';
 import AdminService from '../services/AdminServices/admin.service';
 
-
 export interface AuthenticatedRequest extends Request {
-    user: User;
+    user: IUser;
 }
 
 export interface AdminAuthenticatedRequest extends Request {
     isSuperAdmin: boolean;
     email: string;
-    admin: Admin;
+    admin: IAdmin;
 }
 
 // eslint-disable-next-line no-unused-vars
@@ -54,13 +53,12 @@ export const basicAuth = function () {
                 throw new UnauthorizedError('Invalid token');
             }
 
-            const user: User | null = await UserService.viewSingleUser(payload.user.id);
+            const user: IUser | null = await UserService.viewSingleUser(payload.user.id);
             if (!user) {
                 throw new NotFoundError('User not found');
             }
 
             if (req.method === 'GET' && req.path === '/refreshtoken' && payload.tokenType === 'refresh') {
-
                 AuthUtil.verifyToken(jwtToken, user.walletAddress);
 
                 const newAccessToken = await AuthUtil.generateToken({ type: 'access', user });
@@ -83,11 +81,11 @@ export const basicAuth = function () {
             //     throw new UnauthorizedError('Invalid token');
             // }
 
-            if (user.settings.isBlocked) {
+            if (user.settings?.isBlocked) {
                 throw new ForbiddenError('Account blocked. Please contact support');
             }
 
-            if (user.settings.isDeactivated) {
+            if (user.settings?.isDeactivated) {
                 throw new ForbiddenError('Account deactivated. Please contact support');
             }
 
@@ -129,13 +127,12 @@ export const adminAuth = function (tokenType: ENCRYPTEDTOKEN) {
             const admin = await AdminService.getAdminByEmail(tokenData.authKey as string);
             emailToUse = admin.email;
             (req as AdminAuthenticatedRequest).admin = admin;
-            (req as AdminAuthenticatedRequest).isSuperAdmin = admin.isSuperAdmin;
+            (req as AdminAuthenticatedRequest).isSuperAdmin = admin.isSuperAdmin ?? false;
         } else {
             (req as AdminAuthenticatedRequest).isSuperAdmin = true;
         }
 
         (req as AdminAuthenticatedRequest).email = emailToUse;
-
 
         logger.authorized('User authorized');
 
