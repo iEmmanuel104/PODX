@@ -1,5 +1,5 @@
 import { generateRoomId } from './generateRoomId';
-import { IUser, User } from '../../models/Mongodb/user.model'; // Adjust the import path as needed
+import { IUser } from '../../models/Mongodb/user.model'; // Adjust the import path as needed
 
 export interface PodMember {
     userId: string;
@@ -317,16 +317,6 @@ export class PodManager {
             walletAddress: user.walletAddress,
             displayImage: user.displayImage || '',
         };
-    }
-
-    async getUserFromMongo(userId: string): Promise<IUser | null> {
-        try {
-            const user = await User.findById(userId);
-            return user;
-        } catch (error) {
-            console.error('Error fetching user from MongoDB:', error);
-            return null;
-        }
     }
 
     async updateUserInfo(podId: string, userId: string, userInfo: Partial<PodMember>): Promise<boolean> {
