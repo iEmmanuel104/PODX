@@ -80,3 +80,6 @@ mongooseUserSchema.pre('save', function (this: IUser, next) {
 });
 
 export const User = model<IUser>('User', mongooseUserSchema);
+
+// Export the interface for use in other parts of the application
+export { IUser };
