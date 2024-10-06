@@ -1,12 +1,12 @@
 import { ethers } from 'ethers';
 import PodXABI from '../../../web3/abi.json';
 import { PodXContract } from './interface';
+import { CONTRACT_ADDRESS } from '../../utils/constants';
 
-const PODX_CONTRACT_ADDRESS = process.env.PODX_CONTRACT_ADDRESS || '';
-const ETHEREUM_RPC_URL = process.env.ETHEREUM_RPC_URL || '';
+const ETHEREUM_RPC_URL = 'https://sepolia.base.org';
 
 const provider = new ethers.JsonRpcProvider(ETHEREUM_RPC_URL);
-const podXContract = new ethers.Contract(PODX_CONTRACT_ADDRESS, PodXABI, provider) as unknown as PodXContract;
+const podXContract = new ethers.Contract(CONTRACT_ADDRESS, PodXABI, provider) as unknown as PodXContract;
 
 export function getPodXContractInstance(signerOrProvider?: ethers.Signer | ethers.Provider): PodXContract {
     if (signerOrProvider) {
