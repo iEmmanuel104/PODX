@@ -1,5 +1,6 @@
 import { Schema, model, Document, Types } from 'mongoose';
 import { z } from 'zod';
+import { IUserSettings } from './userSettings.model';
 
 // Zod schema for validation
 const UserSchema = z.object({
@@ -17,6 +18,7 @@ type UserType = z.infer<typeof UserSchema>;
 // Extend UserType with Mongoose's Document properties
 interface IUser extends Omit<UserType, '_id'>, Document {
     fullName: string;
+    settings?: IUserSettings; // Add this line
 }
 
 // Mongoose schema
