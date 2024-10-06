@@ -6,16 +6,15 @@ import attachPodHandlers from './controllers/podHandler';
 import attachTipHandlers from './controllers/tipHandler';
 import attachMediaHandlers from './controllers/mediaHandler';
 import { PodManager } from './socket-helper/podManager';
+import corsOptions from '../utils/cors';
 
 let io: SocketIOServer;
 const podManager = new PodManager();
 
 export function initializeSocketIO(server: Server): void {
     io = new SocketIOServer(server, {
-        cors: {
-            origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
-            methods: ['GET', 'POST'],
-        },
+        cors: corsOptions,
+        connectionStateRecovery: {},
     });
 
     // Apply authentication middleware
