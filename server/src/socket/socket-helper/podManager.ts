@@ -3,6 +3,7 @@ import { IUser } from '../../models/Mongodb/user.model'; // Adjust the import pa
 import { Pod, PodMember, JoinRequest, PodType } from './interface';
 
 export class PodManager {
+    // TODO  - Switch to using a database to store pods, pod members, join requests, and co-host requests
     private pods: Map<string, Pod> = new Map();
     private podMembers: Map<string, PodMember[]> = new Map();
     private podJoinRequests: Map<string, JoinRequest[]> = new Map();
@@ -286,7 +287,7 @@ export class PodManager {
         };
     }
 
-    async updateUserInfo(podId: string, userId: string, userInfo: Partial<PodMember>): Promise<boolean> {
+    updateUserInfo(podId: string, userId: string, userInfo: Partial<PodMember>): boolean {
         const members = this.podMembers.get(podId);
         if (members) {
             const memberIndex = members.findIndex(m => m.userId === userId);
@@ -307,6 +308,43 @@ export class PodManager {
             }
         }
         return userPods;
+    }
+
+    muteUser(podId: string, userId: string, muteType: 'audio' | 'video', isMuted: boolean): boolean {
+        const pod = this.pods.get(podId);
+        const members = this.podMembers.get(podId);
+        if (pod && members) {
+            const member = members.find(m => m.userId === userId);
+            if (member) {
+                if (muteType === 'audio') {
+                    member.isAudioEnabled = isMuted;
+                } else {
+                    member.isVideoEnabled= isMuted;
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    muteAllUsers(podId: string, muteType: 'audio' | 'video', isMuted: boolean): boolean {
+        const members = this.podMembers.get(podId);
+        if (members) {
+            members.forEach(member => {
+                if (muteType === 'audio') {
+                    member.isAudioEnabled= isMuted;
+                } else {
+                    member.isVideoEnabled = isMuted;
+                }
+            });
+            return true;
+        }
+        return false;
+    }
+
+    isUserAuthorized(podId: string, userId: string): boolean {
+        const pod = this.pods.get(podId);
+        return pod ? (pod.owner === userId || pod.hosts.includes(userId)) : false;
     }
 
 }
