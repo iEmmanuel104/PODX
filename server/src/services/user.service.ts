@@ -111,7 +111,7 @@ export default class UserService {
     }
 
     static async viewSingleUser(id: string): Promise<IUser> {
-        const user = await User.findById(id).populate('settings');
+        const user = await User.findById(id).populate<{ settings: IUserSettings }>('settings');
 
         if (!user) {
             throw new NotFoundError('Oops User not found');
@@ -169,10 +169,14 @@ export default class UserService {
     }
 
     static async updateUserSettings(userId: string, dataToUpdate: Partial<IUserSettings>): Promise<IUserSettings> {
-        const userSettings = await UserSettings.findOneAndUpdate({ userId: new Types.ObjectId(userId) }, dataToUpdate, { new: true });
+        const userSettings = await UserSettings.findOneAndUpdate(
+            { userId: new Types.ObjectId(userId) },
+            dataToUpdate,
+            { new: true }
+        );
 
         if (!userSettings) {
-            throw new NotFoundError('Oops User not found');
+            throw new NotFoundError('Oops User settings not found');
         }
 
         return userSettings;
