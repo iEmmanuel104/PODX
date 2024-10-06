@@ -19,7 +19,8 @@ const UserSettingsSchema = z.object({
     meta: BlockMetaSchema.optional(),
 });
 
-type UserSettingsType = z.infer<typeof UserSettingsSchema>;
+export type UserSettingsType = z.infer<typeof UserSettingsSchema>;
+export type IBlockMeta = z.infer<typeof BlockMetaSchema>;
 
 // Extend UserSettingsType with Mongoose's Document properties
 interface IUserSettings extends Omit<UserSettingsType, '_id'>, Document { }
@@ -32,10 +33,10 @@ const mongooseUserSettingsSchema = new Schema<IUserSettings>({
     isBlocked: { type: Boolean, default: false },
     isDeactivated: { type: Boolean, default: false },
     meta: {
-        type: new Schema({
+        type: {
             blockHistory: [{ type: Map, of: String }],
             unblockHistory: [{ type: Map, of: String }],
-        }),
+        },
         required: false,
     },
 }, {
