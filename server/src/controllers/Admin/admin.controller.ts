@@ -5,6 +5,7 @@ import { BadRequestError, ForbiddenError } from '../../utils/customErrors';
 import { AuthUtil } from '../../utils/token';
 import { emailService, EmailTemplate } from '../../utils/Email';
 import UserService from '../../services/user.service';
+import { IAdmin } from '../../models/Mongodb/admin.model';
 
 export default class AdminController {
 
@@ -68,7 +69,7 @@ export default class AdminController {
             throw new ForbiddenError('Only super admin can create new admins');
         }
 
-        const newAdmin = await AdminService.createAdmin({ name, email, isSuperAdmin });
+        const newAdmin = await AdminService.createAdmin({ name, email, isSuperAdmin } as IAdmin);
 
         res.status(201).json({
             status: 'success',
@@ -155,7 +156,7 @@ export default class AdminController {
         const state: boolean = isDeactivated === 'true';
 
         // Check if the status is actually changing
-        if (state === user.settings.isDeactivated) {
+        if (user.settings && state === user.settings.isDeactivated) {
             throw new BadRequestError('User is already in the desired deactivated state');
         }
 
