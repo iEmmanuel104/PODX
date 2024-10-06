@@ -1,7 +1,7 @@
 import http from 'http';
 import app from './app';
 import { initiateMongoDB } from './models/Mongodb';
-import { initiateDB } from './models/Postgres';
+// import { initiateDB } from './models/Postgres';
 import { initializeSocketIO } from './socket';
 import { logger } from './utils/logger';
 import { redisClient } from './utils/redis';
@@ -13,7 +13,7 @@ async function startServer(): Promise<void> {
             logger.info('Connection to REDIS database successful');
         });
         // Initiate a connection to the database
-        await initiateDB();
+        // await initiateDB();
         await initiateMongoDB();
 
         // Start the server and listen on port 8080
