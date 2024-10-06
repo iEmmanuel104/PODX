@@ -1,9 +1,8 @@
-import { Transaction, Op, FindAndCountOptions } from 'sequelize';
-import User, { IUser } from '../models/Postgres/user.model';
+import { Types } from 'mongoose';
+import { User, IUser } from '../models/Mongodb/user.model';
+import { UserSettings, IUserSettings } from '../models/Mongodb/userSettings.model';
 import { NotFoundError, BadRequestError } from '../utils/customErrors';
 import Pagination, { IPaging } from '../utils/pagination';
-import { Sequelize } from '../models/Postgres';
-import UserSettings, { IUserSettings } from '../models/Postgres/userSettings.model';
 
 export interface IViewUsersQuery {
     page?: number;
@@ -22,33 +21,22 @@ export interface IDynamicQueryOptions {
 export default class UserService {
 
     static async isWalletAddressEmailAndUserNameAvailable(walletAddress: string, username: string): Promise<boolean> {
-        // Construct where condition
-        const whereCondition = {
-            [Op.or]: [
-                { walletAddress: walletAddress },
-                { username: username },
+        const existingUser = await User.findOne({
+            $or: [
+                { walletAddress },
+                { username },
             ],
-        };
-
-        // Find existing users with the given email, wallet address, or username
-        const existingUsers = await User.findAll({
-            where: whereCondition,
-            attributes: ['walletAddress', 'username'],
         });
 
-        // Check for conflicts and collect them
-        const conflicts: string[] = [];
-        for (const user of existingUsers) {
-            if (user.walletAddress === walletAddress) {
+        if (existingUser) {
+            const conflicts: string[] = [];
+            if (existingUser.walletAddress === walletAddress) {
                 conflicts.push('wallet address');
             }
-            if (user.username === username) {
+            if (existingUser.username === username) {
                 conflicts.push('username');
             }
-        }
 
-        // If conflicts found, throw a single error with all conflicts
-        if (conflicts.length > 0) {
             const conflictList = conflicts.join(', ');
             throw new BadRequestError(`${conflictList} provided ${conflicts.length > 1 ? 'are' : 'is'} already in use`);
         }
@@ -57,10 +45,7 @@ export default class UserService {
     }
 
     static async isWalletAddressAvailable(walletAddress: string): Promise<boolean> {
-        const existingUser: User | null = await User.findOne({
-            where: { walletAddress },
-            attributes: ['walletAddress'],
-        });
+        const existingUser = await User.findOne({ walletAddress });
 
         if (existingUser) {
             throw new BadRequestError('Wallet address already in use');
@@ -69,74 +54,64 @@ export default class UserService {
         return true;
     }
 
-    static async addUser(userData: IUser): Promise<User> {
-
-        const _transaction = await User.create({ ...userData });
+    static async addUser(userData: IUser): Promise<IUser> {
+        const user = await User.create(userData);
 
         await UserSettings.create({
-            userId: _transaction.id,
+            userId: user._id,
             joinDate: new Date().toISOString().split('T')[0], // yyyy-mm-dd format
         } as IUserSettings);
 
-        return _transaction;
+        return user;
     }
 
-    static async viewUsers(queryData?: IViewUsersQuery): Promise<{ users: User[], count: number, totalPages?: number }> {
+    static async viewUsers(queryData?: IViewUsersQuery): Promise<{ users: IUser[], count: number, totalPages?: number }> {
         const { page, size, q: query, isBlocked, isDeactivated } = queryData || {};
 
-        const where: Record<string | symbol, unknown> = {};
-        const settingsWhere: Record<string, unknown> = {};
+        const filter: Record<string, string | unknown> = {};
+        const settingsFilter: Record<string, boolean> = {};
 
         if (query) {
-            where[Op.or] = [
-                { firstName: { [Op.iLike]: `%${query}%` } },
-                { lastName: { [Op.iLike]: `%${query}%` } },
-                { username: { [Op.iLike]: `%${query}%` } },
-                Sequelize.where(Sequelize.fn('concat', Sequelize.col('User.firstName'), ' ', Sequelize.col('User.lastName')), { [Op.iLike]: `%${query}%` }),
+            filter.$or = [
+                { firstName: { $regex: query, $options: 'i' } },
+                { lastName: { $regex: query, $options: 'i' } },
+                { username: { $regex: query, $options: 'i' } },
+                { $expr: { $regexMatch: { input: { $concat: ['$firstName', ' ', '$lastName'] }, regex: query, options: 'i' } } },
             ];
         }
 
         if (isBlocked !== undefined) {
-            settingsWhere.isBlocked = isBlocked;
+            settingsFilter.isBlocked = isBlocked;
         }
 
         if (isDeactivated !== undefined) {
-            settingsWhere.isDeactivated = isDeactivated;
+            settingsFilter.isDeactivated = isDeactivated;
         }
 
-        const queryOptions: FindAndCountOptions<User> = {
-            where,
-            include: [
-                {
-                    model: UserSettings,
-                    as: 'settings',
-                    attributes: ['joinDate', 'isBlocked', 'isDeactivated', 'lastLogin', 'meta'],
-                    where: settingsWhere,
-                },
-            ],
-        };
+        let userQuery = User.find(filter).populate({
+            path: 'settings',
+            match: settingsFilter,
+            select: 'joinDate isBlocked isDeactivated lastLogin meta',
+        });
 
         if (page && size && page > 0 && size > 0) {
             const { limit, offset } = Pagination.getPagination({ page, size } as IPaging);
-            queryOptions.limit = limit || 0;
-            queryOptions.offset = offset || 0;
+            userQuery = userQuery.skip(offset ?? 0).limit(limit ?? 0);
         }
 
-        const { rows: users, count } = await User.findAndCountAll(queryOptions);
-
-        // Calculate the total count
-        const totalCount = (count as unknown as []).length;
+        const users = await userQuery.exec();
+        const count = await User.countDocuments(filter);
 
         if (page && size && users.length > 0) {
-            const totalPages = Pagination.estimateTotalPage({ count: totalCount, limit: size } as IPaging);
-            return { users, count: totalCount, ...totalPages };
+            const totalPages = Pagination.estimateTotalPage({ count, limit: size } as IPaging);
+            return { users, count, ...totalPages };
         } else {
-            return { users, count: totalCount };
+            return { users, count };
         }
     }
 
-    static async viewSingleUser(id: string): Promise<User> {
-        const user: User | null = await User.scope('withSettings').findByPk(id);
+    static async viewSingleUser(id: string): Promise<IUser> {
+        const user = await User.findById(id).populate('settings');
 
         if (!user) {
             throw new NotFoundError('Oops User not found');
@@ -145,11 +120,8 @@ export default class UserService {
         return user;
     }
 
-    static async viewSingleUserByWalletAddress(walletAddress: string, transaction?: Transaction): Promise<User> {
-        const user: User | null = await User.scope('withSettings').findOne({
-            where: { walletAddress },
-            transaction,
-        });
+    static async viewSingleUserByWalletAddress(walletAddress: string): Promise<IUser> {
+        const user = await User.findOne({ walletAddress }).populate('settings');
 
         if (!user) {
             throw new NotFoundError('Oops User not found');
@@ -158,12 +130,8 @@ export default class UserService {
         return user;
     }
 
-    static async viewSingleUserByEmail(email: string, transaction?: Transaction): Promise<User> {
-        const user: User | null = await User.findOne({
-            where: { email },
-            attributes: ['id', 'firstName', 'status'],
-            transaction,
-        });
+    static async viewSingleUserByEmail(email: string): Promise<IUser> {
+        const user = await User.findOne({ email }).select('id firstName status');
 
         if (!user) {
             throw new NotFoundError('Oops User not found');
@@ -172,13 +140,16 @@ export default class UserService {
         return user;
     }
 
-    static async viewSingleUserDynamic(queryOptions: IDynamicQueryOptions): Promise<User> {
+    static async viewSingleUserDynamic(queryOptions: IDynamicQueryOptions): Promise<IUser> {
         const { query, attributes } = queryOptions;
 
-        const user: User | null = await User.scope('withSettings').findOne({
-            where: query,
-            ...(attributes ? { attributes } : {}),
-        });
+        let userQuery = User.findOne(query);
+
+        if (attributes) {
+            userQuery = userQuery.select(attributes.join(' '));
+        }
+
+        const user = await userQuery.populate('settings');
 
         if (!user) {
             throw new NotFoundError('Oops User not found');
@@ -187,27 +158,33 @@ export default class UserService {
         return user;
     }
 
-    static async updateUser(user: User, dataToUpdate: Partial<IUser>): Promise<User> {
-        await user.update(dataToUpdate);
+    static async updateUser(userId: string, dataToUpdate: Partial<IUser>): Promise<IUser> {
+        const user = await User.findByIdAndUpdate(userId, dataToUpdate, { new: true }).populate('settings');
 
-        const updatedUser = await this.viewSingleUser(user.id);
+        if (!user) {
+            throw new NotFoundError('Oops User not found');
+        }
 
-        return updatedUser;
+        return user;
     }
 
-    static async updateUserSettings(userId: string, dataToUpdate: Partial<IUserSettings>): Promise<UserSettings> {
-        const userSettings = await UserSettings.findOne({ where: { userId } });
+    static async updateUserSettings(userId: string, dataToUpdate: Partial<IUserSettings>): Promise<IUserSettings> {
+        const userSettings = await UserSettings.findOneAndUpdate({ userId: new Types.ObjectId(userId) }, dataToUpdate, { new: true });
+
         if (!userSettings) {
             throw new NotFoundError('Oops User not found');
         }
 
-        await userSettings.update(dataToUpdate);
-
         return userSettings;
     }
 
-    static async deleteUser(user: User, transaction?: Transaction): Promise<void> {
-        transaction ? await user.destroy({ transaction }) : await user.destroy();
-    }
+    static async deleteUser(userId: string): Promise<void> {
+        const user = await User.findByIdAndDelete(userId);
 
+        if (!user) {
+            throw new NotFoundError('Oops User not found');
+        }
+
+        await UserSettings.deleteOne({ userId: new Types.ObjectId(userId) });
+    }
 }
