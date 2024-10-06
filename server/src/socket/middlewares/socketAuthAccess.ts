@@ -35,11 +35,11 @@ export default async function socketAuthAccess(socket: Socket, next: (err?: Erro
 
         AuthUtil.verifyToken(token, user.walletAddress);
 
-        if (user.settings.isBlocked) {
+        if (user.settings?.isBlocked) {
             throw new ForbiddenError('Account blocked. Please contact support');
         }
 
-        if (user.settings.isDeactivated) {
+        if (user.settings?.isDeactivated) {
             throw new ForbiddenError('Account deactivated. Please contact support');
         }
 
