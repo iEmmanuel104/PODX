@@ -5,11 +5,11 @@ import { AuthUtil } from '../../utils/token';
 import UserService from '../../services/user.service';
 import { UnauthorizedError, NotFoundError, ForbiddenError } from '../../utils/customErrors';
 import { DecodedTokenData } from '../../utils/interface';
+import { IUser } from '../../models/Mongodb/user.model';
 
 export interface AuthenticatedSocket extends Socket {
     userId: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    user: any; // Replace 'any' with your User type
+    user: IUser;
 }
 
 // eslint-disable-next-line no-unused-vars
