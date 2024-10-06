@@ -132,5 +132,4 @@ export interface IUser {
     username: string;
     displayImage?: string;
     fullName?: string;
-
 }
