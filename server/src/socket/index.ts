@@ -3,7 +3,6 @@ import { Server } from 'http';
 import { logger } from '../utils/logger';
 import socketAuthAccess, { AuthenticatedSocket } from './middlewares/socketAuthAccess';
 import attachPodHandlers from './controllers/podHandler';
-import { updateUserStatus } from './socket-helper/updateUserStatus';
 
 let io: SocketIOServer;
 
@@ -23,16 +22,8 @@ export function initializeSocketIO(server: Server): void {
         const userId = authenticatedSocket.userId;
         logger.info(`New WebSocket connection: ${socket.id} for user: ${userId}`);
 
-        // Update user status to online
-        updateUserStatus(userId, true);
-
         // Attach pod (room) handlers
         attachPodHandlers(io, authenticatedSocket);
-
-        socket.on('disconnect', () => {
-            logger.info(`WebSocket disconnected: ${socket.id} for user: ${userId}`);
-            updateUserStatus(userId, false);
-        });
     });
 }
 
