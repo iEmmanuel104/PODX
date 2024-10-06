@@ -1,4 +1,4 @@
-import User, { IUser } from '../models/Postgres/user.model';
+import { IUser } from '../models/Mongodb/user.model';
 
 export interface SaveTokenToCache {
     key: string,
@@ -14,7 +14,7 @@ export type AWSUploadType = 'profile' | 'posts' | 'document' | 'other';
 
 export interface GenerateTokenData {
     type: AuthToken,
-    user: User,
+    user: IUser,
 }
 export interface GenerateAdminTokenData {
     type: AuthToken,
