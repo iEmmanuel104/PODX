@@ -4,7 +4,6 @@ import {
     IsEmail, IsUUID, PrimaryKey, Index, BeforeCreate, BeforeUpdate,
     Unique,
 } from 'sequelize-typescript';
-import Password from './password.model';
 import UserSettings from './userSettings.model';
 import { FindOptions } from 'sequelize';
 
@@ -166,9 +165,6 @@ export default class User extends Model<User | IUser> {
         referralBonus: string;
 
     // Associations
-    @HasOne(() => Password)
-        password: Password;
-
     @HasOne(() => UserSettings)
         settings: UserSettings;
 

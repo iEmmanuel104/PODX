@@ -1,27 +1,27 @@
-import express, { Router } from 'express';
-import AuthController from '../controllers/auth.controller';
-import { basicAuth, AuthenticatedController } from '../middlewares/authMiddleware';
+// import express, { Router } from 'express';
+// import AuthController from '../controllers/auth.controller';
+// import { basicAuth, AuthenticatedController } from '../middlewares/authMiddleware';
 
-const router: Router = express.Router();
+// const router: Router = express.Router();
 
-router
-    // Signup route
-    .post('/signup', AuthController.signup)
+// router
+//     // Signup route
+//     .post('/signup', AuthController.signup)
 
-    // Wallet verification route
-    .post('/verifywallet', AuthController.verifyWallet)
+//     // Wallet verification route
+//     .post('/verifywallet', AuthController.verifyWallet)
 
-    // Login route
-    .post('/login', AuthController.login)
+//     // Login route
+//     .post('/login', AuthController.login)
 
-    // Logout route
-    .get('/logout', basicAuth(), AuthenticatedController(AuthController.logout))
+//     // Logout route
+//     .get('/logout', basicAuth(), AuthenticatedController(AuthController.logout))
 
-    // Get logged user data route
-    .get('/loggeduser', basicAuth(), AuthenticatedController(AuthController.getLoggedUserData))
+//     // Get logged user data route
+//     .get('/loggeduser', basicAuth(), AuthenticatedController(AuthController.getLoggedUserData))
 
-    // Refresh token route
-    .get('/refreshtoken', basicAuth());
+//     // Refresh token route
+//     .get('/refreshtoken', basicAuth());
 
 
-export default router;
+// export default router;

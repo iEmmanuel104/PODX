@@ -1,16 +1,13 @@
-import { Router } from 'express';
-import authRoute from './auth.routes';
-import userRoute from './user.routes';
-// import AdminRoutes from './Admin/admin.routes';
+// import { Router } from 'express';
+// import authRoute from './auth.routes';
+// import userRoute from './user.routes';
 
+// const router = Router();
 
-const router = Router();
+// router
+//     .use('/auth', authRoute)
+//     .use('/user', userRoute);
 
-router
-    .use('/auth', authRoute)
-    // .use('/iamBase', adminRoute)
-    .use('/user', userRoute);
-
-export default router;
+// export default router;
 
 
