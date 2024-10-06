@@ -1,7 +1,6 @@
 import 'express-async-errors';
 import express, { Request, Response, NextFunction } from 'express';
 import Middlewares from './middlewares/errorHandlers';
-// import bodyParser from 'body-parser';
 import cors from 'cors';
 import expressWinston from 'express-winston';
 import { logger } from './utils/logger';
@@ -9,17 +8,11 @@ import { logger } from './utils/logger';
 import morgan from 'morgan';
 import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
-// import passport from 'passport';
 import { getServerHealth } from './views/serverHealthCheck';
 import cookieParser from 'cookie-parser';
-// import cookieSession from 'cookie-session';
-// import { SESSION_SECRET } from './utils/constants';
-// import FederationLoginConfig from './clients/passport.config';
+import corsOptions from './utils/cors';
+
 const app = express();
-
-// Initialize Passport configuration
-// new FederationLoginConfig();
-
 app.use(
     expressWinston.logger({
         winstonInstance: logger,
@@ -32,17 +25,9 @@ app.use(helmet());
 app.use(mongoSanitize());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(morgan('dev'));
 app.use(cookieParser());
-// app.use(
-//     cookieSession({
-//         maxAge: 24 * 60 * 60 * 1000,
-//         keys: [SESSION_SECRET],
-//     })
-// );
-// app.use(passport.initialize());
-// app.use(passport.session());
 
 // Request logger middleware
 app.use((req: Request, res: Response, next: NextFunction) => {
