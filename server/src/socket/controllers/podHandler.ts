@@ -2,7 +2,8 @@
 import { Server } from 'socket.io';
 import { AuthenticatedSocket } from '../middlewares/socketAuthAccess';
 import { logger } from '../../utils/logger';
-import { PodManager, Pod, PodType, PodMember, JoinRequest } from '../socket-helper/podManager';
+import { PodManager } from '../socket-helper/podManager';
+import { Pod, PodType, PodMember, JoinRequest } from '../socket-helper/interface';
 
 
 export default function attachPodHandlers(io: Server, socket: AuthenticatedSocket) {
