@@ -8,11 +8,10 @@ import { ethers } from 'ethers';
 import { getPodXContractInstance, getSignerForAddress } from '../socket-helper/contractInstance';
 
 
-export default function attachPodHandlers(io: Server, socket: AuthenticatedSocket) {
+export default function attachPodHandlers(io: Server, socket: AuthenticatedSocket, podManager: PodManager) {
     const userId = socket.userId;
     const userWallet = socket.user.walletAddress;
     const user = socket.user;
-    const podManager = new PodManager();
 
     socket.on('create-pod', async (ipfsContentHash: string, callback: (response: { success: boolean; podId?: string; error?: string }) => void) => {
         try {
@@ -285,70 +284,6 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
         }
     });
 
-    socket.on('send-tip', async (podId: string, recipientId: string, amount: string, callback: (response: { success: boolean; transactionHash?: string; error?: string }) => void) => {
-        try {
-            const signer = await getSignerForAddress(userWallet);
-            const connectedContract = getPodXContractInstance(signer);
-
-            // Convert amount to wei (assuming the contract expects wei)
-            const amountInWei = ethers.parseEther(amount);
-
-            // Send the transaction
-            const tx = await connectedContract.sendTip(ethers.encodeBytes32String(podId), recipientId, amountInWei);
-
-            // Notify the client that the transaction is pending
-            socket.emit('tip-pending', { transactionHash: tx.hash });
-
-            // Wait for the transaction to be mined
-            const receipt = await tx.wait();
-
-            if (receipt.status === 1) { // 1 indicates success
-                // Check if the TipSent event was emitted
-                const tipSentEvent = receipt.logs.find(
-                    log => log.topics[0] === ethers.id('TipSent(bytes32,address,address,uint256)')
-                );
-
-                if (tipSentEvent) {
-                    const decodedEvent = connectedContract.interface.parseLog(tipSentEvent);
-                    logger.info(`Tip sent successfully. Event data: ${JSON.stringify(decodedEvent)}`);
-
-                    // Notify all clients in the pod about the successful tip
-                    io.to(podId).emit('tip-sent', {
-                        from: userId,
-                        to: recipientId,
-                        amount: amount,
-                        transactionHash: tx.hash,
-                    });
-
-                    callback({ success: true, transactionHash: tx.hash });
-                } else {
-                    logger.warn(`Transaction successful but TipSent event not found. TX Hash: ${tx.hash}`);
-                    callback({ success: true, transactionHash: tx.hash });
-                }
-            } else {
-                throw new Error('Transaction failed');
-            }
-
-            logger.info(`User ${userId} sent tip of ${amount} to ${recipientId} in pod ${podId}. TX Hash: ${tx.hash}`);
-        } catch (error) {
-            logger.error(`Error sending tip: ${error}`);
-            callback({ success: false, error: 'Failed to send tip' });
-
-            // Notify the client about the failed transaction
-            socket.emit('tip-failed', { error: 'Failed to send tip' });
-        }
-    });
-
-    socket.on('toggle-audio', ({ podId, isAudioEnabled }: { podId: string; isAudioEnabled: boolean }) => {
-        podManager.updateUserInfo(podId, userId, { isAudioEnabled });
-        socket.to(podId).emit('user-audio-toggle', { userId, isAudioEnabled });
-    });
-
-    socket.on('toggle-video', ({ podId, isVideoEnabled }: { podId: string; isVideoEnabled: boolean }) => {
-        podManager.updateUserInfo(podId, userId, { isVideoEnabled });
-        socket.to(podId).emit('user-video-toggle', { userId, isVideoEnabled });
-    });
-
     socket.on('send-message', ({ podId, message }: { podId: string; message: string }) => {
         socket.to(podId).emit('new-message', { userId, message });
     });
@@ -358,22 +293,4 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
         logger.info(`User ${userId} sent a signal to ${to}`);
     });
 
-    // Handle disconnection
-    socket.on('disconnect', () => {
-        const userPods = podManager.getUserPods(userId);
-
-        userPods.forEach(podId => {
-            const updatedPod = podManager.leavePod(podId, userId);
-            if (updatedPod) {
-                io.to(podId).emit('user-left', { userId, socketId: socket.id });
-                io.to(podId).emit('pod-stats-updated', updatedPod.stats);
-                if (updatedPod.owner !== userId && updatedPod.owner !== socket.user.id) {
-                    io.to(podId).emit('pod-owner-changed', { podId, newOwnerId: updatedPod.owner });
-                }
-                logger.info(`User ${userId} disconnected from pod ${podId}`);
-            }
-        });
-
-        logger.info(`WebSocket disconnected: ${socket.id} for user: ${userId}`);
-    });
 }
