@@ -2,8 +2,9 @@
 import { Server } from 'socket.io';
 import { AuthenticatedSocket } from '../middlewares/socketAuthAccess';
 import { logger } from '../../utils/logger';
-import { ethers } from 'ethers';
+import { ethers, TransactionReceipt } from 'ethers';
 import { getPodXContractInstance, getSignerForAddress } from '../socket-helper/contractInstance';
+import { PodXContract } from '../socket-helper/interface';
 
 export default function attachTipHandlers(io: Server, socket: AuthenticatedSocket) {
     const userId = socket.userId;
@@ -12,7 +13,7 @@ export default function attachTipHandlers(io: Server, socket: AuthenticatedSocke
     socket.on('send-tip', async (podId: string, recipientId: string, amount: string, callback: (response: { success: boolean; transactionHash?: string; error?: string }) => void) => {
         try {
             const signer = await getSignerForAddress(userWallet);
-            const connectedContract = getPodXContractInstance(signer);
+            const connectedContract = getPodXContractInstance(signer) as PodXContract;
 
             // Convert amount to wei (assuming the contract expects wei)
             const amountInWei = ethers.parseEther(amount);
@@ -24,16 +25,19 @@ export default function attachTipHandlers(io: Server, socket: AuthenticatedSocke
             socket.emit('tip-pending', { transactionHash: tx.hash });
 
             // Wait for the transaction to be mined
-            const receipt = await tx.wait();
+            const receipt = await tx.wait() as TransactionReceipt;
 
             if (receipt.status === 1) { // 1 indicates success
                 // Check if the TipSent event was emitted
                 const tipSentEvent = receipt.logs.find(
-                    log => log.topics[0] === ethers.id('TipSent(bytes32,address,address,uint256)')
+                    (log: ethers.Log) => log.topics[0] === ethers.id('TipSent(bytes32,address,address,uint256)')
                 );
 
                 if (tipSentEvent) {
-                    const decodedEvent = connectedContract.interface.parseLog(tipSentEvent);
+                    const decodedEvent = connectedContract.interface.parseLog({
+                        topics: tipSentEvent.topics as string[],
+                        data: tipSentEvent.data,
+                    });
                     logger.info(`Tip sent successfully. Event data: ${JSON.stringify(decodedEvent)}`);
 
                     // Notify all clients in the pod about the successful tip
