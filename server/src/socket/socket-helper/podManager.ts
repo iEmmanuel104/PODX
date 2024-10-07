@@ -90,7 +90,6 @@ export class PodManager {
         return null;
     }
 
-
     async leavePod(podId: string, userId: string): Promise<IPod | null> {
         const pod = await Pod.findOne({ id: podId });
         if (pod) {

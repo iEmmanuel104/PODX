@@ -3,9 +3,10 @@ import { Server } from 'socket.io';
 import { AuthenticatedSocket } from '../middlewares/socketAuthAccess';
 import { logger } from '../../utils/logger';
 import { PodManager } from '../socket-helper/podManager';
-import { Pod, PodType, PodMember } from '../socket-helper/interface';
+import { PodType, PodMember } from '../socket-helper/interface';
 import { ethers } from 'ethers';
 import { getPodXContractInstance, getSignerForAddress } from '../socket-helper/contractInstance';
+import { IPod } from '../../models/Mongodb/pod.model';
 
 export default function attachPodHandlers(io: Server, socket: AuthenticatedSocket, podManager: PodManager) {
     const userId = socket.userId;
@@ -87,7 +88,7 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
         }
     });
 
-    socket.on('get-pod-info', async (podId: string, callback: (response: { success: boolean; pod?: Pod; error?: string }) => void) => {
+    socket.on('get-pod-info', async (podId: string, callback: (response: { success: boolean; pod?: IPod; error?: string }) => void) => {
         const pod = await podManager.getPod(podId);
         if (pod) {
             callback({ success: true, pod });
@@ -130,8 +131,7 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
     socket.on('update-content', async (podId: string, newIpfsContentHash: string, callback: (response: { success: boolean; error?: string }) => void) => {
         try {
             const pod = await podManager.getPod(podId);
-            if (pod && (pod.owner.toString() === userId || pod.hosts.includes(userId))) {
-                const signer = await getSignerForAddress(userWallet);
+            if (pod && (pod.owner.toString() === userId || pod.hosts.some(hostId => hostId.toString() === userId))) {                const signer = await getSignerForAddress(userWallet);
                 const connectedContract = getPodXContractInstance(signer);
 
                 const tx = await connectedContract.updatePodcastContent(ethers.encodeBytes32String(podId), newIpfsContentHash);
