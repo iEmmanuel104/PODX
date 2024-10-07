@@ -1,272 +1,37 @@
 import { generateRoomId } from './generateRoomId';
-import { IUser } from '../../models/Mongodb/user.model'; // Adjust the import path as needed
-import { Pod, PodMember, JoinRequest, PodType } from './interface';
+import { IUser } from '../../models/Mongodb/user.model';
+import { PodMember, PodType } from './interface';
+import { Pod, IPod } from '../../models/Mongodb/pod.model';
+import { getRedisPubClient } from '../index';
+import { redisClient } from '../../utils/redis';
+import { Types } from 'mongoose';
 
 export class PodManager {
-    // TODO  - Switch to using a database to store pods, pod members, join requests, and co-host requests
-    private pods: Map<string, Pod> = new Map();
-    private podMembers: Map<string, PodMember[]> = new Map();
-    private podJoinRequests: Map<string, JoinRequest[]> = new Map();
-    private podCoHostRequests: Map<string, PodMember[]> = new Map();
+    private redisPub: ReturnType<typeof getRedisPubClient>;
 
-    async createPod(user: IUser, socketId: string, ipfsContentHash: string): Promise<Pod> {
+    constructor() {
+        this.redisPub = getRedisPubClient();
+    }
+
+    async createPod(user: IUser, socketId: string, ipfsContentHash: string): Promise<IPod> {
         const podId = generateRoomId();
-        const newPod: Pod = {
+        const newPod = new Pod({
             id: podId,
-            owner: user.id,
-            hosts: [user.id],
+            owner: user._id,
+            hosts: [user._id],
+            members: [user._id],
             ipfsContentHash,
-            type: 'open',
+            type: 'open' as PodType,
             stats: {
                 memberCount: 1,
                 hostCount: 1,
                 joinRequestCount: 0,
                 coHostRequestCount: 0,
             },
-        };
-        this.pods.set(podId, newPod);
+        });
+        await newPod.save();
 
-        const newMember = await this.createPodMember(user, socketId);
-        this.podMembers.set(podId, [newMember]);
-        this.podJoinRequests.set(podId, []);
-        this.podCoHostRequests.set(podId, []);
-
-        return newPod;
-    }
-
-    async joinPod(podId: string, user: IUser, socketId: string): Promise<'joined' | 'requested' | null> {
-        const pod = this.pods.get(podId);
-        if (pod) {
-            if (pod.type === 'open' || pod.hosts.includes(user.id)) {
-                const members = this.podMembers.get(podId) || [];
-                if (!members.some(member => member.userId === user.id)) {
-                    const newMember = await this.createPodMember(user, socketId);
-                    members.push(newMember);
-                    this.podMembers.set(podId, members);
-                    pod.stats.memberCount++;
-                }
-                return 'joined';
-            } else if (pod.type === 'trusted') {
-                const joinRequests = this.podJoinRequests.get(podId) || [];
-                if (!joinRequests.some(request => request.userId === user.id)) {
-                    const newRequest = await this.createJoinRequest(user, socketId);
-                    joinRequests.push(newRequest);
-                    this.podJoinRequests.set(podId, joinRequests);
-                    pod.stats.joinRequestCount++;
-                }
-                return 'requested';
-            }
-        }
-        return null;
-    }
-
-    leavePod(podId: string, userId: string): Pod | null {
-        const pod = this.pods.get(podId);
-        if (pod) {
-            // Remove from members
-            const members = this.podMembers.get(podId) || [];
-            const updatedMembers = members.filter(member => member.userId !== userId);
-            this.podMembers.set(podId, updatedMembers);
-
-            // Remove from hosts
-            pod.hosts = pod.hosts.filter(hostId => hostId !== userId);
-
-            // Remove from co-host requests
-            const coHostRequests = this.podCoHostRequests.get(podId) || [];
-            const updatedCoHostRequests = coHostRequests.filter(request => request.userId !== userId);
-            this.podCoHostRequests.set(podId, updatedCoHostRequests);
-
-            // Remove from join requests
-            const joinRequests = this.podJoinRequests.get(podId) || [];
-            const updatedJoinRequests = joinRequests.filter(request => request.userId !== userId);
-            this.podJoinRequests.set(podId, updatedJoinRequests);
-
-            // Update pod stats
-            pod.stats = {
-                memberCount: updatedMembers.length,
-                hostCount: pod.hosts.length,
-                joinRequestCount: updatedJoinRequests.length,
-                coHostRequestCount: updatedCoHostRequests.length,
-            };
-
-            // Check if pod should be deleted
-            if (updatedMembers.length === 0) {
-                this.pods.delete(podId);
-                this.podMembers.delete(podId);
-                this.podJoinRequests.delete(podId);
-                this.podCoHostRequests.delete(podId);
-            } else if (pod.owner === userId && pod.hosts.length > 0) {
-                // If the owner is leaving, assign a new owner
-                pod.owner = pod.hosts[0];
-            }
-
-            return pod;
-        }
-        return null;
-    }
-
-    getPod(podId: string): Pod | undefined {
-        return this.pods.get(podId);
-    }
-
-    getPodMembers(podId: string): PodMember[] | null {
-        return this.podMembers.get(podId) || null;
-    }
-
-    updatePodContent(podId: string, newIpfsContentHash: string): boolean {
-        const pod = this.pods.get(podId);
-        if (pod) {
-            pod.ipfsContentHash = newIpfsContentHash;
-            return true;
-        }
-        return false;
-    }
-
-    async getJoinRequests(podId: string, userId: string): Promise<JoinRequest[] | null> {
-        const pod = this.pods.get(podId);
-        if (pod && (pod.owner === userId || pod.hosts.includes(userId))) {
-            return this.podJoinRequests.get(podId) || [];
-        }
-        return null;
-    }
-
-    async getCoHostRequests(podId: string, userId: string): Promise<PodMember[] | null> {
-        const pod = this.pods.get(podId);
-        if (pod && (pod.owner === userId || pod.hosts.includes(userId))) {
-            return this.podCoHostRequests.get(podId) || [];
-        }
-        return null;
-    }
-
-    requestCoHost(podId: string, userId: string): boolean {
-        const pod = this.pods.get(podId);
-        if (pod && !pod.hosts.includes(userId)) {
-            const coHostRequests = this.podCoHostRequests.get(podId) || [];
-            if (!coHostRequests.some(request => request.userId === userId)) {
-                coHostRequests.push(this.podMembers.get(podId)!.find(member => member.userId === userId)!);
-                this.podCoHostRequests.set(podId, coHostRequests);
-                pod.stats.coHostRequestCount++;
-                return true;
-            }
-        }
-        return false;
-    }
-
-    approveCoHost(podId: string, approverUserId: string, coHostUserId: string): boolean {
-        const pod = this.pods.get(podId);
-        if (pod && (pod.owner === approverUserId || pod.hosts.includes(approverUserId))) {
-            const coHostRequests = this.podCoHostRequests.get(podId) || [];
-            const request = coHostRequests.find(request => request.userId === coHostUserId);
-            const requestIndex = request ? coHostRequests.indexOf(request) : -1;
-            if (requestIndex !== -1) {
-                coHostRequests.splice(requestIndex, 1);
-                this.podCoHostRequests.set(podId, coHostRequests);
-                if (!pod.hosts.includes(coHostUserId)) {
-                    pod.hosts.push(coHostUserId);
-                    pod.stats.hostCount++;
-                }
-                pod.stats.coHostRequestCount--;
-                return true;
-            }
-        }
-        return false;
-    }
-
-    changePodType(podId: string, userId: string, newType: PodType): string[] {
-        const pod = this.pods.get(podId);
-        if (pod && pod.owner === userId) {
-            pod.type = newType;
-            if (newType === 'open') {
-                const joinRequests = this.podJoinRequests.get(podId) || [];
-                const admittedUsers = joinRequests.map(request => request.userId);
-                const members = this.podMembers.get(podId) || [];
-
-                joinRequests.forEach(request => {
-                    if (!members.some(member => member.userId === request.userId)) {
-                        members.push({
-                            userId: request.userId,
-                            socketId: request.socketId,
-                            name: request.name,
-                            walletAddress: request.walletAddress,
-                            displayImage: request.displayImage,
-                            isAudioEnabled: true,
-                            isVideoEnabled: true,
-                        });
-                    }
-                });
-
-                this.podMembers.set(podId, members);
-                this.podJoinRequests.set(podId, []);
-
-                pod.stats.memberCount = members.length;
-                pod.stats.joinRequestCount = 0;
-
-                return admittedUsers;
-            }
-        }
-        return [];
-    }
-
-    async approveJoinRequest(podId: string, approverUserId: string, joinUserId: string): Promise<boolean> {
-        const pod = this.pods.get(podId);
-        if (pod && pod.type === 'trusted' && (pod.owner === approverUserId || pod.hosts.includes(approverUserId))) {
-            const joinRequests = this.podJoinRequests.get(podId) || [];
-            const requestIndex = joinRequests.findIndex(request => request.userId === joinUserId);
-            if (requestIndex !== -1) {
-                const approvedRequest = joinRequests.splice(requestIndex, 1)[0];
-                this.podJoinRequests.set(podId, joinRequests);
-
-                const members = this.podMembers.get(podId) || [];
-                if (!members.some(member => member.userId === joinUserId)) {
-                    const newMember: PodMember = {
-                        ...approvedRequest,
-                        isAudioEnabled: true,
-                        isVideoEnabled: true,
-                    };
-                    members.push(newMember);
-                    this.podMembers.set(podId, members);
-                }
-
-                pod.stats.memberCount = members.length;
-                pod.stats.joinRequestCount = joinRequests.length;
-
-                return true;
-            }
-        }
-        return false;
-    }
-
-    async approveAllJoinRequests(podId: string, approverUserId: string): Promise<string[]> {
-        const pod = this.pods.get(podId);
-        if (pod && (pod.owner === approverUserId || pod.hosts.includes(approverUserId))) {
-            const joinRequests = this.podJoinRequests.get(podId) || [];
-            const approvedUsers = joinRequests.map(request => request.userId);
-
-            const members = this.podMembers.get(podId) || [];
-            joinRequests.forEach(request => {
-                if (!members.some(member => member.userId === request.userId)) {
-                    const newMember: PodMember = {
-                        ...request,
-                        isAudioEnabled: true,
-                        isVideoEnabled: true,
-                    };
-                    members.push(newMember);
-                }
-            });
-
-            this.podMembers.set(podId, members);
-            this.podJoinRequests.set(podId, []);
-
-            pod.stats.memberCount = members.length;
-            pod.stats.joinRequestCount = 0;
-
-            return approvedUsers;
-        }
-        return [];
-    }
-
-    private async createPodMember(user: IUser, socketId: string): Promise<PodMember> {
-        return {
+        const memberData: PodMember = {
             userId: user.id,
             socketId,
             name: `${user.firstName} ${user.lastName}`,
@@ -275,76 +40,252 @@ export class PodManager {
             isAudioEnabled: true,
             isVideoEnabled: true,
         };
-    }
 
-    private async createJoinRequest(user: IUser, socketId: string): Promise<JoinRequest> {
-        return {
-            userId: user.id,
-            socketId,
-            name: `${user.firstName} ${user.lastName}`,
-            walletAddress: user.walletAddress,
-            displayImage: user.displayImage || '',
+        // Store pod info in Redis
+        const podInfo = {
+            id: podId,
+            owner: user.id,
+            hosts: [user.id],
+            type: 'open',
         };
+        await redisClient.hset(`pod:${podId}`, 'info', JSON.stringify(podInfo));
+
+        await redisClient.hset(`pod:${podId}:members`, user.id, JSON.stringify(memberData));
+        await this.redisPub.publish('pod-updates', JSON.stringify({ type: 'pod-created', podId, userId: user.id }));
+
+        return newPod;
     }
 
-    updateUserInfo(podId: string, userId: string, userInfo: Partial<PodMember>): boolean {
-        const members = this.podMembers.get(podId);
-        if (members) {
-            const memberIndex = members.findIndex(m => m.userId === userId);
-            if (memberIndex !== -1) {
-                members[memberIndex] = { ...members[memberIndex], ...userInfo };
-                this.podMembers.set(podId, members);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    getUserPods(userId: string): string[] {
-        const userPods: string[] = [];
-        for (const [podId, members] of this.podMembers.entries()) {
-            if (members.some(member => member.userId === userId)) {
-                userPods.push(podId);
-            }
-        }
-        return userPods;
-    }
-
-    muteUser(podId: string, userId: string, muteType: 'audio' | 'video', isMuted: boolean): boolean {
-        const pod = this.pods.get(podId);
-        const members = this.podMembers.get(podId);
-        if (pod && members) {
-            const member = members.find(m => m.userId === userId);
-            if (member) {
-                if (muteType === 'audio') {
-                    member.isAudioEnabled = isMuted;
-                } else {
-                    member.isVideoEnabled= isMuted;
+    async joinPod(podId: string, user: IUser, socketId: string): Promise<'joined' | 'requested' | null> {
+        const pod = await Pod.findOne({ id: podId });
+        if (pod) {
+            if (pod.type === 'open' || pod.hosts.includes(user.id)) {
+                if (!pod.members.includes(user.id)) {
+                    pod.members.push(user.id);
+                    pod.stats.memberCount++;
+                    await pod.save();
                 }
-                return true;
+
+                const memberData: PodMember = {
+                    userId: user.id,
+                    socketId,
+                    name: `${user.firstName} ${user.lastName}`,
+                    walletAddress: user.walletAddress,
+                    displayImage: user.displayImage || '',
+                    isAudioEnabled: true,
+                    isVideoEnabled: true,
+                };
+
+                await redisClient.hset(`pod:${podId}:members`, user.id, JSON.stringify(memberData));
+                await this.redisPub.publish('pod-updates', JSON.stringify({ type: 'user-joined', podId, userId: user.id }));
+                return 'joined';
+            } else if (pod.type === 'trusted') {
+                await redisClient.sadd(`pod:${podId}:joinRequests`, user.id);
+                pod.stats.joinRequestCount++;
+                await pod.save();
+                await this.redisPub.publish('pod-updates', JSON.stringify({ type: 'join-requested', podId, userId: user.id }));
+                return 'requested';
             }
         }
-        return false;
+        return null;
     }
 
-    muteAllUsers(podId: string, muteType: 'audio' | 'video', isMuted: boolean): boolean {
-        const members = this.podMembers.get(podId);
-        if (members) {
-            members.forEach(member => {
-                if (muteType === 'audio') {
-                    member.isAudioEnabled= isMuted;
-                } else {
-                    member.isVideoEnabled = isMuted;
+
+    async leavePod(podId: string, userId: string): Promise<IPod | null> {
+        const pod = await Pod.findOne({ id: podId });
+        if (pod) {
+            pod.members = pod.members.filter(memberId => memberId.toString() !== userId);
+            pod.hosts = pod.hosts.filter(hostId => hostId.toString() !== userId);
+            pod.stats.memberCount = pod.members.length;
+            pod.stats.hostCount = pod.hosts.length;
+
+            if (pod.stats.memberCount === 0) {
+                await Pod.deleteOne({ id: podId });
+                await redisClient.del(`pod:${podId}:members`);
+                await redisClient.del(`pod:${podId}:joinRequests`);
+                await redisClient.del(`pod:${podId}:coHostRequests`);
+            } else {
+                if (pod.owner.toString() === userId && pod.hosts.length > 0) {
+                    pod.owner = pod.hosts[0];
                 }
-            });
+                await pod.save();
+            }
+
+            await redisClient.hdel(`pod:${podId}:members`, userId);
+            await this.redisPub.publish('pod-updates', JSON.stringify({ type: 'user-left', podId, userId }));
+
+            return pod;
+        }
+        return null;
+    }
+
+    async getPod(podId: string): Promise<IPod | null> {
+        return Pod.findOne({ id: podId }).populate('owner hosts members');
+    }
+
+    async getPodMembers(podId: string): Promise<PodMember[]> {
+        const memberData = await redisClient.hgetall(`pod:${podId}:members`);
+        return Object.values(memberData).map(data => JSON.parse(data));
+    }
+
+    async updatePodContent(podId: string, newIpfsContentHash: string): Promise<boolean> {
+        const result = await Pod.updateOne({ id: podId }, { ipfsContentHash: newIpfsContentHash });
+        if (result.modifiedCount > 0) {
+            await this.redisPub.publish('pod-updates', JSON.stringify({ type: 'content-updated', podId, newIpfsContentHash }));
             return true;
         }
         return false;
     }
 
-    isUserAuthorized(podId: string, userId: string): boolean {
-        const pod = this.pods.get(podId);
-        return pod ? (pod.owner === userId || pod.hosts.includes(userId)) : false;
+    async getJoinRequests(podId: string): Promise<string[]> {
+        return redisClient.smembers(`pod:${podId}:joinRequests`);
     }
 
+    async getCoHostRequests(podId: string): Promise<string[]> {
+        return redisClient.smembers(`pod:${podId}:coHostRequests`);
+    }
+
+    async requestCoHost(podId: string, userId: string): Promise<boolean> {
+        const added = await redisClient.sadd(`pod:${podId}:coHostRequests`, userId);
+        if (added) {
+            const pod = await Pod.findOne({ id: podId });
+            if (pod) {
+                pod.stats.coHostRequestCount++;
+                await pod.save();
+                await this.redisPub.publish('pod-updates', JSON.stringify({ type: 'cohost-requested', podId, userId }));
+                return true;
+            }
+        }
+        return false;
+    }
+
+    async approveCoHost(podId: string, coHostUserId: string): Promise<boolean> {
+        const pod = await Pod.findOne({ id: podId });
+        if (pod && !pod.hosts.some(hostId => hostId.toString() === coHostUserId)) {
+            pod.hosts.push(new Types.ObjectId(coHostUserId));
+            pod.stats.hostCount++;
+            pod.stats.coHostRequestCount--;
+            await pod.save();
+
+            // Update Redis
+            const podInfo = await redisClient.hget(`pod:${podId}`, 'info');
+            if (podInfo) {
+                const updatedPodInfo = JSON.parse(podInfo);
+                updatedPodInfo.hosts.push(coHostUserId);
+                await redisClient.hset(`pod:${podId}`, 'info', JSON.stringify(updatedPodInfo));
+            }
+
+            await redisClient.srem(`pod:${podId}:coHostRequests`, coHostUserId);
+            await this.redisPub.publish('pod-updates', JSON.stringify({ type: 'cohost-approved', podId, userId: coHostUserId }));
+            return true;
+        }
+        return false;
+    }
+
+    async changePodType(podId: string, newType: PodType): Promise<string[]> {
+        const pod = await Pod.findOne({ id: podId });
+        if (pod) {
+            pod.type = newType;
+            if (newType === 'open') {
+                const joinRequests = await this.getJoinRequests(podId);
+                for (const userId of joinRequests) {
+                    if (!pod.members.some(memberId => memberId.toString() === userId)) {
+                        pod.members.push(new Types.ObjectId(userId));
+                    }
+                }
+                pod.stats.memberCount = pod.members.length;
+                pod.stats.joinRequestCount = 0;
+                await redisClient.del(`pod:${podId}:joinRequests`);
+                await pod.save();
+                await this.redisPub.publish('pod-updates', JSON.stringify({ type: 'pod-type-changed', podId, newType, admittedUsers: joinRequests }));
+                return joinRequests;
+            }
+            await pod.save();
+            await this.redisPub.publish('pod-updates', JSON.stringify({ type: 'pod-type-changed', podId, newType }));
+        }
+        return [];
+    }
+
+    async approveJoinRequest(podId: string, joinUserId: string): Promise<boolean> {
+        const pod = await Pod.findOne({ id: podId });
+        if (pod && pod.type === 'trusted') {
+            const isRequested = await redisClient.sismember(`pod:${podId}:joinRequests`, joinUserId);
+            if (isRequested) {
+                pod.members.push(new Types.ObjectId(joinUserId));
+                pod.stats.memberCount++;
+                pod.stats.joinRequestCount--;
+                await pod.save();
+                await redisClient.srem(`pod:${podId}:joinRequests`, joinUserId);
+                await this.redisPub.publish('pod-updates', JSON.stringify({ type: 'join-approved', podId, userId: joinUserId }));
+                return true;
+            }
+        }
+        return false;
+    }
+
+    async updateUserInfo(podId: string, userId: string, userInfo: Partial<PodMember>): Promise<boolean> {
+        const memberData = await redisClient.hget(`pod:${podId}:members`, userId);
+        if (memberData) {
+            const updatedData = { ...JSON.parse(memberData), ...userInfo };
+            await redisClient.hset(`pod:${podId}:members`, userId, JSON.stringify(updatedData));
+            await this.redisPub.publish('pod-updates', JSON.stringify({ type: 'user-info-updated', podId, userId, ...userInfo }));
+            return true;
+        }
+        return false;
+    }
+
+    async getUserPods(userId: string): Promise<string[]> {
+        const pods = await Pod.find({ members: new Types.ObjectId(userId) }, 'id');
+        return pods.map(pod => pod.id);
+    }
+
+    async muteUser(podId: string, userId: string, muteType: 'audio' | 'video', isMuted: boolean): Promise<boolean> {
+        const memberData = await redisClient.hget(`pod:${podId}:members`, userId);
+        if (memberData) {
+            const updatedData = JSON.parse(memberData);
+            if (muteType === 'audio') {
+                updatedData.isAudioEnabled = !isMuted;
+            } else {
+                updatedData.isVideoEnabled = !isMuted;
+            }
+            await redisClient.hset(`pod:${podId}:members`, userId, JSON.stringify(updatedData));
+            await this.redisPub.publish('pod-updates', JSON.stringify({ type: 'user-muted', podId, userId, muteType, isMuted }));
+            return true;
+        }
+        return false;
+    }
+
+    async muteAllUsers(podId: string, muteType: 'audio' | 'video', isMuted: boolean): Promise<boolean> {
+        const members = await redisClient.hgetall(`pod:${podId}:members`);
+        for (const [userId, data] of Object.entries(members)) {
+            const updatedData = JSON.parse(data);
+            if (muteType === 'audio') {
+                updatedData.isAudioEnabled = !isMuted;
+            } else {
+                updatedData.isVideoEnabled = !isMuted;
+            }
+            await redisClient.hset(`pod:${podId}:members`, userId, JSON.stringify(updatedData));
+        }
+        await this.redisPub.publish('pod-updates', JSON.stringify({ type: 'all-users-muted', podId, muteType, isMuted }));
+        return true;
+    }
+
+    async isUserAuthorized(podId: string, userId: string): Promise<boolean> {
+        // First, check if the user is a member of the pod using Redis
+        const isMember = await redisClient.hexists(`pod:${podId}:members`, userId);
+        if (!isMember) return false;
+
+        // If the user is a member, get the pod data from Redis
+        const podData = await redisClient.hget(`pod:${podId}`, 'info');
+        if (podData) {
+            const pod = JSON.parse(podData);
+            return pod.owner === userId || pod.hosts.includes(userId);
+        }
+
+        // If Redis doesn't have the pod data, fall back to MongoDB
+        const pod = await Pod.findOne({ id: podId });
+        if (!pod) return false;
+
+        return pod.owner.toString() === userId || pod.hosts.some(hostId => hostId.toString() === userId);
+    }
 }
