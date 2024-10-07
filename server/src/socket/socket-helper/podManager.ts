@@ -223,6 +223,52 @@ export class PodManager {
         return false;
     }
 
+    async approveAllJoinRequests(podId: string): Promise<string[]> {
+        const pod = await Pod.findOne({ id: podId });
+        if (!pod || pod.type !== 'trusted') {
+            return [];
+        }
+
+        const joinRequests = await redisClient.smembers(`pod:${podId}:joinRequests`);
+        if (joinRequests.length === 0) {
+            return [];
+        }
+
+        const approvedUsers: string[] = [];
+
+        for (const userId of joinRequests) {
+            if (!pod.members.some(memberId => memberId.toString() === userId)) {
+                pod.members.push(new Types.ObjectId(userId));
+                approvedUsers.push(userId);
+            }
+        }
+
+        pod.stats.memberCount = pod.members.length;
+        pod.stats.joinRequestCount = 0;
+        await pod.save();
+
+        // Update Redis
+        await redisClient.del(`pod:${podId}:joinRequests`);
+        for (const userId of approvedUsers) {
+            const memberData = await redisClient.hget(`pod:${podId}:members`, userId);
+            if (memberData) {
+                const updatedData = JSON.parse(memberData);
+                updatedData.isAudioEnabled = true;
+                updatedData.isVideoEnabled = true;
+                await redisClient.hset(`pod:${podId}:members`, userId, JSON.stringify(updatedData));
+            }
+        }
+
+        // Publish updates
+        await this.redisPub.publish('pod-updates', JSON.stringify({
+            type: 'all-join-requests-approved',
+            podId,
+            approvedUsers,
+        }));
+
+        return approvedUsers;
+    }
+
     async updateUserInfo(podId: string, userId: string, userInfo: Partial<PodMember>): Promise<boolean> {
         const memberData = await redisClient.hget(`pod:${podId}:members`, userId);
         if (memberData) {
