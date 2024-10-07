@@ -11,6 +11,8 @@ const UserSchema = z.object({
     otherName: z.string().optional(),
     username: z.string().toLowerCase(),
     displayImage: z.string().optional(),
+    ownedPods: z.array(z.instanceof(Types.ObjectId)),
+    memberPods: z.array(z.instanceof(Types.ObjectId)),
 });
 
 type UserType = z.infer<typeof UserSchema>;
@@ -40,6 +42,8 @@ const mongooseUserSchema = new Schema<IUser>({
     },
     username: { type: String, required: true, unique: true, lowercase: true },
     displayImage: String,
+    ownedPods: [{ type: Schema.Types.ObjectId, ref: 'Pod' }],
+    memberPods: [{ type: Schema.Types.ObjectId, ref: 'Pod' }],
 }, {
     timestamps: true,
     toJSON: { virtuals: true },
