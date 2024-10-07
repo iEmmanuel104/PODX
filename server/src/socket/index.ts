@@ -12,16 +12,18 @@ import { redisClient } from '../utils/redis';
 import Redis from 'ioredis';
 import { handleRedisMessage } from './middlewares/handleRedisMessage';
 
-
 export let io: SocketIOServer;
 let redisPubClient: Redis;
 let redisSubClient: Redis;
-const podManager = new PodManager();
+let podManager: PodManager;
 
 export function initializeSocketIO(server: Server): void {
     // Create Redis pub/sub clients
     redisPubClient = redisClient.duplicate();
     redisSubClient = redisClient.duplicate();
+
+    // Initialize PodManager after Redis clients are created
+    podManager = new PodManager();
 
     io = new SocketIOServer(server, {
         cors: corsOptions,
@@ -52,7 +54,6 @@ export function initializeSocketIO(server: Server): void {
         // Handle disconnection
         socket.on('disconnect', async () => {
             const userPods = await podManager.getUserPods(userId);
-
             for (const podId of userPods) {
                 const updatedPod = await podManager.leavePod(podId, userId);
                 if (updatedPod) {
@@ -64,7 +65,6 @@ export function initializeSocketIO(server: Server): void {
                     logger.info(`User ${userId} disconnected from pod ${podId}`);
                 }
             }
-
             logger.info(`WebSocket disconnected: ${socket.id} for user: ${userId}`);
         });
     });
