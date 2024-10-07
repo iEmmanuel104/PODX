@@ -1,5 +1,5 @@
 import { generateRoomId } from './generateRoomId';
-import { IUser } from '../../models/Mongodb/user.model';
+import { IUser, User } from '../../models/Mongodb/user.model';
 import { PodMember, PodType } from './interface';
 import { Pod, IPod } from '../../models/Mongodb/pod.model';
 import { getRedisPubClient } from '../index';
@@ -30,6 +30,9 @@ export class PodManager {
             },
         });
         await newPod.save();
+
+        user.ownedPods.push(newPod.id);
+        await user.save();
 
         const memberData: PodMember = {
             userId: user.id,
@@ -64,6 +67,9 @@ export class PodManager {
                     pod.members.push(user.id);
                     pod.stats.memberCount++;
                     await pod.save();
+
+                    user.memberPods.push(pod.id);
+                    await user.save();
                 }
 
                 const memberData: PodMember = {
@@ -207,13 +213,22 @@ export class PodManager {
 
     async approveJoinRequest(podId: string, joinUserId: string): Promise<boolean> {
         const pod = await Pod.findOne({ id: podId });
-        if (pod && pod.type === 'trusted') {
+        const user = await User.findById(joinUserId);
+
+        if (pod && user && pod.type === 'trusted') {
             const isRequested = await redisClient.sismember(`pod:${podId}:joinRequests`, joinUserId);
             if (isRequested) {
                 pod.members.push(new Types.ObjectId(joinUserId));
                 pod.stats.memberCount++;
                 pod.stats.joinRequestCount--;
                 await pod.save();
+
+                // Update user references
+                if (!user.memberPods.includes(pod.id)) {
+                    user.memberPods.push(pod.id);
+                    await user.save();
+                }
+
                 await redisClient.srem(`pod:${podId}:joinRequests`, joinUserId);
                 await this.redisPub.publish('pod-updates', JSON.stringify({ type: 'join-approved', podId, userId: joinUserId }));
                 return true;
@@ -239,6 +254,12 @@ export class PodManager {
             if (!pod.members.some(memberId => memberId.toString() === userId)) {
                 pod.members.push(new Types.ObjectId(userId));
                 approvedUsers.push(userId);
+
+                const user = await User.findById(userId);
+                if (user && !user.memberPods.includes(pod.id)) {
+                    user.memberPods.push(pod.id);
+                    await user.save();
+                }
             }
         }
 
