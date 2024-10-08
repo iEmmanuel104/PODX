@@ -10,16 +10,6 @@ import FooterControls from '@/components/meeting/footer'
 import LeaveConfirmationModal from '@/components/meeting/leave-confirm'
 import Notifications from '@/components/meeting/notifications'
 
-
-
-
-
-
-
-
-
-
-
 export default function MeetingInterface() {
     const [participants, setParticipants] = useState<Participant[]>([
         { name: 'folajindayo.base.eth', role: 'host', isMuted: false },
