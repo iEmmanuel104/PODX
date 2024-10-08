@@ -8,15 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import CreateSessionModal from "@/components/pod/createSessionModal";
 import CreatedSessionModal from "@/components/pod/createdSessionModal";
-
-const Logo = () => (
-    <h1 className="text-4xl font-bold mb-16 flex items-center">
-        Pod
-        <span className="inline-flex items-center justify-center w-10 h-10 bg-[#6032F6] rounded-full ml-1">
-            <span className="text-black font-bold">X</span>
-        </span>
-    </h1>
-);
+import Logo from "@/components/ui/logo";
 
 export default function PodPage() {
     const router = useRouter();
@@ -46,6 +38,7 @@ export default function PodPage() {
 
                 <div className="flex items-center mb-16">
                     <div className="w-8 h-8 bg-[#6032F6] rounded-full flex items-center justify-center text-xs font-bold mr-2">FB</div>
+                    <span className="bg-green-500 h-1.5 w-1.5 rounded-full mr-1"></span>
                     <span className="text-[#A3A3A3] text-sm">folajinidayo.basu.eth</span>
                 </div>
 

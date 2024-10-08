@@ -23,15 +23,12 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({ isOpen, onClose
     };
 
     return (
-        <Dialog open={isOpen}>
+        <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="bg-[#1E1E1E] text-white rounded-lg p-6 w-full max-w-md">
                 <DialogHeader className="flex flex-row justify-between items-center mb-6">
                     <DialogTitle className="text-2xl font-semibold">Create session</DialogTitle>
-                    <button onClick={onClose} className="text-[#A3A3A3] hover:text-white">
-                        <X className="w-6 h-6" />
-                    </button>
                 </DialogHeader>
-                <div className="space-y-4">
+                <div className="space-y-6">
                     <div>
                         <label htmlFor="sessionTitle" className="block text-[#A3A3A3] mb-2">
                             Session title
@@ -57,11 +54,11 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({ isOpen, onClose
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="flex justify-end gap-4 mt-8">
-                        <Button onClick={onClose} className="px-4 py-2 bg-[#2C2C2C] rounded-md hover:bg-[#3C3C3C] transition-colors">
+                    <div className="flex justify-between gap-6 pt-3">
+                        <Button onClick={onClose} className="w-1/2 px-4 py-6 bg-[#2C2C2C] rounded-md hover:bg-[#3C3C3C] transition-colors">
                             Cancel
                         </Button>
-                        <Button onClick={handleCreateSession} className="px-4 py-2 bg-[#6032F6] rounded-md hover:bg-[#6D28D9] transition-colors">
+                        <Button onClick={handleCreateSession} className="w-1/2 px-4 py-6 bg-[#6032F6] rounded-md hover:bg-[#6D28D9] transition-colors">
                             Create session
                         </Button>
                     </div>

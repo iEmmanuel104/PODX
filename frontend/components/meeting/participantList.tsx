@@ -1,39 +1,29 @@
-import React from "react";
-import { ChevronDown } from "lucide-react";
+import ParticipantItem from "./participant-item"
 
-interface Participant {
-    name: string;
-    role: "host" | "co-host" | "listener";
-    isMuted: boolean;
+interface ParticipantsSidebarProps {
+    participants: Participant[]
+    currentUser: Participant
+    hoveredParticipant: string | null
+    setHoveredParticipant: (name: string | null) => void
+    openTipModal: (name: string) => void
 }
 
-interface ParticipantListProps {
-    participants: Participant[];
-    onTip: (participantName: string) => void;
-}
-
-const ParticipantList: React.FC<ParticipantListProps> = ({ participants, onTip }) => {
-    return (
-        <div className="w-64 bg-gray-800 p-4 flex flex-col h-full">
-            <h2 className="text-lg font-semibold mb-4">
-                Participants <span className="bg-purple-600 text-xs px-2 py-0.5 rounded-full ml-2">{participants.length}</span>
-            </h2>
-            <div className="flex-grow overflow-y-auto pr-2">
-                {participants.map((participant, index) => (
-                    <div key={index} className="flex items-center justify-between mb-2 hover:bg-gray-700 p-2 rounded">
-                        <div>
-                            <span className="text-sm">{participant.name}</span>
-                            {participant.role !== "listener" && <span className="text-xs text-gray-400 ml-1">({participant.role})</span>}
-                        </div>
-                        <div className="flex items-center">
-                            <div className={`w-2 h-2 rounded-full ${participant.isMuted ? "bg-red-500" : "bg-green-500"} mr-2`}></div>
-                            <ChevronDown className="w-4 h-4 text-gray-400" />
-                        </div>
-                    </div>
-                ))}
-            </div>
+const ParticipantsSidebar: React.FC<ParticipantsSidebarProps> = ({ participants, currentUser, hoveredParticipant, setHoveredParticipant, openTipModal }) => (
+    <div className="w-64 bg-[#1E1E1E] p-4 flex flex-col">
+        <h2 className="text-lg font-semibold mb-4">Participants <span className="bg-[#7C3AED] text-xs px-2 py-0.5 rounded-full ml-2">{participants.length}</span></h2>
+        <div className="flex-grow overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-[#3C3C3C] scrollbar-track-[#2C2C2C] hover:scrollbar-thumb-[#4C4C4C]">
+            {participants.map((participant, index) => (
+                <ParticipantItem
+                    key={index}
+                    participant={participant}
+                    currentUser={currentUser}
+                    hoveredParticipant={hoveredParticipant}
+                    setHoveredParticipant={setHoveredParticipant}
+                    openTipModal={openTipModal}
+                />
+            ))}
         </div>
-    );
-};
+    </div>
+)
 
-export default ParticipantList;
+export default ParticipantsSidebar

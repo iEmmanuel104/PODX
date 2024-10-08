@@ -3,11 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Mic, Video, PhoneOff } from "lucide-react";
 
 interface ControlsProps {
-    isMuted: boolean;
-    isVideoOn: boolean;
-    onToggleMute: () => void;
-    onToggleVideo: () => void;
-    onLeave: () => void;
+    isMuted?: boolean;
+    isVideoOn?: boolean;
+    onToggleMute?: () => void;
+    onToggleVideo?: () => void;
+    onLeave?: () => void;
 }
 
 const Controls: React.FC<ControlsProps> = ({ isMuted, isVideoOn, onToggleMute, onToggleVideo, onLeave }) => {

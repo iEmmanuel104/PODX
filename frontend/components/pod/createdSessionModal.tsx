@@ -19,13 +19,10 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClo
     };
 
     return (
-        <Dialog open={isOpen}>
+        <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="bg-[#1E1E1E] text-white rounded-lg p-6 w-full max-w-md">
                 <DialogHeader className="flex flex-row justify-between items-center mb-6">
                     <DialogTitle className="text-2xl font-semibold">Your session is created</DialogTitle>
-                    <button onClick={onClose} className="text-[#A3A3A3] hover:text-white">
-                        <X className="w-6 h-6" />
-                    </button>
                 </DialogHeader>
                 <div className="space-y-4">
                     <div>
