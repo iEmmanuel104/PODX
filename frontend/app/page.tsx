@@ -44,7 +44,7 @@ export default function Home() {
             className={`w-full py-3 px-4 rounded-md flex items-center justify-center transition-colors ${selectedMethod === 'wallet' ? 'bg-[#7C3AED]' : 'bg-[#2C2C2C] hover:bg-[#3C3C3C]'
               }`}
             onClick={() => {
-              router.push("/podcast")
+              router.push("/pod")
               setSelectedMethod('wallet')
             }}
           >
