@@ -1,33 +1,33 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { Settings, Mic, X, ChevronDown, Link, Copy, AlertCircle } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { useState } from "react";
+import { Settings, Mic, X, ChevronDown, Link, Copy, AlertCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function PodXInterface() {
-    const router = useRouter()
-    
-    const [meetingCode, setMeetingCode] = useState('')
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-    const [isCreatedModalOpen, setIsCreatedModalOpen] = useState(false)
-    const [sessionTitle, setSessionTitle] = useState('Session-1')
-    const [sessionType, setSessionType] = useState('Audio Session')
-    const [inviteLink, setInviteLink] = useState('https://podx.studio/studio/temidayo-folajins-hv...')
-    const [sessionCode, setSessionCode] = useState('XA4-56Y')
+    const router = useRouter();
 
-    const openCreateModal = () => setIsCreateModalOpen(true)
-    const closeCreateModal = () => setIsCreateModalOpen(false)
-    const openCreatedModal = () => setIsCreatedModalOpen(true)
-    const closeCreatedModal = () => setIsCreatedModalOpen(false)
+    const [meetingCode, setMeetingCode] = useState("");
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isCreatedModalOpen, setIsCreatedModalOpen] = useState(false);
+    const [sessionTitle, setSessionTitle] = useState("Session-1");
+    const [sessionType, setSessionType] = useState("Audio Session");
+    const [inviteLink, setInviteLink] = useState("https://podx.studio/studio/temidayo-folajins-hv...");
+    const [sessionCode, setSessionCode] = useState("XA4-56Y");
+
+    const openCreateModal = () => setIsCreateModalOpen(true);
+    const closeCreateModal = () => setIsCreateModalOpen(false);
+    const openCreatedModal = () => setIsCreatedModalOpen(true);
+    const closeCreatedModal = () => setIsCreatedModalOpen(false);
 
     const handleCreateSession = () => {
-        closeCreateModal()
-        openCreatedModal()
-    }
+        closeCreateModal();
+        openCreatedModal();
+    };
 
     const copyToClipboard = (text: string) => {
-        navigator.clipboard.writeText(text)
-    }
+        navigator.clipboard.writeText(text);
+    };
 
     return (
         <div className="min-h-screen bg-[#121212] text-white flex flex-col items-center justify-center p-4 relative">
@@ -37,9 +37,7 @@ export default function PodXInterface() {
                 </h1>
 
                 <div className="flex items-center mb-16">
-                    <div className="w-8 h-8 bg-[#7C3AED] rounded-full flex items-center justify-center text-xs font-bold mr-2">
-                        FB
-                    </div>
+                    <div className="w-8 h-8 bg-[#7C3AED] rounded-full flex items-center justify-center text-xs font-bold mr-2">FB</div>
                     <span className="text-[#A3A3A3]">folajinidayo.basu.eth</span>
                 </div>
 
@@ -49,13 +47,18 @@ export default function PodXInterface() {
                         <p className="text-[#A3A3A3] mb-4">Join a meeting instantly and collaborate!</p>
                         <div className="flex">
                             <input
+                                title="meeting-code"
                                 type="text"
                                 placeholder="Enter meeting code"
                                 value={meetingCode}
                                 onChange={(e) => setMeetingCode(e.target.value)}
                                 className="flex-1 bg-[#3C3C3C] rounded-l-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#7C3AED] text-white placeholder-[#6C6C6C]"
                             />
-                            <button onClick={() => router.push("/podcast/join")} className="bg-gradient-to-br from-[#9F7AEA] to-[#5B21B6] text-white px-4 py-2 rounded-r-md hover:from-[#8B5CF6] hover:to-[#4C1D95] transition-all duration-300 ease-in-out">
+                            <button
+                                title="join-session"
+                                onClick={() => router.push("/pod/join")}
+                                className="bg-gradient-to-br from-[#9F7AEA] to-[#5B21B6] text-white px-4 py-2 rounded-r-md hover:from-[#8B5CF6] hover:to-[#4C1D95] transition-all duration-300 ease-in-out"
+                            >
                                 Join
                             </button>
                         </div>
@@ -67,9 +70,7 @@ export default function PodXInterface() {
                     >
                         <Mic className="w-12 h-12 mb-4 text-white" />
                         <h2 className="text-2xl font-semibold mb-2 text-white">Create Session</h2>
-                        <p className="text-[#E9D5FF]">
-                            Start a meeting or podcast session in seconds - collaborate, share, and record with ease!
-                        </p>
+                        <p className="text-[#E9D5FF]">Start a meeting or pod session in seconds - collaborate, share, and record with ease!</p>
                     </div>
                 </div>
             </div>
@@ -83,13 +84,16 @@ export default function PodXInterface() {
                     <div className="bg-[#1E1E1E] rounded-lg p-6 w-full max-w-md">
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-2xl font-semibold">Create session</h2>
-                            <button onClick={closeCreateModal} className="text-[#A3A3A3] hover:text-white">
+                            <button title="create-session" onClick={closeCreateModal} className="text-[#A3A3A3] hover:text-white">
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
                         <div className="mb-4">
-                            <label htmlFor="sessionTitle" className="block text-[#A3A3A3] mb-2">Session title</label>
+                            <label htmlFor="sessionTitle" className="block text-[#A3A3A3] mb-2">
+                                Session title
+                            </label>
                             <input
+                                title="session-title"
                                 id="sessionTitle"
                                 type="text"
                                 value={sessionTitle}
@@ -98,9 +102,12 @@ export default function PodXInterface() {
                             />
                         </div>
                         <div className="mb-6">
-                            <label htmlFor="sessionType" className="block text-[#A3A3A3] mb-2">Session type</label>
+                            <label htmlFor="sessionType" className="block text-[#A3A3A3] mb-2">
+                                Session type
+                            </label>
                             <div className="relative">
                                 <select
+                                    title="session-type"
                                     id="sessionType"
                                     value={sessionType}
                                     onChange={(e) => setSessionType(e.target.value)}
@@ -116,10 +123,12 @@ export default function PodXInterface() {
                             <button
                                 onClick={closeCreateModal}
                                 className="px-4 py-2 bg-[#2C2C2C] rounded-md hover:bg-[#3C3C3C] transition-colors"
+                                title="cancel"
                             >
                                 Cancel
                             </button>
                             <button
+                                title="create-session2"
                                 onClick={handleCreateSession}
                                 className="px-4 py-2 bg-[#7C3AED] rounded-md hover:bg-[#6D28D9] transition-colors"
                             >
@@ -135,7 +144,7 @@ export default function PodXInterface() {
                     <div className="bg-[#1E1E1E] rounded-lg p-6 w-full max-w-md">
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-2xl font-semibold">Your session is created</h2>
-                            <button onClick={closeCreatedModal} className="text-[#A3A3A3] hover:text-white">
+                            <button onClick={closeCreatedModal} className="text-[#A3A3A3] hover:text-white" title="session">
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
@@ -152,6 +161,7 @@ export default function PodXInterface() {
                                     className="flex-1 bg-[#2C2C2C] rounded-l-md px-4 py-2 focus:outline-none"
                                 />
                                 <button
+                                    title="copy-link"
                                     onClick={() => copyToClipboard(inviteLink)}
                                     className="bg-[#7C3AED] text-white px-4 py-2 rounded-r-md hover:bg-[#6D28D9] transition-colors"
                                 >
@@ -170,6 +180,7 @@ export default function PodXInterface() {
                                     className="flex-1 bg-[#2C2C2C] rounded-l-md px-4 py-2 focus:outline-none"
                                 />
                                 <button
+                                    title="copy-session"
                                     onClick={() => copyToClipboard(sessionCode)}
                                     className="bg-[#7C3AED] text-white px-4 py-2 rounded-r-md hover:bg-[#6D28D9] transition-colors"
                                 >
@@ -185,5 +196,5 @@ export default function PodXInterface() {
                 </div>
             )}
         </div>
-    )
+    );
 }
