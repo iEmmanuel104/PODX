@@ -10,6 +10,8 @@ import CreateSessionModal from "@/components/pod/createSessionModal";
 import CreatedSessionModal from "@/components/pod/createdSessionModal";
 import Logo from "@/components/ui/logo";
 import { useAppSelector } from "@/store/hooks";
+import { usePrivy } from "@privy-io/react-auth";
+
 
 export default function PodPage() {
     const router = useRouter();
@@ -18,6 +20,8 @@ export default function PodPage() {
     const [isCreatedModalOpen, setIsCreatedModalOpen] = useState(false);
     const [inviteLink, setInviteLink] = useState("");
     const [sessionCode, setSessionCode] = useState("");
+    const { ready, authenticated, user, login, logout } = usePrivy();
+
 
     const { isLoggedIn, username, smartWalletAddress } = useAppSelector((state) => state.user);
 
@@ -70,7 +74,8 @@ export default function PodPage() {
                                 className="flex-1 bg-[#2C2C2C] rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6032F6] text-white placeholder-[#6C6C6C]"
                             />
                             <Button
-                                onClick={() => router.push("/pod/join")}
+                                onClick={logout}
+                                // onClick={() => router.push("/pod/join")}
                                 className="bg-[#6032F6] text-white px-8 py-2 rounded-md hover:bg-[#4C28C4] transition-all duration-300 ease-in-out text-sm font-medium"
                             >
                                 Join
