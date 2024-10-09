@@ -11,7 +11,7 @@ import CreatedSessionModal from "@/components/pod/createdSessionModal";
 import Logo from "@/components/ui/logo";
 import { useAppSelector } from "@/store/hooks";
 import { usePrivy } from "@privy-io/react-auth";
-
+import { useMediaPermissions } from "@/hooks/useMediaPermissions";
 
 export default function PodPage() {
     const router = useRouter();
@@ -22,8 +22,10 @@ export default function PodPage() {
     const [sessionCode, setSessionCode] = useState("");
     const { ready, authenticated, user, login, logout } = usePrivy();
 
-
     const { isLoggedIn, username, smartWalletAddress } = useAppSelector((state) => state.user);
+    const { isAudioEnabled, isVideoEnabled } = useAppSelector((state) => state.media);
+
+    useMediaPermissions();
 
     useEffect(() => {
         if (!isLoggedIn) {
@@ -37,7 +39,6 @@ export default function PodPage() {
     const closeCreatedModal = () => setIsCreatedModalOpen(false);
 
     const handleCreateSession = (title: string, type: string) => {
-        // Implement session creation logic here
         setInviteLink("https://podx.studio/studio/example-session");
         setSessionCode("XA4-56Y");
         closeCreateModal();
@@ -45,7 +46,7 @@ export default function PodPage() {
     };
 
     if (!isLoggedIn) {
-        return null; // or a loading spinner
+        return null;
     }
 
     return (
@@ -74,8 +75,7 @@ export default function PodPage() {
                                 className="flex-1 bg-[#2C2C2C] rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6032F6] text-white placeholder-[#6C6C6C]"
                             />
                             <Button
-                                onClick={logout}
-                                // onClick={() => router.push("/pod/join")}
+                                onClick={() => router.push(`/pod/join?code=${meetingCode}`)}
                                 className="bg-[#6032F6] text-white px-8 py-2 rounded-md hover:bg-[#4C28C4] transition-all duration-300 ease-in-out text-sm font-medium"
                             >
                                 Join
