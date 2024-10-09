@@ -11,7 +11,7 @@ import { useFindOrCreateUserMutation, UserInfo } from "@/store/api/userApi";
 import UserInfoModal from "@/components/user/userInfoModal";
 import { useAuthSigner } from "@/hooks/useAuthSigner";
 import { SIGNATURE_MESSAGE } from "@/constants";
-import { connectSocket } from "@/lib/connections/socket";
+import { initializeSocketConnection } from "@/lib/connections/socket";
 import { useSocketListeners } from "@/hooks/useSocketListeners";
 
 export default function Home() {
@@ -50,7 +50,7 @@ export default function Home() {
 
                 dispatch(setSignature(signature));
 
-                connectSocket(signature);
+                initializeSocketConnection(signature);
 
                 if (userData.username.startsWith("guest-")) {
                     setShowUsernameModal(true);
