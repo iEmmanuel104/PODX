@@ -4,7 +4,7 @@ import Middlewares from './middlewares/errorHandlers';
 import cors from 'cors';
 import expressWinston from 'express-winston';
 import { logger } from './utils/logger';
-// import router from './routes';
+import router from './routes';
 import morgan from 'morgan';
 import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
@@ -40,7 +40,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 // server health check
 app.get('/serverhealth', getServerHealth);
 
-// app.use('/api/v0', router);
+app.use('/api/v0', router);
 
 app.use(Middlewares.notFound);
 app.use(Middlewares.errorHandler);
