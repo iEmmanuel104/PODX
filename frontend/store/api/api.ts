@@ -1,4 +1,3 @@
-// src/store/api/api.ts
 import { createApi, fetchBaseQuery, BaseQueryFn, FetchBaseQueryError, FetchArgs } from '@reduxjs/toolkit/query/react';
 import { ethers } from 'ethers';
 import { RootState } from '../index';
@@ -26,9 +25,9 @@ const baseQuery: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> =
                     const message = SIGNATURE_MESSAGE || 'Sign this message to authenticate';
                     const newSignature = await signer.signMessage(message);
                     api.dispatch(setSignature(newSignature));
-                    headers.set('Authorization', `Bearer ${newSignature}`);
+                    headers.set('x-wallet-signature', newSignature);
                 } else {
-                    headers.set('Authorization', `Bearer ${signature}`);
+                    headers.set('x-wallet-signature', signature);
                 }
             }
 
