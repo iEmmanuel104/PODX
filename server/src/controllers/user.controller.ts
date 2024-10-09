@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import UserService from '../services/user.service';
 import { BadRequestError } from '../utils/customErrors';
 import { AuthenticatedRequest } from '../middlewares/authMiddleware';
@@ -106,7 +106,7 @@ export default class UserController {
         });
     }
 
-    static async findOrCreateUser(req: AuthenticatedRequest, res: Response) {
+    static async findOrCreateUser(req: Request, res: Response) {
         const { walletAddress } = req.body;
 
         if (!walletAddress) {
@@ -120,6 +120,8 @@ export default class UserController {
             const username = `guest-${walletAddress.slice(0, 4)}`;
             user = await UserService.addUser({ walletAddress, username });
         }
+
+        console.log({ user });
 
         res.status(200).json({
             status: 'success',
