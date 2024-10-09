@@ -10,6 +10,7 @@ import { setUser, setSignature, updateUser } from "@/store/slices/userSlice";
 import { useFindOrCreateUserMutation, UserInfo } from "@/store/api/userApi";
 import UserInfoModal from "@/components/user/userInfoModal";
 import { useAuthSigner } from "@/hooks/useAuthSigner";
+import { SIGNATURE_MESSAGE } from "@/constants";
 
 export default function Home() {
     const [selectedMethod, setSelectedMethod] = useState<"email" | "phone" | "wallet" | null>(null);
@@ -39,7 +40,7 @@ export default function Home() {
                 setUserInfo(userData);
                 dispatch(setUser(userData));
 
-                const message = process.env.NEXT_PUBLIC_SIGNATURE_MESSAGE || "Sign this message to authenticate";
+                const message = SIGNATURE_MESSAGE || "Sign this message to authenticate";
                 const signature = await signMessage(message);
 
                 dispatch(setSignature(signature));
