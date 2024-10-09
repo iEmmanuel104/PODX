@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Settings } from "lucide-react";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import CreateSessionModal from "@/components/pod/createSessionModal";
 import CreatedSessionModal from "@/components/pod/createdSessionModal";
 import Logo from "@/components/ui/logo";
+import { useAppSelector } from "@/store/hooks";
 
 export default function PodPage() {
     const router = useRouter();
@@ -17,6 +18,14 @@ export default function PodPage() {
     const [isCreatedModalOpen, setIsCreatedModalOpen] = useState(false);
     const [inviteLink, setInviteLink] = useState("");
     const [sessionCode, setSessionCode] = useState("");
+
+    const { isLoggedIn, username, smartWalletAddress } = useAppSelector((state) => state.user);
+
+    useEffect(() => {
+        if (!isLoggedIn) {
+            router.push("/");
+        }
+    }, [isLoggedIn, router]);
 
     const openCreateModal = () => setIsCreateModalOpen(true);
     const closeCreateModal = () => setIsCreateModalOpen(false);
@@ -30,6 +39,10 @@ export default function PodPage() {
         closeCreateModal();
         openCreatedModal();
     };
+
+    if (!isLoggedIn) {
+        return null; // or a loading spinner
+    }
 
     return (
         <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4 relative">
