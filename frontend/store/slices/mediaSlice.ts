@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 
-interface MediaState {
+export interface MediaState {
     isAudioEnabled: boolean
     isVideoEnabled: boolean
 }
