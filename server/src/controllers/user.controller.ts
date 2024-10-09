@@ -105,4 +105,26 @@ export default class UserController {
             data: updatedUser,
         });
     }
+
+    static async findOrCreateUser(req: AuthenticatedRequest, res: Response) {
+        const { walletAddress } = req.body;
+
+        if (!walletAddress) {
+            throw new BadRequestError('Wallet address is required');
+        }
+
+        let user = await UserService.viewSingleUserByWalletAddress(walletAddress);
+
+        if (!user) {
+            // Create a new user
+            const username = `guest-${walletAddress.slice(0, 4)}`;
+            user = await UserService.addUser({ walletAddress, username });
+        }
+
+        res.status(200).json({
+            status: 'success',
+            message: user.username.startsWith('guest-') ? 'New user created' : 'Existing user found',
+            data: user,
+        });
+    }
 }
