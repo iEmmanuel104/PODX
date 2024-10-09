@@ -3,37 +3,68 @@
 import { useState, useEffect } from "react";
 import { Wallet } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { usePrivy } from "@privy-io/react-auth";
+import { usePrivy, User } from "@privy-io/react-auth";
 import Logo from "@/components/ui/logo";
 import { useAppDispatch } from "@/store/hooks";
-import { setUserInfo } from "@/store/slices/userSlice";
+import { setUser, setSignature, updateUser } from "@/store/slices/userSlice";
+import { useFindOrCreateUserMutation, UserInfo } from "@/store/api/userApi";
+import UserInfoModal from "@/components/user/userInfoModal";
+import { useAuthSigner } from "@/hooks/useAuthSigner";
 
 export default function Home() {
     const [selectedMethod, setSelectedMethod] = useState<"email" | "phone" | "wallet" | null>(null);
     const { ready, authenticated, user, login, logout } = usePrivy();
-    console.log({ ready, authenticated, user });
     const router = useRouter();
     const dispatch = useAppDispatch();
+    const [findOrCreateUser] = useFindOrCreateUserMutation();
+    const [showUsernameModal, setShowUsernameModal] = useState(false);
+    const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+    const { signMessage } = useAuthSigner();
 
     useEffect(() => {
         if (authenticated && user) {
-            const smartWallet = user.linkedAccounts.find((account) => account.type === "smart_wallet");
-            dispatch(
-                setUserInfo({
-                    walletAddress: user.wallet?.address || null,
-                    smartWalletAddress: smartWallet?.address || null,
-                    smartWalletType: smartWallet?.type || null,
-                    username: (user.email as unknown as string) || (user.phone as unknown as string) || user.wallet?.address || null,
-                    isLoggedIn: true,
-                })
-            );
-            router.push("/pod");
+            handleUserAuthentication(user);
         }
-    }, [authenticated, user, dispatch, router]);
+    }, [authenticated, user]);
+
+    const handleUserAuthentication = async (user: User) => {
+        const smartWallet = user.linkedAccounts.find((account) => account.type === "smart_wallet");
+        const walletAddress = user.wallet?.address || smartWallet?.address;
+
+        if (walletAddress) {
+            try {
+                const result = await findOrCreateUser({ walletAddress }).unwrap();
+                const userData = result.data as UserInfo;
+
+                setUserInfo(userData);
+                dispatch(setUser(userData));
+
+                const message = process.env.NEXT_PUBLIC_SIGNATURE_MESSAGE || "Sign this message to authenticate";
+                const signature = await signMessage(message);
+
+                dispatch(setSignature(signature));
+
+                if (userData.username.startsWith("guest-")) {
+                    setShowUsernameModal(true);
+                } else {
+                    router.push("/pod");
+                }
+            } catch (error) {
+                console.error("Error finding or creating user:", error);
+                // Handle error (e.g., show error message to user)
+            }
+        }
+    };
 
     const handleConnect = async () => {
         setSelectedMethod("wallet");
         await login();
+    };
+
+    const handleUsernameUpdate = (newUsername: string) => {
+        dispatch(updateUser({ username: newUsername }));
+        setShowUsernameModal(false);
+        router.push("/pod");
     };
 
     return (
@@ -55,6 +86,15 @@ export default function Home() {
                     </button>
                 </div>
             </div>
+
+            {showUsernameModal && userInfo && (
+                <UserInfoModal
+                    isOpen={showUsernameModal}
+                    onClose={() => setShowUsernameModal(false)}
+                    initialUsername={userInfo.username}
+                    onUpdate={handleUsernameUpdate}
+                />
+            )}
         </div>
     );
 }
