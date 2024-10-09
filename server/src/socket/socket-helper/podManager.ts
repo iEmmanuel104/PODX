@@ -37,7 +37,7 @@ export class PodManager {
         const memberData: PodMember = {
             userId: user.id,
             socketId,
-            name: `${user.firstName} ${user.lastName}`,
+            name: `${user.username}`,
             walletAddress: user.walletAddress,
             displayImage: user.displayImage || '',
             isAudioEnabled: true,
@@ -75,7 +75,7 @@ export class PodManager {
                 const memberData: PodMember = {
                     userId: user.id,
                     socketId,
-                    name: `${user.firstName} ${user.lastName}`,
+                    name: `${user.username}`,
                     walletAddress: user.walletAddress,
                     displayImage: user.displayImage || '',
                     isAudioEnabled: true,
