@@ -50,7 +50,7 @@ export default class UserController {
     }
 
     static async updateUser(req: AuthenticatedRequest, res: Response) {
-        const { firstName, lastName, otherName, displayImage, gender, isDeactivated } = req.body;
+        const { username, displayImage, isDeactivated } = req.body;
 
         // eslint-disable-next-line no-undef
         const file = req.file as Express.Multer.File | undefined;
@@ -69,10 +69,7 @@ export default class UserController {
 
         // Prepare the update data for the user profile
         const updateData = {
-            ...(firstName && { firstName }),
-            ...(lastName && { lastName }),
-            ...(otherName && { otherName }),
-            ...(gender && { gender }),
+            ...(username && { username }),
             ...(url && { displayImage: url }),
         };
 
