@@ -10,6 +10,10 @@ import {
     updateParticipantAudioState,
     updateParticipantVideoState,
     updatePodContent,
+    addCoHostRequest,
+    addJoinRequest,
+    removeJoinRequest,
+    setError,
 } from '../store/slices/podSlice';
 import { handleSignal } from '../lib/connections/webrtc';
 
@@ -104,6 +108,31 @@ export const useSocketListeners = () => {
             handleSignal(from, signal);
         });
 
+        socket.on('co-host-requested', ({ userId, podId }) => {
+            dispatch(addCoHostRequest({ userId, podId }));
+        });
+
+        socket.on('users-admitted', ({ podId, admittedUsers }) => {
+            admittedUsers.forEach((userId: string) => {
+                dispatch(addParticipant({ userId, socketId: 'unknown' }));
+                dispatch(removeJoinRequest({ userId, podId }));
+            });
+        });
+
+        socket.on('mute-failed', ({ error }) => {
+            dispatch(setError({ type: 'mute', message: error }));
+        });
+
+        socket.on('mute-all-failed', ({ error }) => {
+            dispatch(setError({ type: 'muteAll', message: error }));
+        });
+
+        socket.on('tip-pending', ({ transactionHash }) => {
+            // Update UI to show pending transaction
+            console.log(`Tip transaction pending: ${transactionHash}`);
+        });
+
+
         return () => {
             socket.off('user-joined');
             socket.off('user-left');
@@ -122,6 +151,11 @@ export const useSocketListeners = () => {
             socket.off('tip-sent');
             socket.off('tip-failed');
             socket.off('signal');
+            socket.off('co-host-requested');
+            socket.off('users-admitted');
+            socket.off('mute-failed');
+            socket.off('mute-all-failed');
+            socket.off('tip-pending');
         };
     }, [dispatch]);
 };
