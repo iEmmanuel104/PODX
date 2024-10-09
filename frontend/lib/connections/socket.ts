@@ -1,17 +1,19 @@
-import { SERVER_URL } from '@/constants';
+import { SERVER_SOCKET_URL } from '@/constants';
 import { io, Socket } from 'socket.io-client';
 import { store } from '@/store';
 import { setSocketConnected } from '@/store/slices/socketSlice';
 
-let socket: Socket;
+let socket: Socket | null = null;
 
-export const initializeSocket = (token: string) => {
-    const socketUrl = SERVER_URL;
+export const connectSocket = (token: string) => {
+    if (socket) {
+        socket.disconnect();
+    }
 
-    socket = io(socketUrl, {
+    socket = io(SERVER_SOCKET_URL, {
         auth: { token },
         transports: ['websocket'],
-        secure: socketUrl.startsWith('https'),
+        secure: SERVER_SOCKET_URL.startsWith('https'),
     });
 
     socket.on('connect', () => {
@@ -29,7 +31,13 @@ export const initializeSocket = (token: string) => {
 
 export const getSocket = () => {
     if (!socket) {
-        throw new Error('Socket not initialized. Call initializeSocket first.');
+        throw new Error('Socket not initialized. Call connectSocket first.');
     }
     return socket;
+};
+
+export const disconnectSocket = () => {
+    if (socket) {
+        socket.disconnect();
+    }
 };
