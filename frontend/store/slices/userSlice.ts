@@ -1,33 +1,52 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { UserInfo } from '../api/userApi';
 
-interface UserState {
-    walletAddress: string | null;
-    smartWalletAddress: string | null;
-    smartWalletType: string | null;
-    username: string | null;
+export interface UserState {
+    user: UserInfo | null;
+    signature: string | null;
     isLoggedIn: boolean;
 }
 
 const initialState: UserState = {
-    walletAddress: null,
-    smartWalletAddress: null,
-    smartWalletType: null,
-    username: null,
-    isLoggedIn: false,
+    user: JSON.parse(localStorage.getItem("user") || "null"),
+    signature: localStorage.getItem("signature"),
+    isLoggedIn: !!localStorage.getItem("user"),
 };
 
 const userSlice = createSlice({
     name: 'user',
     initialState,
     reducers: {
-        setUserInfo: (state, action: PayloadAction<Partial<UserState>>) => {
-            return { ...state, ...action.payload };
+        setUser: (state, action: PayloadAction<UserInfo>) => {
+            state.user = action.payload;
+            state.isLoggedIn = true;
+            localStorage.setItem("user", JSON.stringify(action.payload));
         },
-        clearUserInfo: (state) => {
-            return initialState;
+        setSignature: (state, action: PayloadAction<string>) => {
+            state.signature = action.payload;
+            localStorage.setItem("signature", action.payload);
+        },
+        updateUser: (state, action: PayloadAction<Partial<UserInfo>>) => {
+            if (state.user) {
+                state.user = { ...state.user, ...action.payload };
+                localStorage.setItem("user", JSON.stringify(state.user));
+            }
+        },
+        logOut: (state) => {
+            state.user = null;
+            state.signature = null;
+            state.isLoggedIn = false;
+            localStorage.removeItem("user");
+            localStorage.removeItem("signature");
         },
     },
 });
 
-export const { setUserInfo, clearUserInfo } = userSlice.actions;
+export const {
+    setUser,
+    setSignature,
+    updateUser,
+    logOut,
+} = userSlice.actions;
+
 export default userSlice.reducer;
