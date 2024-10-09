@@ -21,14 +21,22 @@ export const userApiSlice = apiSlice.injectEndpoints({
         }),
         updateUsername: builder.mutation<ApiResponse<UserInfo>, { userId: string; username: string }>({
             query: ({ userId, username }) => ({
-                url: `/user/update/${userId}`,
-                method: 'PUT',
+                url: '/user/update',
+                method: 'PATCH',
                 body: { username },
             }),
             invalidatesTags: ['User'],
         }),
         getUser: builder.query<ApiResponse<UserInfo>, string>({
-            query: (userId) => `/user/info/${userId}`,
+            query: (id) => {
+                const params = new URLSearchParams();
+                params.append('id', id);
+
+                return {
+                    url: `/user/info?${params.toString()}`,
+                    method: 'GET',
+                };
+            },
             providesTags: ['User'],
         }),
     }),
