@@ -11,7 +11,7 @@ import { setUserInfo } from "@/store/slices/userSlice";
 export default function Home() {
     const [selectedMethod, setSelectedMethod] = useState<"email" | "phone" | "wallet" | null>(null);
     const { ready, authenticated, user, login, logout } = usePrivy();
-    console.log("ready, authenticated,user,", ready, authenticated, user);
+    console.log({ ready, authenticated, user });
     const router = useRouter();
     const dispatch = useAppDispatch();
 
@@ -46,7 +46,7 @@ export default function Home() {
                 <div className="w-full space-y-4">
                     <button
                         className={`w-full py-3 px-4 rounded-md flex items-center justify-center transition-colors ${
-                            selectedMethod === "wallet" ? "bg-[#7C3AED]" : "bg-[#2C2C2C] hover:bg-[#3C3C3C]"
+                            selectedMethod === "wallet" ? "bg-[#6032f6]" : "bg-[#2C2C2C] hover:bg-[#3C3C3C]"
                         }`}
                         onClick={handleConnect}
                     >
