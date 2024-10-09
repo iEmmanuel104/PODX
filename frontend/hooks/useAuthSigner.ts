@@ -1,13 +1,14 @@
-// src/hooks/useEthersSigner.ts
 import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
+import { usePrivy } from '@privy-io/react-auth';
 
 export const useAuthSigner = () => {
     const [signer, setSigner] = useState<ethers.Signer | null>(null);
+    const { user } = usePrivy();
 
     useEffect(() => {
         const initSigner = async () => {
-            if (typeof window !== 'undefined' && typeof window.ethereum !== 'undefined') {
+            if (user?.wallet?.address) {
                 try {
                     const provider = new ethers.providers.Web3Provider(window.ethereum);
                     const signer = provider.getSigner();
@@ -19,7 +20,7 @@ export const useAuthSigner = () => {
         };
 
         initSigner();
-    }, []);
+    }, [user]);
 
     const signMessage = async (message: string): Promise<string> => {
         if (!signer) {
