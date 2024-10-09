@@ -7,7 +7,7 @@ import { logger } from '../utils/logger';
 import { AuthUtil } from '../utils/token';
 import { ethers } from 'ethers';
 import { IAdmin } from '../models/Mongodb/admin.model';
-import { ADMIN_EMAIL } from '../utils/constants';
+import { ADMIN_EMAIL, SIGNATURE_MESSAGE } from '../utils/constants';
 import AdminService from '../services/AdminServices/admin.service';
 
 export interface AuthenticatedRequest extends Request {
@@ -40,7 +40,7 @@ export function AdminAuthenticatedController<T = AdminAuthenticatedRequest>(
 }
 
 export async function authenticateUser(signature: string): Promise<IUser> {
-    const message = process.env.SIGNATURE_MESSAGE || 'Sign this message to authenticate';
+    const message = SIGNATURE_MESSAGE || 'Sign this message to authenticate';
     const recoveredAddress = ethers.verifyMessage(message, signature);
 
     const user = await UserService.viewSingleUserByWalletAddress(recoveredAddress);
