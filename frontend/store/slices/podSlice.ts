@@ -7,7 +7,7 @@ interface Participant {
     isVideoEnabled: boolean;
 }
 
-interface PodState {
+export interface PodState {
     podId: string | null;
     participants: Participant[];
     isAudioEnabled: boolean;
