@@ -73,10 +73,7 @@ export default class UserService {
 
         if (query) {
             filter.$or = [
-                { firstName: { $regex: query, $options: 'i' } },
-                { lastName: { $regex: query, $options: 'i' } },
                 { username: { $regex: query, $options: 'i' } },
-                { $expr: { $regexMatch: { input: { $concat: ['$firstName', ' ', '$lastName'] }, regex: query, options: 'i' } } },
             ];
         }
 
