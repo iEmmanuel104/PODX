@@ -5,7 +5,7 @@ import { setSocketConnected } from '@/store/slices/socketSlice';
 
 let socket: Socket | null = null;
 
-export const connectSocket = (token: string) => {
+export const initializeSocketConnection = (token: string) => {
     if (socket) {
         socket.disconnect();
     }
