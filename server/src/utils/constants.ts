@@ -52,6 +52,8 @@ export const ADMIN_EMAIL = process.env.ADMIN_EMAIL as string;
 
 export const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS as string;
 
+export const SIGNATURE_MESSAGE = process.env.SIGNATURE_MESSAGE as string;
+
 export const CONTRACT_ADDRESS =  '0x2759794c851901D723dAB6B90AD875Bc01Bd22F5';
 
 export const USDC_BASE_CONTRACT_ADDRESS =  '0x036CbD53842c5426634e7929541eC2318f3dCF7e';
