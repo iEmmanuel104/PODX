@@ -7,6 +7,21 @@ interface Participant {
     isVideoEnabled: boolean;
 }
 
+interface CoHostRequest {
+    userId: string;
+    podId: string;
+}
+
+interface JoinRequest {
+    userId: string;
+    podId: string;
+}
+
+interface Error {
+    type: string;
+    message: string;
+}
+
 export interface PodState {
     podId: string | null;
     participants: Participant[];
@@ -21,6 +36,10 @@ export interface PodState {
         coHostRequestCount: number;
     };
     ipfsContentHash: string | null;
+    coHostRequests: CoHostRequest[];
+    joinRequests: JoinRequest[];
+    errors: Error[];
+    pendingTipTransaction: string | null;
 }
 
 const initialState: PodState = {
@@ -37,6 +56,10 @@ const initialState: PodState = {
         coHostRequestCount: 0,
     },
     ipfsContentHash: null,
+    coHostRequests: [],
+    joinRequests: [],
+    errors: [],
+    pendingTipTransaction: null,
 };
 
 const podSlice = createSlice({
@@ -90,6 +113,39 @@ const podSlice = createSlice({
                 state.ipfsContentHash = action.payload.newIpfsContentHash;
             }
         },
+        addCoHostRequest: (state, action: PayloadAction<CoHostRequest>) => {
+            if (!state.coHostRequests.some(request => request.userId === action.payload.userId && request.podId === action.payload.podId)) {
+                state.coHostRequests.push(action.payload);
+                state.stats.coHostRequestCount++;
+            }
+        },
+        removeCoHostRequest: (state, action: PayloadAction<{ userId: string; podId: string }>) => {
+            state.coHostRequests = state.coHostRequests.filter(
+                request => !(request.userId === action.payload.userId && request.podId === action.payload.podId)
+            );
+            state.stats.coHostRequestCount = state.coHostRequests.length;
+        },
+        addJoinRequest: (state, action: PayloadAction<JoinRequest>) => {
+            if (!state.joinRequests.some(request => request.userId === action.payload.userId && request.podId === action.payload.podId)) {
+                state.joinRequests.push(action.payload);
+                state.stats.joinRequestCount++;
+            }
+        },
+        removeJoinRequest: (state, action: PayloadAction<{ userId: string; podId: string }>) => {
+            state.joinRequests = state.joinRequests.filter(
+                request => !(request.userId === action.payload.userId && request.podId === action.payload.podId)
+            );
+            state.stats.joinRequestCount = state.joinRequests.length;
+        },
+        setError: (state, action: PayloadAction<Error>) => {
+            state.errors.push(action.payload);
+        },
+        clearErrors: (state) => {
+            state.errors = [];
+        },
+        setPendingTipTransaction: (state, action: PayloadAction<string | null>) => {
+            state.pendingTipTransaction = action.payload;
+        },
         clearPodState: (state) => {
             Object.assign(state, initialState);
         },
@@ -108,6 +164,13 @@ export const {
     updateParticipantAudioState,
     updateParticipantVideoState,
     updatePodContent,
+    addCoHostRequest,
+    removeCoHostRequest,
+    addJoinRequest,
+    removeJoinRequest,
+    setError,
+    clearErrors,
+    setPendingTipTransaction,
     clearPodState
 } = podSlice.actions;
 
