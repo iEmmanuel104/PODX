@@ -1,11 +1,8 @@
 // src/socket/middlewares/socketAuthAccess.ts
 import { Socket } from 'socket.io';
 import { logger } from '../../utils/logger';
-import { AuthUtil } from '../../utils/token';
-import UserService from '../../services/user.service';
-import { UnauthorizedError, NotFoundError, ForbiddenError } from '../../utils/customErrors';
-import { DecodedTokenData } from '../../utils/interface';
 import { IUser } from '../../models/Mongodb/user.model';
+import { authenticateUser } from '../../middlewares/authMiddleware';
 
 export interface AuthenticatedSocket extends Socket {
     userId: string;
@@ -14,38 +11,16 @@ export interface AuthenticatedSocket extends Socket {
 
 // eslint-disable-next-line no-unused-vars
 export default async function socketAuthAccess(socket: Socket, next: (err?: Error) => void): Promise<void> {
-    const header = socket.handshake.headers.authorization;
+    const signature = socket.handshake.auth.signature;
 
-    if (!header || !header.startsWith('Bearer')) {
-        return next(new Error('Invalid authorization header'));
+    if (!signature) {
+        return next(new Error('Missing signature'));
     }
 
-    const token = header.split(' ')[1];
-
     try {
-        const payload = AuthUtil.decodeToken(token) as unknown as DecodedTokenData;
-        if (!payload || !payload.user || !payload.user.walletAddress) {
-            throw new UnauthorizedError('Invalid token');
-        }
-
-        const user = await UserService.viewSingleUser(payload.user.id);
-        if (!user) {
-            throw new NotFoundError('User not found');
-        }
-
-        AuthUtil.verifyToken(token, user.walletAddress);
-
-        if (user.settings?.isBlocked) {
-            throw new ForbiddenError('Account blocked. Please contact support');
-        }
-
-        if (user.settings?.isDeactivated) {
-            throw new ForbiddenError('Account deactivated. Please contact support');
-        }
-
+        const user = await authenticateUser(signature);
         (socket as AuthenticatedSocket).userId = user.id;
         (socket as AuthenticatedSocket).user = user;
-
         next();
     } catch (error) {
         logger.error('Socket authentication error:', error);
