@@ -118,7 +118,7 @@ export default class UserService {
     }
 
     static async viewSingleUserByWalletAddress(walletAddress: string): Promise<IUser | null> {
-        return User.findOne({ walletAddress }).populate('settings');
+        return User.findOne({ walletAddress });
     }
 
     static async viewSingleUserByEmail(email: string): Promise<IUser> {
@@ -150,7 +150,7 @@ export default class UserService {
     }
 
     static async updateUser(userId: string, dataToUpdate: Partial<IUser>): Promise<IUser> {
-        const user = await User.findByIdAndUpdate(userId, dataToUpdate, { new: true }).populate('settings');
+        const user = await User.findByIdAndUpdate(userId, dataToUpdate, { new: true });
 
         if (!user) {
             throw new NotFoundError('Oops User not found');
