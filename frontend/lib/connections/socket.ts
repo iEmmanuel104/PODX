@@ -1,10 +1,15 @@
+import { SERVER_URL } from '@/constants';
 import { io, Socket } from 'socket.io-client';
 
 let socket: Socket;
 
 export const initializeSocket = (token: string) => {
-    socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001', {
+    const socketUrl = SERVER_URL;
+
+    socket = io(socketUrl, {
         auth: { token },
+        transports: ['websocket'],
+        secure: socketUrl.startsWith('https'),
     });
 
     socket.on('connect', () => {
