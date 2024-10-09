@@ -11,10 +11,10 @@ export default function PrivyProvider({ children }: { children: React.ReactNode 
             config={{
                 // Customize Privy's appearance in your app
                 appearance: {
-                    // walletList: ["coinbase_wallet",  ],
-                    theme: "dark",
+                    walletList: ["coinbase_wallet", "metamask", "rainbow", "wallet_connect" ],
+                    theme: "#121212",
                     accentColor: "#6032F6",
-                    logo: "https://res.cloudinary.com/dxzwbed3z/image/upload/v1720793570/c1cnd8dmyleekqmdw7rf.png",
+                    logo: "https://res.cloudinary.com/drc6omjqc/image/upload/v1728435415/Frame_2_ykhxfe.png",
                 },
                 // Create embedded wallets for users who don't have a wallet
                 embeddedWallets: {
@@ -26,6 +26,7 @@ export default function PrivyProvider({ children }: { children: React.ReactNode 
                     },
                 },
                 defaultChain: base,
+                loginMethods: ["wallet", "email"],
                 supportedChains: [mainnet, sepolia, base, baseGoerli, polygon, polygonMumbai] 
             }}
         >
