@@ -15,9 +15,16 @@ import { handleSignal } from '../lib/connections/webrtc';
 
 export const useSocketListeners = () => {
     const dispatch = useAppDispatch();
-    const socket = getSocket();
 
     useEffect(() => {
+        let socket;
+        try {
+            socket = getSocket();
+        } catch (error) {
+            console.log('Socket not initialized yet');
+            return;
+        }
+
         socket.on('user-joined', ({ userId, socketId }) => {
             dispatch(addParticipant({ userId, socketId }));
         });
@@ -116,5 +123,5 @@ export const useSocketListeners = () => {
             socket.off('tip-failed');
             socket.off('signal');
         };
-    }, [socket, dispatch]);
+    }, [dispatch]);
 };
