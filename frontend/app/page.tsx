@@ -11,16 +11,21 @@ import { useFindOrCreateUserMutation, UserInfo } from "@/store/api/userApi";
 import UserInfoModal from "@/components/user/userInfoModal";
 import { useAuthSigner } from "@/hooks/useAuthSigner";
 import { SIGNATURE_MESSAGE } from "@/constants";
+import { connectSocket } from "@/lib/connections/socket";
+import { useSocketListeners } from "@/hooks/useSocketListeners";
 
 export default function Home() {
     const [selectedMethod, setSelectedMethod] = useState<"email" | "phone" | "wallet" | null>(null);
     const { ready, authenticated, user, login, logout } = usePrivy();
+    console.log({ ready, authenticated, user });
     const router = useRouter();
     const dispatch = useAppDispatch();
     const [findOrCreateUser] = useFindOrCreateUserMutation();
     const [showUsernameModal, setShowUsernameModal] = useState(false);
     const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
     const { signMessage } = useAuthSigner();
+
+    useSocketListeners();
 
     useEffect(() => {
         if (authenticated && user) {
@@ -44,6 +49,8 @@ export default function Home() {
                 const signature = await signMessage(message);
 
                 dispatch(setSignature(signature));
+
+                connectSocket(signature);
 
                 if (userData.username.startsWith("guest-")) {
                     setShowUsernameModal(true);
