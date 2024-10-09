@@ -54,7 +54,7 @@ export default class UserService {
         return true;
     }
 
-    static async addUser(userData: IUser): Promise<IUser> {
+    static async addUser(userData: Partial<IUser>): Promise<IUser> {
         const user = await User.create(userData);
 
         await UserSettings.create({
@@ -117,14 +117,8 @@ export default class UserService {
         return user;
     }
 
-    static async viewSingleUserByWalletAddress(walletAddress: string): Promise<IUser> {
-        const user = await User.findOne({ walletAddress }).populate('settings');
-
-        if (!user) {
-            throw new NotFoundError('Oops User not found');
-        }
-
-        return user;
+    static async viewSingleUserByWalletAddress(walletAddress: string): Promise<IUser | null> {
+        return User.findOne({ walletAddress }).populate('settings');
     }
 
     static async viewSingleUserByEmail(email: string): Promise<IUser> {
