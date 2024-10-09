@@ -3,6 +3,7 @@ import { createApi, fetchBaseQuery, BaseQueryFn, FetchBaseQueryError, FetchArgs 
 import { ethers } from 'ethers';
 import { RootState } from '../index';
 import { logOut, setSignature } from '../slices/userSlice';
+import { SERVER_URL, SIGNATURE_MESSAGE } from '@/constants';
 
 export interface ApiResponse<T> {
     status: string;
@@ -13,7 +14,7 @@ export interface ApiResponse<T> {
 
 const baseQuery: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (args, api, extraOptions) => {
     const result = await fetchBaseQuery({
-        baseUrl: process.env.NEXT_PUBLIC_API_URL,
+        baseUrl: SERVER_URL,
         prepareHeaders: async (headers, { getState }) => {
             const state = getState() as RootState;
             const { user, signature } = state.user;
@@ -22,7 +23,7 @@ const baseQuery: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> =
                 if (!signature) {
                     const provider = new ethers.providers.Web3Provider(window.ethereum);
                     const signer = provider.getSigner();
-                    const message = process.env.NEXT_PUBLIC_SIGNATURE_MESSAGE || 'Sign this message to authenticate';
+                    const message = SIGNATURE_MESSAGE || 'Sign this message to authenticate';
                     const newSignature = await signer.signMessage(message);
                     api.dispatch(setSignature(newSignature));
                     headers.set('Authorization', `Bearer ${newSignature}`);
