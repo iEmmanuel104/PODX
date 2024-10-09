@@ -3,11 +3,12 @@
 import { PrivyProvider as Provider } from "@privy-io/react-auth";
 import { SmartWalletsProvider } from "@privy-io/react-auth/smart-wallets";
 import {base, baseGoerli, mainnet, sepolia, polygon, polygonMumbai} from 'viem/chains';
+import { PRIVY_APP_ID } from "@/constants";
 
 export default function PrivyProvider({ children }: { children: React.ReactNode }) {
     return (
         <Provider
-            appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID!}
+            appId={PRIVY_APP_ID}
             config={{
                 // Customize Privy's appearance in your app
                 appearance: {
