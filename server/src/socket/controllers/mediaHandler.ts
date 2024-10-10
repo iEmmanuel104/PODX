@@ -43,4 +43,14 @@ export default function attachMediaToggleHandlers(io: Server, socket: Authentica
             socket.emit('mute-all-failed', { error: 'Not authorized to mute all users' });
         }
     });
+
+    socket.on('toggle-local-audio', async ({ podId, isAudioEnabled }: { podId: string; isAudioEnabled: boolean }) => {
+        await podManager.updateUserInfo(podId, userId, { isAudioEnabled });
+        socket.to(podId).emit('user-audio-toggle', { userId, isAudioEnabled });
+    });
+
+    socket.on('toggle-local-video', async ({ podId, isVideoEnabled }: { podId: string; isVideoEnabled: boolean }) => {
+        await podManager.updateUserInfo(podId, userId, { isVideoEnabled });
+        socket.to(podId).emit('user-video-toggle', { userId, isVideoEnabled });
+    });
 }
