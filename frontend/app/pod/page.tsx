@@ -10,7 +10,6 @@ import CreateSessionModal from "@/components/pod/createSessionModal";
 import CreatedSessionModal from "@/components/pod/createdSessionModal";
 import Logo from "@/components/ui/logo";
 import { useAppSelector } from "@/store/hooks";
-import { usePrivy } from "@privy-io/react-auth";
 import { useMediaPermissions } from "@/hooks/useMediaPermissions";
 
 export default function PodPage() {
@@ -20,10 +19,8 @@ export default function PodPage() {
     const [isCreatedModalOpen, setIsCreatedModalOpen] = useState(false);
     const [inviteLink, setInviteLink] = useState("");
     const [sessionCode, setSessionCode] = useState("");
-    const { ready, authenticated, user, login, logout } = usePrivy();
 
-    const { isLoggedIn, username, smartWalletAddress } = useAppSelector((state) => state.user);
-    const { isAudioEnabled, isVideoEnabled } = useAppSelector((state) => state.media);
+    const { isLoggedIn, user } = useAppSelector((state) => state.user);
 
     useMediaPermissions();
 
@@ -45,9 +42,12 @@ export default function PodPage() {
         openCreatedModal();
     };
 
-    if (!isLoggedIn) {
+    if (!isLoggedIn || !user) {
         return null;
     }
+
+    const displayName = user.username || `${user.walletAddress.slice(0, 6)}...${user.walletAddress.slice(-4)}`;
+    const initials = user.username ? user.username.slice(0, 2).toUpperCase() : user.walletAddress.slice(0, 2).toUpperCase();
 
     return (
         <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4 relative">
@@ -55,9 +55,9 @@ export default function PodPage() {
                 <Logo />
 
                 <div className="flex items-center mb-16">
-                    <div className="w-8 h-8 bg-[#6032F6] rounded-full flex items-center justify-center text-xs font-bold mr-2">FB</div>
+                    <div className="w-8 h-8 bg-[#6032F6] rounded-full flex items-center justify-center text-xs font-bold mr-2">{initials}</div>
                     <span className="bg-green-500 h-1.5 w-1.5 rounded-full mr-1"></span>
-                    <span className="text-[#A3A3A3] text-sm">folajinidayo.basu.eth</span>
+                    <span className="text-[#A3A3A3] text-sm">{displayName}</span>
                 </div>
 
                 <div className="w-full flex flex-col md:flex-row gap-6 mb-16">
