@@ -194,12 +194,15 @@ export const useSocketEmitters = () => {
             });
     }, [dispatch, emitWithSocket]);
 
-    const updateLocalTracks = useCallback((audioTrack: MediaStreamTrack | null, videoTrack: MediaStreamTrack | null) => {
-        dispatch(setLocalTracks({ audioTrack, videoTrack }));
-    }, [dispatch]);
+    const updateLocalTracks = useCallback((podId: string, audioTrackId: string | null, videoTrackId: string | null) => {
+        return emitWithSocket('update-local-tracks', podId, audioTrackId, videoTrackId)
+            .then(() => {
+                dispatch(setLocalTracks({ audioTrackId, videoTrackId }));
+            });
+    }, [dispatch, emitWithSocket]);
 
-    const updateRemoteTrack = useCallback((userId: string, kind: 'audio' | 'video', track: MediaStreamTrack | null) => {
-        dispatch(updateParticipantTrack({ userId, kind, track }));
+    const updateRemoteTrack = useCallback((userId: string, kind: 'audio' | 'video', trackId: string | null) => {
+        dispatch(updateParticipantTrack({ userId, kind, trackId }));
     }, [dispatch]);
 
     const muteUser = useCallback((podId: string, targetUserId: string, muteType: 'audio' | 'video', isMuted: boolean) => {
