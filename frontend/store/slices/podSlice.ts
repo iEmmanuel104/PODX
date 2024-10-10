@@ -5,8 +5,8 @@ interface Participant {
     socketId: string;
     isAudioEnabled: boolean;
     isVideoEnabled: boolean;
-    audioTrack: MediaStreamTrack | null;
-    videoTrack: MediaStreamTrack | null;
+    audioTrackId: string | null;
+    videoTrackId: string | null;
 }
 
 interface CoHostRequest {
@@ -30,8 +30,8 @@ export interface PodState {
     localUser: {
         isAudioEnabled: boolean;
         isVideoEnabled: boolean;
-        audioTrack: MediaStreamTrack | null;
-        videoTrack: MediaStreamTrack | null;
+        audioTrackId: string | null;
+        videoTrackId: string | null;
     };
     messages: { userId: string; message: string }[];
     podType: 'open' | 'trusted' | null;
@@ -56,8 +56,8 @@ const initialState: PodState = {
     localUser: {
         isAudioEnabled: true,
         isVideoEnabled: true,
-        audioTrack: null,
-        videoTrack: null,
+        audioTrackId: null,
+        videoTrackId: null,
     },
     messages: [],
     podType: null,
@@ -89,8 +89,8 @@ const podSlice = createSlice({
                     ...action.payload,
                     isAudioEnabled: true,
                     isVideoEnabled: true,
-                    audioTrack: null,
-                    videoTrack: null,
+                    audioTrackId: null,
+                    videoTrackId: null,
                 });
             }
         },
@@ -103,17 +103,17 @@ const podSlice = createSlice({
         toggleLocalVideo: (state) => {
             state.localUser.isVideoEnabled = !state.localUser.isVideoEnabled;
         },
-        setLocalTracks: (state, action: PayloadAction<{ audioTrack: MediaStreamTrack | null; videoTrack: MediaStreamTrack | null }>) => {
-            state.localUser.audioTrack = action.payload.audioTrack;
-            state.localUser.videoTrack = action.payload.videoTrack;
+        setLocalTracks: (state, action: PayloadAction<{ audioTrackId: string | null; videoTrackId: string | null }>) => {
+            state.localUser.audioTrackId = action.payload.audioTrackId;
+            state.localUser.videoTrackId = action.payload.videoTrackId;
         },
-        updateParticipantTrack: (state, action: PayloadAction<{ userId: string; kind: 'audio' | 'video'; track: MediaStreamTrack | null }>) => {
+        updateParticipantTrack: (state, action: PayloadAction<{ userId: string; kind: 'audio' | 'video'; trackId: string | null }>) => {
             const participant = state.participants.find(p => p.userId === action.payload.userId);
             if (participant) {
                 if (action.payload.kind === 'audio') {
-                    participant.audioTrack = action.payload.track;
+                    participant.audioTrackId = action.payload.trackId;
                 } else {
-                    participant.videoTrack = action.payload.track;
+                    participant.videoTrackId = action.payload.trackId;
                 }
             }
         },
