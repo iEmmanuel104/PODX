@@ -49,7 +49,7 @@ export default function PodPage() {
                             updateParticipantTrack({
                                 userId: from,
                                 kind: event.track.kind as "audio" | "video",
-                                track: event.track,
+                                trackId: event.track.id,
                             })
                         );
                     });
@@ -81,9 +81,13 @@ export default function PodPage() {
                 const audioTrack = stream.getAudioTracks()[0] || null;
                 const videoTrack = stream.getVideoTracks()[0] || null;
 
-                // Update local tracks in Redux store
-                dispatch(setLocalTracks({ audioTrack, videoTrack }));
-                updateLocalTracks(audioTrack, videoTrack);
+                dispatch(
+                    setLocalTracks({
+                        audioTrackId: audioTrack ? audioTrack.id : null,
+                        videoTrackId: videoTrack ? videoTrack.id : null,
+                    })
+                );
+                updateLocalTracks(podId, audioTrack ? audioTrack.id : null, videoTrack ? videoTrack.id : null);
 
                 const peerConnection = createPeerConnection(podId, (event: RTCTrackEvent) => {
                     // Handle incoming tracks
@@ -93,7 +97,7 @@ export default function PodPage() {
                         updateParticipantTrack({
                             userId: podId,
                             kind: event.track.kind as "audio" | "video",
-                            track: event.track,
+                            trackId: event.track.id,
                         })
                     );
                 });
@@ -106,7 +110,7 @@ export default function PodPage() {
                         updateParticipantTrack({
                             userId: podId,
                             kind: event.track.kind as "audio" | "video",
-                            track: event.track,
+                            trackId: event.track.id,
                         })
                     );
                 });
