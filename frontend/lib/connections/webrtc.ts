@@ -181,6 +181,51 @@ export const replaceTrack = async (kind: 'audio' | 'video', newTrack: MediaStrea
                     sender.replaceTrack(newTrack);
                 }
             });
+
+            // Emit the track update to the server
+            const socket = getSocket();
+            if (socket) {
+                socket.emit('update-local-tracks', newTrack.id, kind);
+            }
+        }
+    }
+};
+
+export const startScreenSharing = async (podId: string) => {
+    try {
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+        const screenTrack = screenStream.getVideoTracks()[0];
+
+        // Replace the video track with the screen sharing track
+        await replaceTrack('video', screenTrack);
+
+        // Notify the server about screen sharing
+        const socket = getSocket();
+        if (socket) {
+            socket.emit('toggle-screen-sharing', { podId, isScreenSharing: true });
+        }
+
+        // Handle the end of screen sharing
+        screenTrack.onended = () => {
+            stopScreenSharing(podId);
+        };
+    } catch (error) {
+        console.error('Error starting screen sharing:', error);
+    }
+};
+
+export const stopScreenSharing = async (podId: string) => {
+    if (localStream) {
+        const videoTrack = localStream.getVideoTracks()[0];
+        if (videoTrack) {
+            // Replace the screen sharing track with the original video track
+            await replaceTrack('video', videoTrack);
+        }
+
+        // Notify the server about stopping screen sharing
+        const socket = getSocket();
+        if (socket) {
+            socket.emit('toggle-screen-sharing', { podId, isScreenSharing: false });
         }
     }
 };
