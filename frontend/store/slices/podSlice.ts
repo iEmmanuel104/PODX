@@ -5,6 +5,8 @@ interface Participant {
     socketId: string;
     isAudioEnabled: boolean;
     isVideoEnabled: boolean;
+    audioTrack: MediaStreamTrack | null;
+    videoTrack: MediaStreamTrack | null;
 }
 
 interface CoHostRequest {
@@ -25,8 +27,12 @@ interface Error {
 export interface PodState {
     podId: string | null;
     participants: Participant[];
-    isAudioEnabled: boolean;
-    isVideoEnabled: boolean;
+    localUser: {
+        isAudioEnabled: boolean;
+        isVideoEnabled: boolean;
+        audioTrack: MediaStreamTrack | null;
+        videoTrack: MediaStreamTrack | null;
+    };
     messages: { userId: string; message: string }[];
     podType: 'open' | 'trusted' | null;
     stats: {
@@ -40,13 +46,19 @@ export interface PodState {
     joinRequests: JoinRequest[];
     errors: Error[];
     pendingTipTransaction: string | null;
+    isScreenSharing: boolean;
+    screenSharingUserId: string | null;
 }
 
 const initialState: PodState = {
     podId: null,
     participants: [],
-    isAudioEnabled: true,
-    isVideoEnabled: true,
+    localUser: {
+        isAudioEnabled: true,
+        isVideoEnabled: true,
+        audioTrack: null,
+        videoTrack: null,
+    },
     messages: [],
     podType: null,
     stats: {
@@ -60,6 +72,8 @@ const initialState: PodState = {
     joinRequests: [],
     errors: [],
     pendingTipTransaction: null,
+    isScreenSharing: false,
+    screenSharingUserId: null,
 };
 
 const podSlice = createSlice({
@@ -75,17 +89,33 @@ const podSlice = createSlice({
                     ...action.payload,
                     isAudioEnabled: true,
                     isVideoEnabled: true,
+                    audioTrack: null,
+                    videoTrack: null,
                 });
             }
         },
         removeParticipant: (state, action: PayloadAction<string>) => {
             state.participants = state.participants.filter(p => p.userId !== action.payload);
         },
-        toggleAudio: (state) => {
-            state.isAudioEnabled = !state.isAudioEnabled;
+        toggleLocalAudio: (state) => {
+            state.localUser.isAudioEnabled = !state.localUser.isAudioEnabled;
         },
-        toggleVideo: (state) => {
-            state.isVideoEnabled = !state.isVideoEnabled;
+        toggleLocalVideo: (state) => {
+            state.localUser.isVideoEnabled = !state.localUser.isVideoEnabled;
+        },
+        setLocalTracks: (state, action: PayloadAction<{ audioTrack: MediaStreamTrack | null; videoTrack: MediaStreamTrack | null }>) => {
+            state.localUser.audioTrack = action.payload.audioTrack;
+            state.localUser.videoTrack = action.payload.videoTrack;
+        },
+        updateParticipantTrack: (state, action: PayloadAction<{ userId: string; kind: 'audio' | 'video'; track: MediaStreamTrack | null }>) => {
+            const participant = state.participants.find(p => p.userId === action.payload.userId);
+            if (participant) {
+                if (action.payload.kind === 'audio') {
+                    participant.audioTrack = action.payload.track;
+                } else {
+                    participant.videoTrack = action.payload.track;
+                }
+            }
         },
         addMessage: (state, action: PayloadAction<{ userId: string; message: string }>) => {
             state.messages.push(action.payload);
@@ -146,6 +176,10 @@ const podSlice = createSlice({
         setPendingTipTransaction: (state, action: PayloadAction<string | null>) => {
             state.pendingTipTransaction = action.payload;
         },
+        setScreenSharing: (state, action: PayloadAction<{ isScreenSharing: boolean; userId: string | null }>) => {
+            state.isScreenSharing = action.payload.isScreenSharing;
+            state.screenSharingUserId = action.payload.userId;
+        },
         clearPodState: (state) => {
             Object.assign(state, initialState);
         },
@@ -156,8 +190,10 @@ export const {
     setPodId,
     addParticipant,
     removeParticipant,
-    toggleAudio,
-    toggleVideo,
+    toggleLocalAudio,
+    toggleLocalVideo,
+    setLocalTracks,
+    updateParticipantTrack,
     addMessage,
     setPodType,
     updatePodStats,
@@ -171,6 +207,7 @@ export const {
     setError,
     clearErrors,
     setPendingTipTransaction,
+    setScreenSharing,
     clearPodState
 } = podSlice.actions;
 
