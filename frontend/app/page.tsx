@@ -11,8 +11,8 @@ import { useFindOrCreateUserMutation, UserInfo } from "@/store/api/userApi";
 import UserInfoModal from "@/components/user/userInfoModal";
 import { useAuthSigner } from "@/hooks/useAuthSigner";
 import { SIGNATURE_MESSAGE } from "@/constants";
-import { initializeSocketConnection } from "@/lib/connections/socket";
-import { useSocketListeners } from "@/hooks/useSocketListeners";
+// import { initializeSocketConnection } from "@/lib/connections/socket";
+// import { useSocketListeners } from "@/hooks/useSocketListeners";
 
 export default function Home() {
     const [selectedMethod, setSelectedMethod] = useState<"email" | "phone" | "wallet" | null>(null);
@@ -25,7 +25,7 @@ export default function Home() {
     const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
     const { signMessage } = useAuthSigner();
 
-    useSocketListeners();
+    // useSocketListeners();
 
     useEffect(() => {
         if (authenticated && user) {
@@ -50,7 +50,7 @@ export default function Home() {
 
                 dispatch(setSignature(signature));
 
-                initializeSocketConnection(signature);
+                // initializeSocketConnection(signature);
 
                 if (userData.username.startsWith("guest-")) {
                     setShowUsernameModal(true);
