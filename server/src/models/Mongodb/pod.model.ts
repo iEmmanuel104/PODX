@@ -14,6 +14,8 @@ export interface IPod extends Document {
         joinRequestCount: number;
         coHostRequestCount: number;
     };
+    isScreenSharing: boolean;
+    screenSharingUserId: string | null;
 }
 
 const PodSchema: Schema = new Schema({
@@ -29,6 +31,8 @@ const PodSchema: Schema = new Schema({
         joinRequestCount: { type: Number, default: 0 },
         coHostRequestCount: { type: Number, default: 0 },
     },
+    isScreenSharing: { type: Boolean, default: false },
+    screenSharingUserId: { type: String, default: null },
 }, { timestamps: true });
 
 export const Pod = mongoose.model<IPod>('Pod', PodSchema);
