@@ -7,8 +7,10 @@ import {
     setPodId,
     addParticipant,
     removeParticipant,
-    toggleAudio,
-    toggleVideo,
+    toggleLocalAudio,
+    toggleLocalVideo,
+    setLocalTracks,
+    updateParticipantTrack,
     addMessage,
     setPodType,
     updatePodContent,
@@ -18,7 +20,10 @@ import {
     addJoinRequest,
     removeJoinRequest,
     setError,
-    setPendingTipTransaction
+    setPendingTipTransaction,
+    setScreenSharing,
+    updateParticipantAudioState,
+    updateParticipantVideoState
 } from '../store/slices/podSlice';
 
 export const useSocketEmitters = () => {
@@ -134,7 +139,6 @@ export const useSocketEmitters = () => {
         return emitWithSocket('approve-co-host', podId, coHostUserId)
             .then(() => {
                 dispatch(removeCoHostRequest({ userId: coHostUserId, podId }));
-                // You might want to update the participant's role here if you have such a field
             });
     }, [dispatch, emitWithSocket]);
 
@@ -176,23 +180,38 @@ export const useSocketEmitters = () => {
             });
     }, [dispatch, emitWithSocket]);
 
-    const toggleAudioEmit = useCallback((podId: string, isAudioEnabled: boolean) => {
+    const toggleLocalAudioEmit = useCallback((podId: string, isAudioEnabled: boolean) => {
         return emitWithSocket('toggle-audio', { podId, isAudioEnabled })
             .then(() => {
-                dispatch(toggleAudio());
+                dispatch(toggleLocalAudio());
             });
     }, [dispatch, emitWithSocket]);
 
-    const toggleVideoEmit = useCallback((podId: string, isVideoEnabled: boolean) => {
+    const toggleLocalVideoEmit = useCallback((podId: string, isVideoEnabled: boolean) => {
         return emitWithSocket('toggle-video', { podId, isVideoEnabled })
             .then(() => {
-                dispatch(toggleVideo());
+                dispatch(toggleLocalVideo());
             });
     }, [dispatch, emitWithSocket]);
 
+    const updateLocalTracks = useCallback((audioTrack: MediaStreamTrack | null, videoTrack: MediaStreamTrack | null) => {
+        dispatch(setLocalTracks({ audioTrack, videoTrack }));
+    }, [dispatch]);
+
+    const updateRemoteTrack = useCallback((userId: string, kind: 'audio' | 'video', track: MediaStreamTrack | null) => {
+        dispatch(updateParticipantTrack({ userId, kind, track }));
+    }, [dispatch]);
+
     const muteUser = useCallback((podId: string, targetUserId: string, muteType: 'audio' | 'video', isMuted: boolean) => {
-        return emitWithSocket('mute-user', { podId, targetUserId, muteType, isMuted });
-    }, [emitWithSocket]);
+        return emitWithSocket('mute-user', { podId, targetUserId, muteType, isMuted })
+            .then(() => {
+                if (muteType === 'audio') {
+                    dispatch(updateParticipantAudioState({ userId: targetUserId, isAudioEnabled: !isMuted }));
+                } else {
+                    dispatch(updateParticipantVideoState({ userId: targetUserId, isVideoEnabled: !isMuted }));
+                }
+            });
+    }, [dispatch, emitWithSocket]);
 
     const muteAllUsers = useCallback((podId: string, muteType: 'audio' | 'video', isMuted: boolean) => {
         return emitWithSocket('mute-all', { podId, muteType, isMuted });
@@ -203,6 +222,13 @@ export const useSocketEmitters = () => {
             .then((response: any) => {
                 dispatch(setPendingTipTransaction(response.transactionHash));
                 return response.transactionHash;
+            });
+    }, [dispatch, emitWithSocket]);
+
+    const toggleScreenSharing = useCallback((podId: string, isScreenSharing: boolean) => {
+        return emitWithSocket('toggle-screen-sharing', { podId, isScreenSharing })
+            .then(() => {
+                dispatch(setScreenSharing({ isScreenSharing, userId: getSocket()?.id || null }));
             });
     }, [dispatch, emitWithSocket]);
 
@@ -221,10 +247,13 @@ export const useSocketEmitters = () => {
         approveJoinRequest,
         approveAllJoinRequests,
         sendMessage,
-        toggleAudioEmit,
-        toggleVideoEmit,
+        toggleLocalAudioEmit,
+        toggleLocalVideoEmit,
+        updateLocalTracks,
+        updateRemoteTrack,
         muteUser,
         muteAllUsers,
         sendTip,
+        toggleScreenSharing,
     };
 };
