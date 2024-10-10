@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Settings } from "lucide-react";
@@ -14,8 +14,8 @@ import { useMediaPermissions } from "@/hooks/useMediaPermissions";
 import { useSocketEmitters } from "@/hooks/useSocketEmitters";
 import { useSocketListeners } from "@/hooks/useSocketListeners";
 import { initializeSocketConnection, getSocket } from "@/lib/connections/socket";
-import { createPeerConnection, addTracks, startCall } from "@/lib/connections/webrtc";
-import { setPodId } from "@/store/slices/podSlice";
+import { initializeLocalStream, createPeerConnection, addTracks, startCall, handleSignal } from "@/lib/connections/webrtc";
+import { setPodId, setLocalTracks, updateParticipantTrack } from "@/store/slices/podSlice";
 
 export default function PodPage() {
     const router = useRouter();
@@ -27,18 +27,36 @@ export default function PodPage() {
     const [sessionCode, setSessionCode] = useState("");
 
     const { isLoggedIn, user, signature } = useAppSelector((state) => state.user);
-    const { createPod, joinPod } = useSocketEmitters();
+    const { createPod, joinPod, updateLocalTracks } = useSocketEmitters();
+    const socketListeners = useSocketListeners();
+
+    const localVideoRef = useRef<HTMLVideoElement>(null);
 
     useMediaPermissions();
-    useSocketListeners();
 
     useEffect(() => {
         if (!isLoggedIn) {
             router.push("/");
         } else if (user) {
-            initializeSocketConnection(signature as string);
+            const socket = initializeSocketConnection(signature as string);
+            if (socket) {
+                socket.on("signal", ({ from, signal }) => {
+                    handleSignal(from, signal, (event: RTCTrackEvent) => {
+                        // Handle incoming tracks
+                        console.log("Received track", event.track.kind, "from", from);
+                        // Update the Redux store with the new track
+                        dispatch(
+                            updateParticipantTrack({
+                                userId: from,
+                                kind: event.track.kind as "audio" | "video",
+                                track: event.track,
+                            })
+                        );
+                    });
+                });
+            }
         }
-    }, [isLoggedIn, router, user]);
+    }, [isLoggedIn, router, user, signature, dispatch]);
 
     const openCreateModal = () => setIsCreateModalOpen(true);
     const closeCreateModal = () => setIsCreateModalOpen(false);
@@ -56,15 +74,47 @@ export default function PodPage() {
                 openCreatedModal();
 
                 // Initialize WebRTC
-                const localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === "Video Session" });
-                const peerConnection = createPeerConnection(podId);
-                await addTracks(peerConnection, localStream);
-                await startCall(podId, localStream);
+                const stream = await initializeLocalStream(true, type === "Video Session");
+                if (localVideoRef.current) {
+                    localVideoRef.current.srcObject = stream;
+                }
+                const audioTrack = stream.getAudioTracks()[0] || null;
+                const videoTrack = stream.getVideoTracks()[0] || null;
+
+                // Update local tracks in Redux store
+                dispatch(setLocalTracks({ audioTrack, videoTrack }));
+                updateLocalTracks(audioTrack, videoTrack);
+
+                const peerConnection = createPeerConnection(podId, (event: RTCTrackEvent) => {
+                    // Handle incoming tracks
+                    console.log("Received track", event.track.kind, "from", podId);
+                    // Update the Redux store with the new track
+                    dispatch(
+                        updateParticipantTrack({
+                            userId: podId,
+                            kind: event.track.kind as "audio" | "video",
+                            track: event.track,
+                        })
+                    );
+                });
+                await addTracks(peerConnection, stream);
+                await startCall(podId, (event: RTCTrackEvent) => {
+                    // Handle incoming tracks
+                    console.log("Received track", event.track.kind, "from", podId);
+                    // Update the Redux store with the new track
+                    dispatch(
+                        updateParticipantTrack({
+                            userId: podId,
+                            kind: event.track.kind as "audio" | "video",
+                            track: event.track,
+                        })
+                    );
+                });
             } catch (error) {
                 console.error("Failed to create session:", error);
             }
         },
-        [createPod, dispatch]
+        [createPod, dispatch, updateLocalTracks]
     );
 
     const handleJoinSession = useCallback(async () => {
@@ -130,13 +180,19 @@ export default function PodPage() {
                     </div>
                 </div>
             </div>
-
             <button className="text-[#A3A3A3] hover:text-white transition-colors flex items-center gap-2 text-sm">
                 <Settings className="w-4 h-4" /> Settings
             </button>
 
+            <video ref={localVideoRef} autoPlay muted className="hidden" />
             <CreateSessionModal isOpen={isCreateModalOpen} onClose={closeCreateModal} onCreateSession={handleCreateSession} />
-            <CreatedSessionModal isOpen={isCreatedModalOpen} onClose={closeCreatedModal} inviteLink={inviteLink} sessionCode={sessionCode} />
+            <CreatedSessionModal
+                isOpen={isCreatedModalOpen}
+                onClose={closeCreatedModal}
+                inviteLink={inviteLink}
+                sessionCode={sessionCode}
+                onJoinSession={() => router.push(`/pod/join?code=${sessionCode}`)}
+            />
         </div>
     );
 }
