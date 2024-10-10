@@ -7,6 +7,7 @@ const whitelist = [
     'https://api-dev.royalti.io',
     'https://api-prod.royalti.io',
     'http://127.0.0.1:8080',
+    'http://127.0.0.1:3000',
     'https://server-dot-royalti-project.uc.r.appspot.com',
 ]; // list of allowed domains
 
