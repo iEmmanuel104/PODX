@@ -31,9 +31,9 @@ export class PodManager {
         });
         await newPod.save();
 
-        user.ownedPods.push(newPod.id);
+        user.ownedPods.push(newPod._id as Types.ObjectId);
         await user.save();
-
+        console.log('save passed');
         const memberData: PodMember = {
             userId: user.id,
             socketId,
