@@ -275,6 +275,37 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
         }
     });
 
+    socket.on('update-local-tracks', async (podId: string, audioTrackId: string | null, videoTrackId: string | null, callback: (response: { success: boolean; error?: string }) => void) => {
+        try {
+            const success = await podManager.updateLocalTracks(podId, userId, audioTrackId, videoTrackId);
+            if (success) {
+                callback({ success: true });
+                logger.info(`User ${userId} updated local tracks for pod ${podId}`);
+            } else {
+                throw new Error('Failed to update local tracks');
+            }
+        } catch (error) {
+            logger.error(`Error updating local tracks: ${error}`);
+            callback({ success: false, error: 'Failed to update local tracks' });
+        }
+    });
+
+    socket.on('toggle-screen-sharing', async (podId: string, isScreenSharing: boolean, callback: (response: { success: boolean; error?: string }) => void) => {
+        try {
+            const success = await podManager.toggleScreenSharing(podId, userId, isScreenSharing);
+            if (success) {
+                io.to(podId).emit('screen-sharing-toggled', { podId, userId, isScreenSharing });
+                callback({ success: true });
+                logger.info(`User ${userId} ${isScreenSharing ? 'started' : 'stopped'} screen sharing in pod ${podId}`);
+            } else {
+                throw new Error('Failed to toggle screen sharing');
+            }
+        } catch (error) {
+            logger.error(`Error toggling screen sharing: ${error}`);
+            callback({ success: false, error: 'Failed to toggle screen sharing' });
+        }
+    });
+    
     socket.on('send-message', ({ podId, message }: { podId: string; message: string }) => {
         socket.to(podId).emit('new-message', { userId, message });
     });
