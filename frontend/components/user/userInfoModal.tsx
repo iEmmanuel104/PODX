@@ -39,12 +39,12 @@ export default function UserInfoModal({ isOpen, onClose, initialUsername, onUpda
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="bg-[#1E1E1E] text-white rounded-lg p-6 w-full max-w-md">
                 <DialogHeader>
-                    <DialogTitle className="text-2xl font-semibold">Update Your Username</DialogTitle>
+                    <DialogTitle className="text-2xl font-semibold">Edit Profile</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <label htmlFor="username" className="block text-[#A3A3A3] mb-2">
-                            New Username
+                            Username
                         </label>
                         <Input
                             id="username"
@@ -67,7 +67,7 @@ export default function UserInfoModal({ isOpen, onClose, initialUsername, onUpda
                             type="submit"
                             className="bg-[#6032F6] text-white px-4 py-2 rounded-md hover:bg-[#4C28C4] transition-all duration-300 ease-in-out text-sm font-medium"
                         >
-                            Update
+                            Save
                         </Button>
                     </div>
                 </form>
