@@ -4,16 +4,17 @@ import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { X, Link, AlertCircle } from "lucide-react";
+import { Link, AlertCircle } from "lucide-react";
 
 interface CreatedSessionModalProps {
     isOpen: boolean;
     onClose: () => void;
     inviteLink: string;
     sessionCode: string;
+    onJoinSession: () => void;
 }
 
-const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClose, inviteLink, sessionCode }) => {
+const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClose, inviteLink, sessionCode, onJoinSession }) => {
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
     };
@@ -67,6 +68,12 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClo
                         <AlertCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
                         <p>For the best experience, remind participants to connect their wallet when joining through the session link</p>
                     </div>
+                    <Button
+                        onClick={onJoinSession}
+                        className="w-full bg-[#6032F6] text-white px-8 py-4 rounded-md hover:bg-[#4C28C4] transition-all duration-300 ease-in-out text-sm font-medium mt-4"
+                    >
+                        Join Session Now
+                    </Button>
                 </div>
             </DialogContent>
         </Dialog>
