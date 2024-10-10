@@ -86,7 +86,13 @@ export const useSocketListeners = () => {
                 console.error('Tip failed:', error);
             },
             'signal': ({ from, signal }: { from: string, signal: any }) => {
-                handleSignal(from, signal);
+                handleSignal(from, signal, (event: RTCTrackEvent) => {
+                    // Handle the new track
+                    console.log('Received new track:', event.track.kind, 'from', from);
+                    // You might want to dispatch an action here to update the UI
+                    // For example:
+                    // dispatch(addRemoteTrack({ userId: from, track: event.track }));
+                });
             },
             'co-host-requested': ({ userId, podId }: { userId: string, podId: string }) => {
                 dispatch(addCoHostRequest({ userId, podId }));
