@@ -16,11 +16,15 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
     socket.on('create-pod', async (ipfsContentHash: string, callback: (response: { success: boolean; podId?: string; error?: string }) => void) => {
         try {
             const newPod = await podManager.createPod(user, socket.id, ipfsContentHash);
-            const signer = await getSignerForAddress(userWallet);
-            const connectedContract = getPodXContractInstance(signer);
 
-            const tx = await connectedContract.createPodcast(ethers.encodeBytes32String(newPod.id), ipfsContentHash);
-            await tx.wait();
+            console.log({ newPod });
+            console.log('web3');
+            // const signer = await getSignerForAddress(userWallet);
+            // const connectedContract = getPodXContractInstance(signer);
+
+            // const tx = await connectedContract.createPodcast(ethers.encodeBytes32String(newPod.id), ipfsContentHash);
+            // await tx.wait();
+            console.log('web3 end');
 
             socket.join(newPod.id);
             callback({ success: true, podId: newPod.id });
@@ -52,8 +56,6 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
             } else if (joinStatus === 'requested') {
                 callback({ success: true, status: 'requested' });
                 logger.info(`User ${userId} requested to join pod ${podId}`);
-            } else {
-                throw new Error('Pod not found');
             }
         } catch (error) {
             logger.error(`Error joining pod: ${error}`);
@@ -65,11 +67,11 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
         try {
             const updatedPod = await podManager.leavePod(podId, userId);
             if (updatedPod) {
-                const signer = await getSignerForAddress(userWallet);
-                const connectedContract = getPodXContractInstance(signer);
+                // const signer = await getSignerForAddress(userWallet);
+                // const connectedContract = getPodXContractInstance(signer);
 
-                const tx = await connectedContract.leavePodcast(ethers.encodeBytes32String(podId));
-                await tx.wait();
+                // const tx = await connectedContract.leavePodcast(ethers.encodeBytes32String(podId));
+                // await tx.wait();
 
                 socket.leave(podId);
                 socket.to(podId).emit('user-left', { userId, socketId: socket.id });
@@ -80,7 +82,7 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
                 callback({ success: true });
                 logger.info(`User ${userId} left pod ${podId}`);
             } else {
-                throw new Error('Failed to leave pod');
+                callback({ success: false, error: 'Failed to leave pod' });
             }
         } catch (error) {
             logger.error(`Error leaving pod: ${error}`);
@@ -143,10 +145,10 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
                     callback({ success: true });
                     logger.info(`User ${userId} updated content for pod ${podId}`);
                 } else {
-                    throw new Error('Failed to update content');
+                    callback({ success: false, error: 'Failed to update content' });
                 }
             } else {
-                throw new Error('User not authorized to update content');
+                callback({ success: false, error: 'Unauthorized' });
             }
         } catch (error) {
             logger.error(`Error updating content: ${error}`);
@@ -170,10 +172,10 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
                     callback({ success: true });
                     logger.info(`User ${userId} requested co-host for pod ${podId}`);
                 } else {
-                    throw new Error('Pod not found');
+                    callback({ success: false, error: 'Pod not found' });
                 }
             } else {
-                throw new Error('Failed to request co-host');
+                callback({ success: false, error: 'Failed to request co-host' });
             }
         } catch (error) {
             logger.error(`Error requesting co-host: ${error}`);
@@ -198,10 +200,10 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
                     callback({ success: true });
                     logger.info(`User ${userId} approved co-host ${coHostUserId} for pod ${podId}`);
                 } else {
-                    throw new Error('Pod not found');
+                    callback({ success: false, error: 'Pod not found' });
                 }
             } else {
-                throw new Error('Failed to approve co-host');
+                callback({ success: false, error: 'Failed to approve co-host' });
             }
         } catch (error) {
             logger.error(`Error approving co-host: ${error}`);
@@ -222,7 +224,7 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
                 callback({ success: true, admittedUsers });
                 logger.info(`User ${userId} changed pod ${podId} type to ${newType}`);
             } else {
-                throw new Error('Pod not found');
+                callback({ success: false, error: 'Pod not found' });
             }
         } catch (error) {
             logger.error(`Error changing pod type: ${error}`);
@@ -241,10 +243,10 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
                     callback({ success: true });
                     logger.info(`User ${userId} approved join request for ${joinUserId} in pod ${podId}`);
                 } else {
-                    throw new Error('Pod not found');
+                    callback({ success: false, error: 'Pod not found' });
                 }
             } else {
-                throw new Error('Failed to approve join request');
+                callback({ success: false, error: 'Failed to approve join request' });
             }
         } catch (error) {
             logger.error(`Error approving join request: ${error}`);
@@ -263,7 +265,7 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
                     callback({ success: true, approvedUsers });
                     logger.info(`User ${socket.userId} approved all join requests for pod ${podId}`);
                 } else {
-                    throw new Error('Pod not found');
+                    callback({ success: false, error: 'Pod not found' });
                 }
             } else {
                 callback({ success: true, approvedUsers: [] });
@@ -282,7 +284,7 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
                 callback({ success: true });
                 logger.info(`User ${userId} updated local tracks for pod ${podId}`);
             } else {
-                throw new Error('Failed to update local tracks');
+                callback({ success: false, error: 'Failed to update local tracks' });
             }
         } catch (error) {
             logger.error(`Error updating local tracks: ${error}`);
@@ -298,14 +300,14 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
                 callback({ success: true });
                 logger.info(`User ${userId} ${isScreenSharing ? 'started' : 'stopped'} screen sharing in pod ${podId}`);
             } else {
-                throw new Error('Failed to toggle screen sharing');
+                callback({ success: false, error: 'Failed to toggle screen sharing' });
             }
         } catch (error) {
             logger.error(`Error toggling screen sharing: ${error}`);
             callback({ success: false, error: 'Failed to toggle screen sharing' });
         }
     });
-    
+
     socket.on('send-message', ({ podId, message }: { podId: string; message: string }) => {
         socket.to(podId).emit('new-message', { userId, message });
     });
