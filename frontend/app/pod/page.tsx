@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Settings } from "lucide-react";
@@ -9,38 +9,72 @@ import { Input } from "@/components/ui/input";
 import CreateSessionModal from "@/components/pod/createSessionModal";
 import CreatedSessionModal from "@/components/pod/createdSessionModal";
 import Logo from "@/components/ui/logo";
-import { useAppSelector } from "@/store/hooks";
+import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { useMediaPermissions } from "@/hooks/useMediaPermissions";
+import { useSocketEmitters } from "@/hooks/useSocketEmitters";
+import { useSocketListeners } from "@/hooks/useSocketListeners";
+import { initializeSocketConnection, getSocket } from "@/lib/connections/socket";
+import { createPeerConnection, addTracks, startCall } from "@/lib/connections/webrtc";
+import { setPodId } from "@/store/slices/podSlice";
 
 export default function PodPage() {
     const router = useRouter();
+    const dispatch = useAppDispatch();
     const [meetingCode, setMeetingCode] = useState("");
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isCreatedModalOpen, setIsCreatedModalOpen] = useState(false);
     const [inviteLink, setInviteLink] = useState("");
     const [sessionCode, setSessionCode] = useState("");
 
-    const { isLoggedIn, user } = useAppSelector((state) => state.user);
+    const { isLoggedIn, user, signature } = useAppSelector((state) => state.user);
+    const { createPod, joinPod } = useSocketEmitters();
 
     useMediaPermissions();
+    useSocketListeners();
 
     useEffect(() => {
         if (!isLoggedIn) {
             router.push("/");
+        } else if (user) {
+            initializeSocketConnection(signature as string);
         }
-    }, [isLoggedIn, router]);
+    }, [isLoggedIn, router, user]);
 
     const openCreateModal = () => setIsCreateModalOpen(true);
     const closeCreateModal = () => setIsCreateModalOpen(false);
     const openCreatedModal = () => setIsCreatedModalOpen(true);
     const closeCreatedModal = () => setIsCreatedModalOpen(false);
 
-    const handleCreateSession = (title: string, type: string) => {
-        setInviteLink("https://podx.studio/studio/example-session");
-        setSessionCode("XA4-56Y");
-        closeCreateModal();
-        openCreatedModal();
-    };
+    const handleCreateSession = useCallback(
+        async (title: string, type: string) => {
+            try {
+                const podId = await createPod(title);
+                dispatch(setPodId(podId));
+                setInviteLink(`https://podx.studio/studio/${podId}`);
+                setSessionCode(podId);
+                closeCreateModal();
+                openCreatedModal();
+
+                // Initialize WebRTC
+                const localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === "Video Session" });
+                const peerConnection = createPeerConnection(podId);
+                await addTracks(peerConnection, localStream);
+                await startCall(podId, localStream);
+            } catch (error) {
+                console.error("Failed to create session:", error);
+            }
+        },
+        [createPod, dispatch]
+    );
+
+    const handleJoinSession = useCallback(async () => {
+        try {
+            await joinPod(meetingCode);
+            router.push(`/pod/join?code=${meetingCode}`);
+        } catch (error) {
+            console.error("Failed to join session:", error);
+        }
+    }, [joinPod, meetingCode, router]);
 
     if (!isLoggedIn || !user) {
         return null;
@@ -75,7 +109,7 @@ export default function PodPage() {
                                 className="flex-1 bg-[#2C2C2C] rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6032F6] text-white placeholder-[#6C6C6C]"
                             />
                             <Button
-                                onClick={() => router.push(`/pod/join?code=${meetingCode}`)}
+                                onClick={handleJoinSession}
                                 className="bg-[#6032F6] text-white px-8 py-2 rounded-md hover:bg-[#4C28C4] transition-all duration-300 ease-in-out text-sm font-medium"
                             >
                                 Join
