@@ -13,9 +13,17 @@ import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { useMediaPermissions } from "@/hooks/useMediaPermissions";
 import { useSocketEmitters } from "@/hooks/useSocketEmitters";
 import { useSocketListeners } from "@/hooks/useSocketListeners";
-import { initializeSocketConnection, getSocket } from "@/lib/connections/socket";
-import { initializeLocalStream, createPeerConnection, addTracks, startCall, handleSignal } from "@/lib/connections/webrtc";
-import { setPodId, setLocalTracks, updateParticipantTrack } from "@/store/slices/podSlice";
+import { useSocket, useSocketInit } from "@/lib/connections/socket";
+import { useWebRTC } from "@/lib/connections/webrtc";
+import {
+    setPodId,
+    setLocalTracks,
+    updateParticipantTrack,
+    addParticipant,
+    removeParticipant,
+    toggleLocalAudio,
+    toggleLocalVideo,
+} from "@/store/slices/podSlice";
 
 export default function PodPage() {
     const router = useRouter();
@@ -27,8 +35,13 @@ export default function PodPage() {
     const [sessionCode, setSessionCode] = useState("");
 
     const { isLoggedIn, user, signature } = useAppSelector((state) => state.user);
-    const { createPod, joinPod, updateLocalTracks } = useSocketEmitters();
+    const { podId, localUser } = useAppSelector((state) => state.pod);
+    const { createPod, joinPod, updateLocalTracks, leavePod } = useSocketEmitters();
     const socketListeners = useSocketListeners();
+
+    const [socket, isSocketConnected] = useSocket();
+    const initSocket = useSocketInit();
+    const { initializeLocalStream, createPeerConnection, addTracks, startCall, handleSignal, toggleAudioTrack, toggleVideoTrack } = useWebRTC();
 
     const localVideoRef = useRef<HTMLVideoElement>(null);
 
@@ -37,26 +50,50 @@ export default function PodPage() {
     useEffect(() => {
         if (!isLoggedIn) {
             router.push("/");
-        } else if (user) {
-            const socket = initializeSocketConnection(signature as string);
-            if (socket) {
-                socket.on("signal", ({ from, signal }) => {
-                    handleSignal(from, signal, (event: RTCTrackEvent) => {
-                        // Handle incoming tracks
-                        console.log("Received track", event.track.kind, "from", from);
-                        // Update the Redux store with the new track
-                        dispatch(
-                            updateParticipantTrack({
-                                userId: from,
-                                kind: event.track.kind as "audio" | "video",
-                                trackId: event.track.id,
-                            })
-                        );
-                    });
-                });
-            }
+        } else if (user && signature) {
+            initSocket(signature);
         }
-    }, [isLoggedIn, router, user, signature, dispatch]);
+
+        return () => {
+            if (podId) {
+                leavePod(podId);
+            }
+        };
+    }, [isLoggedIn, router, user, signature, initSocket, leavePod, podId]);
+
+    useEffect(() => {
+        if (socket && isSocketConnected) {
+            socket.on("signal", ({ from, signal }) => {
+                handleSignal(from, signal, (event: RTCTrackEvent) => {
+                    console.log("Received track", event.track.kind, "from", from);
+                    dispatch(
+                        updateParticipantTrack({
+                            userId: from,
+                            kind: event.track.kind as "audio" | "video",
+                            trackId: event.track.id,
+                        })
+                    );
+                });
+            });
+
+            socket.on("user-joined", ({ userId, socketId }) => {
+                dispatch(addParticipant({ userId, socketId }));
+                startCall(userId, (event: RTCTrackEvent) => {
+                    dispatch(
+                        updateParticipantTrack({
+                            userId,
+                            kind: event.track.kind as "audio" | "video",
+                            trackId: event.track.id,
+                        })
+                    );
+                });
+            });
+
+            socket.on("user-left", ({ userId }) => {
+                dispatch(removeParticipant(userId));
+            });
+        }
+    }, [socket, isSocketConnected, dispatch, handleSignal, startCall]);
 
     const openCreateModal = () => setIsCreateModalOpen(true);
     const closeCreateModal = () => setIsCreateModalOpen(false);
@@ -66,14 +103,13 @@ export default function PodPage() {
     const handleCreateSession = useCallback(
         async (title: string, type: string) => {
             try {
-                const podId = await createPod(title);
-                dispatch(setPodId(podId));
-                setInviteLink(`https://podx.studio/studio/${podId}`);
-                setSessionCode(podId);
+                const newPodId = await createPod(title);
+                dispatch(setPodId(newPodId));
+                setInviteLink(`https://podx.studio/studio/${newPodId}`);
+                setSessionCode(newPodId);
                 closeCreateModal();
                 openCreatedModal();
 
-                // Initialize WebRTC
                 const stream = await initializeLocalStream(true, type === "Video Session");
                 if (localVideoRef.current) {
                     localVideoRef.current.srcObject = stream;
@@ -87,38 +123,23 @@ export default function PodPage() {
                         videoTrackId: videoTrack ? videoTrack.id : null,
                     })
                 );
-                updateLocalTracks(podId, audioTrack ? audioTrack.id : null, videoTrack ? videoTrack.id : null);
+                updateLocalTracks(newPodId, audioTrack ? audioTrack.id : null, videoTrack ? videoTrack.id : null);
 
-                const peerConnection = createPeerConnection(podId, (event: RTCTrackEvent) => {
-                    // Handle incoming tracks
-                    console.log("Received track", event.track.kind, "from", podId);
-                    // Update the Redux store with the new track
+                const peerConnection = createPeerConnection(newPodId, (event: RTCTrackEvent) => {
                     dispatch(
                         updateParticipantTrack({
-                            userId: podId,
+                            userId: newPodId,
                             kind: event.track.kind as "audio" | "video",
                             trackId: event.track.id,
                         })
                     );
                 });
                 await addTracks(peerConnection, stream);
-                await startCall(podId, (event: RTCTrackEvent) => {
-                    // Handle incoming tracks
-                    console.log("Received track", event.track.kind, "from", podId);
-                    // Update the Redux store with the new track
-                    dispatch(
-                        updateParticipantTrack({
-                            userId: podId,
-                            kind: event.track.kind as "audio" | "video",
-                            trackId: event.track.id,
-                        })
-                    );
-                });
             } catch (error) {
                 console.error("Failed to create session:", error);
             }
         },
-        [createPod, dispatch, updateLocalTracks]
+        [createPod, dispatch, updateLocalTracks, initializeLocalStream, createPeerConnection, addTracks]
     );
 
     const handleJoinSession = useCallback(async () => {
