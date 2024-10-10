@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from 'react';
-import { getSocket } from '../lib/connections/socket';
+import { useSocket } from '../lib/connections/socket';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import {
     addParticipant,
@@ -22,14 +22,11 @@ import { handleSignal } from '../lib/connections/webrtc';
 
 export const useSocketListeners = () => {
     const dispatch = useAppDispatch();
-    const isSocketConnected = useAppSelector(state => state.socket.isConnected);
+    const [socket, isSocketConnected] = useSocket();
     const podId = useAppSelector(state => state.pod.podId);
 
     useEffect(() => {
-        if (!isSocketConnected) return;
-
-        const socket = getSocket();
-        if (!socket) return;
+        if (!isSocketConnected || !socket) return;
 
         const listeners = {
             'user-joined': ({ userId, socketId }: { userId: string, socketId: string }) => {
