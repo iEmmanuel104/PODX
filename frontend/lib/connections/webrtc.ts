@@ -1,6 +1,6 @@
 "use client";
 
-import { getSocket } from './socket';
+import { getSocket, useSocket } from './socket';
 
 export const webRTCConfig = {
     iceServers: [
@@ -228,4 +228,28 @@ export const stopScreenSharing = async (podId: string) => {
             socket.emit('toggle-screen-sharing', { podId, isScreenSharing: false });
         }
     }
+};
+
+// Hook to use WebRTC with the optimized socket connection
+export const useWebRTC = () => {
+    const [socket, isConnected] = useSocket();
+
+    return {
+        socket,
+        isConnected,
+        initializeLocalStream,
+        createPeerConnection,
+        addTracks,
+        createOffer,
+        handleSignal,
+        startCall,
+        endCall,
+        toggleAudioTrack,
+        toggleVideoTrack,
+        getActivePeerConnections,
+        cleanupPeerConnections,
+        replaceTrack,
+        startScreenSharing,
+        stopScreenSharing,
+    };
 };
