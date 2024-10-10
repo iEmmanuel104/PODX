@@ -1,210 +1,210 @@
+"use client";
+
 import { useCallback } from 'react';
 import { getSocket } from '../lib/connections/socket';
-import { useAppDispatch } from '../store/hooks';
-import { setPodId, addParticipant, removeParticipant, toggleAudio, toggleVideo, addMessage, setPodType } from '../store/slices/podSlice';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import {
+    setPodId,
+    addParticipant,
+    removeParticipant,
+    toggleAudio,
+    toggleVideo,
+    addMessage,
+    setPodType,
+    updatePodContent,
+    updatePodStats,
+    addCoHostRequest,
+    removeCoHostRequest,
+    addJoinRequest,
+    removeJoinRequest,
+    setError,
+    setPendingTipTransaction
+} from '../store/slices/podSlice';
 
 export const useSocketEmitters = () => {
     const dispatch = useAppDispatch();
-    const socket = getSocket();
+    const isSocketConnected = useAppSelector(state => state.socket.isConnected);
+
+    const emitWithSocket = useCallback((eventName: string, ...args: any[]) => {
+        const socket = getSocket();
+        if (socket && isSocketConnected) {
+            return new Promise((resolve, reject) => {
+                socket.emit(eventName, ...args, (response: any) => {
+                    if (response.success) {
+                        resolve(response);
+                    } else {
+                        dispatch(setError({ type: eventName, message: response.error || `Failed to emit ${eventName}` }));
+                        reject(new Error(response.error || `Failed to emit ${eventName}`));
+                    }
+                });
+            });
+        } else {
+            const error = new Error('Socket not connected');
+            dispatch(setError({ type: 'connection', message: error.message }));
+            return Promise.reject(error);
+        }
+    }, [isSocketConnected, dispatch]);
 
     const createPod = useCallback((ipfsContentHash: string) => {
-        return new Promise<string>((resolve, reject) => {
-            socket.emit('create-pod', ipfsContentHash, (response: { success: boolean; podId?: string; error?: string }) => {
-                if (response.success && response.podId) {
-                    dispatch(setPodId(response.podId));
-                    resolve(response.podId);
-                } else {
-                    reject(new Error(response.error || 'Failed to create pod'));
-                }
+        return emitWithSocket('create-pod', ipfsContentHash)
+            .then((response: any) => {
+                dispatch(setPodId(response.podId));
+                dispatch(updatePodContent({ podId: response.podId, newIpfsContentHash: ipfsContentHash }));
+                return response.podId;
             });
-        });
-    }, [socket, dispatch]);
+    }, [dispatch, emitWithSocket]);
 
     const joinPod = useCallback((podId: string) => {
-        return new Promise<void>((resolve, reject) => {
-            socket.emit('join-pod', podId, (response: { success: boolean; status?: 'joined' | 'requested'; error?: string }) => {
-                if (response.success) {
-                    dispatch(setPodId(podId));
-                    if (response.status === 'joined') {
-                        resolve();
-                    } else {
-                        reject(new Error('Join request sent'));
-                    }
+        return emitWithSocket('join-pod', podId)
+            .then((response: any) => {
+                dispatch(setPodId(podId));
+                if (response.status === 'joined') {
+                    dispatch(addParticipant({ userId: getSocket()?.id || 'unknown', socketId: getSocket()?.id || 'unknown' }));
+                    return Promise.resolve();
                 } else {
-                    reject(new Error(response.error || 'Failed to join pod'));
+                    dispatch(addJoinRequest({ userId: getSocket()?.id || 'unknown', podId }));
+                    return Promise.reject(new Error('Join request sent'));
                 }
             });
-        });
-    }, [socket, dispatch]);
+    }, [dispatch, emitWithSocket]);
 
     const leavePod = useCallback((podId: string) => {
-        return new Promise<void>((resolve, reject) => {
-            socket.emit('leave-pod', podId, (response: { success: boolean; error?: string }) => {
-                if (response.success) {
-                    dispatch(setPodId(null));
-                    resolve();
-                } else {
-                    reject(new Error(response.error || 'Failed to leave pod'));
-                }
+        return emitWithSocket('leave-pod', podId)
+            .then(() => {
+                dispatch(setPodId(null));
+                dispatch(removeParticipant(getSocket()?.id || 'unknown'));
             });
-        });
-    }, [socket, dispatch]);
+    }, [dispatch, emitWithSocket]);
 
     const getPodInfo = useCallback((podId: string) => {
-        return new Promise((resolve, reject) => {
-            socket.emit('get-pod-info', podId, (response: { success: boolean; pod?: any; error?: string }) => {
-                if (response.success && response.pod) {
-                    resolve(response.pod);
-                } else {
-                    reject(new Error(response.error || 'Failed to get pod info'));
-                }
+        return emitWithSocket('get-pod-info', podId)
+            .then((response: any) => {
+                dispatch(updatePodStats(response.pod.stats));
+                dispatch(setPodType(response.pod.type));
+                dispatch(updatePodContent({ podId, newIpfsContentHash: response.pod.ipfsContentHash }));
+                return response.pod;
             });
-        });
-    }, [socket]);
+    }, [dispatch, emitWithSocket]);
 
     const getPodMembers = useCallback((podId: string) => {
-        return new Promise((resolve, reject) => {
-            socket.emit('get-pod-members', podId, (response: { success: boolean; members?: any[]; error?: string }) => {
-                if (response.success && response.members) {
-                    resolve(response.members);
-                } else {
-                    reject(new Error(response.error || 'Failed to get pod members'));
-                }
+        return emitWithSocket('get-pod-members', podId)
+            .then((response: any) => {
+                response.members.forEach((member: any) => {
+                    dispatch(addParticipant({ userId: member.userId, socketId: member.socketId }));
+                });
+                return response.members;
             });
-        });
-    }, [socket]);
+    }, [dispatch, emitWithSocket]);
 
     const getJoinRequests = useCallback((podId: string) => {
-        return new Promise((resolve, reject) => {
-            socket.emit('get-join-requests', podId, (response: { success: boolean; requests?: string[]; error?: string }) => {
-                if (response.success && response.requests) {
-                    resolve(response.requests);
-                } else {
-                    reject(new Error(response.error || 'Failed to get join requests'));
-                }
+        return emitWithSocket('get-join-requests', podId)
+            .then((response: any) => {
+                response.requests.forEach((request: string) => {
+                    dispatch(addJoinRequest({ userId: request, podId }));
+                });
+                return response.requests;
             });
-        });
-    }, [socket]);
+    }, [dispatch, emitWithSocket]);
 
     const getCoHostRequests = useCallback((podId: string) => {
-        return new Promise((resolve, reject) => {
-            socket.emit('get-co-host-requests', podId, (response: { success: boolean; requests?: string[]; error?: string }) => {
-                if (response.success && response.requests) {
-                    resolve(response.requests);
-                } else {
-                    reject(new Error(response.error || 'Failed to get co-host requests'));
-                }
+        return emitWithSocket('get-co-host-requests', podId)
+            .then((response: any) => {
+                response.requests.forEach((request: string) => {
+                    dispatch(addCoHostRequest({ userId: request, podId }));
+                });
+                return response.requests;
             });
-        });
-    }, [socket]);
+    }, [dispatch, emitWithSocket]);
 
     const updateContent = useCallback((podId: string, newIpfsContentHash: string) => {
-        return new Promise<void>((resolve, reject) => {
-            socket.emit('update-content', podId, newIpfsContentHash, (response: { success: boolean; error?: string }) => {
-                if (response.success) {
-                    resolve();
-                } else {
-                    reject(new Error(response.error || 'Failed to update content'));
-                }
+        return emitWithSocket('update-content', podId, newIpfsContentHash)
+            .then(() => {
+                dispatch(updatePodContent({ podId, newIpfsContentHash }));
             });
-        });
-    }, [socket]);
+    }, [dispatch, emitWithSocket]);
 
     const requestCoHost = useCallback((podId: string) => {
-        return new Promise<void>((resolve, reject) => {
-            socket.emit('request-co-host', podId, (response: { success: boolean; error?: string }) => {
-                if (response.success) {
-                    resolve();
-                } else {
-                    reject(new Error(response.error || 'Failed to request co-host'));
-                }
+        return emitWithSocket('request-co-host', podId)
+            .then(() => {
+                dispatch(addCoHostRequest({ userId: getSocket()?.id || 'unknown', podId }));
             });
-        });
-    }, [socket]);
+    }, [dispatch, emitWithSocket]);
 
     const approveCoHost = useCallback((podId: string, coHostUserId: string) => {
-        return new Promise<void>((resolve, reject) => {
-            socket.emit('approve-co-host', podId, coHostUserId, (response: { success: boolean; error?: string }) => {
-                if (response.success) {
-                    resolve();
-                } else {
-                    reject(new Error(response.error || 'Failed to approve co-host'));
-                }
+        return emitWithSocket('approve-co-host', podId, coHostUserId)
+            .then(() => {
+                dispatch(removeCoHostRequest({ userId: coHostUserId, podId }));
+                // You might want to update the participant's role here if you have such a field
             });
-        });
-    }, [socket]);
+    }, [dispatch, emitWithSocket]);
 
     const changePodType = useCallback((podId: string, newType: 'open' | 'trusted') => {
-        return new Promise<string[]>((resolve, reject) => {
-            socket.emit('change-pod-type', podId, newType, (response: { success: boolean; admittedUsers?: string[]; error?: string }) => {
-                if (response.success) {
-                    dispatch(setPodType(newType));
-                    resolve(response.admittedUsers || []);
-                } else {
-                    reject(new Error(response.error || 'Failed to change pod type'));
-                }
+        return emitWithSocket('change-pod-type', podId, newType)
+            .then((response: any) => {
+                dispatch(setPodType(newType));
+                response.admittedUsers.forEach((userId: string) => {
+                    dispatch(addParticipant({ userId, socketId: 'unknown' }));
+                    dispatch(removeJoinRequest({ userId, podId }));
+                });
+                return response.admittedUsers || [];
             });
-        });
-    }, [socket, dispatch]);
+    }, [dispatch, emitWithSocket]);
 
     const approveJoinRequest = useCallback((podId: string, joinUserId: string) => {
-        return new Promise<void>((resolve, reject) => {
-            socket.emit('approve-join-request', podId, joinUserId, (response: { success: boolean; error?: string }) => {
-                if (response.success) {
-                    resolve();
-                } else {
-                    reject(new Error(response.error || 'Failed to approve join request'));
-                }
+        return emitWithSocket('approve-join-request', podId, joinUserId)
+            .then(() => {
+                dispatch(removeJoinRequest({ userId: joinUserId, podId }));
+                dispatch(addParticipant({ userId: joinUserId, socketId: 'unknown' }));
             });
-        });
-    }, [socket]);
+    }, [dispatch, emitWithSocket]);
 
     const approveAllJoinRequests = useCallback((podId: string) => {
-        return new Promise<string[]>((resolve, reject) => {
-            socket.emit('approve-all-join-requests', podId, (response: { success: boolean; approvedUsers?: string[]; error?: string }) => {
-                if (response.success) {
-                    resolve(response.approvedUsers || []);
-                } else {
-                    reject(new Error(response.error || 'Failed to approve all join requests'));
-                }
+        return emitWithSocket('approve-all-join-requests', podId)
+            .then((response: any) => {
+                response.approvedUsers.forEach((userId: string) => {
+                    dispatch(removeJoinRequest({ userId, podId }));
+                    dispatch(addParticipant({ userId, socketId: 'unknown' }));
+                });
+                return response.approvedUsers || [];
             });
-        });
-    }, [socket]);
+    }, [dispatch, emitWithSocket]);
 
     const sendMessage = useCallback((podId: string, message: string) => {
-        socket.emit('send-message', { podId, message });
-        dispatch(addMessage({ userId: socket.id || 'unknown', message }));
-    }, [socket, dispatch]);
+        return emitWithSocket('send-message', { podId, message })
+            .then(() => {
+                dispatch(addMessage({ userId: getSocket()?.id || 'unknown', message }));
+            });
+    }, [dispatch, emitWithSocket]);
 
     const toggleAudioEmit = useCallback((podId: string, isAudioEnabled: boolean) => {
-        socket.emit('toggle-audio', { podId, isAudioEnabled });
-        dispatch(toggleAudio());
-    }, [socket, dispatch]);
+        return emitWithSocket('toggle-audio', { podId, isAudioEnabled })
+            .then(() => {
+                dispatch(toggleAudio());
+            });
+    }, [dispatch, emitWithSocket]);
 
     const toggleVideoEmit = useCallback((podId: string, isVideoEnabled: boolean) => {
-        socket.emit('toggle-video', { podId, isVideoEnabled });
-        dispatch(toggleVideo());
-    }, [socket, dispatch]);
+        return emitWithSocket('toggle-video', { podId, isVideoEnabled })
+            .then(() => {
+                dispatch(toggleVideo());
+            });
+    }, [dispatch, emitWithSocket]);
 
     const muteUser = useCallback((podId: string, targetUserId: string, muteType: 'audio' | 'video', isMuted: boolean) => {
-        socket.emit('mute-user', { podId, targetUserId, muteType, isMuted });
-    }, [socket]);
+        return emitWithSocket('mute-user', { podId, targetUserId, muteType, isMuted });
+    }, [emitWithSocket]);
 
     const muteAllUsers = useCallback((podId: string, muteType: 'audio' | 'video', isMuted: boolean) => {
-        socket.emit('mute-all', { podId, muteType, isMuted });
-    }, [socket]);
+        return emitWithSocket('mute-all', { podId, muteType, isMuted });
+    }, [emitWithSocket]);
 
     const sendTip = useCallback((podId: string, recipientId: string, amount: string) => {
-        return new Promise<string>((resolve, reject) => {
-            socket.emit('send-tip', podId, recipientId, amount, (response: { success: boolean; transactionHash?: string; error?: string }) => {
-                if (response.success && response.transactionHash) {
-                    resolve(response.transactionHash);
-                } else {
-                    reject(new Error(response.error || 'Failed to send tip'));
-                }
+        return emitWithSocket('send-tip', podId, recipientId, amount)
+            .then((response: any) => {
+                dispatch(setPendingTipTransaction(response.transactionHash));
+                return response.transactionHash;
             });
-        });
-    }, [socket]);
+    }, [dispatch, emitWithSocket]);
 
     return {
         createPod,
