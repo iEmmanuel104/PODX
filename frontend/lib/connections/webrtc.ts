@@ -1,3 +1,5 @@
+"use client";
+
 import { getSocket } from './socket';
 
 export const webRTCConfig = {
@@ -17,22 +19,42 @@ export const webRTCConfig = {
 };
 
 const peerConnections = new Map<string, RTCPeerConnection>();
+let localStream: MediaStream | null = null;
 
-export const createPeerConnection = (userId: string) => {
+export const initializeLocalStream = async (audioEnabled: boolean, videoEnabled: boolean) => {
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: audioEnabled, video: videoEnabled });
+    return localStream;
+};
+
+export const createPeerConnection = (userId: string, onTrack: (event: RTCTrackEvent) => void) => {
     const peerConnection = new RTCPeerConnection(webRTCConfig);
     peerConnections.set(userId, peerConnection);
 
     peerConnection.onicecandidate = (event) => {
         if (event.candidate) {
-            getSocket().emit('signal', { to: userId, signal: { ice: event.candidate } });
+            const socket = getSocket();
+            if (socket) {
+                socket.emit('signal', { to: userId, signal: { ice: event.candidate } });
+            } else {
+                console.error('Socket not initialized');
+            }
         }
     };
 
-    peerConnection.ontrack = (event) => {
-        // Handle incoming tracks (audio/video)
-        console.log('Received track', event.track.kind, 'from', userId);
-        // You should update your UI here to display the new track
+    peerConnection.ontrack = onTrack;
+
+    peerConnection.onconnectionstatechange = () => {
+        if (peerConnection.connectionState === 'failed') {
+            console.log('Connection failed, attempting to restart ICE');
+            peerConnection.restartIce();
+        }
     };
+
+    if (localStream) {
+        localStream.getTracks().forEach(track => {
+            peerConnection.addTrack(track, localStream!);
+        });
+    }
 
     return peerConnection;
 };
@@ -44,16 +66,19 @@ export const addTracks = async (peerConnection: RTCPeerConnection, stream: Media
 };
 
 export const createOffer = async (peerConnection: RTCPeerConnection) => {
-    const offer = await peerConnection.createOffer();
+    const offer = await peerConnection.createOffer({
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: true
+    });
     await peerConnection.setLocalDescription(offer);
     return offer;
 };
 
-export const handleSignal = async (fromUserId: string, signal: any) => {
+export const handleSignal = async (fromUserId: string, signal: any, onTrack: (event: RTCTrackEvent) => void) => {
     let peerConnection = peerConnections.get(fromUserId);
 
     if (!peerConnection) {
-        peerConnection = createPeerConnection(fromUserId);
+        peerConnection = createPeerConnection(fromUserId, onTrack);
     }
 
     if (signal.sdp) {
@@ -61,18 +86,33 @@ export const handleSignal = async (fromUserId: string, signal: any) => {
         if (signal.sdp.type === 'offer') {
             const answer = await peerConnection.createAnswer();
             await peerConnection.setLocalDescription(answer);
-            getSocket().emit('signal', { to: fromUserId, signal: { sdp: answer } });
+            const socket = getSocket();
+            if (socket) {
+                socket.emit('signal', { to: fromUserId, signal: { sdp: answer } });
+            } else {
+                console.error('Socket not initialized');
+            }
         }
     } else if (signal.ice) {
         await peerConnection.addIceCandidate(new RTCIceCandidate(signal.ice));
     }
 };
 
-export const startCall = async (targetUserId: string, stream: MediaStream) => {
-    const peerConnection = createPeerConnection(targetUserId);
-    await addTracks(peerConnection, stream);
+export const startCall = async (targetUserId: string, onTrack: (event: RTCTrackEvent) => void) => {
+    if (!localStream) {
+        console.error('Local stream not initialized');
+        return;
+    }
+
+    const peerConnection = createPeerConnection(targetUserId, onTrack);
+    await addTracks(peerConnection, localStream);
     const offer = await createOffer(peerConnection);
-    getSocket().emit('signal', { to: targetUserId, signal: { sdp: offer } });
+    const socket = getSocket();
+    if (socket) {
+        socket.emit('signal', { to: targetUserId, signal: { sdp: offer } });
+    } else {
+        console.error('Socket not initialized');
+    }
 };
 
 export const endCall = (userId: string) => {
@@ -84,6 +124,11 @@ export const endCall = (userId: string) => {
 };
 
 export const toggleAudioTrack = (enabled: boolean) => {
+    if (localStream) {
+        localStream.getAudioTracks().forEach(track => {
+            track.enabled = enabled;
+        });
+    }
     peerConnections.forEach((pc) => {
         pc.getSenders().forEach((sender) => {
             if (sender.track && sender.track.kind === 'audio') {
@@ -94,6 +139,11 @@ export const toggleAudioTrack = (enabled: boolean) => {
 };
 
 export const toggleVideoTrack = (enabled: boolean) => {
+    if (localStream) {
+        localStream.getVideoTracks().forEach(track => {
+            track.enabled = enabled;
+        });
+    }
     peerConnections.forEach((pc) => {
         pc.getSenders().forEach((sender) => {
             if (sender.track && sender.track.kind === 'video') {
@@ -101,4 +151,36 @@ export const toggleVideoTrack = (enabled: boolean) => {
             }
         });
     });
+};
+
+export const getActivePeerConnections = () => {
+    return peerConnections;
+};
+
+export const cleanupPeerConnections = () => {
+    peerConnections.forEach((pc, userId) => {
+        pc.close();
+    });
+    peerConnections.clear();
+    if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+        localStream = null;
+    }
+};
+
+export const replaceTrack = async (kind: 'audio' | 'video', newTrack: MediaStreamTrack) => {
+    if (localStream) {
+        const oldTrack = localStream.getTracks().find(track => track.kind === kind);
+        if (oldTrack) {
+            localStream.removeTrack(oldTrack);
+            localStream.addTrack(newTrack);
+
+            peerConnections.forEach((pc) => {
+                const sender = pc.getSenders().find(s => s.track && s.track.kind === kind);
+                if (sender) {
+                    sender.replaceTrack(newTrack);
+                }
+            });
+        }
+    }
 };
