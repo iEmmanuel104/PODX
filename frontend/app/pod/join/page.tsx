@@ -1,219 +1,127 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/router";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import UserInputForm from "@/components/join/user-input-form";
 import WaitingScreen from "@/components/join/waiting-screen";
 import Logo from "@/components/ui/logo";
-import { Mic, MicOff, Video, VideoOff } from "lucide-react";
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { setAudioEnabled, setVideoEnabled } from "@/store/slices/mediaSlice";
-import { useMediaPermissions } from "@/hooks/useMediaPermissions";
-import { useSocketEmitters } from "@/hooks/useSocketEmitters";
-import { useSocketListeners } from "@/hooks/useSocketListeners";
-import { useSocket, useSocketInit } from "@/lib/connections/socket";
-import { useWebRTC } from "@/lib/connections/webrtc";
-import { setPodId, setLocalTracks, updateParticipantTrack, addParticipant, removeParticipant } from "@/store/slices/podSlice";
+import { useAppSelector } from "@/store/hooks";
+import MeetProvider from "@/providers/meetProvider";
+import { useStreamVideoClient, useCall, useCallStateHooks, CallingState, CallParticipantResponse } from "@stream-io/video-react-sdk";
+import MeetingPreview from "@/components/meeting/meetingPreview";
+import CallParticipants from "@/components/meeting/callParticipants";
 
 const JoinSession: React.FC = () => {
     const router = useRouter();
-    const { code } = router.query;
+    const searchParams = useSearchParams();
+    const code = searchParams.get("code") || "";
     const [name, setName] = useState<string>("");
     const [isBasenameConfirmed, setIsBasenameConfirmed] = useState<boolean>(false);
     const [isWaiting, setIsWaiting] = useState<boolean>(false);
-    const [stream, setStream] = useState<MediaStream | null>(null);
-    const videoRef = useRef<HTMLVideoElement>(null);
+    const [isGuest, setIsGuest] = useState<boolean>(false);
+    const [joining, setJoining] = useState<boolean>(false);
+    const [participants, setParticipants] = useState<CallParticipantResponse[]>([]);
 
-    const dispatch = useAppDispatch();
-    const { isAudioEnabled, isVideoEnabled } = useAppSelector((state) => state.media);
-    const { isLoggedIn, user, signature } = useAppSelector((state) => state.user);
-    const { joinPod, updateLocalTracks, leavePod } = useSocketEmitters();
-    const socketListeners = useSocketListeners();
+    const { isLoggedIn, user } = useAppSelector((state) => state.user);
 
-    const [socket, isSocketConnected] = useSocket();
-    const initSocket = useSocketInit();
-    const { initializeLocalStream, createPeerConnection, addTracks, startCall, handleSignal, toggleAudioTrack, toggleVideoTrack } = useWebRTC();
-
-    useMediaPermissions();
+    const client = useStreamVideoClient();
+    const call = useCall();
+    const { useCallCallingState } = useCallStateHooks();
+    const callingState = useCallCallingState();
 
     useEffect(() => {
-        if (!isLoggedIn) {
-            router.push("/");
-        } else if (user && signature && code) {
-            initSocket(signature);
+        if (!isLoggedIn && !user) {
+            setIsGuest(true);
         }
-
-        return () => {
-            if (code) {
-                leavePod(code as string);
-            }
-        };
-    }, [isLoggedIn, router, user, signature, initSocket, leavePod, code]);
+    }, [isLoggedIn, user]);
 
     useEffect(() => {
-        if (socket && isSocketConnected) {
-            socket.on("signal", ({ from, signal }) => {
-                handleSignal(from, signal, (event: RTCTrackEvent) => {
-                    console.log("Received track", event.track.kind, "from", from);
-                    dispatch(
-                        updateParticipantTrack({
-                            userId: from,
-                            kind: event.track.kind as "audio" | "video",
-                            trackId: event.track.id,
-                        })
-                    );
-                });
-            });
-
-            socket.on("user-joined", ({ userId, socketId }) => {
-                dispatch(addParticipant({ userId, socketId }));
-                startCall(userId, (event: RTCTrackEvent) => {
-                    dispatch(
-                        updateParticipantTrack({
-                            userId,
-                            kind: event.track.kind as "audio" | "video",
-                            trackId: event.track.id,
-                        })
-                    );
-                });
-            });
-
-            socket.on("user-left", ({ userId }) => {
-                dispatch(removeParticipant(userId));
-            });
-        }
-    }, [socket, isSocketConnected, dispatch, handleSignal, startCall]);
-
-    useEffect(() => {
-        const initStream = async () => {
-            if (isAudioEnabled && isVideoEnabled) {
+        const getCurrentCall = async () => {
+            if (call) {
                 try {
-                    const mediaStream = await initializeLocalStream(isAudioEnabled, isVideoEnabled);
-                    setStream(mediaStream);
-                    if (videoRef.current) {
-                        videoRef.current.srcObject = mediaStream;
-                    }
-                } catch (error) {
-                    console.error("Error accessing media devices:", error);
+                    const callData = await call.get();
+                    setParticipants(callData?.call?.session?.participants || []);
+                } catch (e) {
+                    console.error("Error fetching call data:", e);
                 }
             }
         };
 
-        initStream();
-
-        return () => {
-            if (stream) {
-                stream.getTracks().forEach((track) => track.stop());
-            }
-        };
-    }, [isAudioEnabled, isVideoEnabled, initializeLocalStream]);
+        if (code && !joining) {
+            getCurrentCall();
+        }
+    }, [call, code, joining]);
 
     const handleJoinSession = useCallback(async () => {
-        if (code && stream) {
-            try {
-                await joinPod(code as string);
-                dispatch(setPodId(code as string));
-
-                const audioTrack = stream.getAudioTracks()[0] || null;
-                const videoTrack = stream.getVideoTracks()[0] || null;
-
-                dispatch(
-                    setLocalTracks({
-                        audioTrackId: audioTrack ? audioTrack.id : null,
-                        videoTrackId: videoTrack ? videoTrack.id : null,
-                    })
-                );
-                updateLocalTracks(code as string, audioTrack ? audioTrack.id : null, videoTrack ? videoTrack.id : null);
-
-                const peerConnection = createPeerConnection(code as string, (event: RTCTrackEvent) => {
-                    dispatch(
-                        updateParticipantTrack({
-                            userId: code as string,
-                            kind: event.track.kind as "audio" | "video",
-                            trackId: event.track.id,
-                        })
-                    );
-                });
-                await addTracks(peerConnection, stream);
-
-                setIsWaiting(true);
-            } catch (error) {
-                console.error("Failed to join session:", error);
+        if (code) {
+            setJoining(true);
+            if (isGuest) {
+                // Handle guest join request
+                console.log("Guest joining session:", name, code);
+                // Implement your guest join request logic here
+            } else {
+                if (callingState !== CallingState.JOINED) {
+                    await call?.join();
+                }
+                router.push(`/pod/meeting?code=${code}`);
             }
         }
-    }, [code, stream, joinPod, dispatch, updateLocalTracks, createPeerConnection, addTracks]);
+    }, [code, isGuest, name, call, callingState, router]);
 
-    const toggleAudio = useCallback(() => {
-        if (stream) {
-            const audioTrack = stream.getAudioTracks()[0];
-            audioTrack.enabled = !audioTrack.enabled;
-            dispatch(setAudioEnabled(audioTrack.enabled));
-            toggleAudioTrack(audioTrack.enabled);
+    const participantsUI = useMemo(() => {
+        switch (true) {
+            case joining:
+                return "You'll join the call in just a moment";
+            case participants.length === 0:
+                return "No one else is here";
+            case participants.length > 0:
+                return <CallParticipants participants={participants} />;
+            default:
+                return null;
         }
-    }, [stream, dispatch, toggleAudioTrack]);
+    }, [joining, participants]);
 
-    const toggleVideo = useCallback(() => {
-        if (stream) {
-            const videoTrack = stream.getVideoTracks()[0];
-            videoTrack.enabled = !videoTrack.enabled;
-            dispatch(setVideoEnabled(videoTrack.enabled));
-            toggleVideoTrack(videoTrack.enabled);
+    const renderContent = () => {
+        if (isGuest) {
+            return <UserInputForm name={name} setName={setName} isBasenameConfirmed={isBasenameConfirmed} handleJoinSession={handleJoinSession} />;
+        } else if (!isWaiting) {
+            return (
+                <div className="flex flex-col md:flex-row gap-6 md:gap-10 w-full">
+                    <div className="w-full md:w-1/2">
+                        <MeetingPreview />
+                    </div>
+                    <div className="w-full md:w-1/2 flex flex-col justify-center">
+                        <h2 className="text-2xl font-semibold mb-4">Ready to join?</h2>
+                        {participantsUI}
+                        <button
+                            onClick={handleJoinSession}
+                            className="mt-4 w-full bg-[#6032F6] text-white px-8 py-2 rounded-md hover:bg-[#4C28C4] transition-all duration-300 ease-in-out text-sm font-medium"
+                            disabled={joining}
+                        >
+                            {joining ? "Joining..." : "Join Now"}
+                        </button>
+                    </div>
+                </div>
+            );
+        } else {
+            return <WaitingScreen />;
         }
-    }, [stream, dispatch, toggleVideoTrack]);
+    };
 
     return (
-        <div className="min-h-screen bg-[#121212] text-white flex flex-col items-center justify-center p-4">
-            <div className="w-full max-w-5xl">
-                <div className="flex justify-center mb-8">
-                    <Logo />
-                </div>
-
-                <p className="text-center mb-8 text-lg">You are about to join Base Live Build Session</p>
-
-                <div className="flex flex-col md:flex-row gap-6 md:gap-10">
-                    <div className="w-full md:w-1/2 bg-[#1D1D1D] p-3.5 rounded-xl">
-                        <div className="bg-[#1E1E1E] rounded-lg overflow-hidden mb-6">
-                            <div className="relative aspect-video">
-                                <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
-                                {!isAudioEnabled && (
-                                    <div className="absolute top-2 left-2 bg-red-500 text-white text-xs py-1 px-2 rounded-full flex items-center">
-                                        Muted
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                        <div className="flex justify-between px-2">
-                            <button
-                                className={`${
-                                    isVideoEnabled ? "bg-[#2C2C2C]" : "bg-red-500"
-                                } hover:bg-[#3C3C3C] transition-colors px-4 py-3 rounded-full flex items-center`}
-                                onClick={toggleVideo}
-                            >
-                                {isVideoEnabled ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
-                            </button>
-                            <button
-                                className={`${
-                                    isAudioEnabled ? "bg-[#2C2C2C]" : "bg-red-500"
-                                } hover:bg-[#3C3C3C] transition-colors px-4 py-3 rounded-full flex items-center`}
-                                onClick={toggleAudio}
-                            >
-                                {isAudioEnabled ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
-                            </button>
-                        </div>
+        <MeetProvider meetingId={code}>
+            <div className="min-h-screen bg-[#121212] text-white flex flex-col items-center justify-center p-4">
+                <div className="w-full max-w-5xl">
+                    <div className="flex justify-center mb-8">
+                        <Logo />
                     </div>
-                    {!isWaiting ? (
-                        <UserInputForm
-                            name={name}
-                            setName={setName}
-                            isBasenameConfirmed={isBasenameConfirmed}
-                            handleJoinSession={handleJoinSession}
-                        />
-                    ) : (
-                        <WaitingScreen />
-                    )}
+
+                    <p className="text-center mb-8 text-lg">You are about to join Base Live Build Session</p>
+
+                    {renderContent()}
                 </div>
             </div>
-        </div>
+        </MeetProvider>
     );
 };
 
