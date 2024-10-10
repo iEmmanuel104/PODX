@@ -5,7 +5,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, ChevronDown } from "lucide-react";
 
 interface CreateSessionModalProps {
     isOpen: boolean;
@@ -15,7 +14,7 @@ interface CreateSessionModalProps {
 
 const CreateSessionModal: React.FC<CreateSessionModalProps> = ({ isOpen, onClose, onCreateSession }) => {
     const [sessionTitle, setSessionTitle] = useState("Session-1");
-    const [sessionType, setSessionType] = useState("Audio Session");
+    const [sessionType, setSessionType] = useState("Video Session");
 
     const handleCreateSession = () => {
         onCreateSession(sessionTitle, sessionType);
@@ -58,7 +57,10 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({ isOpen, onClose
                         <Button onClick={onClose} className="w-1/2 px-4 py-6 bg-[#2C2C2C] rounded-md hover:bg-[#3C3C3C] transition-colors">
                             Cancel
                         </Button>
-                        <Button onClick={handleCreateSession} className="w-1/2 px-4 py-6 bg-[#6032F6] rounded-md hover:bg-[#6D28D9] transition-colors">
+                        <Button
+                            onClick={handleCreateSession}
+                            className="w-1/2 px-4 py-6 bg-[#6032F6] rounded-md hover:bg-[#6D28D9] transition-colors"
+                        >
                             Create session
                         </Button>
                     </div>
