@@ -336,6 +336,31 @@ export class PodManager {
         return true;
     }
 
+    async updateLocalTracks(podId: string, userId: string, audioTrackId: string | null, videoTrackId: string | null): Promise<boolean> {
+        const memberData = await redisClient.hget(`pod:${podId}:members`, userId);
+        if (memberData) {
+            const updatedData = JSON.parse(memberData);
+            updatedData.audioTrackId = audioTrackId;
+            updatedData.videoTrackId = videoTrackId;
+            await redisClient.hset(`pod:${podId}:members`, userId, JSON.stringify(updatedData));
+            await this.redisPub.publish('pod-updates', JSON.stringify({ type: 'local-tracks-updated', podId, userId, audioTrackId, videoTrackId }));
+            return true;
+        }
+        return false;
+    }
+
+    async toggleScreenSharing(podId: string, userId: string, isScreenSharing: boolean): Promise<boolean> {
+        const pod = await Pod.findOne({ id: podId });
+        if (pod) {
+            pod.isScreenSharing = isScreenSharing;
+            pod.screenSharingUserId = isScreenSharing ? userId : null;
+            await pod.save();
+            await this.redisPub.publish('pod-updates', JSON.stringify({ type: 'screen-sharing-toggled', podId, userId, isScreenSharing }));
+            return true;
+        }
+        return false;
+    }
+
     async isUserAuthorized(podId: string, userId: string): Promise<boolean> {
         // First, check if the user is a member of the pod using Redis
         const isMember = await redisClient.hexists(`pod:${podId}:members`, userId);
