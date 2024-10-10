@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback } from 'react';
-import { getSocket } from '../lib/connections/socket';
-import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { useSocket } from '../lib/connections/socket';
+import { useAppDispatch } from '../store/hooks';
 import {
     setPodId,
     addParticipant,
@@ -28,10 +28,9 @@ import {
 
 export const useSocketEmitters = () => {
     const dispatch = useAppDispatch();
-    const isSocketConnected = useAppSelector(state => state.socket.isConnected);
+    const [socket, isSocketConnected] = useSocket();
 
     const emitWithSocket = useCallback((eventName: string, ...args: any[]) => {
-        const socket = getSocket();
         if (socket && isSocketConnected) {
             return new Promise((resolve, reject) => {
                 socket.emit(eventName, ...args, (response: any) => {
@@ -48,7 +47,7 @@ export const useSocketEmitters = () => {
             dispatch(setError({ type: 'connection', message: error.message }));
             return Promise.reject(error);
         }
-    }, [isSocketConnected, dispatch]);
+    }, [socket, isSocketConnected, dispatch]);
 
     const createPod = useCallback((ipfsContentHash: string) => {
         return emitWithSocket('create-pod', ipfsContentHash)
@@ -64,22 +63,22 @@ export const useSocketEmitters = () => {
             .then((response: any) => {
                 dispatch(setPodId(podId));
                 if (response.status === 'joined') {
-                    dispatch(addParticipant({ userId: getSocket()?.id || 'unknown', socketId: getSocket()?.id || 'unknown' }));
+                    dispatch(addParticipant({ userId: socket?.id || 'unknown', socketId: socket?.id || 'unknown' }));
                     return Promise.resolve();
                 } else {
-                    dispatch(addJoinRequest({ userId: getSocket()?.id || 'unknown', podId }));
+                    dispatch(addJoinRequest({ userId: socket?.id || 'unknown', podId }));
                     return Promise.reject(new Error('Join request sent'));
                 }
             });
-    }, [dispatch, emitWithSocket]);
+    }, [dispatch, emitWithSocket, socket]);
 
     const leavePod = useCallback((podId: string) => {
         return emitWithSocket('leave-pod', podId)
             .then(() => {
                 dispatch(setPodId(null));
-                dispatch(removeParticipant(getSocket()?.id || 'unknown'));
+                dispatch(removeParticipant(socket?.id || 'unknown'));
             });
-    }, [dispatch, emitWithSocket]);
+    }, [dispatch, emitWithSocket, socket]);
 
     const getPodInfo = useCallback((podId: string) => {
         return emitWithSocket('get-pod-info', podId)
@@ -131,9 +130,9 @@ export const useSocketEmitters = () => {
     const requestCoHost = useCallback((podId: string) => {
         return emitWithSocket('request-co-host', podId)
             .then(() => {
-                dispatch(addCoHostRequest({ userId: getSocket()?.id || 'unknown', podId }));
+                dispatch(addCoHostRequest({ userId: socket?.id || 'unknown', podId }));
             });
-    }, [dispatch, emitWithSocket]);
+    }, [dispatch, emitWithSocket, socket]);
 
     const approveCoHost = useCallback((podId: string, coHostUserId: string) => {
         return emitWithSocket('approve-co-host', podId, coHostUserId)
@@ -176,9 +175,9 @@ export const useSocketEmitters = () => {
     const sendMessage = useCallback((podId: string, message: string) => {
         return emitWithSocket('send-message', { podId, message })
             .then(() => {
-                dispatch(addMessage({ userId: getSocket()?.id || 'unknown', message }));
+                dispatch(addMessage({ userId: socket?.id || 'unknown', message }));
             });
-    }, [dispatch, emitWithSocket]);
+    }, [dispatch, emitWithSocket, socket]);
 
     const toggleLocalAudioEmit = useCallback((podId: string, isAudioEnabled: boolean) => {
         return emitWithSocket('toggle-audio', { podId, isAudioEnabled })
@@ -231,9 +230,9 @@ export const useSocketEmitters = () => {
     const toggleScreenSharing = useCallback((podId: string, isScreenSharing: boolean) => {
         return emitWithSocket('toggle-screen-sharing', { podId, isScreenSharing })
             .then(() => {
-                dispatch(setScreenSharing({ isScreenSharing, userId: getSocket()?.id || null }));
+                dispatch(setScreenSharing({ isScreenSharing, userId: socket?.id || null }));
             });
-    }, [dispatch, emitWithSocket]);
+    }, [dispatch, emitWithSocket, socket]);
 
     return {
         createPod,
