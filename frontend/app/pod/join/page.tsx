@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/router";
 import UserInputForm from "@/components/join/user-input-form";
 import WaitingScreen from "@/components/join/waiting-screen";
 import Logo from "@/components/ui/logo";
@@ -8,9 +9,16 @@ import { Mic, MicOff, Video, VideoOff } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { setAudioEnabled, setVideoEnabled } from "@/store/slices/mediaSlice";
 import { useMediaPermissions } from "@/hooks/useMediaPermissions";
+import { useSocketEmitters } from "@/hooks/useSocketEmitters";
+import { useSocketListeners } from "@/hooks/useSocketListeners";
+import { useSocket, useSocketInit } from "@/lib/connections/socket";
+import { useWebRTC } from "@/lib/connections/webrtc";
+import { setPodId, setLocalTracks, updateParticipantTrack, addParticipant, removeParticipant } from "@/store/slices/podSlice";
 
 const JoinSession: React.FC = () => {
-    const [name, setName] = useState<string>("folajindayo.base.eth");
+    const router = useRouter();
+    const { code } = router.query;
+    const [name, setName] = useState<string>("");
     const [isBasenameConfirmed, setIsBasenameConfirmed] = useState<boolean>(false);
     const [isWaiting, setIsWaiting] = useState<boolean>(false);
     const [stream, setStream] = useState<MediaStream | null>(null);
@@ -18,50 +26,140 @@ const JoinSession: React.FC = () => {
 
     const dispatch = useAppDispatch();
     const { isAudioEnabled, isVideoEnabled } = useAppSelector((state) => state.media);
+    const { isLoggedIn, user, signature } = useAppSelector((state) => state.user);
+    const { joinPod, updateLocalTracks, leavePod } = useSocketEmitters();
+    const socketListeners = useSocketListeners();
+
+    const [socket, isSocketConnected] = useSocket();
+    const initSocket = useSocketInit();
+    const { initializeLocalStream, createPeerConnection, addTracks, startCall, handleSignal, toggleAudioTrack, toggleVideoTrack } = useWebRTC();
 
     useMediaPermissions();
 
     useEffect(() => {
-        if (isAudioEnabled && isVideoEnabled) {
-            navigator.mediaDevices
-                .getUserMedia({ audio: true, video: true })
-                .then((mediaStream) => {
+        if (!isLoggedIn) {
+            router.push("/");
+        } else if (user && signature && code) {
+            initSocket(signature);
+        }
+
+        return () => {
+            if (code) {
+                leavePod(code as string);
+            }
+        };
+    }, [isLoggedIn, router, user, signature, initSocket, leavePod, code]);
+
+    useEffect(() => {
+        if (socket && isSocketConnected) {
+            socket.on("signal", ({ from, signal }) => {
+                handleSignal(from, signal, (event: RTCTrackEvent) => {
+                    console.log("Received track", event.track.kind, "from", from);
+                    dispatch(
+                        updateParticipantTrack({
+                            userId: from,
+                            kind: event.track.kind as "audio" | "video",
+                            trackId: event.track.id,
+                        })
+                    );
+                });
+            });
+
+            socket.on("user-joined", ({ userId, socketId }) => {
+                dispatch(addParticipant({ userId, socketId }));
+                startCall(userId, (event: RTCTrackEvent) => {
+                    dispatch(
+                        updateParticipantTrack({
+                            userId,
+                            kind: event.track.kind as "audio" | "video",
+                            trackId: event.track.id,
+                        })
+                    );
+                });
+            });
+
+            socket.on("user-left", ({ userId }) => {
+                dispatch(removeParticipant(userId));
+            });
+        }
+    }, [socket, isSocketConnected, dispatch, handleSignal, startCall]);
+
+    useEffect(() => {
+        const initStream = async () => {
+            if (isAudioEnabled && isVideoEnabled) {
+                try {
+                    const mediaStream = await initializeLocalStream(isAudioEnabled, isVideoEnabled);
                     setStream(mediaStream);
                     if (videoRef.current) {
                         videoRef.current.srcObject = mediaStream;
                     }
-                })
-                .catch((error) => {
+                } catch (error) {
                     console.error("Error accessing media devices:", error);
-                });
-        }
+                }
+            }
+        };
+
+        initStream();
 
         return () => {
             if (stream) {
                 stream.getTracks().forEach((track) => track.stop());
             }
         };
-    }, [isAudioEnabled, isVideoEnabled]);
+    }, [isAudioEnabled, isVideoEnabled, initializeLocalStream]);
 
-    const handleJoinSession = () => {
-        setIsWaiting(true);
-    };
+    const handleJoinSession = useCallback(async () => {
+        if (code && stream) {
+            try {
+                await joinPod(code as string);
+                dispatch(setPodId(code as string));
 
-    const toggleAudio = () => {
+                const audioTrack = stream.getAudioTracks()[0] || null;
+                const videoTrack = stream.getVideoTracks()[0] || null;
+
+                dispatch(
+                    setLocalTracks({
+                        audioTrackId: audioTrack ? audioTrack.id : null,
+                        videoTrackId: videoTrack ? videoTrack.id : null,
+                    })
+                );
+                updateLocalTracks(code as string, audioTrack ? audioTrack.id : null, videoTrack ? videoTrack.id : null);
+
+                const peerConnection = createPeerConnection(code as string, (event: RTCTrackEvent) => {
+                    dispatch(
+                        updateParticipantTrack({
+                            userId: code as string,
+                            kind: event.track.kind as "audio" | "video",
+                            trackId: event.track.id,
+                        })
+                    );
+                });
+                await addTracks(peerConnection, stream);
+
+                setIsWaiting(true);
+            } catch (error) {
+                console.error("Failed to join session:", error);
+            }
+        }
+    }, [code, stream, joinPod, dispatch, updateLocalTracks, createPeerConnection, addTracks]);
+
+    const toggleAudio = useCallback(() => {
         if (stream) {
             const audioTrack = stream.getAudioTracks()[0];
             audioTrack.enabled = !audioTrack.enabled;
             dispatch(setAudioEnabled(audioTrack.enabled));
+            toggleAudioTrack(audioTrack.enabled);
         }
-    };
+    }, [stream, dispatch, toggleAudioTrack]);
 
-    const toggleVideo = () => {
+    const toggleVideo = useCallback(() => {
         if (stream) {
             const videoTrack = stream.getVideoTracks()[0];
             videoTrack.enabled = !videoTrack.enabled;
             dispatch(setVideoEnabled(videoTrack.enabled));
+            toggleVideoTrack(videoTrack.enabled);
         }
-    };
+    }, [stream, dispatch, toggleVideoTrack]);
 
     return (
         <div className="min-h-screen bg-[#121212] text-white flex flex-col items-center justify-center p-4">
