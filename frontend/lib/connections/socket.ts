@@ -8,21 +8,30 @@ import { setSocketConnected } from '@/store/slices/socketSlice';
 let socket: Socket | null = null;
 
 export const initializeSocketConnection = (token: string) => {
-    if (typeof window === 'undefined') return null; // Check if we're on the client-side
+    console.log('Initializing socket connection');
+    console.log({ signature: token });
+
+    if (typeof window === 'undefined') return null;
 
     if (socket) {
         socket.disconnect();
     }
 
     socket = io(SERVER_SOCKET_URL, {
-        auth: { token },
-        transports: ['websocket'],
+        auth: { signature: token },
+        transports: ['websocket', 'polling'],
         secure: SERVER_SOCKET_URL.startsWith('https'),
+        withCredentials: true,
     });
 
     socket.on('connect', () => {
         console.log('Connected to socket server');
         store.dispatch(setSocketConnected(true));
+    });
+
+    socket.on('connect_error', (error) => {
+        console.error('Connection error:', error);
+        store.dispatch(setSocketConnected(false));
     });
 
     socket.on('disconnect', () => {
@@ -34,7 +43,7 @@ export const initializeSocketConnection = (token: string) => {
 };
 
 export const getSocket = () => {
-    if (typeof window === 'undefined') return null; // Check if we're on the client-side
+    if (typeof window === 'undefined') return null;
     return socket;
 };
 
