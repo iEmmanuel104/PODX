@@ -40,7 +40,7 @@ export function AdminAuthenticatedController<T = AdminAuthenticatedRequest>(
 }
 
 export async function authenticateUser(signature: string): Promise<IUser> {
-    const message = SIGNATURE_MESSAGE || 'Sign this message to authenticate';
+    const message = SIGNATURE_MESSAGE;
     const recoveredAddress = ethers.verifyMessage(message, signature);
 
     const user = await UserService.viewSingleUserByWalletAddress(recoveredAddress);
