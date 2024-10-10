@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useCallback } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Settings } from "lucide-react";
@@ -9,149 +9,38 @@ import { Input } from "@/components/ui/input";
 import CreateSessionModal from "@/components/pod/createSessionModal";
 import CreatedSessionModal from "@/components/pod/createdSessionModal";
 import Logo from "@/components/ui/logo";
-import { useAppSelector, useAppDispatch } from "@/store/hooks";
-import { useMediaPermissions } from "@/hooks/useMediaPermissions";
-import { useSocketEmitters } from "@/hooks/useSocketEmitters";
-import { useSocketListeners } from "@/hooks/useSocketListeners";
-import { useSocket, useSocketInit } from "@/lib/connections/socket";
-import { useWebRTC } from "@/lib/connections/webrtc";
-import {
-    setPodId,
-    setLocalTracks,
-    updateParticipantTrack,
-    addParticipant,
-    removeParticipant,
-    toggleLocalAudio,
-    toggleLocalVideo,
-} from "@/store/slices/podSlice";
+import { useAppSelector } from "@/store/hooks";
+import { nanoid } from "nanoid";
 
 export default function PodPage() {
     const router = useRouter();
-    const dispatch = useAppDispatch();
     const [meetingCode, setMeetingCode] = useState("");
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isCreatedModalOpen, setIsCreatedModalOpen] = useState(false);
     const [inviteLink, setInviteLink] = useState("");
     const [sessionCode, setSessionCode] = useState("");
 
-    const { isLoggedIn, user, signature } = useAppSelector((state) => state.user);
-    const { podId, localUser } = useAppSelector((state) => state.pod);
-    const { createPod, joinPod, updateLocalTracks, leavePod } = useSocketEmitters();
-    const socketListeners = useSocketListeners();
-
-    const [socket, isSocketConnected] = useSocket();
-    const initSocket = useSocketInit();
-    const { initializeLocalStream, createPeerConnection, addTracks, startCall, handleSignal, toggleAudioTrack, toggleVideoTrack } = useWebRTC();
-
-    const localVideoRef = useRef<HTMLVideoElement>(null);
-
-    useMediaPermissions();
-
-    useEffect(() => {
-        if (!isLoggedIn) {
-            router.push("/");
-        } else if (user && signature) {
-            initSocket(signature);
-        }
-
-        return () => {
-            if (podId) {
-                leavePod(podId);
-            }
-        };
-    }, [isLoggedIn, router, user, signature, initSocket, leavePod, podId]);
-
-    useEffect(() => {
-        if (socket && isSocketConnected) {
-            socket.on("signal", ({ from, signal }) => {
-                handleSignal(from, signal, (event: RTCTrackEvent) => {
-                    console.log("Received track", event.track.kind, "from", from);
-                    dispatch(
-                        updateParticipantTrack({
-                            userId: from,
-                            kind: event.track.kind as "audio" | "video",
-                            trackId: event.track.id,
-                        })
-                    );
-                });
-            });
-
-            socket.on("user-joined", ({ userId, socketId }) => {
-                dispatch(addParticipant({ userId, socketId }));
-                startCall(userId, (event: RTCTrackEvent) => {
-                    dispatch(
-                        updateParticipantTrack({
-                            userId,
-                            kind: event.track.kind as "audio" | "video",
-                            trackId: event.track.id,
-                        })
-                    );
-                });
-            });
-
-            socket.on("user-left", ({ userId }) => {
-                dispatch(removeParticipant(userId));
-            });
-        }
-    }, [socket, isSocketConnected, dispatch, handleSignal, startCall]);
+    const { isLoggedIn, user } = useAppSelector((state) => state.user);
 
     const openCreateModal = () => setIsCreateModalOpen(true);
     const closeCreateModal = () => setIsCreateModalOpen(false);
     const openCreatedModal = () => setIsCreatedModalOpen(true);
     const closeCreatedModal = () => setIsCreatedModalOpen(false);
 
-    const handleCreateSession = useCallback(
-        async (title: string, type: string) => {
-            try {
-                const newPodId = await createPod(title);
-                dispatch(setPodId(newPodId));
-                setInviteLink(`https://podx.studio/studio/${newPodId}`);
-                setSessionCode(newPodId);
-                closeCreateModal();
-                openCreatedModal();
-
-                const stream = await initializeLocalStream(true, type === "Video Session");
-                if (localVideoRef.current) {
-                    localVideoRef.current.srcObject = stream;
-                }
-                const audioTrack = stream.getAudioTracks()[0] || null;
-                const videoTrack = stream.getVideoTracks()[0] || null;
-
-                dispatch(
-                    setLocalTracks({
-                        audioTrackId: audioTrack ? audioTrack.id : null,
-                        videoTrackId: videoTrack ? videoTrack.id : null,
-                    })
-                );
-                updateLocalTracks(newPodId, audioTrack ? audioTrack.id : null, videoTrack ? videoTrack.id : null);
-
-                const peerConnection = createPeerConnection(newPodId, (event: RTCTrackEvent) => {
-                    dispatch(
-                        updateParticipantTrack({
-                            userId: newPodId,
-                            kind: event.track.kind as "audio" | "video",
-                            trackId: event.track.id,
-                        })
-                    );
-                });
-                await addTracks(peerConnection, stream);
-            } catch (error) {
-                console.error("Failed to create session:", error);
-            }
-        },
-        [createPod, dispatch, updateLocalTracks, initializeLocalStream, createPeerConnection, addTracks]
-    );
+    const handleCreateSession = useCallback(async (title: string, type: string) => {
+        const newSessionCode = nanoid();
+        setInviteLink(`https://podx.studio/studio/${newSessionCode}`);
+        setSessionCode(newSessionCode);
+        closeCreateModal();
+        openCreatedModal();
+    }, []);
 
     const handleJoinSession = useCallback(async () => {
-        try {
-            await joinPod(meetingCode);
-            router.push(`/pod/join?code=${meetingCode}`);
-        } catch (error) {
-            console.error("Failed to join session:", error);
-        }
-    }, [joinPod, meetingCode, router]);
+        router.push(`/pod/join?code=${meetingCode}`);
+    }, [meetingCode, router]);
 
     if (!isLoggedIn || !user) {
+        router.push("/login"); // Redirect to login page if not logged in
         return null;
     }
 
@@ -209,7 +98,7 @@ export default function PodPage() {
                 <Settings className="w-4 h-4" /> Settings
             </button>
 
-            <video ref={localVideoRef} autoPlay muted className="hidden" />
+            {/* <video ref={localVideoRef} autoPlay muted className="hidden" /> */}
             <CreateSessionModal isOpen={isCreateModalOpen} onClose={closeCreateModal} onCreateSession={handleCreateSession} />
             <CreatedSessionModal
                 isOpen={isCreatedModalOpen}
