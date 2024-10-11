@@ -3,6 +3,7 @@ import UserService from '../services/user.service';
 import { BadRequestError } from '../utils/customErrors';
 import { AuthenticatedRequest } from '../middlewares/authMiddleware';
 import CloudinaryClientConfig from '../clients/cloudinary.config';
+import StreamIOConfig from '../clients/streamio.config';
 
 export default class UserController {
 
@@ -99,6 +100,8 @@ export default class UserController {
             ? await UserService.updateUser(req.user.id, updateData)
             : req.user;
 
+        await StreamIOConfig.updateUser(updatedUser);
+
         res.status(200).json({
             status: 'success',
             message: 'User updated successfully',
@@ -121,12 +124,23 @@ export default class UserController {
             user = await UserService.addUser({ walletAddress, username });
         }
 
-        console.log({ user });
+        const streamToken = await StreamIOConfig.generateToken(user.id);
+
+        // Convert Mongoose document to a plain JavaScript object
+        const userObject = user.toObject();
+
+        // Remove any fields you don't want to send to the client
+        delete userObject.__v;
+
+        console.log({ user: userObject, streamToken });
 
         res.status(200).json({
             status: 'success',
-            message: user.username.startsWith('guest-') ? 'New user created' : 'Existing user found',
-            data: user,
+            message: userObject.username.startsWith('guest-') ? 'New user created' : 'Existing user found',
+            data: {
+                ...userObject,
+                streamToken,
+            },
         });
     }
 }
