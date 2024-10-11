@@ -40,7 +40,7 @@ export default function PodPage() {
     }, [meetingCode, router]);
 
     if (!isLoggedIn || !user) {
-        router.push("/login"); // Redirect to login page if not logged in
+        router.push("/"); // Redirect to login page if not logged in
         return null;
     }
 
