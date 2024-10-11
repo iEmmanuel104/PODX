@@ -1,14 +1,25 @@
 "use client";
 
-import React, { useState, useCallback, useEffect, useMemo } from "react";
+import React, { useState, useCallback, useEffect, useMemo, useContext } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import UserInputForm from "@/components/join/user-input-form";
 import WaitingScreen from "@/components/join/waiting-screen";
 import Logo from "@/components/ui/logo";
 import { useAppSelector } from "@/store/hooks";
-import { useStreamVideoClient, useCall, useCallStateHooks, CallingState, CallParticipantResponse } from "@stream-io/video-react-sdk";
+import {
+    useStreamVideoClient,
+    useCall,
+    useCallStateHooks,
+    CallingState,
+    CallParticipantResponse,
+    ErrorFromResponse,
+    GetCallResponse,
+} from "@stream-io/video-react-sdk";
 import MeetingPreview from "@/components/meeting/meetingPreview";
 import CallParticipants from "@/components/meeting/callParticipants";
+import { AppContext } from "@/providers/AppProvider";
+import { useChatContext } from "stream-chat-react";
+import { GUEST_ID, tokenProvider } from "@/providers/meetProvider";
 
 const JoinSession: React.FC = () => {
     const router = useRouter();
@@ -20,8 +31,12 @@ const JoinSession: React.FC = () => {
     const [isGuest, setIsGuest] = useState<boolean>(false);
     const [joining, setJoining] = useState<boolean>(false);
     const [participants, setParticipants] = useState<CallParticipantResponse[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [errorFetchingMeeting, setErrorFetchingMeeting] = useState<boolean>(false);
 
     const { isLoggedIn, user } = useAppSelector((state) => state.user);
+    const { newMeeting, setNewMeeting } = useContext(AppContext);
+    const { client: chatClient } = useChatContext();
 
     const client = useStreamVideoClient();
     const call = useCall();
@@ -35,35 +50,95 @@ const JoinSession: React.FC = () => {
     }, [isLoggedIn, user]);
 
     useEffect(() => {
+        const leavePreviousCall = async () => {
+            if (callingState === CallingState.JOINED) {
+                await call?.leave();
+            }
+        };
+
         const getCurrentCall = async () => {
             if (call) {
                 try {
                     const callData = await call.get();
                     setParticipants(callData?.call?.session?.participants || []);
                 } catch (e) {
-                    console.error("Error fetching call data:", e);
+                    const err = e as ErrorFromResponse<GetCallResponse>;
+                    console.error(err.message);
+                    setErrorFetchingMeeting(true);
                 }
             }
+            setLoading(false);
         };
 
-        if (code && !joining) {
-            getCurrentCall();
+        const createCall = async () => {
+            if (call) {
+                await call.create({
+                    data: {
+                        members: [
+                            {
+                                user_id: user?.id!,
+                                role: "host",
+                            },
+                        ],
+                    },
+                });
+            }
+            setLoading(false);
+        };
+
+        if (!joining && code) {
+            leavePreviousCall();
+            if (!user) return;
+            if (newMeeting) {
+                createCall();
+            } else {
+                getCurrentCall();
+            }
         }
-    }, [call, code, joining]);
+    }, [call, callingState, user, joining, newMeeting, code]);
+
+    useEffect(() => {
+        setNewMeeting(newMeeting);
+        return () => {
+            setNewMeeting(false);
+        };
+    }, [newMeeting, setNewMeeting]);
+
+    const updateGuestName = async () => {
+        try {
+            // await fetch("/api/user", {
+            //     method: "POST",
+            //     headers: {
+            //         "Content-Type": "application/json",
+            //     },
+            //     body: JSON.stringify({
+            //         user: { id: user?.id, name: name },
+            //     }),
+            // });
+            await chatClient.disconnectUser();
+            await chatClient.connectUser(
+                {
+                    id: GUEST_ID,
+                    type: "guest",
+                    name: name,
+                },
+                tokenProvider
+            );
+        } catch (error) {
+            console.error(error);
+        }
+    };
 
     const handleJoinSession = useCallback(async () => {
         if (code) {
             setJoining(true);
             if (isGuest) {
-                // Handle guest join request
-                console.log("Guest joining session:", name, code);
-                // Implement your guest join request logic here
-            } else {
-                if (callingState !== CallingState.JOINED) {
-                    await call?.join();
-                }
-                router.push(`/pod/${code}`);
+                await updateGuestName();
             }
+            if (callingState !== CallingState.JOINED) {
+                await call?.join();
+            }
+            router.push(`/pod/${code}`);
         }
     }, [code, isGuest, name, call, callingState, router]);
 
@@ -80,10 +155,26 @@ const JoinSession: React.FC = () => {
         }
     }, [joining, participants]);
 
+    if (errorFetchingMeeting) {
+        router.push(`/pod?code=${code}&invalid=true`);
+        return null;
+    }
+
     const renderContent = () => {
-        if (isGuest) {
-            return <UserInputForm name={name} setName={setName} isBasenameConfirmed={isBasenameConfirmed} handleJoinSession={handleJoinSession} />;
-        } else if (!isWaiting) {
+        if (loading) {
+            return <WaitingScreen />;
+        }
+        if (isGuest && !isBasenameConfirmed) {
+            return (
+                <UserInputForm
+                    name={name}
+                    setName={setName}
+                    isBasenameConfirmed={isBasenameConfirmed}
+                    setIsBasenameConfirmed={setIsBasenameConfirmed}
+                    handleJoinSession={handleJoinSession}
+                />
+            );
+        } else {
             return (
                 <div className="flex flex-col md:flex-row gap-6 md:gap-10 w-full">
                     <div className="w-full md:w-1/2">
@@ -95,15 +186,13 @@ const JoinSession: React.FC = () => {
                         <button
                             onClick={handleJoinSession}
                             className="mt-4 w-full bg-[#6032F6] text-white px-8 py-2 rounded-md hover:bg-[#4C28C4] transition-all duration-300 ease-in-out text-sm font-medium"
-                            disabled={joining}
+                            disabled={joining || (isGuest && !name)}
                         >
                             {joining ? "Joining..." : "Join Now"}
                         </button>
                     </div>
                 </div>
             );
-        } else {
-            return <WaitingScreen />;
         }
     };
 
