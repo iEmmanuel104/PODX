@@ -4,10 +4,11 @@ interface UserInputFormProps {
     name: string;
     setName: React.Dispatch<React.SetStateAction<string>>;
     isBasenameConfirmed: boolean;
+    setIsBasenameConfirmed: (confirmed: boolean) => void;
     handleJoinSession: () => void;
 }
 
-const UserInputForm: React.FC<UserInputFormProps> = ({ name, setName, isBasenameConfirmed, handleJoinSession }) => (
+const UserInputForm: React.FC<UserInputFormProps> = ({ name, setName, isBasenameConfirmed, setIsBasenameConfirmed, handleJoinSession }) => (
     <div className="w-full md:w-1/2 flex flex-col justify-center">
         <div className="mb-2">
             <label htmlFor="name" className="block text-[#A3A3A3] mb-2">
@@ -42,6 +43,6 @@ const UserInputForm: React.FC<UserInputFormProps> = ({ name, setName, isBasename
             Join session
         </button>
     </div>
-)
+);
 
-export default UserInputForm
+export default UserInputForm;
