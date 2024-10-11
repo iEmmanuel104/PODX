@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Wallet } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { usePrivy } from "@privy-io/react-auth";
@@ -15,11 +15,18 @@ import { SIGNATURE_MESSAGE } from "@/constants";
 export default function Home() {
     const [showUsernameModal, setShowUsernameModal] = useState(false);
     const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
-    const { login, user } = usePrivy();
+    const { login, user, authenticated, ready } = usePrivy();
     const router = useRouter();
     const dispatch = useAppDispatch();
     const [findOrCreateUser] = useFindOrCreateUserMutation();
     const { signMessage, initSigner } = useAuthSigner();
+
+    // New useEffect to check for authenticated user and redirect
+    useEffect(() => {
+        if (ready && authenticated && user) {
+            handleUserAuthentication();
+        }
+    }, [ready, authenticated, user]);
 
     const handleUserAuthentication = async () => {
         if (!user) return;
