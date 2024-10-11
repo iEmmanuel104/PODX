@@ -40,6 +40,10 @@ export const EMAIL_HOST = process.env.EMAIL_HOST as string,
 
 export const WEBSITE_URL = NODE_ENV === 'production' ? process.env.WEBSITE_URL as string : 'http://localhost:5173';
 
+export const STREAM_API_KEY = process.env.STREAM_API_KEY as string;
+
+export const STREAM_API_SECRET = process.env.STREAM_API_SECRET as string;
+
 export const DOCUMENTATION_URL = process.env.DOCUMENTATION_URL as string;
 
 export const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET as string;
