@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Wallet } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { usePrivy, User } from "@privy-io/react-auth";
+import { usePrivy } from "@privy-io/react-auth";
 import Logo from "@/components/ui/logo";
 import { useAppDispatch } from "@/store/hooks";
 import { setUser, setSignature, updateUser } from "@/store/slices/userSlice";
@@ -11,34 +11,26 @@ import { useFindOrCreateUserMutation, UserInfo } from "@/store/api/userApi";
 import UserInfoModal from "@/components/user/userInfoModal";
 import { useAuthSigner } from "@/hooks/useAuthSigner";
 import { SIGNATURE_MESSAGE } from "@/constants";
-// import { initializeSocketConnection } from "@/lib/connections/socket";
-// import { useSocketListeners } from "@/hooks/useSocketListeners";
 
 export default function Home() {
-    const [selectedMethod, setSelectedMethod] = useState<"email" | "phone" | "wallet" | null>(null);
-    const { ready, authenticated, user, login, logout } = usePrivy();
-    console.log({ ready, authenticated, user });
+    const [showUsernameModal, setShowUsernameModal] = useState(false);
+    const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+    const { login, user } = usePrivy();
     const router = useRouter();
     const dispatch = useAppDispatch();
     const [findOrCreateUser] = useFindOrCreateUserMutation();
-    const [showUsernameModal, setShowUsernameModal] = useState(false);
-    const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
-    const { signMessage } = useAuthSigner();
+    const { signMessage, initSigner } = useAuthSigner();
 
-    // useSocketListeners();
+    const handleUserAuthentication = async () => {
+        if (!user) return;
 
-    useEffect(() => {
-        if (authenticated && user) {
-            handleUserAuthentication(user);
-        }
-    }, [authenticated, user]);
-
-    const handleUserAuthentication = async (user: User) => {
         const smartWallet = user.linkedAccounts.find((account) => account.type === "smart_wallet");
         const walletAddress = user.wallet?.address || smartWallet?.address;
 
         if (walletAddress) {
+            console.log({walletAddress});
             try {
+                await initSigner();
                 const result = await findOrCreateUser({ walletAddress }).unwrap();
                 const userData = result.data as UserInfo;
 
@@ -50,23 +42,26 @@ export default function Home() {
 
                 dispatch(setSignature(signature));
 
-                // initializeSocketConnection(signature);
-
                 if (userData.username.startsWith("guest-")) {
                     setShowUsernameModal(true);
                 } else {
                     router.push("/pod");
                 }
             } catch (error) {
-                console.error("Error finding or creating user:", error);
+                console.error("Error in user authentication:", error);
                 // Handle error (e.g., show error message to user)
             }
         }
     };
 
     const handleConnect = async () => {
-        setSelectedMethod("wallet");
-        await login();
+        try {
+            await login();
+            await handleUserAuthentication();
+        } catch (error) {
+            console.error("Error connecting wallet:", error);
+            // Handle error (e.g., show error message to user)
+        }
     };
 
     const handleUsernameUpdate = (newUsername: string) => {
@@ -84,7 +79,7 @@ export default function Home() {
 
                 <div className="w-full space-y-4">
                     <button
-                        className={"w-full py-3 px-4 rounded-md flex items-center justify-center transition-colors bg-[#6032f6] hover:bg-[#3C3C3C]"}
+                        className="w-full py-3 px-4 rounded-md flex items-center justify-center transition-colors bg-[#6032f6] hover:bg-[#3C3C3C]"
                         onClick={handleConnect}
                     >
                         <Wallet className="w-5 h-5 mr-2" />
