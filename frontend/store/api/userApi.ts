@@ -5,6 +5,8 @@ export interface UserInfo {
     id: string;
     walletAddress: string;
     username: string;
+    streamToken: string;
+    displayImage?: string;
     smartWalletAddress?: string;
     smartWalletType?: string;
 }
