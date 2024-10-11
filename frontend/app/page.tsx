@@ -52,7 +52,7 @@ export default function Home() {
                 if (userData.username.startsWith("guest-")) {
                     setShowUsernameModal(true);
                 } else {
-                    router.push("/pod");
+                    router.push("/landing");
                 }
             } catch (error) {
                 console.error("Error in user authentication:", error);
@@ -74,7 +74,7 @@ export default function Home() {
     const handleUsernameUpdate = (newUsername: string) => {
         dispatch(updateUser({ username: newUsername }));
         setShowUsernameModal(false);
-        router.push("/pod");
+        router.push("/landing");
     };
 
     return (
