@@ -47,20 +47,14 @@ export default class StreamIOConfig {
 
     static async generateToken(userId: string): Promise<string> {
         const validity = 24 * 60 * 60;
-        // check if client has a token in cache
-        const token = await redisClient.get(`stream_token_${userId}`);
 
-        if (token) {
-            return token;
-        } else {
-            this.initialize();
-            // // validity is optional, in this case we set it to 1 day
-            // return this.client.generateUserToken({ user_id: userId, validity_in_seconds: validity });
-            const newToken = this.client.generateUserToken({ user_id: userId, validity_in_seconds: validity });
-            await redisClient.set(`stream_token_${userId}`, newToken);
-            
-            return newToken;
-        }
+        this.initialize();
+        // // validity is optional, in this case we set it to 1 day
+        // return this.client.generateUserToken({ user_id: userId, validity_in_seconds: validity });
+        const newToken = this.client.generateUserToken({ user_id: userId, validity_in_seconds: validity });
+        await redisClient.set(`stream_token_${userId}`, newToken);
+        
+        return newToken;
     }
 
     static async updateUser(user: IUser): Promise<{ message: string; error?: Error }> {
