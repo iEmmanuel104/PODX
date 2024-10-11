@@ -2,10 +2,11 @@ import React, { useEffect, useState } from "react";
 import { nanoid } from "nanoid";
 import { Call, StreamCall, StreamVideo, StreamVideoClient, User } from "@stream-io/video-react-sdk";
 import { User as ChatUser, StreamChat } from "stream-chat";
-import { Chat, useLastReadData } from "stream-chat-react";
+import { Chat } from "stream-chat-react";
 import { useAppSelector } from "@/store/hooks";
 import { STREAM_API_KEY } from "@/constants";
-import { useFindOrCreateUserMutation, UserInfo } from "@/store/api/userApi";
+import { LoadingOverlay } from "@/components/ui/loading";
+import { useStreamTokenProvider } from "@/hooks/useStreamTokenProvider";
 
 export const CALL_TYPE = "default";
 export const API_KEY = STREAM_API_KEY as string;
@@ -14,51 +15,54 @@ export const GUEST_ID = `guest_${nanoid(15)}`;
 type MeetProviderProps = {
     meetingId: string;
     children: React.ReactNode;
-    language?: string,
+    language?: string;
 };
 
 const MeetProvider: React.FC<MeetProviderProps> = ({ meetingId, children, language = "en" }) => {
     const { user: appUser, isLoggedIn } = useAppSelector((state) => state.user);
-    const [findOrCreateUser] = useFindOrCreateUserMutation();
     const [loading, setLoading] = useState(true);
     const [chatClient, setChatClient] = useState<StreamChat>();
     const [videoClient, setVideoClient] = useState<StreamVideoClient>();
     const [call, setCall] = useState<Call>();
+    const tokenProvider = useStreamTokenProvider();
 
     useEffect(() => {
         const setUpClients = async () => {
             if (isLoggedIn && appUser) {
+                const customProvider = async () => {
+                    const token = await tokenProvider(appUser.walletAddress);
+                    return token;
+                };
+
                 console.log("signed in");
-                const response = await findOrCreateUser({ walletAddress: appUser.walletAddress });
-                const userData = response.data?.data as UserInfo;
                 const user = {
-                    id: userData.id,
-                    name: userData.username,
-                    image: userData.displayImage,
+                    id: appUser.id,
+                    name: appUser.username,
+                    image: appUser.displayImage,
                     custom: {
-                        walletAddress: userData.walletAddress,
+                        walletAddress: appUser.walletAddress,
                     },
                 };
                 const chatUser = {
-                    id: userData.id,
-                    username: userData.username,
+                    id: appUser.id,
+                    username: appUser.username,
                 };
-                const token = userData.streamToken;
 
                 const _chatClient = StreamChat.getInstance(API_KEY);
-                console.log('chat client found', _chatClient, {token});
-                await _chatClient.connectUser(chatUser, token);
-                setChatClient(_chatClient);
+                console.log("chat client found", _chatClient);
+                await _chatClient.connectUser(chatUser, customProvider);
 
                 const _videoClient = new StreamVideoClient({
                     apiKey: API_KEY,
                     user,
-                    token,
+                    tokenProvider: customProvider,
                 });
-                setVideoClient(_videoClient);
 
                 const _call = _videoClient.call(CALL_TYPE, meetingId);
+
+                setVideoClient(_videoClient);
                 setCall(_call);
+                setChatClient(_chatClient);
 
                 setLoading(false);
             }
@@ -70,9 +74,9 @@ const MeetProvider: React.FC<MeetProviderProps> = ({ meetingId, children, langua
             chatClient?.disconnectUser();
             videoClient?.disconnectUser();
         };
-    }, [appUser, isLoggedIn, meetingId, findOrCreateUser]);
+    }, [appUser, isLoggedIn, meetingId, tokenProvider, chatClient, videoClient]);
 
-    if (loading) return <div>Loading...</div>;
+    if (loading) return <LoadingOverlay />;
 
     return (
         <Chat client={chatClient!}>
