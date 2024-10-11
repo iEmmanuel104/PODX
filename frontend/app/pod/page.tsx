@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import UserInputForm from "@/components/join/user-input-form";
 import WaitingScreen from "@/components/join/waiting-screen";
 import Logo from "@/components/ui/logo";
-import { useAppSelector } from "@/store/hooks";
+import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import {
     useStreamVideoClient,
     useCall,
@@ -19,10 +19,11 @@ import MeetingPreview from "@/components/meeting/meetingPreview";
 import CallParticipants from "@/components/meeting/callParticipants";
 import { AppContext } from "@/providers/AppProvider";
 import { useChatContext } from "stream-chat-react";
-import { GUEST_ID, tokenProvider } from "@/providers/meetProvider";
+import { useStreamTokenProvider } from "@/hooks/useStreamTokenProvider";
 
 const JoinSession: React.FC = () => {
     const router = useRouter();
+    const dispatch = useAppDispatch();
     const searchParams = useSearchParams();
     const code = searchParams.get("code") || "";
     const [name, setName] = useState<string>("");
@@ -42,9 +43,37 @@ const JoinSession: React.FC = () => {
     const call = useCall();
     const { useCallCallingState } = useCallStateHooks();
     const callingState = useCallCallingState();
+    const tokenProvider = useStreamTokenProvider();
+
+useEffect(() => {
+    if (!isLoggedIn && !user) {
+        // If not logged in, save the current code and redirect to login
+        if (code) {
+            localStorage.setItem("pendingSessionCode", code);
+        }
+        router.push("/");
+    } else if (isLoggedIn && user) {
+        // If logged in and there's no current code, check for a pending code
+        if (!code) {
+            const pendingCode = localStorage.getItem("pendingSessionCode");
+            if (pendingCode) {
+                localStorage.removeItem("pendingSessionCode");
+                router.replace(`/pod?code=${pendingCode}`);
+            }
+        }
+    }
+
+    // Cleanup function
+    return () => {
+        localStorage.removeItem("pendingSessionCode");
+    };
+}, [isLoggedIn, user, code, router]);
 
     useEffect(() => {
-        if (!isLoggedIn && !user) {
+        if (isLoggedIn && user) {
+            setName(user.username || "");
+            setIsGuest(false);
+        } else {
             setIsGuest(true);
         }
     }, [isLoggedIn, user]);
@@ -105,34 +134,26 @@ const JoinSession: React.FC = () => {
     }, [newMeeting, setNewMeeting]);
 
     const updateGuestName = async () => {
-        try {
-            // await fetch("/api/user", {
-            //     method: "POST",
-            //     headers: {
-            //         "Content-Type": "application/json",
-            //     },
-            //     body: JSON.stringify({
-            //         user: { id: user?.id, name: name },
-            //     }),
-            // });
-            await chatClient.disconnectUser();
-            await chatClient.connectUser(
-                {
-                    id: GUEST_ID,
-                    type: "guest",
-                    name: name,
-                },
-                tokenProvider
-            );
-        } catch (error) {
-            console.error(error);
+        if (isLoggedIn && user) {
+            try {
+                await chatClient.disconnectUser();
+                await chatClient.connectUser(
+                    {
+                        id: user.id,
+                        name: user.username,
+                    },
+                    async () => await tokenProvider(user.walletAddress)
+                );
+            } catch (error) {
+                console.error(error);
+            }
         }
     };
 
     const handleJoinSession = useCallback(async () => {
         if (code) {
             setJoining(true);
-            if (isGuest) {
+            if (isLoggedIn && user) {
                 await updateGuestName();
             }
             if (callingState !== CallingState.JOINED) {
@@ -140,7 +161,7 @@ const JoinSession: React.FC = () => {
             }
             router.push(`/pod/${code}`);
         }
-    }, [code, isGuest, name, call, callingState, router]);
+    }, [code, isLoggedIn, user, call, callingState, router]);
 
     const participantsUI = useMemo(() => {
         switch (true) {
