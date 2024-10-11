@@ -35,7 +35,7 @@ export default function Home() {
         const walletAddress = user.wallet?.address || smartWallet?.address;
 
         if (walletAddress) {
-            console.log({walletAddress});
+            console.log({ walletAddress });
             try {
                 await initSigner();
                 const result = await findOrCreateUser({ walletAddress }).unwrap();
@@ -52,7 +52,13 @@ export default function Home() {
                 if (userData.username.startsWith("guest-")) {
                     setShowUsernameModal(true);
                 } else {
-                    router.push("/landing");
+                    const pendingSessionCode = localStorage.getItem("pendingSessionCode");
+                    if (pendingSessionCode) {
+                        localStorage.removeItem("pendingSessionCode");
+                        router.push(`/pod?code=${pendingSessionCode}`);
+                    } else {
+                        router.push("/landing");
+                    }
                 }
             } catch (error) {
                 console.error("Error in user authentication:", error);
@@ -74,7 +80,13 @@ export default function Home() {
     const handleUsernameUpdate = (newUsername: string) => {
         dispatch(updateUser({ username: newUsername }));
         setShowUsernameModal(false);
-        router.push("/landing");
+        const pendingSessionCode = localStorage.getItem("pendingSessionCode");
+        if (pendingSessionCode) {
+            localStorage.removeItem("pendingSessionCode");
+            router.push(`/pod?code=${pendingSessionCode}`);
+        } else {
+            router.push("/landing");
+        }
     };
 
     return (
