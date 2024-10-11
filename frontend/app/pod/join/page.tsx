@@ -109,7 +109,7 @@ const JoinSession: React.FC = () => {
     };
 
     return (
-        <MeetProvider meetingId={code}>
+        <MeetProvider meetingId={code} language="en">
             <div className="min-h-screen bg-[#121212] text-white flex flex-col items-center justify-center p-4">
                 <div className="w-full max-w-5xl">
                     <div className="flex justify-center mb-8">
