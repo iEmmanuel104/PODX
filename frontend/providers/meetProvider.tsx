@@ -7,6 +7,7 @@ import { useAppSelector } from "@/store/hooks";
 import { STREAM_API_KEY } from "@/constants";
 import { LoadingOverlay } from "@/components/ui/loading";
 import { useStreamTokenProvider } from "@/hooks/useStreamTokenProvider";
+import { useRouter } from "next/navigation";
 
 export const CALL_TYPE = "default";
 export const API_KEY = STREAM_API_KEY as string;
@@ -25,6 +26,7 @@ const MeetProvider: React.FC<MeetProviderProps> = ({ meetingId, children, langua
     const videoClientRef = useRef<StreamVideoClient>();
     const callRef = useRef<Call>();
     const tokenProvider = useStreamTokenProvider();
+    const router = useRouter();
 
     const connectChatClient = useCallback(
         async (token: string) => {
@@ -75,14 +77,20 @@ const MeetProvider: React.FC<MeetProviderProps> = ({ meetingId, children, langua
             if (isLoggedIn && appUser) {
                 try {
                     const token = await tokenProvider(appUser.walletAddress);
-                    const initChatRef = await connectChatClient(token);
-                    const initCallRef = await connectVideoClient(token);
-                    console.log({initChatRef, initCallRef});
+                    await connectChatClient(token);
+                    await connectVideoClient(token);
                     setLoading(false);
                 } catch (error) {
                     console.error("Error setting up clients:", error);
                     setLoading(false);
                 }
+            } else {
+                // Store the pending session code in local storage
+                if (meetingId) {
+                    localStorage.setItem("pendingSessionCode", meetingId);
+                }
+                // Redirect to login page
+                router.push("/");
             }
         };
 
@@ -92,8 +100,7 @@ const MeetProvider: React.FC<MeetProviderProps> = ({ meetingId, children, langua
             chatClientRef.current?.disconnectUser();
             videoClientRef.current?.disconnectUser();
         };
-    }, [isLoggedIn, appUser, tokenProvider, connectChatClient, connectVideoClient]);
-
+    }, [isLoggedIn, appUser, tokenProvider, connectChatClient, connectVideoClient, router, meetingId]);
     if (loading) return <LoadingOverlay />;
 
     return (
