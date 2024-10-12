@@ -32,8 +32,9 @@ export default function Home() {
     const handleUserAuthentication = async () => {
         if (!user) return;
 
-        const smartWallet = user.linkedAccounts.find((account) => account.type === "smart_wallet");
-        const walletAddress = smartWallet?.address || user.wallet?.address
+        const smartWallet = user.smartWallet || user.linkedAccounts.find((account) => account.type === "smart_wallet");
+        const walletAddress = user.wallet?.address || smartWallet?.address;
+        // const walletAddress = smartWallet?.address || user.wallet?.address
 
         if (walletAddress) {
             console.log({ walletAddress });
