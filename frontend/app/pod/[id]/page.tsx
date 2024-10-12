@@ -16,7 +16,6 @@ import {
     CallControls,
 } from "@stream-io/video-react-sdk";
 
-
 interface MeetingProps {
     params: {
         id: string;
@@ -25,14 +24,19 @@ interface MeetingProps {
 
 export default function MeetingInterface({ params }: MeetingProps) {
     const call = useCall();
-  const { id } = params;
-    console.log({ callMeetPage: call, id });
-    const { useParticipants, useHasOngoingScreenShare } = useCallStateHooks();
+    const { id } = params;
+    console.log({ callMeetPage: call });
+    const { useParticipants, useCallMembers, useIsCallLive, useCallCustomData, useHasOngoingScreenShare, useCallCallingState } = useCallStateHooks();
+
     const participants = useParticipants();
+    const members = useCallMembers();
+    const customData = useCallCustomData();
+    const live = useIsCallLive();
+
+    console.log({ participants, members, customData });
     const connectedUser = useConnectedUser();
     const hasOngoingScreenShare = useHasOngoingScreenShare();
-    // const callingState = useCallCallingState();
-
+    const callingState = useCallCallingState();
     const [showTipModal, setShowTipModal] = useState(false);
     const [tipAmount, setTipAmount] = useState("");
     const [showTipSuccess, setShowTipSuccess] = useState(false);
@@ -115,8 +119,8 @@ export default function MeetingInterface({ params }: MeetingProps) {
                         <h1 className="text-xl font-bold mr-4">
                             Pod<span className="text-[#7C3AED]">X</span>
                         </h1>
-                        <span className="text-sm mr-2">Base Live Build Session</span>
-                        <span className="bg-red-500 text-xs px-2 py-0.5 rounded-full">Live</span>
+                        <span className="text-sm mr-2">{customData.title}</span>
+                        <span className="bg-red-500 text-xs px-2 py-0.5 rounded-full">{live ? "Live" : "Offline"}</span>
                     </div>
                     <button title="settings" className="text-[#A3A3A3] hover:text-white transition-colors">
                         <Settings className="w-6 h-6" />
@@ -148,6 +152,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                     onRejectJoin={onRejectJoin}
                     onAcceptSpeak={onAcceptSpeak}
                     onRejectSpeak={onRejectSpeak}
+                    callingState={callingState}
                 />
 
                 {/* Tip success notification */}
@@ -160,4 +165,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
             </div>
         </StreamTheme>
     );
+}
+function useCallCallingState() {
+    throw new Error("Function not implemented.");
 }
