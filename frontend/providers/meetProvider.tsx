@@ -70,12 +70,14 @@ const MeetProvider: React.FC<MeetProviderProps> = ({ meetingId, children, langua
     );
 
     useEffect(() => {
+        console.log("MeetProvider mounted");
         const setupClients = async () => {
             if (isLoggedIn && appUser) {
                 try {
                     const token = await tokenProvider(appUser.walletAddress);
-                    await connectChatClient(token);
-                    await connectVideoClient(token);
+                    const initChatRef = await connectChatClient(token);
+                    const initCallRef = await connectVideoClient(token);
+                    console.log({initChatRef, initCallRef});
                     setLoading(false);
                 } catch (error) {
                     console.error("Error setting up clients:", error);
