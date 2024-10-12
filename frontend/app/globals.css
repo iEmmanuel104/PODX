@@ -76,3 +76,7 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+.str-video {
+  --str-video__primary-color: #6032f6;
+}
