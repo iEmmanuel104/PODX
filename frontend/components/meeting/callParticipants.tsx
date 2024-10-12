@@ -1,12 +1,13 @@
 import React from "react";
-import { CallParticipantResponse } from "@stream-io/video-react-sdk";
 import Avatar from "@/components/meeting/participantAvatar";
 
+import { CallParticipantResponse, MemberResponse } from "@stream-io/video-react-sdk";
+
 interface CallParticipantsProps {
-    participants: CallParticipantResponse[];
+    participants: CallParticipantResponse[] | MemberResponse[];
 }
 
-const AVATAR_SIZE = 32;
+const AVATAR_SIZE = 24; // Reduced from 32 to 24
 
 const CallParticipants: React.FC<CallParticipantsProps> = ({ participants }) => {
     const getText = () => {
@@ -27,14 +28,14 @@ const CallParticipants: React.FC<CallParticipantsProps> = ({ participants }) => 
     };
 
     return (
-        <div className="flex flex-col items-start justify-center gap-2">
-            <div className="flex items-center justify-start gap-2">
+        <div className="flex items-center justify-start gap-2">
+            <div className="flex items-center justify-start -space-x-1">
                 {participants.slice(0, 3).map((p) => (
-                    <Avatar key={p.user_session_id} participant={p} width={AVATAR_SIZE} />
+                    <Avatar key={(p as CallParticipantResponse).user_session_id || p.user.id} participant={p} width={AVATAR_SIZE} />
                 ))}
                 {participants.length === 4 && <Avatar participant={participants[3]} width={AVATAR_SIZE} />}
                 {participants.length > 4 && (
-                    <div className="w-8 h-8 bg-[#6032F6] rounded-full flex items-center justify-center text-xs font-bold">
+                    <div className="w-6 h-6 bg-[#6032F6] rounded-full flex items-center justify-center text-xs font-bold text-white">
                         +{participants.length - 3}
                     </div>
                 )}
