@@ -1,8 +1,8 @@
 import React from "react";
-import { CallParticipantResponse } from "@stream-io/video-react-sdk";
+import { CallParticipantResponse, MemberResponse } from "@stream-io/video-react-sdk";
 
 interface AvatarProps {
-    participant: CallParticipantResponse;
+    participant: CallParticipantResponse | MemberResponse;  
     width: number;
 }
 
@@ -11,7 +11,7 @@ const Avatar: React.FC<AvatarProps> = ({ participant, width }) => {
 
     return (
         <div
-            className="bg-[#6032F6] rounded-full flex items-center justify-center text-xs font-bold text-white"
+            className="bg-[#6032F6] rounded-full flex items-center justify-center text-[10px] font-bold text-white"
             style={{ width: `${width}px`, height: `${width}px` }}
         >
             {initials}
