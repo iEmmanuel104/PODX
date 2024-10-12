@@ -1,7 +1,6 @@
 "use client";
-import { ReactNode } from "react";
-import { useParams } from "next/navigation";
-import { useSearchParams } from "next/navigation";
+import { ReactNode, useEffect, useState, useMemo } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 import MeetProvider from "@/providers/meetProvider";
 
 type LayoutProps = {
@@ -13,12 +12,18 @@ type LayoutProps = {
 
 export default function Layout({ children, params }: LayoutProps) {
     const searchParams = useSearchParams();
-    const code = searchParams.get("code");
-
     const { id } = useParams();
-    const meetingId = id as string || params.id || code || "";
 
-    console.log({ meetingId });
+    const meetingId = useMemo(() => {
+        const code = searchParams.get("code");
+        return (id as string) || params.id || code || "";
+    }, [id, params.id, searchParams]);
+
+    console.log({ LayoutFile: meetingId });
+
+    if (!meetingId) {
+        return null; // or a loading indicator
+    }
 
     return <MeetProvider meetingId={meetingId}>{children}</MeetProvider>;
 }
