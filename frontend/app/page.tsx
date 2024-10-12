@@ -16,6 +16,7 @@ export default function Home() {
     const [showUsernameModal, setShowUsernameModal] = useState(false);
     const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
     const { login, user, authenticated, ready } = usePrivy();
+    console.log({user, authenticated});
     const router = useRouter();
     const dispatch = useAppDispatch();
     const [findOrCreateUser] = useFindOrCreateUserMutation();
