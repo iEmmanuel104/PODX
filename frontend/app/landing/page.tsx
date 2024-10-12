@@ -3,7 +3,7 @@
 import React, { useState, useCallback, useContext, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Settings } from "lucide-react";
+import { Settings, Loader } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import CreateSessionModal from "@/components/pod/createSessionModal";
@@ -26,7 +26,8 @@ export default function PodPage() {
     const [meetingCode, setMeetingCode] = useState("");
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isCreatedModalOpen, setIsCreatedModalOpen] = useState(false);
-    const [checkingCode, setCheckingCode] = useState(false);
+    const [isJoining, setIsJoining] = useState(false);
+    const [isCreating, setIsCreating] = useState(false);
     const [error, setError] = useState("");
     const [inviteLink, setInviteLink] = useState("");
     const [sessionCode, setSessionCode] = useState("");
@@ -52,31 +53,43 @@ export default function PodPage() {
 
     const handleCreateSession = useCallback(
         async (title: string, type: "Audio Session" | "Video Session") => {
-            setNewMeeting(true);
-            const newSessionCode = nanoid();
-            setInviteLink(`https://podx.studio/studio/${newSessionCode}`);
-            setSessionCode(newSessionCode);
-            dispatch(setSessionInfo({ title, type }));
-            closeCreateModal();
-            openCreatedModal();
+            setIsCreating(true);
+            try {
+                setNewMeeting(true);
+                const newSessionCode = nanoid();
+                setInviteLink(`https://podx.studio/studio/${newSessionCode}`);
+                setSessionCode(newSessionCode);
+                dispatch(setSessionInfo({ title, type }));
+                closeCreateModal();
+                openCreatedModal();
+            } catch (error) {
+                console.error("Error creating session:", error);
+                setError("Failed to create session. Please try again.");
+            } finally {
+                setIsCreating(false);
+            }
         },
-        [dispatch]
+        [dispatch, setNewMeeting]
     );
 
     const handleJoinSession = useCallback(async () => {
-
-        console.log("Joining session with code: ", meetingCode);
-        // if (!MEETING_ID_REGEX.test(meetingCode)) return;
-        // setCheckingCode(true);
-
-        const client = new StreamVideoClient({
-            apiKey: API_KEY,
-            user: GUEST_USER,
-        });
-
-        const call = client.call(CALL_TYPE, meetingCode);
+        setIsJoining(true);
+        setError("");
 
         try {
+            console.log("Joining session with code: ", meetingCode);
+            // if (!MEETING_ID_REGEX.test(meetingCode)) {
+            //     setError("Invalid meeting code format.");
+            //     return;
+            // }
+
+            const client = new StreamVideoClient({
+                apiKey: API_KEY,
+                user: GUEST_USER,
+            });
+
+            const call = client.call(CALL_TYPE, meetingCode);
+
             const response: GetCallResponse = await call.get();
             if (response.call) {
                 router.push(`/pod?code=${meetingCode}`);
@@ -87,10 +100,12 @@ export default function PodPage() {
             console.error(err.message);
             if (err.status === 404) {
                 setError("Couldn't find the meeting you're trying to join.");
+            } else {
+                setError("An error occurred while joining the session.");
             }
+        } finally {
+            setIsJoining(false);
         }
-
-        // setCheckingCode(false);
     }, [meetingCode, router]);
 
     if (!isLoggedIn || !user) {
@@ -126,12 +141,14 @@ export default function PodPage() {
                                     value={meetingCode}
                                     onChange={(e) => setMeetingCode(e.target.value)}
                                     className="flex-1 bg-[#2C2C2C] rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6032F6] text-white placeholder-[#6C6C6C]"
+                                    disabled={isJoining}
                                 />
                                 <Button
                                     onClick={handleJoinSession}
                                     className="bg-[#6032F6] text-white px-8 py-2 rounded-md hover:bg-[#4C28C4] transition-all duration-300 ease-in-out text-sm font-medium"
+                                    disabled={isJoining}
                                 >
-                                    Join
+                                    {isJoining ? <Loader className="w-4 h-4 animate-spin" /> : "Join"}
                                 </Button>
                             </div>
                             {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
@@ -143,7 +160,11 @@ export default function PodPage() {
                         onClick={openCreateModal}
                         style={{ minHeight: "250px" }}
                     >
-                        <Image src="/images/play-add.svg" alt="Create Session" width={32} height={32} className="mb-4" />
+                        {isCreating ? (
+                            <Loader className="w-8 h-8 animate-spin mb-4" />
+                        ) : (
+                            <Image src="/images/play-add.svg" alt="Create Session" width={32} height={32} className="mb-4" />
+                        )}
                         <h2 className="text-2xl font-semibold mb-2 text-white">Create Session</h2>
                         <p className="text-[#E9D5FF] text-sm">
                             Start a meeting or podcast session in seconds - collaborate, share, and record with ease!
@@ -155,12 +176,6 @@ export default function PodPage() {
             <button className="text-[#A3A3A3] hover:text-white transition-colors flex items-center gap-2 text-sm">
                 <Settings className="w-4 h-4" /> Settings
             </button>
-
-            {checkingCode && (
-                <div className="z-50 fixed top-0 left-0 w-full h-full flex items-center justify-center text-white text-3xl bg-black bg-opacity-80">
-                    Joining...
-                </div>
-            )}
 
             <CreateSessionModal isOpen={isCreateModalOpen} onClose={closeCreateModal} onCreateSession={handleCreateSession} />
             <CreatedSessionModal
