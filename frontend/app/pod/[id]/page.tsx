@@ -1,9 +1,9 @@
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
-import { PhoneOff, Settings, CheckCircle2 } from "lucide-react";
+import { Settings, CheckCircle2 } from "lucide-react";
 import TipModal from "@/components/meeting/tips";
 import ParticipantsSidebar from "@/components/meeting/participantList";
-import LeaveConfirmationModal from "@/components/meeting/leave-confirm";
+import ThankYouModal from "@/components/meeting/thankYou";
 import Notifications from "@/components/meeting/notifications";
 import {
     StreamTheme,
@@ -44,7 +44,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const [tipAmount, setTipAmount] = useState("");
     const [showTipSuccess, setShowTipSuccess] = useState(false);
     const [selectedTipRecipient, setSelectedTipRecipient] = useState<string | null>(null);
-    const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false);
+    const [showThankYouModal, setShowThankYouModal] = useState(false);
     const [joinRequests, setJoinRequests] = useState<string[]>([]);
     const [speakRequests, setSpeakRequests] = useState<string[]>([]);
 
@@ -86,14 +86,28 @@ export default function MeetingInterface({ params }: MeetingProps) {
     };
 
     const handleLeave = () => {
-        setShowLeaveConfirmation(true);
+        setShowThankYouModal(true);
     };
 
     const confirmLeave = async () => {
         // await call?.leave();
-        // setShowLeaveConfirmation(false);
+        // setShowThankYouModal(false);
         // Redirect to end meeting page or home
         router.push("/landing");
+    };
+
+    const updateParticipantRole = (userId: string, newRole: string) => {
+        // Implement the logic to update the participant's role
+        console.log(`Updating ${userId} to ${newRole}`);
+        // You might need to call an API or update the state here
+    };
+
+    const handleJoinRequest = (userId: string, accept: boolean) => {
+        if (accept) {
+            onAcceptJoin(userId);
+        } else {
+            onRejectJoin(userId);
+        }
     };
 
     const onAcceptJoin = (user: string) => {
@@ -116,7 +130,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
     return (
         <StreamTheme className="root-theme">
-             <StreamCall call={call}>
+            <StreamCall call={call}>
                 <div className="h-screen bg-[#121212] text-white flex flex-col">
                     {/** Header Title*/}
                     <header className="flex justify-between items-center p-4 h-16">
@@ -135,7 +149,13 @@ export default function MeetingInterface({ params }: MeetingProps) {
                     {/** Main content */}
                     <div className="flex-grow flex overflow-hidden">
                         <div className="flex-grow p-4">{isSpeakerView ? <SpeakerLayout /> : <PaginatedGridLayout />}</div>
-                        <ParticipantsSidebar participants={participants} currentUser={connectedUser} openTipModal={openTipModal} />
+                        <ParticipantsSidebar
+                            participants={participants}
+                            currentUser={connectedUser}
+                            openTipModal={openTipModal}
+                            updateParticipantRole={updateParticipantRole}
+                            handleJoinRequest={handleJoinRequest}
+                        />
                     </div>
 
                     {/** Footer controls */}
@@ -145,10 +165,17 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
                     {/* Modals and Notifications */}
                     {showTipModal && (
-                        <TipModal selectedTipRecipient={selectedTipRecipient} tipAmount={tipAmount} setTipAmount={setTipAmount} handleTip={handleTip} />
+                        <TipModal
+                            selectedTipRecipient={selectedTipRecipient}
+                            tipAmount={tipAmount}
+                            setTipAmount={setTipAmount}
+                            handleTip={handleTip}
+                        />
                     )}
 
-                    {showLeaveConfirmation && <LeaveConfirmationModal setShowLeaveConfirmation={setShowLeaveConfirmation} confirmLeave={confirmLeave} />}
+                    {showThankYouModal && (
+                        <ThankYouModal onClose={confirmLeave} />
+                    )}
 
                     <Notifications
                         joinRequests={joinRequests}
