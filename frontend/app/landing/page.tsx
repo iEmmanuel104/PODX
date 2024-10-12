@@ -14,11 +14,14 @@ import { nanoid } from "nanoid";
 import { AppContext, MEETING_ID_REGEX } from "@/providers/appProvider";
 import { ErrorFromResponse, GetCallResponse, StreamVideoClient, User } from "@stream-io/video-react-sdk";
 import { API_KEY, CALL_TYPE } from "@/providers/meetProvider";
+import { setSessionInfo } from "@/store/slices/podSlice";
+import { useAppDispatch } from "@/store/hooks";
 
 const GUEST_USER: User = { id: "guest", type: "guest" };
 
 export default function PodPage() {
     const router = useRouter();
+    const dispatch = useAppDispatch();
     const { setNewMeeting } = useContext(AppContext);
     const [meetingCode, setMeetingCode] = useState("");
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -47,14 +50,18 @@ export default function PodPage() {
     const openCreatedModal = () => setIsCreatedModalOpen(true);
     const closeCreatedModal = () => setIsCreatedModalOpen(false);
 
-    const handleCreateSession = useCallback(async (title: string, type: string) => {
-        setNewMeeting(true);
-        const newSessionCode = nanoid();
-        setInviteLink(`https://podx.studio/studio/${newSessionCode}`);
-        setSessionCode(newSessionCode);
-        closeCreateModal();
-        openCreatedModal();
-    }, []);
+    const handleCreateSession = useCallback(
+        async (title: string, type: "Audio Session" | "Video Session") => {
+            setNewMeeting(true);
+            const newSessionCode = nanoid();
+            setInviteLink(`https://podx.studio/studio/${newSessionCode}`);
+            setSessionCode(newSessionCode);
+            dispatch(setSessionInfo({ title, type }));
+            closeCreateModal();
+            openCreatedModal();
+        },
+        [dispatch]
+    );
 
     const handleJoinSession = useCallback(async () => {
 
@@ -68,7 +75,6 @@ export default function PodPage() {
         });
 
         const call = client.call(CALL_TYPE, meetingCode);
-        console.log({client, call});
 
         try {
             const response: GetCallResponse = await call.get();
