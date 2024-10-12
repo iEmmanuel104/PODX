@@ -2,17 +2,19 @@ import React, { useEffect, useCallback, useState } from "react";
 import { VideoPreview, useCallStateHooks, useConnectedUser, createSoundDetector } from "@stream-io/video-react-sdk";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { setAudioEnabled, setVideoEnabled, setSoundDetected } from "@/store/slices/mediaSlice";
+import { setToast } from "@/store/slices/toastSlice";
 import SpeechIndicator from "./speechIndicator";
-import { Mic, MicOff, Video, VideoOff, MoreVertical, Sparkles, Volume2, ChevronDown } from "lucide-react";
+import { Mic, MicOff, Video, VideoOff, MoreVertical, Sparkles, Volume2 } from "lucide-react";
 import { AudioInputDeviceSelector, AudioOutputDeviceSelector, VideoInputDeviceSelector } from "./deviceSelector";
 import DeviceSelectorPopover from "@/components/join/deviceSelectorPopover";
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 const MeetingPreview: React.FC = () => {
     const user = useConnectedUser();
     const dispatch = useAppDispatch();
     const { isAudioEnabled, isVideoEnabled, isSoundDetected } = useAppSelector((state) => state.media);
+    const toast = useAppSelector((state) => state.toast);
     const [videoPreviewText, setVideoPreviewText] = useState("");
 
     const { useCameraState, useMicrophoneState, useSpeakerState } = useCallStateHooks();
@@ -28,6 +30,7 @@ const MeetingPreview: React.FC = () => {
             } catch (error) {
                 console.error(error);
                 dispatch(setVideoEnabled(false));
+                dispatch(setToast("Camera error: " + (error instanceof Error ? error.message : String(error))));
             }
             try {
                 await microphone.enable();
@@ -35,6 +38,7 @@ const MeetingPreview: React.FC = () => {
             } catch (error) {
                 console.error(error);
                 dispatch(setAudioEnabled(false));
+                dispatch(setToast("Microphone error: " + (error instanceof Error ? error.message : String(error))));
             }
         };
 
@@ -50,26 +54,38 @@ const MeetingPreview: React.FC = () => {
         });
 
         return () => {
-            disposeSoundDetector().catch(console.error);
+            disposeSoundDetector().catch((error) => dispatch(setToast("Sound detector error: " + String(error))));
         };
     }, [microphoneStatus, mediaStream, dispatch]);
 
     const toggleAudio = useCallback(() => {
-        microphone.toggle().then(() => {
-            dispatch(setAudioEnabled(!isAudioEnabled));
-        });
+        microphone
+            .toggle()
+            .then(() => {
+                dispatch(setAudioEnabled(!isAudioEnabled));
+            })
+            .catch((error) => dispatch(setToast("Microphone toggle error: " + String(error))));
     }, [microphone, dispatch, isAudioEnabled]);
 
     const toggleVideo = useCallback(() => {
         setVideoPreviewText(isVideoEnabled ? "Camera is off" : "Camera is starting");
-        camera.toggle().then(() => {
-            dispatch(setVideoEnabled(!isVideoEnabled));
-            setVideoPreviewText(isVideoEnabled ? "Camera is off" : "");
-        });
+        camera
+            .toggle()
+            .then(() => {
+                dispatch(setVideoEnabled(!isVideoEnabled));
+                setVideoPreviewText(isVideoEnabled ? "Camera is off" : "");
+            })
+            .catch((error) => dispatch(setToast("Camera toggle error: " + String(error))));
     }, [camera, dispatch, isVideoEnabled]);
 
     return (
         <div className="w-full max-w-3xl lg:pr-2 lg:mt-8">
+            {toast.isVisible && (
+                <Alert variant="destructive" className="mb-4">
+                    <AlertTitle>Error</AlertTitle>
+                    <AlertDescription>{toast.message}</AlertDescription>
+                </Alert>
+            )}
             <div className="relative w-full rounded-lg aspect-video mx-auto shadow-md overflow-hidden">
                 <div className="absolute inset-0 bg-[#121212]" />
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[rgba(0,0,0,0.4)]" />
