@@ -57,14 +57,18 @@ export default function PodPage() {
     }, []);
 
     const handleJoinSession = useCallback(async () => {
-        if (!MEETING_ID_REGEX.test(meetingCode)) return;
-        setCheckingCode(true);
+
+        console.log("Joining session with code: ", meetingCode);
+        // if (!MEETING_ID_REGEX.test(meetingCode)) return;
+        // setCheckingCode(true);
 
         const client = new StreamVideoClient({
             apiKey: API_KEY,
             user: GUEST_USER,
         });
+
         const call = client.call(CALL_TYPE, meetingCode);
+        console.log({client, call});
 
         try {
             const response: GetCallResponse = await call.get();
@@ -80,7 +84,7 @@ export default function PodPage() {
             }
         }
 
-        setCheckingCode(false);
+        // setCheckingCode(false);
     }, [meetingCode, router]);
 
     if (!isLoggedIn || !user) {
