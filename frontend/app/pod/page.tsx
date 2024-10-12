@@ -5,9 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import UserInputForm from "@/components/join/user-input-form";
 import WaitingScreen from "@/components/join/waiting-screen";
 import Logo from "@/components/ui/logo";
-import { useAppSelector, useAppDispatch } from "@/store/hooks";
+import { useAppSelector } from "@/store/hooks";
 import {
-    useStreamVideoClient,
     useCall,
     useCallStateHooks,
     CallingState,
@@ -23,27 +22,22 @@ import { useChatContext } from "stream-chat-react";
 import { useStreamTokenProvider } from "@/hooks/useStreamTokenProvider";
 import Image from "next/image";
 
-
 const JoinSession: React.FC = () => {
     const router = useRouter();
-    const dispatch = useAppDispatch();
     const searchParams = useSearchParams();
-    const code = searchParams.get("code") || "";
+    const code = useMemo(() => searchParams.get("code") || "", [searchParams]);
     const [name, setName] = useState<string>("");
     const [isBasenameConfirmed, setIsBasenameConfirmed] = useState<boolean>(false);
-    const [isWaiting, setIsWaiting] = useState<boolean>(false);
     const [isGuest, setIsGuest] = useState<boolean>(false);
     const [joining, setJoining] = useState<boolean>(false);
     const [participants, setParticipants] = useState<CallParticipantResponse[] | MemberResponse[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [errorFetchingMeeting, setErrorFetchingMeeting] = useState<boolean>(false);
     const { sessionTitle, sessionType } = useAppSelector((state) => state.pod);
-
     const { isLoggedIn, user } = useAppSelector((state) => state.user);
     const { newMeeting, setNewMeeting } = useContext(AppContext);
     const { client: chatClient } = useChatContext();
 
-    const client = useStreamVideoClient();
     const call = useCall();
 
     const { useCallCallingState } = useCallStateHooks();
@@ -51,8 +45,9 @@ const JoinSession: React.FC = () => {
     const tokenProvider = useStreamTokenProvider();
 
     useEffect(() => {
+        console.log("from lobby1");
+
         if (!isLoggedIn && !user) {
-            // If not logged in, save the current code and redirect to login
             if (code) {
                 localStorage.setItem("pendingSessionCode", code);
             }
@@ -70,7 +65,7 @@ const JoinSession: React.FC = () => {
     }, [isLoggedIn, user]);
 
     useEffect(() => {
-        console.log("from lobby");
+        console.log("from lobby3");
         const leavePreviousCall = async () => {
             if (callingState === CallingState.JOINED) {
                 await call?.leave();
@@ -94,47 +89,56 @@ const JoinSession: React.FC = () => {
         };
 
         const createCall = async () => {
-            if (call) {
-                const response = await call.getOrCreate({
+            if (call && user) {
+                await call.getOrCreate({
                     data: {
-                        members: [
-                            {
-                                user_id: user?.id!,
-                                role: "host",
-                            },
-                        ],
+                        members: [{ user_id: user.id, role: "host" }],
                         custom: {
-                            meeting_code: code,
+                            sessionId: code,
                             title: sessionTitle || "New Call",
                             type: sessionType || "Video Session",
                         },
                         settings_override: {
-                            audio: { mic_default_on: false, default_device: "speaker" },
-                            video: { camera_default_on: false },
+                            // audio: { 
+                            //     mic_default_on: true, 
+                            //     speaker_default_on: true,
+                            //     default_device: "speaker" 
+                            // },
+                            // video: { 
+                            //     camera_default_on: true, 
+                            //     target_resolution: {
+                            //         width: 640,
+                            //         height: 480,
+                            //     } 
+                            // },
                             limits: {
                                 max_participants: 20,
-                                max_duration_seconds: 3600, // 1 hour
+                                max_duration_seconds: 3600,
                             },
                         },
                     },
                     members_limit: 20,
                 });
 
-                console.log({ response });
+                console.log("call create success");
             }
             setLoading(false);
         };
 
-        if (!joining && code) {
-            leavePreviousCall();
-            if (!user) return;
-            if (newMeeting) {
-                createCall();
-            } else {
-                getCurrentCall();
+        const initializeCall = async () => {
+            if (!joining && code) {
+                await leavePreviousCall();
+                if (!user) return;
+                if (newMeeting) {
+                    await createCall();
+                } else {
+                    await getCurrentCall();
+                }
             }
-        }
-    }, [call, callingState, user, joining, newMeeting, code]);
+        };
+
+        initializeCall();
+    }, [call, callingState, user, joining, newMeeting, code, sessionTitle, sessionType]);
 
     useEffect(() => {
         setNewMeeting(newMeeting);
@@ -143,25 +147,19 @@ const JoinSession: React.FC = () => {
         };
     }, [newMeeting, setNewMeeting]);
 
-    const updateGuestName = async () => {
+    const updateGuestName = useCallback(async () => {
         if (isLoggedIn && user) {
             try {
                 await chatClient.disconnectUser();
-                await chatClient.connectUser(
-                    {
-                        id: user.id,
-                        name: user.username,
-                    },
-                    async () => await tokenProvider(user.walletAddress)
-                );
+                await chatClient.connectUser({ id: user.id, name: user.username }, async () => await tokenProvider(user.walletAddress));
             } catch (error) {
                 console.error(error);
             }
         }
-    };
+    }, [isLoggedIn, user, chatClient, tokenProvider]);
 
     const handleJoinSession = useCallback(async () => {
-        console.log("join clikced");
+        console.log("join clicked");
         if (code) {
             setJoining(true);
             if (isLoggedIn && user) {
@@ -170,18 +168,13 @@ const JoinSession: React.FC = () => {
             if (callingState !== CallingState.JOINED) {
                 await call?.join({
                     data: {
-                        members: [
-                            {
-                                user_id: user?.id!,
-                                role: "guest",
-                            },
-                        ],
+                        members: [{ user_id: user?.id!, role: "guest" }],
                     },
                 });
             }
             router.push(`/pod/${code}`);
         }
-    }, [code, isLoggedIn, user, call, callingState, router]);
+    }, [code, isLoggedIn, user, call, callingState, router, updateGuestName]);
 
     const participantsUI = useMemo(() => {
         switch (true) {
@@ -244,11 +237,9 @@ const JoinSession: React.FC = () => {
                 <div className="flex justify-center mb-8">
                     <Logo />
                 </div>
-
                 <p className="text-center mb-8 text-lg">
                     You are about to join {sessionTitle || "Base Live Build Session"} ({sessionType || "Video Session"})
                 </p>
-
                 {renderContent()}
             </div>
         </div>
