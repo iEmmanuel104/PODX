@@ -3,7 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import StoreProvider from "@/providers/storeProvider";
 import PrivyProvider from "@/providers/privyProvider";
-import AppProvider from "@/providers/AppProvider";
+import AppProvider from "@/providers/appProvider";
 
 import "@stream-io/video-react-sdk/dist/css/styles.css";
 import "stream-chat-react/dist/css/v2/index.css";
