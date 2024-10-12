@@ -23,6 +23,7 @@ import { useChatContext } from "stream-chat-react";
 import { useStreamTokenProvider } from "@/hooks/useStreamTokenProvider";
 import Image from "next/image";
 
+
 const JoinSession: React.FC = () => {
     const router = useRouter();
     const dispatch = useAppDispatch();
@@ -36,6 +37,7 @@ const JoinSession: React.FC = () => {
     const [participants, setParticipants] = useState<CallParticipantResponse[] | MemberResponse[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [errorFetchingMeeting, setErrorFetchingMeeting] = useState<boolean>(false);
+    const { sessionTitle, sessionType } = useAppSelector((state) => state.pod);
 
     const { isLoggedIn, user } = useAppSelector((state) => state.user);
     const { newMeeting, setNewMeeting } = useContext(AppContext);
@@ -44,7 +46,6 @@ const JoinSession: React.FC = () => {
     const client = useStreamVideoClient();
     const call = useCall();
 
-    console.log("lobby",{call, client})
     const { useCallCallingState } = useCallStateHooks();
     const callingState = useCallCallingState();
     const tokenProvider = useStreamTokenProvider();
@@ -81,7 +82,7 @@ const JoinSession: React.FC = () => {
                 try {
                     const callData = await call.get();
 
-                    console.log({currentCall: callData});
+                    console.log({ currentCall: callData });
                     setParticipants(callData.members || []);
                 } catch (e) {
                     const err = e as ErrorFromResponse<GetCallResponse>;
@@ -104,12 +105,13 @@ const JoinSession: React.FC = () => {
                         ],
                         custom: {
                             meeting_code: code,
-                            title: 'new call',
-                        }
+                            title: sessionTitle || "New Call",
+                            type: sessionType || "Video Session",
+                        },
                     },
                 });
 
-                console.log({response});
+                console.log({ response });
             }
             setLoading(false);
         };
@@ -150,7 +152,7 @@ const JoinSession: React.FC = () => {
     };
 
     const handleJoinSession = useCallback(async () => {
-        console.log('join clikced');
+        console.log("join clikced");
         if (code) {
             setJoining(true);
             if (isLoggedIn && user) {
@@ -225,7 +227,9 @@ const JoinSession: React.FC = () => {
                     <Logo />
                 </div>
 
-                <p className="text-center mb-8 text-lg">You are about to join Base Live Build Session</p>
+                <p className="text-center mb-8 text-lg">
+                    You are about to join {sessionTitle || "Base Live Build Session"} ({sessionType || "Video Session"})
+                </p>
 
                 {renderContent()}
             </div>
