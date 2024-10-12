@@ -11,7 +11,7 @@ import CreatedSessionModal from "@/components/pod/createdSessionModal";
 import Logo from "@/components/ui/logo";
 import { useAppSelector } from "@/store/hooks";
 import { nanoid } from "nanoid";
-import { AppContext, MEETING_ID_REGEX } from "@/providers/AppProvider";
+import { AppContext, MEETING_ID_REGEX } from "@/providers/appProvider";
 import { ErrorFromResponse, GetCallResponse, StreamVideoClient, User } from "@stream-io/video-react-sdk";
 import { API_KEY, CALL_TYPE } from "@/providers/meetProvider";
 
