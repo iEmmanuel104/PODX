@@ -15,6 +15,7 @@ import {
     SpeakerLayout,
     CallControls,
 } from "@stream-io/video-react-sdk";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface MeetingProps {
     params: {
@@ -25,6 +26,7 @@ interface MeetingProps {
 export default function MeetingInterface({ params }: MeetingProps) {
     const call = useCall();
     const { id } = params;
+    const router = useRouter();
     console.log({ callMeetPage: call });
     const { useParticipants, useCallMembers, useIsCallLive, useCallCustomData, useHasOngoingScreenShare, useCallCallingState } = useCallStateHooks();
 
@@ -87,9 +89,10 @@ export default function MeetingInterface({ params }: MeetingProps) {
     };
 
     const confirmLeave = async () => {
-        await call?.leave();
-        setShowLeaveConfirmation(false);
+        // await call?.leave();
+        // setShowLeaveConfirmation(false);
         // Redirect to end meeting page or home
+        router.push("/landing");
     };
 
     const onAcceptJoin = (user: string) => {
