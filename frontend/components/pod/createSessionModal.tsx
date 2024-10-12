@@ -9,12 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 interface CreateSessionModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onCreateSession: (title: string, type: string) => void;
+    onCreateSession: (title: string, type: "Audio Session" | "Video Session") => void;
 }
 
 const CreateSessionModal: React.FC<CreateSessionModalProps> = ({ isOpen, onClose, onCreateSession }) => {
     const [sessionTitle, setSessionTitle] = useState("Session-1");
-    const [sessionType, setSessionType] = useState("Video Session");
+    const [sessionType, setSessionType] = useState<"Audio Session" | "Video Session">("Video Session");
 
     const handleCreateSession = () => {
         onCreateSession(sessionTitle, sessionType);
@@ -43,7 +43,7 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({ isOpen, onClose
                         <label htmlFor="sessionType" className="block text-[#A3A3A3] mb-2">
                             Session type
                         </label>
-                        <Select value={sessionType} onValueChange={setSessionType}>
+                        <Select value={sessionType} onValueChange={(value: string) => setSessionType(value as "Audio Session" | "Video Session")}>
                             <SelectTrigger className="w-full bg-[#2C2C2C] rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]">
                                 <SelectValue>{sessionType}</SelectValue>
                             </SelectTrigger>
