@@ -56,7 +56,7 @@ export default function PodPage() {
             const newSessionCode = nanoid();
             setInviteLink(`https://podx.studio/studio/${newSessionCode}`);
             setSessionCode(newSessionCode);
-            dispatch(setSessionInfo({ title, type }));
+            dispatch(setSessionInfo({ title, type, sessionId: newSessionCode }));
             closeCreateModal();
             openCreatedModal();
         },
@@ -78,7 +78,15 @@ export default function PodPage() {
 
         try {
             const response: GetCallResponse = await call.get();
-            if (response.call) {
+            console.log({ responseCallFound: response });
+            if (response.call && (meetingCode === response.call.custom.sessionId)) {
+                dispatch(
+                    setSessionInfo({
+                        title: response.call.custom.title,
+                        type: response.call.custom.type,
+                        sessionId: meetingCode,
+                    })
+                );
                 router.push(`/pod?code=${meetingCode}`);
                 return;
             }
