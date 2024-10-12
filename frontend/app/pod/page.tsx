@@ -45,29 +45,15 @@ const JoinSession: React.FC = () => {
     const callingState = useCallCallingState();
     const tokenProvider = useStreamTokenProvider();
 
-useEffect(() => {
-    if (!isLoggedIn && !user) {
-        // If not logged in, save the current code and redirect to login
-        if (code) {
-            localStorage.setItem("pendingSessionCode", code);
-        }
-        router.push("/");
-    } else if (isLoggedIn && user) {
-        // If logged in and there's no current code, check for a pending code
-        if (!code) {
-            const pendingCode = localStorage.getItem("pendingSessionCode");
-            if (pendingCode) {
-                localStorage.removeItem("pendingSessionCode");
-                router.replace(`/pod?code=${pendingCode}`);
+    useEffect(() => {
+        if (!isLoggedIn && !user) {
+            // If not logged in, save the current code and redirect to login
+            if (code) {
+                localStorage.setItem("pendingSessionCode", code);
             }
+            router.push("/");
         }
-    }
-
-    // Cleanup function
-    return () => {
-        localStorage.removeItem("pendingSessionCode");
-    };
-}, [isLoggedIn, user, code, router]);
+    }, [isLoggedIn, user, code, router]);
 
     useEffect(() => {
         if (isLoggedIn && user) {
@@ -79,6 +65,7 @@ useEffect(() => {
     }, [isLoggedIn, user]);
 
     useEffect(() => {
+        console.log('from lobby');
         const leavePreviousCall = async () => {
             if (callingState === CallingState.JOINED) {
                 await call?.leave();
