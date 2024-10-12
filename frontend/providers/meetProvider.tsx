@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { nanoid } from "nanoid";
 import { Call, StreamCall, StreamVideo, StreamVideoClient, User } from "@stream-io/video-react-sdk";
 import { User as ChatUser, StreamChat } from "stream-chat";
@@ -21,67 +21,83 @@ type MeetProviderProps = {
 const MeetProvider: React.FC<MeetProviderProps> = ({ meetingId, children, language = "en" }) => {
     const { user: appUser, isLoggedIn } = useAppSelector((state) => state.user);
     const [loading, setLoading] = useState(true);
-    const [chatClient, setChatClient] = useState<StreamChat>();
-    const [videoClient, setVideoClient] = useState<StreamVideoClient>();
-    const [call, setCall] = useState<Call>();
+    const chatClientRef = useRef<StreamChat>();
+    const videoClientRef = useRef<StreamVideoClient>();
+    const callRef = useRef<Call>();
     const tokenProvider = useStreamTokenProvider();
 
-    useEffect(() => {
-        const setUpClients = async () => {
-            if (isLoggedIn && appUser) {
-                const customProvider = async () => {
-                    const token = await tokenProvider(appUser.walletAddress);
-                    return token;
-                };
+    const connectChatClient = useCallback(
+        async (token: string) => {
+            if (!chatClientRef.current) {
+                chatClientRef.current = StreamChat.getInstance(API_KEY);
+            }
 
-                console.log("signed in");
-                const user = {
-                    id: appUser.id,
-                    name: appUser.username,
-                    image: appUser.displayImage,
-                    custom: {
-                        walletAddress: appUser.walletAddress,
+            if (!chatClientRef.current.userID) {
+                await chatClientRef.current.connectUser(
+                    {
+                        id: appUser!.id,
+                        username: appUser!.username,
                     },
-                };
-                const chatUser = {
-                    id: appUser.id,
-                    username: appUser.username,
-                };
+                    token
+                );
+            }
+        },
+        [appUser]
+    );
 
-                const _chatClient = StreamChat.getInstance(API_KEY);
-                console.log("chat client found", _chatClient);
-                await _chatClient.connectUser(chatUser, customProvider);
-
-                const _videoClient = new StreamVideoClient({
+    const connectVideoClient = useCallback(
+        async (token: string) => {
+            if (!videoClientRef.current) {
+                videoClientRef.current = new StreamVideoClient({
                     apiKey: API_KEY,
-                    user,
-                    tokenProvider: customProvider,
+                    user: {
+                        id: appUser!.id,
+                        name: appUser!.username,
+                        image: appUser!.displayImage,
+                        custom: {
+                            walletAddress: appUser!.walletAddress,
+                        },
+                    },
+                    tokenProvider: async () => token,
                 });
+            }
 
-                const _call = _videoClient.call(CALL_TYPE, meetingId);
+            if (!callRef.current) {
+                callRef.current = videoClientRef.current.call(CALL_TYPE, meetingId);
+            }
+        },
+        [appUser, meetingId]
+    );
 
-                setVideoClient(_videoClient);
-                setCall(_call);
-                setChatClient(_chatClient);
-
-                setLoading(false);
+    useEffect(() => {
+        const setupClients = async () => {
+            if (isLoggedIn && appUser) {
+                try {
+                    const token = await tokenProvider(appUser.walletAddress);
+                    await connectChatClient(token);
+                    await connectVideoClient(token);
+                    setLoading(false);
+                } catch (error) {
+                    console.error("Error setting up clients:", error);
+                    setLoading(false);
+                }
             }
         };
 
-        setUpClients();
+        setupClients();
 
         return () => {
-            chatClient?.disconnectUser();
-            videoClient?.disconnectUser();
+            chatClientRef.current?.disconnectUser();
+            videoClientRef.current?.disconnectUser();
         };
-    }, [appUser, isLoggedIn, meetingId, tokenProvider, chatClient, videoClient]);
+    }, [isLoggedIn, appUser, tokenProvider, connectChatClient, connectVideoClient]);
 
     if (loading) return <LoadingOverlay />;
 
     return (
-        <Chat client={chatClient!}>
-            <StreamVideo client={videoClient!}>
-                <StreamCall call={call}>{children}</StreamCall>
+        <Chat client={chatClientRef.current!}>
+            <StreamVideo client={videoClientRef.current!}>
+                <StreamCall call={callRef.current!}>{children}</StreamCall>
             </StreamVideo>
         </Chat>
     );
