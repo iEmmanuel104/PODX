@@ -84,13 +84,16 @@ const MeetingPreview: React.FC = () => {
                 </div>
 
                 {/* User name with camera and speech indicator*/}
-                <div className="absolute left-4 top-4 max-w-[85%] truncate text-white text-sm font-thin flex items-center">
+                <div className="absolute left-2 top-2 max-w-[80%] flex items-center">
                     <SpeechIndicator isSpeaking={isSoundDetected} isMicrophoneEnabled={microphoneStatus === "enabled"} />
-                    <span className="relative mr-2">
-                        {user?.name}
+                    <span className="relative mr-2 text-white text-xs font-thin truncate max-w-[120px]">
+                        {(() => {
+                            const name = user?.name || "Anonymous";
+                            return name.length > 12 ? `${name.slice(0, 12)}...` : name;
+                        })()}
                         <span
-                            className={`absolute -right-3 top-1/2 transform -translate-y-1/2 w-2 h-2 rounded-full ${
-                                hasCameraPermission ? "bg-green-500" : "bg-red-500"
+                            className={`absolute -right-2 top-1/2 transform -translate-y-1/2 w-1.5 h-1.5 rounded-full ${
+                                hasCameraPermission ? "bg-[#6032F6]-500" : "bg-red-500"
                             }`}
                         ></span>
                     </span>
@@ -161,7 +164,6 @@ const MeetingPreview: React.FC = () => {
                         <AudioOutputDeviceSelector disabled={!hasMicrophonePermission} />
                     </DeviceSelectorPopover>
                 </div>
-
             </div>
         </div>
     );
