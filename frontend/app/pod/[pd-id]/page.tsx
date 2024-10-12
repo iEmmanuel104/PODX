@@ -6,6 +6,16 @@ import TipModal from "@/components/meeting/tips";
 import ParticipantsSidebar from "@/components/meeting/participantList";
 import LeaveConfirmationModal from "@/components/meeting/leave-confirm";
 import Notifications from "@/components/meeting/notifications";
+import {
+    CallingState,
+    hasScreenShare,
+    isPinned,
+    RecordCallButton,
+    StreamTheme,
+    useCall,
+    useCallStateHooks,
+    useConnectedUser,
+} from "@stream-io/video-react-sdk";
 
 export default function MeetingInterface() {
     const [participants, setParticipants] = useState<Participant[]>([
@@ -13,6 +23,8 @@ export default function MeetingInterface() {
         { name: "Jane Doe", role: "co-host", isMuted: true },
         ...Array(20).fill({ name: "Listener", role: "listener", isMuted: true }),
     ]);
+      const call = useCall();
+    console.log({call});
     const [currentUser, setCurrentUser] = useState<Participant>({ name: "Current User", role: "listener", isMuted: true });
     const [isMuted, setIsMuted] = useState(true);
     const [isVideoOn, setIsVideoOn] = useState(true);
@@ -78,96 +90,98 @@ export default function MeetingInterface() {
     };
 
     return (
-        <div className="h-screen bg-[#121212] text-white flex flex-col">
-            {/** Header Title*/}
-            <header className="flex justify-between items-center p-4 h-16">
-                <div className="flex items-center">
-                    <h1 className="text-xl font-bold mr-4">
-                        Pod<span className="text-[#7C3AED]">X</span>
-                    </h1>
-                    <span className="text-sm mr-2">Base Live Build Session</span>
-                    <span className="bg-red-500 text-xs px-2 py-0.5 rounded-full">Live</span>
-                </div>
-                <button title="settings" className="text-[#A3A3A3] hover:text-white transition-colors">
-                    <Settings className="w-6 h-6" />
-                </button>
-            </header>
-
-            {/** Main content */}
-            <div className="flex-grow flex overflow-hidden">
-                <div className="flex-grow p-4">
-                    <div className="h-full relative bg-[#2C2C2C] rounded-lg overflow-hidden">
-                        <img src="/images/woman.png" alt="Current speaker" className="w-full h-full object-cover" />
-                        <div className="absolute top-2 left-2 bg-[#7C3AED] text-white text-xs py-1 px-2 rounded-full">Muted</div>
-                        {hoveredParticipant === "folajindayo.base.eth" && currentUser.role === "listener" && (
-                            <button
-                                className="absolute bottom-4 right-4 bg-[#2C2C2C] text-white text-sm py-2 px-4 rounded-full flex items-center"
-                                onClick={() => openTipModal("folajindayo.base.eth")}
-                            >
-                                <DollarSign className="w-4 h-4 mr-2" />
-                                Tip
-                            </button>
-                        )}
+        <StreamTheme className="root-theme">
+            <div className="h-screen bg-[#121212] text-white flex flex-col">
+                {/** Header Title*/}
+                <header className="flex justify-between items-center p-4 h-16">
+                    <div className="flex items-center">
+                        <h1 className="text-xl font-bold mr-4">
+                            Pod<span className="text-[#7C3AED]">X</span>
+                        </h1>
+                        <span className="text-sm mr-2">Base Live Build Session</span>
+                        <span className="bg-red-500 text-xs px-2 py-0.5 rounded-full">Live</span>
                     </div>
+                    <button title="settings" className="text-[#A3A3A3] hover:text-white transition-colors">
+                        <Settings className="w-6 h-6" />
+                    </button>
+                </header>
+
+                {/** Main content */}
+                <div className="flex-grow flex overflow-hidden">
+                    <div className="flex-grow p-4">
+                        <div className="h-full relative bg-[#2C2C2C] rounded-lg overflow-hidden">
+                            <img src="/images/woman.png" alt="Current speaker" className="w-full h-full object-cover" />
+                            <div className="absolute top-2 left-2 bg-[#7C3AED] text-white text-xs py-1 px-2 rounded-full">Muted</div>
+                            {hoveredParticipant === "folajindayo.base.eth" && currentUser.role === "listener" && (
+                                <button
+                                    className="absolute bottom-4 right-4 bg-[#2C2C2C] text-white text-sm py-2 px-4 rounded-full flex items-center"
+                                    onClick={() => openTipModal("folajindayo.base.eth")}
+                                >
+                                    <DollarSign className="w-4 h-4 mr-2" />
+                                    Tip
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    <ParticipantsSidebar
+                        participants={participants}
+                        currentUser={currentUser}
+                        // hoveredParticipant={hoveredParticipant}
+                        // setHoveredParticipant={setHoveredParticipant}
+                        openTipModal={openTipModal}
+                    />
                 </div>
 
-                <ParticipantsSidebar
-                    participants={participants}
-                    currentUser={currentUser}
-                    // hoveredParticipant={hoveredParticipant}
-                    // setHoveredParticipant={setHoveredParticipant}
-                    openTipModal={openTipModal}
+                {/** Footer controls */}
+                <footer className="bg-[#1E1E1E] p-4 flex justify-center items-center gap-4 h-20">
+                    <button
+                        title="mute"
+                        className={`p-3 rounded-full ${isMuted ? "bg-red-500" : "bg-[#2C2C2C]"} hover:bg-opacity-80 transition-colors`}
+                        onClick={() => setIsMuted(!isMuted)}
+                    >
+                        <Mic className="w-6 h-6" />
+                    </button>
+                    <button
+                        title="video"
+                        className={`p-3 rounded-full ${isVideoOn ? "bg-[#2C2C2C]" : "bg-red-500"} hover:bg-opacity-80 transition-colors`}
+                        onClick={() => setIsVideoOn(!isVideoOn)}
+                    >
+                        <Video className="w-6 h-6" />
+                    </button>
+                    <button
+                        className="bg-red-500 text-white px-4 py-2 rounded-full flex items-center hover:bg-opacity-80 transition-colors"
+                        onClick={handleLeave}
+                    >
+                        <PhoneOff className="w-5 h-5 mr-2" />
+                        Leave
+                    </button>
+                </footer>
+
+                {/* tip modals */}
+                {showTipModal && (
+                    <TipModal selectedTipRecipient={selectedTipRecipient} tipAmount={tipAmount} setTipAmount={setTipAmount} handleTip={handleTip} />
+                )}
+
+                {/* leave modals */}
+                {showLeaveConfirmation && <LeaveConfirmationModal setShowLeaveConfirmation={setShowLeaveConfirmation} confirmLeave={confirmLeave} />}
+                <Notifications
+                    joinRequests={joinRequests}
+                    speakRequests={speakRequests}
+                    onAcceptJoin={onAcceptJoin}
+                    onRejectJoin={onRejectJoin}
+                    onAcceptSpeak={onAcceptSpeak}
+                    onRejectSpeak={onRejectSpeak}
                 />
+
+                {/* Tip success notification */}
+                {showTipSuccess && (
+                    <div className="fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md flex items-center">
+                        <CheckCircle2 className="w-5 h-5 mr-2" />
+                        You successfully tipped {selectedTipRecipient} {tipAmount} USDC
+                    </div>
+                )}
             </div>
-
-            {/** Footer controls */}
-            <footer className="bg-[#1E1E1E] p-4 flex justify-center items-center gap-4 h-20">
-                <button
-                    title="mute"
-                    className={`p-3 rounded-full ${isMuted ? "bg-red-500" : "bg-[#2C2C2C]"} hover:bg-opacity-80 transition-colors`}
-                    onClick={() => setIsMuted(!isMuted)}
-                >
-                    <Mic className="w-6 h-6" />
-                </button>
-                <button
-                    title="video"
-                    className={`p-3 rounded-full ${isVideoOn ? "bg-[#2C2C2C]" : "bg-red-500"} hover:bg-opacity-80 transition-colors`}
-                    onClick={() => setIsVideoOn(!isVideoOn)}
-                >
-                    <Video className="w-6 h-6" />
-                </button>
-                <button
-                    className="bg-red-500 text-white px-4 py-2 rounded-full flex items-center hover:bg-opacity-80 transition-colors"
-                    onClick={handleLeave}
-                >
-                    <PhoneOff className="w-5 h-5 mr-2" />
-                    Leave
-                </button>
-            </footer>
-                
-            {/* tip modals */}
-            {showTipModal && (
-                <TipModal selectedTipRecipient={selectedTipRecipient} tipAmount={tipAmount} setTipAmount={setTipAmount} handleTip={handleTip} />
-            )}
-
-            {/* leave modals */}
-            {showLeaveConfirmation && <LeaveConfirmationModal setShowLeaveConfirmation={setShowLeaveConfirmation} confirmLeave={confirmLeave} />}
-            <Notifications
-                joinRequests={joinRequests}
-                speakRequests={speakRequests}
-                onAcceptJoin={onAcceptJoin}
-                onRejectJoin={onRejectJoin}
-                onAcceptSpeak={onAcceptSpeak}
-                onRejectSpeak={onRejectSpeak}
-            />
-
-            {/* Tip success notification */}
-            {showTipSuccess && (
-                <div className="fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md flex items-center">
-                    <CheckCircle2 className="w-5 h-5 mr-2" />
-                    You successfully tipped {selectedTipRecipient} {tipAmount} USDC
-                </div>
-            )}
-        </div>
+        </StreamTheme>
     );
 }
