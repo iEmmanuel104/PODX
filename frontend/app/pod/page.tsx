@@ -45,17 +45,6 @@ const JoinSession: React.FC = () => {
     const tokenProvider = useStreamTokenProvider();
 
     useEffect(() => {
-        console.log("from lobby1");
-
-        if (!isLoggedIn && !user) {
-            if (code) {
-                localStorage.setItem("pendingSessionCode", code);
-            }
-            router.push("/");
-        }
-    }, [isLoggedIn, user, code, router]);
-
-    useEffect(() => {
         if (isLoggedIn && user) {
             setName(user.username || "");
             setIsGuest(false);
