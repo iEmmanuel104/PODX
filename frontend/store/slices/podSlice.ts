@@ -50,6 +50,7 @@ export interface PodState {
     screenSharingUserId: string | null;
     sessionTitle: string;
     sessionType: 'Audio Session' | 'Video Session' | '';
+    sessionId: string,
 }
 
 const initialState: PodState = {
@@ -78,6 +79,7 @@ const initialState: PodState = {
     screenSharingUserId: null,
     sessionTitle: '',
     sessionType: '',
+    sessionId: '',
 };
 
 const podSlice = createSlice({
@@ -187,13 +189,15 @@ const podSlice = createSlice({
         clearPodState: (state) => {
             Object.assign(state, initialState);
         },
-        setSessionInfo: (state, action: PayloadAction<{ title: string; type: 'Audio Session' | 'Video Session' }>) => {
+        setSessionInfo: (state, action: PayloadAction<{ title: string; type: 'Audio Session' | 'Video Session'; sessionId: string }>) => {
             state.sessionTitle = action.payload.title;
             state.sessionType = action.payload.type;
+            state.sessionId = action.payload.sessionId;
         },
         clearSessionInfo: (state) => {
             state.sessionTitle = '';
             state.sessionType = '';
+            state.sessionId = '';
         },
     },
 });
