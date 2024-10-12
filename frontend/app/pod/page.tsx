@@ -14,6 +14,7 @@ import {
     CallParticipantResponse,
     ErrorFromResponse,
     GetCallResponse,
+    MemberResponse,
 } from "@stream-io/video-react-sdk";
 import MeetingPreview from "@/components/meeting/meetingPreview";
 import CallParticipants from "@/components/meeting/callParticipants";
@@ -32,7 +33,7 @@ const JoinSession: React.FC = () => {
     const [isWaiting, setIsWaiting] = useState<boolean>(false);
     const [isGuest, setIsGuest] = useState<boolean>(false);
     const [joining, setJoining] = useState<boolean>(false);
-    const [participants, setParticipants] = useState<CallParticipantResponse[]>([]);
+    const [participants, setParticipants] = useState<CallParticipantResponse[] | MemberResponse[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [errorFetchingMeeting, setErrorFetchingMeeting] = useState<boolean>(false);
 
@@ -42,6 +43,8 @@ const JoinSession: React.FC = () => {
 
     const client = useStreamVideoClient();
     const call = useCall();
+
+    console.log("lobby",{call, client})
     const { useCallCallingState } = useCallStateHooks();
     const callingState = useCallCallingState();
     const tokenProvider = useStreamTokenProvider();
@@ -77,7 +80,9 @@ const JoinSession: React.FC = () => {
             if (call) {
                 try {
                     const callData = await call.get();
-                    setParticipants(callData?.call?.session?.participants || []);
+
+                    console.log({currentCall: callData});
+                    setParticipants(callData.members || []);
                 } catch (e) {
                     const err = e as ErrorFromResponse<GetCallResponse>;
                     console.error(err.message);
@@ -89,7 +94,7 @@ const JoinSession: React.FC = () => {
 
         const createCall = async () => {
             if (call) {
-                await call.create({
+                const response = await call.getOrCreate({
                     data: {
                         members: [
                             {
@@ -97,8 +102,14 @@ const JoinSession: React.FC = () => {
                                 role: "host",
                             },
                         ],
+                        custom: {
+                            meeting_code: code,
+                            title: 'new call',
+                        }
                     },
                 });
+
+                console.log({response});
             }
             setLoading(false);
         };
@@ -139,6 +150,7 @@ const JoinSession: React.FC = () => {
     };
 
     const handleJoinSession = useCallback(async () => {
+        console.log('join clikced');
         if (code) {
             setJoining(true);
             if (isLoggedIn && user) {
