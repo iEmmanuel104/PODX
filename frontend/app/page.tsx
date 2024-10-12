@@ -33,7 +33,7 @@ export default function Home() {
         if (!user) return;
 
         const smartWallet = user.linkedAccounts.find((account) => account.type === "smart_wallet");
-        const walletAddress = user.wallet?.address || smartWallet?.address;
+        const walletAddress = smartWallet?.address || user.wallet?.address
 
         if (walletAddress) {
             console.log({ walletAddress });
