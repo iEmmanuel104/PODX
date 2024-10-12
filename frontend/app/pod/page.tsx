@@ -17,9 +17,10 @@ import {
 } from "@stream-io/video-react-sdk";
 import MeetingPreview from "@/components/meeting/meetingPreview";
 import CallParticipants from "@/components/meeting/callParticipants";
-import { AppContext } from "@/providers/AppProvider";
+import { AppContext } from "@/providers/appProvider";
 import { useChatContext } from "stream-chat-react";
 import { useStreamTokenProvider } from "@/hooks/useStreamTokenProvider";
+import Image from "next/image";
 
 const JoinSession: React.FC = () => {
     const router = useRouter();
@@ -65,7 +66,7 @@ const JoinSession: React.FC = () => {
     }, [isLoggedIn, user]);
 
     useEffect(() => {
-        console.log('from lobby');
+        console.log("from lobby");
         const leavePreviousCall = async () => {
             if (callingState === CallingState.JOINED) {
                 await call?.leave();
@@ -193,10 +194,11 @@ const JoinSession: React.FC = () => {
                         {participantsUI}
                         <button
                             onClick={handleJoinSession}
-                            className="mt-4 w-full bg-[#6032F6] text-white px-8 py-2 rounded-md hover:bg-[#4C28C4] transition-all duration-300 ease-in-out text-sm font-medium"
+                            className="mt-4 w-full bg-[#6032F6] text-white px-8 py-3 rounded-md hover:bg-[#4C28C4] transition-all duration-300 ease-in-out text-base font-medium flex items-center justify-center"
                             disabled={joining || (isGuest && !name)}
                         >
-                            {joining ? "Joining..." : "Join Now"}
+                            <Image src="/images/join.svg" alt="Join" width={24} height={24} className="mr-2" />
+                            {joining ? "Joining..." : "Join session"}
                         </button>
                     </div>
                 </div>
