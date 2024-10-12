@@ -108,7 +108,16 @@ const JoinSession: React.FC = () => {
                             title: sessionTitle || "New Call",
                             type: sessionType || "Video Session",
                         },
+                        settings_override: {
+                            audio: { mic_default_on: false, default_device: "speaker" },
+                            video: { camera_default_on: false },
+                            limits: {
+                                max_participants: 20,
+                                max_duration_seconds: 3600, // 1 hour
+                            },
+                        },
                     },
+                    members_limit: 20,
                 });
 
                 console.log({ response });
@@ -159,7 +168,16 @@ const JoinSession: React.FC = () => {
                 await updateGuestName();
             }
             if (callingState !== CallingState.JOINED) {
-                await call?.join();
+                await call?.join({
+                    data: {
+                        members: [
+                            {
+                                user_id: user?.id!,
+                                role: "guest",
+                            },
+                        ],
+                    },
+                });
             }
             router.push(`/pod/${code}`);
         }
