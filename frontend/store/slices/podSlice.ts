@@ -48,6 +48,8 @@ export interface PodState {
     pendingTipTransaction: string | null;
     isScreenSharing: boolean;
     screenSharingUserId: string | null;
+    sessionTitle: string;
+    sessionType: 'Audio Session' | 'Video Session' | '';
 }
 
 const initialState: PodState = {
@@ -74,6 +76,8 @@ const initialState: PodState = {
     pendingTipTransaction: null,
     isScreenSharing: false,
     screenSharingUserId: null,
+    sessionTitle: '',
+    sessionType: '',
 };
 
 const podSlice = createSlice({
@@ -183,6 +187,14 @@ const podSlice = createSlice({
         clearPodState: (state) => {
             Object.assign(state, initialState);
         },
+        setSessionInfo: (state, action: PayloadAction<{ title: string; type: 'Audio Session' | 'Video Session' }>) => {
+            state.sessionTitle = action.payload.title;
+            state.sessionType = action.payload.type;
+        },
+        clearSessionInfo: (state) => {
+            state.sessionTitle = '';
+            state.sessionType = '';
+        },
     },
 });
 
@@ -208,7 +220,9 @@ export const {
     clearErrors,
     setPendingTipTransaction,
     setScreenSharing,
-    clearPodState
+    clearPodState,
+    setSessionInfo,
+    clearSessionInfo
 } = podSlice.actions;
 
 export default podSlice.reducer;
