@@ -1,10 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Link, AlertCircle } from "lucide-react";
+import { Link, AlertCircle, Check } from "lucide-react";
 
 interface CreatedSessionModalProps {
     isOpen: boolean;
@@ -15,8 +15,18 @@ interface CreatedSessionModalProps {
 }
 
 const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClose, inviteLink, sessionCode, onJoinSession }) => {
-    const copyToClipboard = (text: string) => {
+    const [linkCopied, setLinkCopied] = useState(false);
+    const [codeCopied, setCodeCopied] = useState(false);
+
+    const copyToClipboard = (text: string, isCopyingLink: boolean) => {
         navigator.clipboard.writeText(text);
+        if (isCopyingLink) {
+            setLinkCopied(true);
+            setTimeout(() => setLinkCopied(false), 2000);
+        } else {
+            setCodeCopied(true);
+            setTimeout(() => setCodeCopied(false), 2000);
+        }
     };
 
     return (
@@ -39,10 +49,13 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClo
                                 className="flex-1 bg-[#2C2C2C] rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6032F6] text-white placeholder-[#6C6C6C]"
                             />
                             <Button
-                                onClick={() => copyToClipboard(inviteLink)}
-                                className="bg-[#6032F6] text-white px-4 py-2 rounded-md hover:bg-[#4C28C4] transition-all duration-300 ease-in-out text-sm font-medium"
+                                onClick={() => copyToClipboard(inviteLink, true)}
+                                variant="default"
+                                size="default"
+                                className="bg-[#6032F6] text-white hover:bg-[#4C28C4] transition-all duration-300 ease-in-out"
                             >
-                                Copy Link
+                                {linkCopied ? <Check className="w-4 h-4 mr-2" /> : null}
+                                {linkCopied ? "Copied!" : "Copy Link"}
                             </Button>
                         </div>
                     </div>
@@ -57,10 +70,13 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClo
                                 className="flex-1 bg-[#2C2C2C] rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6032F6] text-white placeholder-[#6C6C6C]"
                             />
                             <Button
-                                onClick={() => copyToClipboard(sessionCode)}
-                                className="bg-[#6032F6] text-white px-8 py-2 rounded-md hover:bg-[#4C28C4] transition-all duration-300 ease-in-out text-sm font-medium"
+                                onClick={() => copyToClipboard(sessionCode, false)}
+                                variant="default"
+                                size="default"
+                                className="bg-[#6032F6] text-white hover:bg-[#4C28C4] transition-all duration-300 ease-in-out"
                             >
-                                Copy
+                                {codeCopied ? <Check className="w-4 h-4 mr-2" /> : null}
+                                {codeCopied ? "Copied!" : "Copy"}
                             </Button>
                         </div>
                     </div>
@@ -70,7 +86,9 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClo
                     </div>
                     <Button
                         onClick={onJoinSession}
-                        className="w-full bg-[#6032F6] text-white px-8 py-4 rounded-md hover:bg-[#4C28C4] transition-all duration-300 ease-in-out text-sm font-medium mt-4"
+                        variant="default"
+                        size="lg"
+                        className="w-full bg-[#6032F6] text-white hover:bg-[#4C28C4] transition-all duration-300 ease-in-out mt-4"
                     >
                         Join Session Now
                     </Button>
