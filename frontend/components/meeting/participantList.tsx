@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { ChevronDown, Mic, MicOff, Video, VideoOff } from "lucide-react";
+import { ChevronDown, Mic, MicOff, Video, VideoOff, DollarSign } from "lucide-react";
 import { StreamVideoParticipant, OwnUserResponse, useCallStateHooks } from "@stream-io/video-react-sdk";
 
 interface ParticipantsSidebarProps {
@@ -78,9 +78,10 @@ const ParticipantsSidebar: React.FC<ParticipantsSidebarProps> = ({
                 {expandedParticipant === participant.userId && !isCurrentUser && (
                     <div className="bg-[#3C3C3C] p-2 rounded-b-lg">
                         <button
-                            className="w-full text-left text-white text-sm py-1 px-2 hover:bg-[#4C4C4C] rounded"
+                            className="w-full text-left text-white text-sm py-1 px-2 hover:bg-[#4C4C4C] rounded flex items-center"
                             onClick={() => openTipModal(participant.name || participant.userId)}
                         >
+                            <DollarSign className="w-4 h-4 mr-2 text-green-500" />
                             Tip
                         </button>
                         {canPromote && (
