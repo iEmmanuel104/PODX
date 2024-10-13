@@ -9,15 +9,21 @@ import { Input } from "@/components/ui/input";
 import CreateSessionModal from "@/components/pod/createSessionModal";
 import CreatedSessionModal from "@/components/pod/createdSessionModal";
 import Logo from "@/components/ui/logo";
-import { useAppSelector } from "@/store/hooks";
-import { nanoid } from "nanoid";
-import { AppContext, MEETING_ID_REGEX } from "@/providers/appProvider";
+import { useAppSelector, useAppDispatch } from "@/store/hooks";
+import { customAlphabet, nanoid } from "nanoid";
+import { AppContext } from "@/providers/appProvider";
 import { ErrorFromResponse, GetCallResponse, StreamVideoClient, User } from "@stream-io/video-react-sdk";
 import { API_KEY, CALL_TYPE } from "@/providers/meetProvider";
 import { setSessionInfo } from "@/store/slices/podSlice";
-import { useAppDispatch } from "@/store/hooks";
 
 const GUEST_USER: User = { id: "guest", type: "guest" };
+
+const getMeetingId = (): string => {
+    const alphabet = "abcdefghijklmnopqrstuvwxyz";
+    const nanoid = customAlphabet(alphabet, 4);
+
+    return `${nanoid(3)}-${nanoid(4)}-${nanoid(3)}`;
+};
 
 export default function PodPage() {
     const router = useRouter();
@@ -30,6 +36,7 @@ export default function PodPage() {
     const [error, setError] = useState("");
     const [inviteLink, setInviteLink] = useState("");
     const [sessionCode, setSessionCode] = useState("");
+    const [isJoining, setIsJoining] = useState(false);
 
     const { isLoggedIn, user } = useAppSelector((state) => state.user);
 
@@ -53,21 +60,20 @@ export default function PodPage() {
     const handleCreateSession = useCallback(
         async (title: string, type: "Audio Session" | "Video Session") => {
             setNewMeeting(true);
-            const newSessionCode = nanoid();
+            const newSessionCode = getMeetingId();
             setInviteLink(`https://podx.studio/studio/${newSessionCode}`);
             setSessionCode(newSessionCode);
             dispatch(setSessionInfo({ title, type, sessionId: newSessionCode }));
             closeCreateModal();
             openCreatedModal();
         },
-        [dispatch]
+        [dispatch, setNewMeeting]
     );
 
     const handleJoinSession = useCallback(async () => {
-
+        if (!meetingCode) return;
+        setIsJoining(true);
         console.log("Joining session with code: ", meetingCode);
-        // if (!MEETING_ID_REGEX.test(meetingCode)) return;
-        // setCheckingCode(true);
 
         const client = new StreamVideoClient({
             apiKey: API_KEY,
@@ -79,7 +85,7 @@ export default function PodPage() {
         try {
             const response: GetCallResponse = await call.get();
             console.log({ responseCallFound: response });
-            if (response.call && (meetingCode === response.call.custom.sessionId)) {
+            if (response.call && meetingCode === response.call.custom.sessionId) {
                 dispatch(
                     setSessionInfo({
                         title: response.call.custom.title,
@@ -96,10 +102,10 @@ export default function PodPage() {
             if (err.status === 404) {
                 setError("Couldn't find the meeting you're trying to join.");
             }
+        } finally {
+            setIsJoining(false);
         }
-
-        // setCheckingCode(false);
-    }, [meetingCode, router]);
+    }, [meetingCode, router, dispatch]);
 
     if (!isLoggedIn || !user) {
         router.push("/");
@@ -137,9 +143,10 @@ export default function PodPage() {
                                 />
                                 <Button
                                     onClick={handleJoinSession}
-                                    className="bg-[#6032F6] text-white px-8 py-2 rounded-md hover:bg-[#4C28C4] transition-all duration-300 ease-in-out text-sm font-medium"
+                                    disabled={!meetingCode || isJoining}
+                                    className="bg-[#6032F6] text-white px-8 py-2 rounded-md hover:bg-[#4C28C4] transition-all duration-300 ease-in-out text-sm font-medium disabled:bg-gray-500 disabled:cursor-not-allowed"
                                 >
-                                    Join
+                                    {isJoining ? "Joining..." : "Join"}
                                 </Button>
                             </div>
                             {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
