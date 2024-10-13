@@ -15,9 +15,13 @@ interface CreateSessionModalProps {
 const CreateSessionModal: React.FC<CreateSessionModalProps> = ({ isOpen, onClose, onCreateSession }) => {
     const [sessionTitle, setSessionTitle] = useState("Session-1");
     const [sessionType, setSessionType] = useState<"Audio Session" | "Video Session">("Video Session");
+    const [isCreating, setIsCreating] = useState(false);
 
     const handleCreateSession = () => {
+        if (!sessionTitle.trim()) return;
+        setIsCreating(true);
         onCreateSession(sessionTitle, sessionType);
+        setIsCreating(false);
         onClose();
     };
 
@@ -59,9 +63,10 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({ isOpen, onClose
                         </Button>
                         <Button
                             onClick={handleCreateSession}
-                            className="w-1/2 px-4 py-6 bg-[#6032F6] rounded-md hover:bg-[#6D28D9] transition-colors"
+                            disabled={!sessionTitle.trim() || isCreating}
+                            className="w-1/2 px-4 py-6 bg-[#6032F6] rounded-md hover:bg-[#6D28D9] transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed"
                         >
-                            Create session
+                            {isCreating ? "Creating..." : "Create session"}
                         </Button>
                     </div>
                 </div>
