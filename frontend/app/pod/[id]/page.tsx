@@ -16,7 +16,8 @@ import {
     SpeakerLayout,
     CallControls,
 } from "@stream-io/video-react-sdk";
-import { useRouter, useSearchParams } from "next/navigation";
+import { Channel, ChannelHeader, MessageInput, MessageList, useChatContext, Window } from "stream-chat-react";
+import { useRouter } from "next/navigation";
 
 interface MeetingProps {
     params: {
@@ -173,9 +174,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                         />
                     )}
 
-                    {showThankYouModal && (
-                        <ThankYouModal onClose={confirmLeave} />
-                    )}
+                    {showThankYouModal && <ThankYouModal onClose={confirmLeave} />}
 
                     <Notifications
                         joinRequests={joinRequests}
