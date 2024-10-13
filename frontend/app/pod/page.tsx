@@ -107,6 +107,7 @@ const JoinSession: React.FC = () => {
                         },
                     },
                     members_limit: 20,
+                    ...((sessionType === 'Audio Session') && {video : false} ),
                 });
 
                 console.log("call create success");
@@ -159,6 +160,7 @@ const JoinSession: React.FC = () => {
                     data: {
                         members: [{ user_id: user?.id!, role: "guest" }],
                     },
+                    ...(sessionType === "Audio Session" && { video: false }),
                 });
             }
             router.push(`/pod/${code}`);
