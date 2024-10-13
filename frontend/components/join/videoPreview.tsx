@@ -1,5 +1,6 @@
+"use client";
 import React, { useState } from "react";
-
+import Image from "next/image";
 interface VideoPreviewProps {
     isMuted: boolean;
 }
@@ -7,7 +8,7 @@ interface VideoPreviewProps {
 const VideoPreview: React.FC<VideoPreviewProps> = ({ isMuted }) => (
     <div className="bg-[#1E1E1E] rounded-lg overflow-hidden mb-6">
         <div className="relative aspect-video">
-            <img
+            <Image
                 src="/images/woman.png"
                 alt="Video preview"
                 className="w-full h-full object-cover"
