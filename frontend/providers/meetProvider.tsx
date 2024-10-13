@@ -101,7 +101,13 @@ const MeetProvider: React.FC<MeetProviderProps> = ({ meetingId, children, langua
             videoClientRef.current?.disconnectUser();
         };
     }, [isLoggedIn, appUser, tokenProvider, connectChatClient, connectVideoClient, router, meetingId]);
-    if (loading) return <LoadingOverlay />;
+    if (loading) {
+        return (
+            <div className="h-screen w-screen bg-[#121212]">
+                <LoadingOverlay />
+            </div>
+        );
+    }
 
     return (
         <Chat client={chatClientRef.current!}>
