@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
-import { Settings, CheckCircle2 } from "lucide-react";
+import { Settings, CheckCircle2, Menu } from "lucide-react";
 import TipModal from "@/components/meeting/tips";
 import ParticipantsSidebar from "@/components/meeting/participantList";
 import ThankYouModal from "@/components/meeting/thankYou";
@@ -29,7 +29,6 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const call = useCall();
     const { id } = params;
     const router = useRouter();
-    console.log({ callMeetPage: call });
     const { useParticipants, useCallMembers, useIsCallLive, useCallCustomData, useHasOngoingScreenShare, useCallCallingState } = useCallStateHooks();
 
     const participants = useParticipants();
@@ -37,7 +36,6 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const customData = useCallCustomData();
     const live = useIsCallLive();
 
-    console.log({ participants, members, customData });
     const connectedUser = useConnectedUser();
     const hasOngoingScreenShare = useHasOngoingScreenShare();
     const callingState = useCallCallingState();
@@ -48,6 +46,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const [showThankYouModal, setShowThankYouModal] = useState(false);
     const [joinRequests, setJoinRequests] = useState<string[]>([]);
     const [speakRequests, setSpeakRequests] = useState<string[]>([]);
+    const [showSidebar, setShowSidebar] = useState(false);
 
     const isSpeakerView = useMemo(() => {
         return hasOngoingScreenShare || participants.length > 1;
@@ -91,16 +90,11 @@ export default function MeetingInterface({ params }: MeetingProps) {
     };
 
     const confirmLeave = async () => {
-        // await call?.leave();
-        // setShowThankYouModal(false);
-        // Redirect to end meeting page or home
         router.push("/landing");
     };
 
     const updateParticipantRole = (userId: string, newRole: string) => {
-        // Implement the logic to update the participant's role
         console.log(`Updating ${userId} to ${newRole}`);
-        // You might need to call an API or update the state here
     };
 
     const handleJoinRequest = (userId: string, accept: boolean) => {
@@ -129,6 +123,10 @@ export default function MeetingInterface({ params }: MeetingProps) {
         setSpeakRequests((prev) => prev.filter((u) => u !== user));
     };
 
+    const toggleSidebar = () => {
+        setShowSidebar(!showSidebar);
+    };
+
     return (
         <StreamTheme className="root-theme">
             <StreamCall call={call}>
@@ -139,24 +137,41 @@ export default function MeetingInterface({ params }: MeetingProps) {
                             <h1 className="text-xl font-bold mr-4">
                                 Pod<span className="text-[#7C3AED]">X</span>
                             </h1>
-                            <span className="text-sm mr-2">{customData.title}</span>
+                            <span className="text-sm mr-2 hidden sm:inline">{customData.title}</span>
                             <span className="bg-red-500 text-xs px-2 py-0.5 rounded-full">{live ? "Live" : "Offline"}</span>
                         </div>
-                        <button title="settings" className="text-[#A3A3A3] hover:text-white transition-colors">
-                            <Settings className="w-6 h-6" />
-                        </button>
+                        <div className="flex items-center">
+                            <button title="settings" className="text-[#A3A3A3] hover:text-white transition-colors mr-2 sm:mr-4">
+                                <Settings className="w-6 h-6" />
+                            </button>
+                            <button title="toggle sidebar" className="text-[#A3A3A3] hover:text-white transition-colors sm:hidden" onClick={toggleSidebar}>
+                                <Menu className="w-6 h-6" />
+                            </button>
+                        </div>
                     </header>
 
                     {/** Main content */}
-                    <div className="flex-grow flex overflow-hidden">
-                        <div className="flex-grow p-4">{isSpeakerView ? <SpeakerLayout /> : <PaginatedGridLayout />}</div>
-                        <ParticipantsSidebar
-                            participants={participants}
-                            currentUser={connectedUser}
-                            openTipModal={openTipModal}
-                            updateParticipantRole={updateParticipantRole}
-                            handleJoinRequest={handleJoinRequest}
-                        />
+                    <div className="flex-grow flex overflow-hidden relative">
+                        <div className="flex-grow p-2">{isSpeakerView ? <SpeakerLayout /> : <PaginatedGridLayout />}</div>
+                        <div
+                            className={`
+                                ${showSidebar ? 'translate-y-0' : 'translate-y-full sm:translate-y-0'} 
+                                transition-transform duration-300 ease-in-out
+                                fixed sm:relative inset-0 sm:inset-auto top-16 sm:top-0 
+                                 h-screen sm:h-full w-full sm:w-64 lg:w-80 
+                                bg-[#1E1E1E] sm:bg-transparent 
+                                z-20 sm:z-auto
+                                overflow-y-auto
+                            `}
+                        >
+                            <ParticipantsSidebar
+                                participants={participants}
+                                currentUser={connectedUser}
+                                openTipModal={openTipModal}
+                                updateParticipantRole={updateParticipantRole}
+                                handleJoinRequest={handleJoinRequest}
+                            />
+                        </div>
                     </div>
 
                     {/** Footer controls */}
@@ -198,6 +213,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
         </StreamTheme>
     );
 }
+
 function useCallCallingState() {
     throw new Error("Function not implemented.");
 }
