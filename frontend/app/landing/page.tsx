@@ -120,20 +120,20 @@ export default function PodPage() {
             <div className="w-full max-w-2xl flex flex-col items-center">
                 <Logo />
 
-                <div className="flex items-center mb-16">
+                <div className="flex items-center mb-8 sm:mb-16">
                     <div className="w-8 h-8 bg-[#6032F6] rounded-full flex items-center justify-center text-xs font-bold mr-2">{initials}</div>
                     <span className="bg-green-500 h-1.5 w-1.5 rounded-full mr-1"></span>
                     <span className="text-[#A3A3A3] text-sm">{displayName}</span>
                 </div>
 
-                <div className="w-full flex flex-col md:flex-row gap-6 mb-16">
+                <div className="w-full flex flex-col md:flex-row gap-6 mb-8 sm:mb-16">
                     <div className="flex-1 rounded-2xl p-6 bg-[#1E1E1E] flex flex-col justify-between" style={{ minHeight: "200px" }}>
                         <div>
                             <h2 className="text-2xl font-semibold mb-2 text-white">Join Session</h2>
                             <p className="text-[#A3A3A3] text-sm">Join a meeting instantly and collaborate!</p>
                         </div>
-                        <div className="flex flex-col gap-4">
-                            <div className="flex gap-4 align-baseline">
+                        <div className="flex flex-col gap-4 mt-4">
+                            <div className="flex flex-col sm:flex-row gap-4">
                                 <Input
                                     type="text"
                                     placeholder="Enter meeting code"
@@ -154,12 +154,14 @@ export default function PodPage() {
                     </div>
 
                     <div
-                        className="w-[calc(42%-0.75rem)] rounded-lg p-6 cursor-pointer transition-all duration-300 ease-in-out bg-gradient-to-br from-[#6032F6] to-[#381D90] hover:from-[#4C28C4] hover:to-[#2D1873]"
+                        className="w-full md:w-[42%] rounded-lg p-6 cursor-pointer transition-all duration-300 ease-in-out bg-gradient-to-br from-[#6032F6] to-[#381D90] hover:from-[#4C28C4] hover:to-[#2D1873] flex flex-col justify-between"
                         onClick={openCreateModal}
-                        style={{ minHeight: "250px" }}
+                        style={{ minHeight: "200px" }}
                     >
-                        <Image src="/images/play-add.svg" alt="Create Session" width={32} height={32} className="mb-4" />
-                        <h2 className="text-2xl font-semibold mb-2 text-white">Create Session</h2>
+                        <div>
+                            <Image src="/images/play-add.svg" alt="Create Session" width={32} height={32} className="mb-4" />
+                            <h2 className="text-2xl font-semibold mb-2 text-white">Create Session</h2>
+                        </div>
                         <p className="text-[#E9D5FF] text-sm">
                             Start a meeting or podcast session in seconds - collaborate, share, and record with ease!
                         </p>

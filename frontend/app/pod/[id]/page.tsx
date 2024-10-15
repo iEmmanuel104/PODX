@@ -16,6 +16,7 @@ import {
     SpeakerLayout,
     CallControls,
 } from "@stream-io/video-react-sdk";
+import '@stream-io/video-react-sdk/dist/css/styles.css';
 import { Channel, ChannelHeader, MessageInput, MessageList, useChatContext, Window } from "stream-chat-react";
 import { useRouter } from "next/navigation";
 
@@ -152,7 +153,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
                     {/** Main content */}
                     <div className="flex-grow flex overflow-hidden relative">
-                        <div className="flex-grow p-2">{isSpeakerView ? <SpeakerLayout /> : <PaginatedGridLayout />}</div>
+                        <div className="flex-1 hover:bg-white hover:cursor-pointer w-fit h-fit">{isSpeakerView ? <SpeakerLayout /> : <PaginatedGridLayout />}</div>
                         <div
                             className={`
                                 ${showSidebar ? 'translate-y-0' : 'translate-y-full sm:translate-y-0'} 
