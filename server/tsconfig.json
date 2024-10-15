@@ -12,6 +12,7 @@
         "strictPropertyInitialization": false,
         "resolveJsonModule": true,
         "skipLibCheck": true,
+        "baseUrl": "src",
         "paths": {
             "*": ["*", "node_modules/*", "types/*"]
         }
