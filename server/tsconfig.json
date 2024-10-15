@@ -11,7 +11,10 @@
         "strict": true,
         "strictPropertyInitialization": false,
         "resolveJsonModule": true,
-        "skipLibCheck": true
+        "skipLibCheck": true,
+        "paths": {
+            "*": ["*", "node_modules/*", "types/*"]
+        }
     },
-    "include": ["src/**/*", "src/global.d.ts", "migrations", "src/models/.model.ts", "src/middlewares/**/*"]
-}
+    "include": ["src/**/*", "src/global.d.ts", "migrations", "src/models/.model.ts", "src/middlewares/**/*"],
+    "exclude": ["node_modules"]
