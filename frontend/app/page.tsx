@@ -26,9 +26,10 @@ export default function Home() {
 
     useEffect(() => {
         if (ready) {
-            setIsLoading(false);
             if (authenticated && user) {
                 handleUserAuthentication();
+            } else {
+                setIsLoading(false);
             }
         }
     }, [ready, authenticated, user]);
@@ -56,6 +57,7 @@ export default function Home() {
 
                 if (userData.username.startsWith("guest-")) {
                     setShowUsernameModal(true);
+                    setIsLoading(false);
                 } else {
                     const pendingSessionCode = localStorage.getItem("pendingSessionCode");
                     if (pendingSessionCode) {
@@ -67,9 +69,8 @@ export default function Home() {
                 }
             } catch (error) {
                 console.error("Error in user authentication:", error);
-                // Handle error (e.g., show error message to user)
-            } finally {
                 setIsLoading(false);
+                // Handle error (e.g., show error message to user)
             }
         } else {
             setIsLoading(false);
@@ -83,9 +84,8 @@ export default function Home() {
             // handleUserAuthentication will be called by the useEffect hook when authenticated changes
         } catch (error) {
             console.error("Error connecting wallet:", error);
-            // Handle error (e.g., show error message to user)
-        } finally {
             setIsConnecting(false);
+            // Handle error (e.g., show error message to user)
         }
     };
 
@@ -139,8 +139,6 @@ export default function Home() {
                                 </svg>
                                 Connecting...
                             </>
-                        ) : authenticated ? (
-                            "Connected"
                         ) : (
                             <>
                                 <Wallet className="w-5 h-5 mr-2" />
