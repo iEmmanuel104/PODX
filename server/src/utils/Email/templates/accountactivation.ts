@@ -10,7 +10,7 @@ export const accountActivation = (otpCode: string, name: string) => {
                 <h1 style="color: #1e1e2d; margin: 10px 0; font-size: 35px; font-weight: 300; font-family: 'Rubik', sans-serif; text-transform: capitalize;">
                     Hi ${name}, <span style="text-transform: capitalize;"></span>
                 </h1>
-                <p style="color: #1e1e2d; font-size: 18px; margin: 10px 0;">Welcome to Shortlet-Lagos, we are excited to have you on board!</p>
+                <p style="color: #1e1e2d; font-size: 18px; margin: 10px 0;">Welcome to PodX, we are excited to have you on board!</p>
                 <p style="color: #1e1e2d; font-size: 16px; margin: 10px 0;">To complete your account activation, please use the following one-time passcode (OTP):</p>
             </div>
             <div style="margin-top: 15px;">

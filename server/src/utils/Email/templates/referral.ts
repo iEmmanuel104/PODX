@@ -10,7 +10,7 @@ export const emailInvite = (link: string, name: string) => {
                     <h1 style="color: #1e1e2d; margin: 10px 0; font-size: 35px; font-weight: 300; font-family: 'Rubik', sans-serif; text-transform: capitalize;">
                         Hello,
                     </h1>
-                    <p style="color: #1e1e2d; font-size: 18px; margin: 10px 0;">Your friend ${name} has invited you to join Shortlet-Lagos platform</p>
+                    <p style="color: #1e1e2d; font-size: 18px; margin: 10px 0;">Your friend ${name} has invited you to join PodX platform</p>
                     <p style="color: #1e1e2d; font-size: 16px; margin: 10px 0;">Join us today and enjoy the unique benefits we offer. Click the link below to get started:</p>
                 </div>
                 <div style="margin-top: 15px;">
