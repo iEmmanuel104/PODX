@@ -11,7 +11,7 @@ interface CreatedSessionModalProps {
     onClose: () => void;
     inviteLink: string;
     sessionCode: string;
-    onJoinSession: () => Promise<void>;
+    onJoinSession: () => void;
 }
 
 const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClose, inviteLink, sessionCode, onJoinSession }) => {
