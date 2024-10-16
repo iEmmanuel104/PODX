@@ -4,7 +4,7 @@
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
         "module": "commonjs",
-        "rootDirs": ["./src"],
+        "rootDir": "./src",
         "outDir": "./dist",
         "esModuleInterop": true,
         "forceConsistentCasingInFileNames": true,
@@ -14,7 +14,7 @@
         "skipLibCheck": true,
         "baseUrl": "src",
         "paths": {
-            "*": ["*", "node_modules/*", "types/*"]
+            "*": ["*", "../node_modules/*", "types/*"]
         }
     },
     "include": ["src/**/*", "src/global.d.ts", "migrations", "src/models/.model.ts", "src/middlewares/**/*"],
