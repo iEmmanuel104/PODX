@@ -1,3 +1,4 @@
+"use client";
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { nanoid } from "nanoid";
 import { Call, StreamCall, StreamVideo, StreamVideoClient, User } from "@stream-io/video-react-sdk";
@@ -101,7 +102,8 @@ const MeetProvider: React.FC<MeetProviderProps> = ({ meetingId, children, langua
             videoClientRef.current?.disconnectUser();
         };
     }, [isLoggedIn, appUser, tokenProvider, connectChatClient, connectVideoClient, router, meetingId]);
-    if (loading) {
+
+    if (loading || !chatClientRef.current || !videoClientRef.current || !callRef.current) {
         return (
             <div className="h-screen w-screen bg-[#121212]">
                 <LoadingOverlay />
@@ -110,9 +112,9 @@ const MeetProvider: React.FC<MeetProviderProps> = ({ meetingId, children, langua
     }
 
     return (
-        <Chat client={chatClientRef.current!}>
-            <StreamVideo client={videoClientRef.current!}>
-                <StreamCall call={callRef.current!}>{children}</StreamCall>
+        <Chat client={chatClientRef.current}>
+            <StreamVideo client={videoClientRef.current}>
+                <StreamCall call={callRef.current}>{children}</StreamCall>
             </StreamVideo>
         </Chat>
     );
