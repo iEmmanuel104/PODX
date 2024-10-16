@@ -59,13 +59,7 @@ export default function Home() {
                     setShowUsernameModal(true);
                     setIsLoading(false);
                 } else {
-                    const pendingSessionCode = localStorage.getItem("pendingSessionCode");
-                    if (pendingSessionCode) {
-                        localStorage.removeItem("pendingSessionCode");
-                        router.push(`/pod?code=${pendingSessionCode}`);
-                    } else {
-                        router.push("/landing");
-                    }
+                    redirectUser();
                 }
             } catch (error) {
                 console.error("Error in user authentication:", error);
@@ -92,6 +86,10 @@ export default function Home() {
     const handleUsernameUpdate = (newUsername: string) => {
         dispatch(updateUser({ username: newUsername }));
         setShowUsernameModal(false);
+        redirectUser();
+    };
+
+    const redirectUser = () => {
         const pendingSessionCode = localStorage.getItem("pendingSessionCode");
         if (pendingSessionCode) {
             localStorage.removeItem("pendingSessionCode");
@@ -102,6 +100,14 @@ export default function Home() {
     };
 
     if (isLoading) {
+        return (
+            <div className="h-screen w-screen bg-[#121212]">
+                <LoadingOverlay />
+            </div>
+        );
+    }
+
+    if (authenticated) {
         return (
             <div className="h-screen w-screen bg-[#121212]">
                 <LoadingOverlay />
@@ -120,7 +126,7 @@ export default function Home() {
                     <button
                         className="w-full py-3 px-4 rounded-md flex items-center justify-center transition-colors bg-[#6032f6] hover:bg-[#3C3C3C] disabled:opacity-50 disabled:cursor-not-allowed"
                         onClick={handleConnect}
-                        disabled={isConnecting || authenticated}
+                        disabled={isConnecting}
                     >
                         {isConnecting ? (
                             <>
