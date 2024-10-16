@@ -31,7 +31,6 @@ export default function Home() {
     const handleUserAuthentication = async () => {
         if (!user) return;
 
-        setIsLoading(true);
         const smartWallet = user.smartWallet || user.linkedAccounts.find((account) => account.type === "smart_wallet");
         const walletAddress = smartWallet?.address || user.wallet?.address;
 
@@ -63,8 +62,6 @@ export default function Home() {
             } catch (error) {
                 console.error("Error in user authentication:", error);
                 // Handle error (e.g., show error message to user)
-            } finally {
-                setIsLoading(false);
             }
         }
     };
