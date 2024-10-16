@@ -7,7 +7,7 @@ import { base, baseGoerli, mainnet, sepolia, polygon, polygonMumbai } from "viem
 import { PRIVY_APP_ID } from "@/constants";
 import { useAppDispatch } from "@/store/hooks";
 import { setUser, setSignature } from "@/store/slices/userSlice";
-import { initializeSocketConnection } from "@/lib/connections/socket";
+// import { initializeSocketConnection } from "@/lib/connections/socket";
 
 export default function PrivyProvider({ children }: { children: React.ReactNode }) {
     const dispatch = useAppDispatch();
@@ -20,7 +20,7 @@ export default function PrivyProvider({ children }: { children: React.ReactNode 
             const parsedUser = JSON.parse(storedUser);
             dispatch(setUser(parsedUser));
             dispatch(setSignature(storedSignature));
-            initializeSocketConnection(storedSignature);
+            // initializeSocketConnection(storedSignature);
         }
     }, [dispatch]);
 

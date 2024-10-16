@@ -67,15 +67,12 @@ export default function Home() {
     };
 
     const handleConnect = async () => {
-        setIsLoading(true);
         try {
             await login();
             await handleUserAuthentication();
         } catch (error) {
             console.error("Error connecting wallet:", error);
             // Handle error (e.g., show error message to user)
-        } finally {
-            setIsLoading(false);
         }
     };
 
