@@ -1,4 +1,4 @@
-# **Shortlet-Lagos Git Workflow Documentation**
+# **PodX Git Workflow Documentation**
 Git Repository Structure
 
 Our project follows this workflow to manage code changes and releases. The  branches in the repository are:
