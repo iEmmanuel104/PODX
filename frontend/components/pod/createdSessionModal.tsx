@@ -4,28 +4,58 @@ import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Link, AlertCircle, Check } from "lucide-react";
+import { Link, AlertCircle, Check, Loader2 } from "lucide-react";
 
 interface CreatedSessionModalProps {
     isOpen: boolean;
     onClose: () => void;
     inviteLink: string;
     sessionCode: string;
-    onJoinSession: () => void;
+    onJoinSession: () => Promise<void>;
 }
 
 const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClose, inviteLink, sessionCode, onJoinSession }) => {
     const [linkCopied, setLinkCopied] = useState(false);
     const [codeCopied, setCodeCopied] = useState(false);
+    const [isJoining, setIsJoining] = useState(false);
+    const [isCopyingLink, setIsCopyingLink] = useState(false);
+    const [isCopyingCode, setIsCopyingCode] = useState(false);
 
-    const copyToClipboard = (text: string, isCopyingLink: boolean) => {
-        navigator.clipboard.writeText(text);
+    const copyToClipboard = async (text: string, isCopyingLink: boolean) => {
         if (isCopyingLink) {
-            setLinkCopied(true);
-            setTimeout(() => setLinkCopied(false), 2000);
+            setIsCopyingLink(true);
         } else {
-            setCodeCopied(true);
-            setTimeout(() => setCodeCopied(false), 2000);
+            setIsCopyingCode(true);
+        }
+
+        try {
+            await navigator.clipboard.writeText(text);
+            if (isCopyingLink) {
+                setLinkCopied(true);
+                setTimeout(() => setLinkCopied(false), 2000);
+            } else {
+                setCodeCopied(true);
+                setTimeout(() => setCodeCopied(false), 2000);
+            }
+        } catch (error) {
+            console.error("Failed to copy text: ", error);
+        } finally {
+            if (isCopyingLink) {
+                setIsCopyingLink(false);
+            } else {
+                setIsCopyingCode(false);
+            }
+        }
+    };
+
+    const handleJoinSession = async () => {
+        setIsJoining(true);
+        try {
+            await onJoinSession();
+        } catch (error) {
+            console.error("Failed to join session: ", error);
+        } finally {
+            setIsJoining(false);
         }
     };
 
@@ -53,9 +83,14 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClo
                                 variant="default"
                                 size="default"
                                 className="bg-[#6032F6] text-white hover:bg-[#4C28C4] transition-all duration-300 ease-in-out"
+                                disabled={isCopyingLink}
                             >
-                                {linkCopied ? <Check className="w-4 h-4 mr-2" /> : null}
-                                {linkCopied ? "Copied!" : "Copy Link"}
+                                {isCopyingLink ? (
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                ) : linkCopied ? (
+                                    <Check className="w-4 h-4 mr-2" />
+                                ) : null}
+                                {isCopyingLink ? "Copying..." : linkCopied ? "Copied!" : "Copy Link"}
                             </Button>
                         </div>
                     </div>
@@ -74,9 +109,14 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClo
                                 variant="default"
                                 size="default"
                                 className="bg-[#6032F6] text-white hover:bg-[#4C28C4] transition-all duration-300 ease-in-out"
+                                disabled={isCopyingCode}
                             >
-                                {codeCopied ? <Check className="w-4 h-4 mr-2" /> : null}
-                                {codeCopied ? "Copied!" : "Copy"}
+                                {isCopyingCode ? (
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                ) : codeCopied ? (
+                                    <Check className="w-4 h-4 mr-2" />
+                                ) : null}
+                                {isCopyingCode ? "Copying..." : codeCopied ? "Copied!" : "Copy"}
                             </Button>
                         </div>
                     </div>
@@ -85,12 +125,20 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClo
                         <p>For the best experience, remind participants to connect their wallet when joining through the session link</p>
                     </div>
                     <Button
-                        onClick={onJoinSession}
+                        onClick={handleJoinSession}
                         variant="default"
                         size="lg"
                         className="w-full bg-[#6032F6] text-white hover:bg-[#4C28C4] transition-all duration-300 ease-in-out mt-4"
+                        disabled={isJoining}
                     >
-                        Join Session Now
+                        {isJoining ? (
+                            <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Joining...
+                            </>
+                        ) : (
+                            "Join Session Now"
+                        )}
                     </Button>
                 </div>
             </DialogContent>

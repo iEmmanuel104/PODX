@@ -185,9 +185,14 @@ const JoinSession: React.FC = () => {
         return null;
     }
 
+
     const renderContent = () => {
         if (loading) {
-            return <WaitingScreen />;
+            return (
+                <div className="w-full flex justify-center">
+                    <WaitingScreen />
+                </div>
+            );
         }
         if (isGuest && !isBasenameConfirmed) {
             return (
@@ -201,16 +206,22 @@ const JoinSession: React.FC = () => {
             );
         } else {
             return (
-                <div className="flex flex-col md:flex-row gap-6 md:gap-10 w-full">
-                    <div className="w-full md:w-1/2">
+                <div className="flex flex-col lg:flex-row gap-6 lg:gap-10 w-full">
+                    <div className="w-full lg:w-1/2">
                         <MeetingPreview />
                     </div>
-                    <div className="w-full md:w-1/2 flex flex-col justify-center">
-                        <h2 className="text-2xl font-semibold mb-4">Ready to join?</h2>
-                        {participantsUI}
+                    <div className="w-full lg:w-1/2 flex flex-col justify-center items-center lg:items-start">
+                        <h2 className="text-2xl font-semibold mb-4 text-center lg:text-left">Ready to join?</h2>
+                        <div className="w-full text-center lg:text-left">
+                            {typeof participantsUI === 'string' ? (
+                                <p>{participantsUI}</p>
+                            ) : (
+                                participantsUI
+                            )}
+                        </div>
                         <button
                             onClick={handleJoinSession}
-                            className="mt-4 w-full bg-[#6032F6] text-white px-8 py-3 rounded-md hover:bg-[#4C28C4] transition-all duration-300 ease-in-out text-base font-medium flex items-center justify-center"
+                            className="mt-4 w-full max-w-md bg-[#6032F6] text-white px-8 py-3 rounded-md hover:bg-[#4C28C4] transition-all duration-300 ease-in-out text-base font-medium flex items-center justify-center"
                             disabled={joining || (isGuest && !name)}
                         >
                             <Image src="/images/join.svg" alt="Join" width={24} height={24} className="mr-2" />
@@ -228,9 +239,12 @@ const JoinSession: React.FC = () => {
                 <div className="flex justify-center mb-8">
                     <Logo />
                 </div>
-                <p className="text-center mb-8 text-lg">
-                    You are about to join {sessionTitle || "Base Live Build Session"} ({sessionType || "Video Session"})
-                </p>
+                <div className="mb-8 text-lg flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-2 text-center">
+                    <p className="text-gray-400">
+                        You are about to join
+                    </p>
+                    <p className="text-white">{sessionTitle || "Base Live Build Session"} ({sessionType || "Video Session"})</p>
+                </div>
                 {renderContent()}
             </div>
         </div>

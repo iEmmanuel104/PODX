@@ -4,14 +4,19 @@
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
         "module": "commonjs",
-        "rootDirs": ["./src"],
-        "outDir": "./dist",
+        "rootDirs": ["./server/src"],
+        "outDir": "./server/dist",
         "esModuleInterop": true,
         "forceConsistentCasingInFileNames": true,
         "strict": true,
         "strictPropertyInitialization": false,
         "resolveJsonModule": true,
-        "skipLibCheck": true
+        "skipLibCheck": true,
+        "baseUrl": "server/src",
+        "paths": {
+            "*": ["*", "node_modules/*", "types/*"]
+        }
     },
-    "include": ["src/**/*", "src/global.d.ts", "migrations", "src/models/.model.ts", "src/middlewares/**/*"]
+    "include": ["server/src/**/*", "server/src/global.d.ts", "migrations", "src/models/.model.ts", "src/middlewares/**/*"],
+    "exclude": ["node_modules"]
 }

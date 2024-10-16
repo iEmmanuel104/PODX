@@ -15,14 +15,13 @@ import { SIGNATURE_MESSAGE } from "@/constants";
 export default function Home() {
     const [showUsernameModal, setShowUsernameModal] = useState(false);
     const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
     const { login, user, authenticated, ready } = usePrivy();
-    console.log({user, authenticated});
     const router = useRouter();
     const dispatch = useAppDispatch();
     const [findOrCreateUser] = useFindOrCreateUserMutation();
     const { signMessage, initSigner } = useAuthSigner();
 
-    // New useEffect to check for authenticated user and redirect
     useEffect(() => {
         if (ready && authenticated && user) {
             handleUserAuthentication();
@@ -32,12 +31,11 @@ export default function Home() {
     const handleUserAuthentication = async () => {
         if (!user) return;
 
+        setIsLoading(true);
         const smartWallet = user.smartWallet || user.linkedAccounts.find((account) => account.type === "smart_wallet");
-        // const walletAddress = user.wallet?.address || smartWallet?.address;
-        const walletAddress = smartWallet?.address || user.wallet?.address
+        const walletAddress = smartWallet?.address || user.wallet?.address;
 
         if (walletAddress) {
-            console.log({ walletAddress });
             try {
                 await initSigner();
                 const result = await findOrCreateUser({ walletAddress }).unwrap();
@@ -65,17 +63,22 @@ export default function Home() {
             } catch (error) {
                 console.error("Error in user authentication:", error);
                 // Handle error (e.g., show error message to user)
+            } finally {
+                setIsLoading(false);
             }
         }
     };
 
     const handleConnect = async () => {
+        setIsLoading(true);
         try {
             await login();
             await handleUserAuthentication();
         } catch (error) {
             console.error("Error connecting wallet:", error);
             // Handle error (e.g., show error message to user)
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -100,11 +103,24 @@ export default function Home() {
 
                 <div className="w-full space-y-4">
                     <button
-                        className="w-full py-3 px-4 rounded-md flex items-center justify-center transition-colors bg-[#6032f6] hover:bg-[#3C3C3C]"
+                        className="w-full py-3 px-4 rounded-md flex items-center justify-center transition-colors bg-[#6032f6] hover:bg-[#3C3C3C] disabled:opacity-50 disabled:cursor-not-allowed"
                         onClick={handleConnect}
+                        disabled={isLoading}
                     >
-                        <Wallet className="w-5 h-5 mr-2" />
-                        Connect Wallet
+                        {isLoading ? (
+                            <>
+                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Connecting...
+                            </>
+                        ) : (
+                            <>
+                                <Wallet className="w-5 h-5 mr-2" />
+                                Connect Wallet
+                            </>
+                        )}
                     </button>
                 </div>
             </div>

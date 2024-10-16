@@ -101,7 +101,7 @@ const ParticipantsSidebar: React.FC<ParticipantsSidebarProps> = ({
     const pendingParticipants = sortedParticipants.filter((p) => p.roles.includes("pending"));
 
     return (
-        <div className="w-80 bg-[#1E1E1E] p-4 mt-4 flex flex-col rounded-lg">
+        <div className="w-full bg-[#1E1E1E] p-4 mt-4 flex flex-col rounded-lg">
             <h2 className="text-white text-lg font-semibold mb-4 flex items-center">
                 Participants
                 <span className="bg-[#7C3AED] text-white text-xs px-2 py-0.5 rounded-full ml-2">{sortedParticipants.length}</span>

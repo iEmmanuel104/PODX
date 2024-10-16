@@ -9,6 +9,10 @@ const config: Config = {
     ],
     theme: {
         extend: {
+            fontFamily: {
+                sans: ['var(--font-clashgrotesk-sans)', 'sans-serif'],
+                mono: ['var(--font-clashgrotesk-mono)', 'monospace'],
+            },
             colors: {
                 background: 'hsl(var(--background))',
                 foreground: 'hsl(var(--foreground))',

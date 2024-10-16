@@ -20,23 +20,21 @@ contract PodX is Ownable {
     }
 
     struct PodcastSession {
-        bytes32 code;
+        string code;
         address host;
         bool active;
-        string ipfsContentHash; // IPFS hash for podcast content
         mapping(address => User) users;
         address[] userAddresses;
     }
 
-    mapping(bytes32 => PodcastSession) public podcastSessions;
+    mapping(string => PodcastSession) public podcastSessions;
 
-    event PodcastCreated(bytes32 indexed sessionCode, address indexed host, string ipfsContentHash);
-    event PodcastEnded(bytes32 indexed sessionCode);
-    event UserJoined(bytes32 indexed sessionCode, address indexed user, UserRole role);
-    event UserLeft(bytes32 indexed sessionCode, address indexed user);
-    event RoleChanged(bytes32 indexed sessionCode, address indexed user, UserRole newRole);
-    event TipSent(bytes32 indexed sessionCode, address indexed from, address indexed to, uint256 amount);
-    event ContentUpdated(bytes32 indexed sessionCode, string newIpfsContentHash);
+    event PodcastCreated(string indexed sessionCode, address indexed host);
+    event PodcastEnded(string indexed sessionCode);
+    event UserJoined(string indexed sessionCode, address indexed user, UserRole role);
+    event UserLeft(string indexed sessionCode, address indexed user);
+    event RoleChanged(string indexed sessionCode, address indexed user, UserRole newRole);
+    event TipSent(string indexed sessionCode, address indexed from, address indexed to, uint256 amount);
 
     constructor(address _usdcToken) {
         usdcToken = IERC20(_usdcToken);
@@ -45,28 +43,26 @@ contract PodX is Ownable {
     /**
      * @dev Create a new on-chain podcast session
      * @param _sessionCode Unique identifier for the podcast session
-     * @param _ipfsContentHash IPFS hash of the initial podcast content
      */
-    function createPodcast(bytes32 _sessionCode, string memory _ipfsContentHash) external {
+    function createPodcast(string memory _sessionCode) external {
         require(podcastSessions[_sessionCode].host == address(0), "Podcast session already exists");
 
         PodcastSession storage newPodcast = podcastSessions[_sessionCode];
         newPodcast.code = _sessionCode;
         newPodcast.host = msg.sender;
         newPodcast.active = true;
-        newPodcast.ipfsContentHash = _ipfsContentHash;
 
         newPodcast.users[msg.sender] = User(msg.sender, UserRole.Host, true);
         newPodcast.userAddresses.push(msg.sender);
 
-        emit PodcastCreated(_sessionCode, msg.sender, _ipfsContentHash);
+        emit PodcastCreated(_sessionCode, msg.sender);
     }
 
     /**
      * @dev End an active podcast session
      * @param _sessionCode Identifier of the podcast to end
      */
-    function endPodcast(bytes32 _sessionCode) external {
+    function endPodcast(string memory _sessionCode) external {
         PodcastSession storage podcast = podcastSessions[_sessionCode];
         require(podcast.active, "Podcast is not active");
         require(podcast.host == msg.sender, "Only host can end podcast");
@@ -79,7 +75,7 @@ contract PodX is Ownable {
      * @dev Join an active podcast session
      * @param _sessionCode Identifier of the podcast to join
      */
-    function joinPodcast(bytes32 _sessionCode) external {
+    function joinPodcast(string memory _sessionCode) external {
         PodcastSession storage podcast = podcastSessions[_sessionCode];
         require(podcast.active, "Podcast is not active");
         require(!podcast.users[msg.sender].exists, "User already in podcast");
@@ -94,7 +90,7 @@ contract PodX is Ownable {
      * @dev Leave a podcast session
      * @param _sessionCode Identifier of the podcast to leave
      */
-    function leavePodcast(bytes32 _sessionCode) external {
+    function leavePodcast(string memory _sessionCode) external {
         PodcastSession storage podcast = podcastSessions[_sessionCode];
         require(podcast.users[msg.sender].exists, "User not in podcast");
         require(podcast.users[msg.sender].role != UserRole.Host, "Host cannot leave podcast");
@@ -112,17 +108,20 @@ contract PodX is Ownable {
     }
 
     /**
-     * @dev Request to become a co-host
-     * @param _sessionCode Identifier of the podcast
-     */
-    function requestCoHost(bytes32 _sessionCode) external {
+    * @dev Request and automatically become a co-host
+    * @param _sessionCode Identifier of the podcast
+    */
+    function requestCoHost(string memory _sessionCode) external {
         PodcastSession storage podcast = podcastSessions[_sessionCode];
         require(podcast.active, "Podcast is not active");
         require(podcast.users[msg.sender].exists, "User not in podcast");
         require(podcast.users[msg.sender].role == UserRole.Member, "User is not a member");
 
-        // This function only requests co-host status. The host needs to approve it.
-        // Implementation of approval process is left to the frontend or a separate function.
+        // Automatically upgrade the user to co-host
+        podcast.users[msg.sender].role = UserRole.CoHost;
+
+        // Emit an event to notify about the role change
+        emit RoleChanged(_sessionCode, msg.sender, UserRole.CoHost);
     }
 
     /**
@@ -130,7 +129,7 @@ contract PodX is Ownable {
      * @param _sessionCode Identifier of the podcast
      * @param _user Address of the user to be promoted
      */
-    function approveCoHost(bytes32 _sessionCode, address _user) external {
+    function approveCoHost(string memory _sessionCode, address _user) external {
         PodcastSession storage podcast = podcastSessions[_sessionCode];
         require(podcast.active, "Podcast is not active");
         require(podcast.host == msg.sender, "Only host can approve co-hosts");
@@ -147,7 +146,7 @@ contract PodX is Ownable {
      * @param _recipient Address of the tip recipient
      * @param _amount Amount of USDC to tip
      */
-    function sendTip(bytes32 _sessionCode, address _recipient, uint256 _amount) external {
+    function sendTip(string memory _sessionCode, address _recipient, uint256 _amount) external {
         PodcastSession storage podcast = podcastSessions[_sessionCode];
         require(podcast.active, "Podcast is not active");
         require(podcast.users[msg.sender].exists, "Sender not in podcast");
@@ -163,25 +162,11 @@ contract PodX is Ownable {
     }
 
     /**
-     * @dev Update the podcast content
-     * @param _sessionCode Identifier of the podcast
-     * @param _newIpfsContentHash New IPFS hash of the updated content
-     */
-    function updatePodcastContent(bytes32 _sessionCode, string memory _newIpfsContentHash) external {
-        PodcastSession storage podcast = podcastSessions[_sessionCode];
-        require(podcast.active, "Podcast is not active");
-        require(podcast.host == msg.sender, "Only host can update content");
-
-        podcast.ipfsContentHash = _newIpfsContentHash;
-        emit ContentUpdated(_sessionCode, _newIpfsContentHash);
-    }
-
-    /**
      * @dev Get all users in a podcast
      * @param _sessionCode Identifier of the podcast
      * @return Array of user addresses in the podcast
      */
-    function getPodcastUsers(bytes32 _sessionCode) external view returns (address[] memory) {
+    function getPodcastUsers(string memory _sessionCode) external view returns (address[] memory) {
         return podcastSessions[_sessionCode].userAddresses;
     }
 
@@ -191,16 +176,7 @@ contract PodX is Ownable {
      * @param _user Address of the user
      * @return User's role in the podcast
      */
-    function getUserRole(bytes32 _sessionCode, address _user) external view returns (UserRole) {
+    function getUserRole(string memory _sessionCode, address _user) external view returns (UserRole) {
         return podcastSessions[_sessionCode].users[_user].role;
-    }
-
-    /**
-     * @dev Get podcast content hash
-     * @param _sessionCode Identifier of the podcast
-     * @return IPFS content hash of the podcast
-     */
-    function getPodcastContent(bytes32 _sessionCode) external view returns (string memory) {
-        return podcastSessions[_sessionCode].ipfsContentHash;
     }
 }
