@@ -9,14 +9,14 @@ import "@stream-io/video-react-sdk/dist/css/styles.css";
 import "stream-chat-react/dist/css/v2/index.css";
 import "./globals.css";
 
-const geistSans = localFont({
-    src: "./fonts/GeistVF.woff",
-    variable: "--font-geist-sans",
+const clashGroteskRegular = localFont({
+    src: "./fonts/ClashGrotesk-Regular.woff",
+    variable: "--font-clashgrotesk-sans",
     weight: "100 900",
 });
-const geistMono = localFont({
-    src: "./fonts/GeistMonoVF.woff",
-    variable: "--font-geist-mono",
+const clashgroteskMedium = localFont({
+    src: "./fonts/ClashGrotesk-Medium.woff",
+    variable: "--font-clashgrotesk-mono",
     weight: "100 900",
 });
 
@@ -33,7 +33,7 @@ export default function RootLayout({
     return (
         <AppProvider>
             <html lang="en">
-                <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+                <body className={`${clashGroteskRegular.variable} ${clashgroteskMedium.variable} antialiased`}>
                     <StoreProvider>
                         <PrivyProvider>{children}</PrivyProvider>
                     </StoreProvider>
