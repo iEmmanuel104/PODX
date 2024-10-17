@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { setUser, setSignature, logOut } from "@/store/slices/userSlice";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useFindOrCreateUserMutation, UserInfo } from "@/store/api/userApi";
 import { useAuthSigner } from "@/hooks/useAuthSigner";
 import { SIGNATURE_MESSAGE } from "@/constants";
@@ -14,6 +14,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     const storeUser = useAppSelector((state) => state.user);
     const dispatch = useAppDispatch();
     const router = useRouter();
+    const pathname = usePathname();
     const [findOrCreateUser] = useFindOrCreateUserMutation();
     const { signMessage, initSigner } = useAuthSigner();
     const [isAuthenticating, setIsAuthenticating] = useState(false);
@@ -44,7 +45,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
                         dispatch(setSignature(signature));
 
                         if (userData.username.startsWith("guest-")) {
-                            router.push("/"); // Show username modal on home page
+                            router.push("/");
                         } else {
                             redirectUser();
                         }
@@ -58,15 +59,16 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
                     redirectUser();
                 }
             } else if (!authenticated && storeUser) {
-                console.log("logging out from privy to clean state");
                 dispatch(logOut());
-                router.push("/");
+                if (!pathname.startsWith("/pod")) {
+                    router.push("/");
+                }
             }
             setIsAuthenticating(false);
         };
 
         handleAuth();
-    }, [ready, authenticated, privyUser, storeUser, dispatch, logout, router]);
+    }, [ready, authenticated, privyUser, storeUser, dispatch, logout, router, pathname]);
 
     const redirectUser = () => {
         console.log("redirecting user hit");
@@ -75,8 +77,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
             console.log("redirecting to pending session");
             localStorage.removeItem("pendingSessionCode");
             router.push(`/pod?code=${pendingSessionCode}`);
-        } else {
-            console.log("redirecting to landing");
+        } else if (!pathname.startsWith("/pod")) {
             router.push("/landing");
         }
     };
