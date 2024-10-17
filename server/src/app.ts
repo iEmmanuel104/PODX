@@ -25,7 +25,8 @@ app.use(helmet());
 app.use(mongoSanitize());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors(corsOptions));
+// app.use(cors(corsOptions));
+app.use(cors());
 app.use(morgan('dev'));
 app.use(cookieParser());
 
