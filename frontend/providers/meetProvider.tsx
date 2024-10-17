@@ -7,7 +7,7 @@ import { Chat } from "stream-chat-react";
 import { useAppSelector } from "@/store/hooks";
 import { STREAM_API_KEY } from "@/constants";
 import { LoadingOverlay } from "@/components/ui/loading";
-import { useStreamTokenProvider } from "@/hooks/useStreamTokenProvider";
+// import { useStreamTokenProvider } from "@/hooks/useStreamTokenProvider";
 import { useRouter } from "next/navigation";
 
 export const CALL_TYPE = "default";
@@ -26,7 +26,7 @@ const MeetProvider: React.FC<MeetProviderProps> = ({ meetingId, children, langua
     const chatClientRef = useRef<StreamChat>();
     const videoClientRef = useRef<StreamVideoClient>();
     const callRef = useRef<Call>();
-    const tokenProvider = useStreamTokenProvider();
+    // const tokenProvider = useStreamTokenProvider();
     const router = useRouter();
 
     const connectChatClient = useCallback(
@@ -61,7 +61,7 @@ const MeetProvider: React.FC<MeetProviderProps> = ({ meetingId, children, langua
                             walletAddress: appUser!.walletAddress,
                         },
                     },
-                    tokenProvider: async () => token,
+                    token,
                 });
             }
 
@@ -77,7 +77,7 @@ const MeetProvider: React.FC<MeetProviderProps> = ({ meetingId, children, langua
         const setupClients = async () => {
             if (isLoggedIn && appUser) {
                 try {
-                    const token = await tokenProvider(appUser.walletAddress);
+                    const token = appUser.streamToken;
                     await connectChatClient(token);
                     await connectVideoClient(token);
                     setLoading(false);
@@ -101,7 +101,7 @@ const MeetProvider: React.FC<MeetProviderProps> = ({ meetingId, children, langua
             chatClientRef.current?.disconnectUser();
             videoClientRef.current?.disconnectUser();
         };
-    }, [isLoggedIn, appUser, tokenProvider, connectChatClient, connectVideoClient, router, meetingId]);
+    }, [isLoggedIn, appUser, connectChatClient, connectVideoClient, router, meetingId]);
 
     if (loading || !chatClientRef.current || !videoClientRef.current || !callRef.current) {
         return (
