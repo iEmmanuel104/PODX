@@ -1,3 +1,4 @@
+"use client";
 import { useState, useCallback } from 'react';
 import { ethers } from 'ethers';
 import { usePrivy } from '@privy-io/react-auth';
