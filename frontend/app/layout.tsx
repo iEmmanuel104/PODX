@@ -4,6 +4,7 @@ import "./globals.css";
 import StoreProvider from "@/providers/storeProvider";
 import PrivyProvider from "@/providers/privyProvider";
 import AppProvider from "@/providers/appProvider";
+import AuthProvider from "@/providers/authProvider";
 
 import "@stream-io/video-react-sdk/dist/css/styles.css";
 import "stream-chat-react/dist/css/v2/index.css";
@@ -35,7 +36,9 @@ export default function RootLayout({
             <html lang="en">
                 <body className={`${clashGroteskRegular.variable} ${clashgroteskMedium.variable} antialiased`}>
                     <StoreProvider>
-                        <PrivyProvider>{children}</PrivyProvider>
+                        <PrivyProvider>
+                            <AuthProvider>{children}</AuthProvider>
+                        </PrivyProvider>
                     </StoreProvider>
                 </body>
             </html>
