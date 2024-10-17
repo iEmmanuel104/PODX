@@ -54,9 +54,11 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
                         router.push("/");
                     }
                 } else {
+                    console.log('store user found redirecting');
                     redirectUser();
                 }
             } else if (!authenticated && storeUser) {
+                console.log("logging out from privy to clean state");
                 dispatch(logOut());
                 router.push("/");
             }
@@ -67,16 +69,20 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     }, [ready, authenticated, privyUser, storeUser, dispatch, logout, router]);
 
     const redirectUser = () => {
+        console.log("redirecting user hit");
         const pendingSessionCode = localStorage.getItem("pendingSessionCode");
         if (pendingSessionCode) {
+            console.log("redirecting to pending session");
             localStorage.removeItem("pendingSessionCode");
             router.push(`/pod?code=${pendingSessionCode}`);
         } else {
+            console.log("redirecting to landing");
             router.push("/landing");
         }
     };
 
     if (!ready || isAuthenticating) {
+        console.log("loading overlay in auth provider");
         return (
             <div className="h-screen w-screen bg-[#121212]">
                 <LoadingOverlay />
