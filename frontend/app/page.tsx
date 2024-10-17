@@ -2,112 +2,47 @@
 
 import { useState, useEffect } from "react";
 import { Wallet } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { usePrivy } from "@privy-io/react-auth";
 import Logo from "@/components/ui/logo";
-import { useAppDispatch } from "@/store/hooks";
-import { setUser, setSignature, updateUser } from "@/store/slices/userSlice";
-import { useFindOrCreateUserMutation, UserInfo } from "@/store/api/userApi";
+import { useAppSelector } from "@/store/hooks";
 import UserInfoModal from "@/components/user/userInfoModal";
-import { useAuthSigner } from "@/hooks/useAuthSigner";
-import { SIGNATURE_MESSAGE } from "@/constants";
 import { LoadingOverlay } from "@/components/ui/loading";
 
 export default function Home() {
     const [showUsernameModal, setShowUsernameModal] = useState(false);
-    const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
     const [isConnecting, setIsConnecting] = useState(false);
-    const { login, user, authenticated, ready } = usePrivy();
-    const router = useRouter();
-    const dispatch = useAppDispatch();
-    const [findOrCreateUser] = useFindOrCreateUserMutation();
-    const { signMessage, initSigner } = useAuthSigner();
+    const { login, ready, authenticated } = usePrivy();
+    const user = useAppSelector((state) => state.user.user);
 
     useEffect(() => {
-        if (ready) {
-            if (authenticated && user) {
-                handleUserAuthentication();
-            } else {
-                setIsLoading(false);
-            }
+        if (ready && authenticated && user && user.username.startsWith("guest-")) {
+            setShowUsernameModal(true);
         }
     }, [ready, authenticated, user]);
-
-    const handleUserAuthentication = async () => {
-        if (!user) return;
-
-        setIsLoading(true);
-        const smartWallet = user.smartWallet || user.linkedAccounts.find((account) => account.type === "smart_wallet");
-        const walletAddress = smartWallet?.address || user.wallet?.address;
-
-        if (walletAddress) {
-            try {
-                await initSigner();
-                const result = await findOrCreateUser({ walletAddress }).unwrap();
-                const userData = result.data as UserInfo;
-
-                setUserInfo(userData);
-                dispatch(setUser(userData));
-
-                const message = SIGNATURE_MESSAGE || "Sign this message to authenticate";
-                const signature = await signMessage(message);
-
-                dispatch(setSignature(signature));
-
-                if (userData.username.startsWith("guest-")) {
-                    setShowUsernameModal(true);
-                    setIsLoading(false);
-                } else {
-                    redirectUser();
-                }
-            } catch (error) {
-                console.error("Error in user authentication:", error);
-                setIsLoading(false);
-                // Handle error (e.g., show error message to user)
-            }
-        } else {
-            setIsLoading(false);
-        }
-    };
 
     const handleConnect = async () => {
         setIsConnecting(true);
         try {
             await login();
-            // handleUserAuthentication will be called by the useEffect hook when authenticated changes
         } catch (error) {
             console.error("Error connecting wallet:", error);
-            setIsConnecting(false);
             // Handle error (e.g., show error message to user)
+        } finally {
+            setIsConnecting(false);
         }
     };
 
     const handleUsernameUpdate = (newUsername: string) => {
-        dispatch(updateUser({ username: newUsername }));
+        // Implement username update logic here
         setShowUsernameModal(false);
-        redirectUser();
+        // Redirect or update UI as needed
     };
 
-    const redirectUser = () => {
-        const pendingSessionCode = localStorage.getItem("pendingSessionCode");
-        if (pendingSessionCode) {
-            localStorage.removeItem("pendingSessionCode");
-            router.push(`/pod?code=${pendingSessionCode}`);
-        } else {
-            router.push("/landing");
-        }
-    };
-
-    if (isLoading) {
-        return (
-            <div className="h-screen w-screen bg-[#121212]">
-                <LoadingOverlay />
-            </div>
-        );
+    if (!ready) {
+        return <LoadingOverlay />;
     }
 
-    if (authenticated) {
+    if (authenticated && !showUsernameModal) {
         return (
             <div className="h-screen w-screen bg-[#121212]">
                 <LoadingOverlay />
@@ -155,11 +90,11 @@ export default function Home() {
                 </div>
             </div>
 
-            {showUsernameModal && userInfo && (
+            {showUsernameModal && user && (
                 <UserInfoModal
                     isOpen={showUsernameModal}
                     onClose={() => setShowUsernameModal(false)}
-                    initialUsername={userInfo.username}
+                    initialUsername={user.username}
                     onUpdate={handleUsernameUpdate}
                 />
             )}
