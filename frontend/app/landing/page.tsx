@@ -32,7 +32,6 @@ export default function PodPage() {
     const [meetingCode, setMeetingCode] = useState("");
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isCreatedModalOpen, setIsCreatedModalOpen] = useState(false);
-    const [checkingCode, setCheckingCode] = useState(false);
     const [error, setError] = useState("");
     const [inviteLink, setInviteLink] = useState("");
     const [sessionCode, setSessionCode] = useState("");
@@ -172,12 +171,6 @@ export default function PodPage() {
             <button className="text-[#A3A3A3] hover:text-white transition-colors flex items-center gap-2 text-sm">
                 <Settings className="w-4 h-4" /> Settings
             </button>
-
-            {checkingCode && (
-                <div className="z-50 fixed top-0 left-0 w-full h-full flex items-center justify-center text-white text-3xl bg-black bg-opacity-80">
-                    Joining...
-                </div>
-            )}
 
             <CreateSessionModal isOpen={isCreateModalOpen} onClose={closeCreateModal} onCreateSession={handleCreateSession} />
             <CreatedSessionModal
