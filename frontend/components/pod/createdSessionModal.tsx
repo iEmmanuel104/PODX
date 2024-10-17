@@ -1,4 +1,4 @@
-"use client";
+'use client'
 
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -11,10 +11,16 @@ interface CreatedSessionModalProps {
     onClose: () => void;
     inviteLink: string;
     sessionCode: string;
-    onJoinSession: () => void;
+    onJoinSession: () => Promise<void>;
 }
 
-const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClose, inviteLink, sessionCode, onJoinSession }) => {
+const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({
+    isOpen,
+    onClose,
+    inviteLink,
+    sessionCode,
+    onJoinSession
+}) => {
     const [linkCopied, setLinkCopied] = useState(false);
     const [codeCopied, setCodeCopied] = useState(false);
     const [isJoining, setIsJoining] = useState(false);

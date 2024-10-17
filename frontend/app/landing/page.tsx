@@ -36,6 +36,7 @@ export default function PodPage() {
     const [inviteLink, setInviteLink] = useState("");
     const [sessionCode, setSessionCode] = useState("");
     const [isJoining, setIsJoining] = useState(false);
+    const [isJoiningCreated, setIsJoiningCreated] = useState(false);
 
     const { isLoggedIn, user } = useAppSelector((state) => state.user);
 
@@ -105,6 +106,18 @@ export default function PodPage() {
             setIsJoining(false);
         }
     }, [meetingCode, router, dispatch]);
+
+    const handleJoinCreatedSession = useCallback(async () => {
+        setIsJoiningCreated(true);
+        try {
+            router.push(`/pod/?code=${sessionCode}`);
+        } catch (error) {
+            console.error("Failed to join created session:", error);
+            // Optionally, you can set an error state here to display to the user
+        } finally {
+            setIsJoiningCreated(false);
+        }
+    }, [router, sessionCode]);
 
     if (!isLoggedIn || !user) {
         router.push("/");
@@ -178,7 +191,7 @@ export default function PodPage() {
                 onClose={closeCreatedModal}
                 inviteLink={inviteLink}
                 sessionCode={sessionCode}
-                onJoinSession={() => router.push(`/pod/?code=${sessionCode}`)}
+                onJoinSession={handleJoinCreatedSession}
             />
         </div>
     );
