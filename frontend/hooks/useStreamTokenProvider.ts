@@ -8,7 +8,7 @@ export const useStreamTokenProvider = () => {
 
     const tokenProvider = useCallback(
         async (walletAddress: string = "") => {
-            console.log("token provider hit");
+            console.log("token provider hit", {tokenCache});
             if (tokenCache.current[walletAddress]) {
                 return tokenCache.current[walletAddress];
             }
