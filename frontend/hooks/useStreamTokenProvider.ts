@@ -15,6 +15,7 @@ export const useStreamTokenProvider = () => {
 
             try {
                 const response = await findOrCreateUser({ walletAddress }).unwrap();
+                console.log({ response });
                 const userData = response.data as UserInfo;
                 tokenCache.current[walletAddress] = userData.streamToken;
                 return userData.streamToken;
