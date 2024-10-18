@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useEffect, useMemo, useContext } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import UserInputForm from "@/components/join/user-input-form";
 import WaitingScreen from "@/components/join/waiting-screen";
 import Logo from "@/components/ui/logo";
@@ -22,10 +22,15 @@ import { useChatContext } from "stream-chat-react";
 import { useStreamTokenProvider } from "@/hooks/useStreamTokenProvider";
 import Image from "next/image";
 
-const JoinSession: React.FC = () => {
+interface JoinSessionProps {
+    params: {
+        id: string;
+    };
+}
+
+const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
     const router = useRouter();
-    const searchParams = useSearchParams();
-    const code = useMemo(() => searchParams.get("code") || "", [searchParams]);
+    const code = params.id;
     const [name, setName] = useState<string>("");
     const [isBasenameConfirmed, setIsBasenameConfirmed] = useState<boolean>(false);
     const [isGuest, setIsGuest] = useState<boolean>(false);
@@ -88,17 +93,17 @@ const JoinSession: React.FC = () => {
                             type: sessionType || "Video Session",
                         },
                         settings_override: {
-                            // audio: { 
-                            //     mic_default_on: true, 
+                            // audio: {
+                            //     mic_default_on: true,
                             //     speaker_default_on: true,
-                            //     default_device: "speaker" 
+                            //     default_device: "speaker"
                             // },
-                            // video: { 
-                            //     camera_default_on: true, 
+                            // video: {
+                            //     camera_default_on: true,
                             //     target_resolution: {
                             //         width: 640,
                             //         height: 480,
-                            //     } 
+                            //     }
                             // },
                             limits: {
                                 max_participants: 20,
@@ -107,7 +112,7 @@ const JoinSession: React.FC = () => {
                         },
                     },
                     members_limit: 20,
-                    ...((sessionType === 'Audio Session') && {video : false} ),
+                    ...(sessionType === "Audio Session" && { video: false }),
                 });
 
                 console.log("call create success");
@@ -181,10 +186,9 @@ const JoinSession: React.FC = () => {
     }, [joining, participants]);
 
     if (errorFetchingMeeting) {
-        router.push(`/pod?code=${code}&invalid=true`);
+        router.push(`/pod/join/${code}&invalid=true`);
         return null;
     }
-
 
     const renderContent = () => {
         if (loading) {
@@ -213,11 +217,7 @@ const JoinSession: React.FC = () => {
                     <div className="w-full lg:w-1/2 flex flex-col justify-center items-center lg:items-start">
                         <h2 className="text-2xl font-semibold mb-4 text-center lg:text-left">Ready to join?</h2>
                         <div className="w-full text-center lg:text-left">
-                            {typeof participantsUI === 'string' ? (
-                                <p>{participantsUI}</p>
-                            ) : (
-                                participantsUI
-                            )}
+                            {typeof participantsUI === "string" ? <p>{participantsUI}</p> : participantsUI}
                         </div>
                         <button
                             onClick={handleJoinSession}
@@ -240,10 +240,10 @@ const JoinSession: React.FC = () => {
                     <Logo />
                 </div>
                 <div className="mb-8 text-lg flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-2 text-center">
-                    <p className="text-gray-400">
-                        You are about to join
+                    <p className="text-gray-400">You are about to join</p>
+                    <p className="text-white">
+                        {sessionTitle || "Base Live Build Session"} ({sessionType || "Video Session"})
                     </p>
-                    <p className="text-white">{sessionTitle || "Base Live Build Session"} ({sessionType || "Video Session"})</p>
                 </div>
                 {renderContent()}
             </div>
