@@ -19,6 +19,7 @@ import {
 import '@stream-io/video-react-sdk/dist/css/styles.css';
 import { Channel, ChannelHeader, MessageInput, MessageList, useChatContext, Window } from "stream-chat-react";
 import { useRouter } from "next/navigation";
+import CustomRingingCall from "@/components/meeting/customRingingCall";
 
 interface MeetingProps {
     params: {
@@ -145,7 +146,11 @@ export default function MeetingInterface({ params }: MeetingProps) {
                             <button title="settings" className="text-[#A3A3A3] hover:text-white transition-colors mr-2 sm:mr-4">
                                 <Settings className="w-6 h-6" />
                             </button>
-                            <button title="toggle sidebar" className="text-[#A3A3A3] hover:text-white transition-colors sm:hidden" onClick={toggleSidebar}>
+                            <button
+                                title="toggle sidebar"
+                                className="text-[#A3A3A3] hover:text-white transition-colors sm:hidden"
+                                onClick={toggleSidebar}
+                            >
                                 <Menu className="w-6 h-6" />
                             </button>
                         </div>
@@ -153,10 +158,12 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
                     {/** Main content */}
                     <div className="flex-grow flex overflow-hidden relative">
-                        <div className="flex-1 hover:bg-white hover:cursor-pointer w-fit h-fit">{isSpeakerView ? <SpeakerLayout /> : <PaginatedGridLayout />}</div>
+                        <div className="flex-1 hover:bg-white hover:cursor-pointer w-fit h-fit">
+                            {isSpeakerView ? <SpeakerLayout /> : <PaginatedGridLayout />}
+                        </div>
                         <div
                             className={`
-                                ${showSidebar ? 'translate-y-0' : 'translate-y-full sm:translate-y-0'} 
+                                ${showSidebar ? "translate-y-0" : "translate-y-full sm:translate-y-0"} 
                                 transition-transform duration-300 ease-in-out
                                 fixed sm:relative inset-0 sm:inset-auto top-16 sm:top-0 
                                  h-screen sm:h-full w-full sm:w-64 lg:w-80 
@@ -179,7 +186,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                     <footer className="bg-[#1E1E1E] p-4 flex justify-center items-center gap-4 h-20">
                         <CallControls onLeave={handleLeave} />
                     </footer>
-
+                    <CustomRingingCall showMemberCount={3} />
                     {/* Modals and Notifications */}
                     {showTipModal && (
                         <TipModal
