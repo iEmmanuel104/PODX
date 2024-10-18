@@ -5,6 +5,7 @@ import { redisClient } from './redis';
 import { UnauthorizedError, TokenExpiredError, JsonWebTokenError } from './customErrors';
 import { CompareTokenData, DecodedTokenData, ENCRYPTEDTOKEN, GenerateCodeData, GenerateTokenData, SaveTokenToCache, GenerateAdminTokenData, CompareAdminTokenData } from './interface';
 import { ethers } from 'ethers';
+import { verifyMessage } from '@ethersproject/wallet';
 
 class TokenCacheUtil {
     static saveTokenToCache({ key, token, expiry }: SaveTokenToCache) {
@@ -45,7 +46,7 @@ class TokenCacheUtil {
         const { token, state } = JSON.parse(dataString);
 
         if (state !== 'active') {
-            throw new UnauthorizedError('Unauthorized token');  
+            throw new UnauthorizedError('Unauthorized token');
         }
 
         // Save updated state along with the existing token and remaining TTL
@@ -59,7 +60,7 @@ class TokenCacheUtil {
         const tokenString = await redisClient.get(key);
         if (!tokenString) {
             return null;
-        }            
+        }
         return tokenString;
     }
 
@@ -76,18 +77,18 @@ class AuthUtil {
 
     static getSecretKeyForTokenType(type: ENCRYPTEDTOKEN): { secretKey: string, expiry: number } {
         switch (type) {
-        case 'access':
-            // 1day
-            return { secretKey: JWT_ACCESS_SECRET, expiry: 60 * 60 * 24 }; 
-        case 'refresh':
-            // 7days
-            return { secretKey: JWT_REFRESH_SECRET, expiry: 60 * 60 * 24 * 7 };
-        case 'admin':
-            // 7days
-            return { secretKey: JWT_ADMIN_ACCESS_SECRET, expiry: 60 * 60 * 24 * 7 };
-        default:
-            // 20min
-            return { secretKey: JWT_SECRET, expiry: 60 * 20 };
+            case 'access':
+                // 1day
+                return { secretKey: JWT_ACCESS_SECRET, expiry: 60 * 60 * 24 };
+            case 'refresh':
+                // 7days
+                return { secretKey: JWT_REFRESH_SECRET, expiry: 60 * 60 * 24 * 7 };
+            case 'admin':
+                // 7days
+                return { secretKey: JWT_ADMIN_ACCESS_SECRET, expiry: 60 * 60 * 24 * 7 };
+            default:
+                // 20min
+                return { secretKey: JWT_SECRET, expiry: 60 * 20 };
         }
     }
 
@@ -132,7 +133,7 @@ class AuthUtil {
 
     static async generateCode({ type, identifier, expiry }: GenerateCodeData) {
         // const tokenKey = `${type}_code:${identifier}`;
-        let token:number | string;
+        let token: number | string;
         if (type === 'passwordreset') {
             token = uuidv4();
         } else {
@@ -177,11 +178,10 @@ class AuthUtil {
         }
     }
 
-    static verifyWalletSignature(walletAddress: string, signature: string): boolean {
+    static verifyWalletSignature(walletAddress: string, signature: string, message: string): boolean {
         try {
-            const message = `Sign this message to verify your wallet: ${walletAddress}`;
-            const signerAddress = ethers.verifyMessage(message, signature);
-            return signerAddress.toLowerCase() === walletAddress.toLowerCase();
+            const recoveredAddress = verifyMessage(message, signature);
+            return recoveredAddress.toLowerCase() === walletAddress.toLowerCase();
         } catch (error) {
             console.error('Error verifying wallet signature:', error);
             return false;

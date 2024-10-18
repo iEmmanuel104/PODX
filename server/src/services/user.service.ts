@@ -182,4 +182,18 @@ export default class UserService {
 
         await UserSettings.deleteOne({ userId: new Types.ObjectId(userId) });
     }
+
+    static async updateUsername(address: string, username: string) {
+        const user = await User.findOneAndUpdate(
+            { walletAddress: address },
+            { username },
+            { new: true }
+        );
+
+        if (!user) {
+            throw new Error('User not found');
+        }
+
+        return user;
+    }
 }

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { usePrivy } from "@privy-io/react-auth";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { setUser, setSignature, logOut } from "@/store/slices/userSlice";
 import { useRouter, usePathname } from "next/navigation";
@@ -18,18 +18,18 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     const [findOrCreateUser] = useFindOrCreateUserMutation();
     const { signMessage, initSigner } = useAuthSigner();
     const [isAuthenticating, setIsAuthenticating] = useState(false);
+    const { wallets } = useWallets();
 
     useEffect(() => {
         if (!ready || isAuthenticating) return;
 
         const handleAuth = async () => {
             setIsAuthenticating(true);
-            if (authenticated && privyUser) {
-                console.log("auth mounted");
-                console.log({ authenticated, privyUser, storeUser });
-                if (!storeUser.user || storeUser.isLoggedIn === false) {
-                    try {
-                        console.log("authenticating user, tp get store");
+            try {
+                if (authenticated && privyUser && wallets.length > 0) {
+                    console.log("Authenticated user detected");
+                    if (!storeUser.user || !storeUser.isLoggedIn) {
+                        console.log("Authenticating user to get store data");
                         await initSigner();
                         const smartWallet = privyUser.smartWallet || privyUser.linkedAccounts.find((account) => account.type === "smart_wallet");
                         const walletAddress = smartWallet?.address || privyUser.wallet?.address;
@@ -44,38 +44,28 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
                         const signature = await signMessage(message);
                         dispatch(setSignature(signature));
 
-                        if (userData.username.startsWith("guest-")) {
-                            router.push("/");
-                        } else {
-                            redirectUser();
-                        }
-                    } catch (error) {
-                        console.error("Authentication error:", error);
-                        logout();
-                        dispatch(logOut());
-                        router.push("/");
+                        userData.username.startsWith("guest-") ? router.push("/") : redirectUser();
+                    } else {
+                        console.log('Store user found, redirecting');
+                        redirectUser();
                     }
-                } else {
-                    console.log('store user found redirecting');
-                    redirectUser();
                 }
-            } else if (!authenticated && storeUser) {
-                dispatch(logOut());
-                if (!pathname.startsWith("/pod")) {
-                    router.push("/");
-                }
+            } catch (error) {
+                console.error("Authentication error:", error);
+                // Handle error (e.g., show error message to user)
+            } finally {
+                setIsAuthenticating(false);
             }
-            setIsAuthenticating(false);
         };
 
         handleAuth();
-    }, [ready, authenticated, privyUser, storeUser, dispatch, logout, router, pathname]);
+    }, [authenticated, privyUser, ready, wallets]);
 
     const redirectUser = () => {
-        console.log("redirecting user hit");
+        console.log("Redirecting user");
         const pendingSessionCode = localStorage.getItem("pendingSessionCode");
         if (pendingSessionCode) {
-            console.log("redirecting to pending session");
+            console.log("Redirecting to pending session");
             localStorage.removeItem("pendingSessionCode");
             router.push(`/pod?code=${pendingSessionCode}`);
         } else if (!pathname.startsWith("/pod")) {
@@ -84,7 +74,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     };
 
     if (!ready || isAuthenticating) {
-        console.log("loading overlay in auth provider");
+        console.log("Displaying loading overlay");
         return (
             <div className="h-screen w-screen bg-[#121212]">
                 <LoadingOverlay />

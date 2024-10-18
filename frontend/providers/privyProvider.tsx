@@ -8,6 +8,7 @@ import { PRIVY_APP_ID } from "@/constants";
 import { useAppDispatch } from "@/store/hooks";
 import { setUser, setSignature } from "@/store/slices/userSlice";
 // import { initializeSocketConnection } from "@/lib/connections/socket";
+import { usePrivy } from '@privy-io/react-auth';
 
 export default function PrivyProvider({ children }: { children: React.ReactNode }) {
     const dispatch = useAppDispatch();
@@ -20,7 +21,6 @@ export default function PrivyProvider({ children }: { children: React.ReactNode 
             const parsedUser = JSON.parse(storedUser);
             dispatch(setUser(parsedUser));
             dispatch(setSignature(storedSignature));
-            // initializeSocketConnection(storedSignature);
         }
     }, [dispatch]);
 
@@ -38,6 +38,7 @@ export default function PrivyProvider({ children }: { children: React.ReactNode 
                 // Create embedded wallets for users who don't have a wallet
                 embeddedWallets: {
                     createOnLogin: "users-without-wallets",
+                    noPromptOnSignature: false
                 },
                 externalWallets: {
                     coinbaseWallet: {
@@ -45,11 +46,11 @@ export default function PrivyProvider({ children }: { children: React.ReactNode 
                     },
                 },
                 defaultChain: base,
-                loginMethods: ["wallet", "email"],
+                loginMethods: ["email", "wallet"],
                 supportedChains: [mainnet, sepolia, base, baseGoerli, polygon, polygonMumbai],
                 fundingMethodConfig: {
                     moonpay: {
-            
+
                         useSandbox: true,
                         paymentMethod: "credit_debit_card",
                         uiConfig: {
