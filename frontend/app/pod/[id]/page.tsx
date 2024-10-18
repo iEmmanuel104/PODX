@@ -19,7 +19,7 @@ import {
 import '@stream-io/video-react-sdk/dist/css/styles.css';
 import { Channel, ChannelHeader, MessageInput, MessageList, useChatContext, Window } from "stream-chat-react";
 import { useRouter } from "next/navigation";
-import CustomRingingCall from "@/components/meeting/customRingingCall";
+// import CustomRingingCall from "@/components/meeting/customRingingCall";
 
 interface MeetingProps {
     params: {
@@ -35,6 +35,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
     const participants = useParticipants();
     const members = useCallMembers();
+    console.log({participants, members});
     const customData = useCallCustomData();
     const live = useIsCallLive();
 
@@ -186,7 +187,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                     <footer className="bg-[#1E1E1E] p-4 flex justify-center items-center gap-4 h-20">
                         <CallControls onLeave={handleLeave} />
                     </footer>
-                    <CustomRingingCall showMemberCount={3} />
+                    {/* <CustomRingingCall showMemberCount={3} /> */}
                     {/* Modals and Notifications */}
                     {showTipModal && (
                         <TipModal
