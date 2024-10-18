@@ -93,7 +93,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
     };
 
     const confirmLeave = async () => {
-        router.push("/landing");
+        router.push("/pod");
     };
 
     const updateParticipantRole = (userId: string, newRole: string) => {
