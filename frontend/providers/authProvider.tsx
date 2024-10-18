@@ -77,7 +77,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         if (pendingSessionCode) {
             console.log("redirecting to pending session");
             localStorage.removeItem("pendingSessionCode");
-            router.push(`/pod?code=${pendingSessionCode}`);
+            router.push(`/pod/join/${pendingSessionCode}`);
         } else if (!pathname.startsWith("/pod")) {
             router.push("/landing");
         }
