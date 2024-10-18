@@ -1,20 +1,21 @@
 "use client";
-
 import React, { useState, useCallback, useContext, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Settings } from "lucide-react";
+import { Settings, Edit2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import CreateSessionModal from "@/components/pod/createSessionModal";
 import CreatedSessionModal from "@/components/pod/createdSessionModal";
+import UserInfoModal from "@/components/user/userInfoModal";
 import Logo from "@/components/ui/logo";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
-import { customAlphabet, nanoid } from "nanoid";
+import { customAlphabet } from "nanoid";
 import { AppContext } from "@/providers/appProvider";
 import { ErrorFromResponse, GetCallResponse, StreamVideoClient, User } from "@stream-io/video-react-sdk";
 import { API_KEY, CALL_TYPE } from "@/providers/meetProvider";
 import { setSessionInfo } from "@/store/slices/podSlice";
+import { updateUser } from "@/store/slices/userSlice";
 
 const GUEST_USER: User = { id: "guest", type: "guest" };
 
@@ -32,13 +33,21 @@ export default function PodPage() {
     const [meetingCode, setMeetingCode] = useState("");
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isCreatedModalOpen, setIsCreatedModalOpen] = useState(false);
+    const [showUsernameModal, setShowUsernameModal] = useState(false);
     const [error, setError] = useState("");
     const [inviteLink, setInviteLink] = useState("");
     const [sessionCode, setSessionCode] = useState("");
     const [isJoining, setIsJoining] = useState(false);
+    const [showEditIcon, setShowEditIcon] = useState(false);
     const [isJoiningCreated, setIsJoiningCreated] = useState(false);
 
     const { isLoggedIn, user } = useAppSelector((state) => state.user);
+
+    useEffect(() => {
+        if (isLoggedIn && user && user.username.startsWith("guest-")) {
+            setShowUsernameModal(true);
+        }
+    }, [isLoggedIn, user]);
 
     useEffect(() => {
         let timeout: NodeJS.Timeout;
@@ -113,11 +122,20 @@ export default function PodPage() {
             router.push(`/pod/join/${sessionCode}`);
         } catch (error) {
             console.error("Failed to join created session:", error);
-            // Optionally, you can set an error state here to display to the user
         } finally {
             setIsJoiningCreated(false);
         }
     }, [router, sessionCode]);
+
+    const handleUpdateUsername = useCallback(
+        (newUsername: string) => {
+            setShowUsernameModal(false);
+            dispatch(updateUser({ username: newUsername }));
+        },
+        [dispatch]
+    );
+
+    const openUsernameModal = () => setShowUsernameModal(true);
 
     if (!isLoggedIn || !user) {
         router.push("/");
@@ -132,10 +150,20 @@ export default function PodPage() {
             <div className="w-full max-w-2xl flex flex-col items-center">
                 <Logo />
 
-                <div className="flex items-center mb-8 sm:mb-16">
+                <div
+                    className="flex items-center mb-8 sm:mb-16 relative"
+                    onMouseEnter={() => setShowEditIcon(true)}
+                    onMouseLeave={() => setShowEditIcon(false)}
+                >
                     <div className="w-8 h-8 bg-[#6032F6] rounded-full flex items-center justify-center text-xs font-bold mr-2">{initials}</div>
                     <span className="bg-green-500 h-1.5 w-1.5 rounded-full mr-1"></span>
                     <span className="text-[#A3A3A3] text-sm">{displayName}</span>
+                    {showEditIcon && (
+                        <Edit2
+                            className="w-2 h-4 ml-2 cursor-pointer text-[#A3A3A3] hover:text-white transition-colors"
+                            onClick={openUsernameModal}
+                        />
+                    )}
                 </div>
 
                 <div className="w-full flex flex-col md:flex-row gap-6 mb-8 sm:mb-16">
@@ -193,6 +221,14 @@ export default function PodPage() {
                 sessionCode={sessionCode}
                 onJoinSession={handleJoinCreatedSession}
             />
+            {user && (
+                <UserInfoModal
+                    isOpen={showUsernameModal}
+                    onClose={() => setShowUsernameModal(false)}
+                    initialUsername={user.username}
+                    onUpdate={handleUpdateUsername}
+                />
+            )}
         </div>
     );
 }
