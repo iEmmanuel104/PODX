@@ -15,12 +15,16 @@ export const API_KEY = STREAM_API_KEY as string;
 export const GUEST_ID = `guest_${nanoid(15)}`;
 
 type MeetProviderProps = {
-    meetingId: string;
+    meetingId?: string;
     children: React.ReactNode;
     language?: string;
 };
 
-const MeetProvider: React.FC<MeetProviderProps> = ({ meetingId, children, language = "en" }) => {
+const SimpleMeetProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    return <>{children}</>;
+};
+
+const StreamMeetProvider: React.FC<{ meetingId: string; children: React.ReactNode; language: string }> = ({ meetingId, children, language }) => {
     const { user: appUser, isLoggedIn } = useAppSelector((state) => state.user);
     const [loading, setLoading] = useState(true);
     const chatClientRef = useRef<StreamChat>();
@@ -118,6 +122,18 @@ const MeetProvider: React.FC<MeetProviderProps> = ({ meetingId, children, langua
                 <StreamCall call={callRef.current}>{children}</StreamCall>
             </StreamVideo>
         </Chat>
+    );
+};
+
+const MeetProvider: React.FC<MeetProviderProps> = ({ meetingId, children, language = "en" }) => {
+    if (!meetingId) {
+        return <SimpleMeetProvider>{children}</SimpleMeetProvider>;
+    }
+
+    return (
+        <StreamMeetProvider meetingId={meetingId} language={language}>
+            {children}
+        </StreamMeetProvider>
     );
 };
 
