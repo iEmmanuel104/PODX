@@ -83,7 +83,7 @@ export default function Home() {
                         ) : (
                             <>
                                 <Wallet className="w-5 h-5 mr-2" />
-                                Connect Wallet
+                                Connect
                             </>
                         )}
                     </button>
