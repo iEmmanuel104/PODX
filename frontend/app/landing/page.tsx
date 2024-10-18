@@ -93,7 +93,7 @@ export default function PodPage() {
                         sessionId: meetingCode,
                     })
                 );
-                router.push(`/pod?code=${meetingCode}`);
+                router.push(`/pod/join/${meetingCode}`);
                 return;
             }
         } catch (e: unknown) {
@@ -110,7 +110,7 @@ export default function PodPage() {
     const handleJoinCreatedSession = useCallback(async () => {
         setIsJoiningCreated(true);
         try {
-            router.push(`/pod/?code=${sessionCode}`);
+            router.push(`/pod/join/${sessionCode}`);
         } catch (error) {
             console.error("Failed to join created session:", error);
             // Optionally, you can set an error state here to display to the user
