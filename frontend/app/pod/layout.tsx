@@ -1,8 +1,9 @@
 "use client";
-import { ReactNode, useEffect, useState } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { ReactNode, useEffect } from "react";
+import { useParams, useRouter, usePathname } from "next/navigation";
 import MeetProvider from "@/providers/meetProvider";
 import { Suspense } from "react";
+import { LoadingOverlay } from "@/components/ui/loading";
 
 type LayoutProps = {
     children: ReactNode;
@@ -12,15 +13,25 @@ type LayoutProps = {
 };
 
 function LayoutContent({ children, params }: LayoutProps) {
-    const searchParams = useSearchParams();
     const { id } = useParams();
+    const router = useRouter();
+    const pathname = usePathname();
 
-    const meetingId = (id as string) || params.id || searchParams.get("code") || "";
+    const meetingId = (id as string) || params.id;
 
-    console.log({ LayoutFile: meetingId });
+    console.log({ LayoutFile: meetingId, pathname });
+
+    useEffect(() => {
+        const shouldRedirect = pathname === "/pod" || pathname === "/pod/join" || (pathname.startsWith("/pod") && !meetingId);
+
+        if (shouldRedirect) {
+            console.log("Redirecting to landing page");
+            router.push("/landing");
+        }
+    }, [meetingId, router, pathname]);
 
     if (!meetingId) {
-        return null; // or a loading indicator
+        return null;
     }
 
     return <MeetProvider meetingId={meetingId}>{children}</MeetProvider>;
@@ -28,7 +39,7 @@ function LayoutContent({ children, params }: LayoutProps) {
 
 export default function Layout(props: LayoutProps) {
     return (
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<LoadingOverlay text="Preparing your session..." />}>
             <LayoutContent {...props} />
         </Suspense>
     );
