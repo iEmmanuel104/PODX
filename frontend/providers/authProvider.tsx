@@ -41,19 +41,15 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
                         const userData = result.data as UserInfo;
                         dispatch(setUser(userData));
 
-                        // Check if the user has an embedded wallet before attempting to sign
-                        const embeddedWallet = wallets.find(w => w.walletClientType === 'privy');
-                        if (embeddedWallet) {
-                            try {
-                                const message = SIGNATURE_MESSAGE || "Sign this message to authenticate";
-                                const signature = await signMessage(message);
-                                dispatch(setSignature(signature));
-                            } catch (signError) {
-                                console.warn("Failed to sign message:", signError);
-                                // Continue without signature if signing fails
-                            }
-                        } else {
-                            console.log("User does not have an embedded wallet. Skipping signature.");
+                        try {
+                            const message = SIGNATURE_MESSAGE || "Sign this message to authenticate";
+                            const signature = await signMessage(message);
+                            dispatch(setSignature(signature));
+                            console.log(`Signature obtained successfully`);
+                        } catch (signError) {
+                            console.error("Failed to sign message:", signError);
+                            // Handle signature failure (e.g., user rejected, or wallet doesn't support signing)
+                            // You might want to show an error message to the user or take appropriate action
                         }
 
                         userData.username.startsWith("guest-") ? router.push("/") : redirectUser();
