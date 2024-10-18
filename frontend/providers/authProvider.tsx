@@ -31,7 +31,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
                     if (!storeUser.user || !storeUser.isLoggedIn) {
                         console.log("Authenticating user to get store data");
                         await initSigner();
-                        const wallet = wallets[0]; // Get the most recently connected wallet
+                        const wallet = wallets[0];
                         const walletAddress = wallet.address;
 
                         if (!walletAddress) throw new Error("No wallet address found");
@@ -44,7 +44,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
                         const signature = await signMessage(message);
                         dispatch(setSignature(signature));
 
-                        userData.username.startsWith("guest-") ? router.push("/") : redirectUser();
+                        // Always redirect to pod page after authentication
+                        router.push("/pod");
                     } else {
                         console.log("Store user found, redirecting");
                         redirectUser();
@@ -62,7 +63,6 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
         handleAuth();
     }, [authenticated, privyUser, ready, walletsReady, wallets]);
-    // }, [authenticated, privyUser, ready, wallets,  storeUser, dispatch, logout, router,]);
 
     const redirectUser = () => {
         console.log("Redirecting user");
@@ -76,24 +76,24 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         }
     };
 
-if (!ready || !walletsReady || isAuthenticating) {
-    console.log("Displaying loading overlay");
-    let loadingText = "";
+    if (!ready || !walletsReady || isAuthenticating) {
+        console.log("Displaying loading overlay");
+        let loadingText = "";
 
-    if (!ready) {
-        loadingText = "Initializing...";
-    } else if (!walletsReady) {
-        loadingText = "Connecting to wallet...";
-    } else if (isAuthenticating) {
-        loadingText = "Authenticating...";
+        if (!ready) {
+            loadingText = "Initializing...";
+        } else if (!walletsReady) {
+            loadingText = "Connecting to wallet...";
+        } else if (isAuthenticating) {
+            loadingText = "Authenticating...";
+        }
+
+        return (
+            <div className="h-screen w-screen bg-[#121212]">
+                <LoadingOverlay text={loadingText} />
+            </div>
+        );
     }
-
-    return (
-        <div className="h-screen w-screen bg-[#121212]">
-            <LoadingOverlay text={loadingText} />
-        </div>
-    );
-}
 
     return <>{children}</>;
 }
