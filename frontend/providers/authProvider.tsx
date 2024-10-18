@@ -74,11 +74,12 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         } else if (pathname && !pathname.startsWith("/pod")) {
             console.log("Redirecting to pod page for path:", pathname);
             router.push("/pod");
-        } else {
-            logout();
-            dispatch(logOut());
-            router.push("/");
         }
+        //  else {
+        //     logout();
+        //     dispatch(logOut());
+        //     router.push("/");
+        // }
     };
 
     if (!ready || !walletsReady || isAuthenticating) {

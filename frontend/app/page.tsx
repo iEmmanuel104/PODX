@@ -4,14 +4,19 @@ import { useState, useEffect } from "react";
 import { Wallet } from "lucide-react";
 import { usePrivy } from "@privy-io/react-auth";
 import Logo from "@/components/ui/logo";
+import { useAppDispatch } from "@/store/hooks";
+import { logOut } from "@/store/slices/userSlice";
 
 export default function Home() {
+    const dispatch = useAppDispatch();
     const [isConnecting, setIsConnecting] = useState(false);
-    const { login, ready, authenticated } = usePrivy();
+    const { login, logout} = usePrivy();
 
     const handleConnect = async () => {
         setIsConnecting(true);
         try {
+            await logout(); // Log out of existing privy session
+            dispatch(logOut()); // clear user data from store
             await login();
         } catch (error) {
             console.error("Error connecting wallet:", error);
