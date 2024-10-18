@@ -43,7 +43,7 @@ function LayoutContent({ children, params }: LayoutProps) {
 
 export default function Layout(props: LayoutProps) {
     return (
-        <Suspense fallback={<LoadingOverlay text="Preparing your session..." />}>
+        <Suspense fallback={<div className="h-screen w-screen bg-[#121212]"><LoadingOverlay text="Preparing your session..." /> </div>}>
             <LayoutContent {...props} />
         </Suspense>
     );
