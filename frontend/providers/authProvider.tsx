@@ -16,7 +16,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     const router = useRouter();
     const pathname = usePathname();
     const [findOrCreateUser] = useFindOrCreateUserMutation();
-    const { signMessage, initSigner, getAddress } = useAuthSigner();
+    const { signMessage, initSigner } = useAuthSigner();
     const [isAuthenticating, setIsAuthenticating] = useState(false);
     const { wallets } = useWallets();
 
@@ -26,18 +26,14 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         const handleAuth = async () => {
             setIsAuthenticating(true);
             try {
-                console.log("AuthSigner:", { signMessage, initSigner, getAddress });
                 if (authenticated && privyUser && wallets.length > 0) {
                     console.log("Authenticated user detected");
                     if (!storeUser.user || !storeUser.isLoggedIn) {
                         console.log("Authenticating user to get store data");
                         const wallet = await initSigner();
-                        console.log("Wallet initialized:", wallet);
-                        if (!wallet) {
-                            throw new Error("Failed to initialize signer");
-                        }
-                        const smartWallet = privyUser.smartWallet || privyUser.linkedAccounts.find((account) => account.type === "smart_wallet");
-                        const walletAddress = smartWallet?.address || privyUser.wallet?.address;
+                        if (!wallet) throw new Error("No wallet found");
+
+                        const walletAddress = wallet.address;
 
                         if (!walletAddress) throw new Error("No wallet address found");
 
@@ -45,14 +41,19 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
                         const userData = result.data as UserInfo;
                         dispatch(setUser(userData));
 
-                        const message = SIGNATURE_MESSAGE || "Sign this message to authenticate";
-                        try {
-                            const signature = await signMessage(message);
-                            dispatch(setSignature(signature));
-                        } catch (signError) {
-                            console.error("Error signing message:", signError);
-                            // Handle signature error (e.g., user rejected signing)
-                            // You might want to show a message to the user or take appropriate action
+                        // Check if the user has an embedded wallet before attempting to sign
+                        const embeddedWallet = wallets.find(w => w.walletClientType === 'privy');
+                        if (embeddedWallet) {
+                            try {
+                                const message = SIGNATURE_MESSAGE || "Sign this message to authenticate";
+                                const signature = await signMessage(message);
+                                dispatch(setSignature(signature));
+                            } catch (signError) {
+                                console.warn("Failed to sign message:", signError);
+                                // Continue without signature if signing fails
+                            }
+                        } else {
+                            console.log("User does not have an embedded wallet. Skipping signature.");
                         }
 
                         userData.username.startsWith("guest-") ? router.push("/") : redirectUser();
@@ -70,7 +71,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         };
 
         handleAuth();
-    }, [authenticated, privyUser, ready, wallets, initSigner, signMessage, getAddress, storeUser, dispatch, router]);
+    }, [authenticated, privyUser, ready, wallets, initSigner, signMessage, findOrCreateUser, dispatch, router, storeUser.user, storeUser.isLoggedIn]);
 
     const redirectUser = () => {
         console.log("Redirecting user");
