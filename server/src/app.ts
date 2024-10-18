@@ -10,7 +10,7 @@ import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
 import { getServerHealth } from './views/serverHealthCheck';
 import cookieParser from 'cookie-parser';
-import corsOptions from './utils/cors';
+// import corsOptions from './utils/cors';
 
 const app = express();
 app.use(
