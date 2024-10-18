@@ -71,19 +71,29 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
             console.log("Redirecting to pending session");
             localStorage.removeItem("pendingSessionCode");
             router.push(`/pod/join/${pendingSessionCode}`);
-        } else if (!pathname.startsWith("/pod")) {
+        } else if (pathname && !pathname.startsWith("/pod")) {
             router.push("/pod");
         }
     };
 
-    if (!ready || isAuthenticating) {
-        console.log("Displaying loading overlay");
-        return (
-            <div className="h-screen w-screen bg-[#121212]">
-                <LoadingOverlay />
-            </div>
-        );
+if (!ready || !walletsReady || isAuthenticating) {
+    console.log("Displaying loading overlay");
+    let loadingText = "";
+
+    if (!ready) {
+        loadingText = "Initializing...";
+    } else if (!walletsReady) {
+        loadingText = "Connecting to wallet...";
+    } else if (isAuthenticating) {
+        loadingText = "Authenticating...";
     }
+
+    return (
+        <div className="h-screen w-screen bg-[#121212]">
+            <LoadingOverlay text={loadingText} />
+        </div>
+    );
+}
 
     return <>{children}</>;
 }
