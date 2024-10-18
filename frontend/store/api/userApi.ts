@@ -13,9 +13,9 @@ export interface UserInfo {
 
 export const userApiSlice = apiSlice.injectEndpoints({
     endpoints: (builder) => ({
-        findOrCreateUser: builder.mutation<ApiResponse<UserInfo>, { walletAddress: string }>({
+        findOrCreateUser: builder.mutation<{ data: UserInfo }, { walletAddress: string, signature?: string }>({
             query: (body) => ({
-                url: '/user/validate',
+                url: '/user/find-or-create',
                 method: 'POST',
                 body,
             }),

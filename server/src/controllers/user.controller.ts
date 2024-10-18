@@ -110,37 +110,19 @@ export default class UserController {
     }
 
     static async findOrCreateUser(req: Request, res: Response) {
-        const { walletAddress } = req.body;
+        try {
+            const { walletAddress, signature } = req.body;
 
-        if (!walletAddress) {
-            throw new BadRequestError('Wallet address is required');
+            if (!walletAddress) {
+                return res.status(400).json({ message: 'Wallet address is required' });
+            }
+
+            const user = await UserService.findOrCreateUser(walletAddress, signature);
+
+            res.status(200).json({ data: user });
+        } catch (error) {
+            console.error('Error in findOrCreateUser:', error);
+            res.status(500).json({ message: 'Internal server error' });
         }
-
-        let user = await UserService.viewSingleUserByWalletAddress(walletAddress);
-
-        if (!user) {
-            // Create a new user
-            const username = `guest-${walletAddress.slice(0, 4)}`;
-            user = await UserService.addUser({ walletAddress, username });
-        }
-
-        const streamToken = await StreamIOConfig.generateToken(user.id);
-
-        // Convert Mongoose document to a plain JavaScript object
-        const userObject = user.toObject();
-
-        // Remove any fields you don't want to send to the client
-        delete userObject.__v;
-
-        console.log({ user: userObject, streamToken });
-
-        res.status(200).json({
-            status: 'success',
-            message: userObject.username.startsWith('guest-') ? 'New user created' : 'Existing user found',
-            data: {
-                ...userObject,
-                streamToken,
-            },
-        });
     }
 }

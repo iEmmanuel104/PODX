@@ -10,7 +10,7 @@ import { setUser, setSignature } from "@/store/slices/userSlice";
 // import { initializeSocketConnection } from "@/lib/connections/socket";
 import { usePrivy } from '@privy-io/react-auth';
 
-export default function PrivyProvider({ children }: { children: React.ReactNode }) {
+export default function PrivyProviderWrapper({ children }: { children: React.ReactNode }) {
     const dispatch = useAppDispatch();
 
     useEffect(() => {
@@ -38,7 +38,7 @@ export default function PrivyProvider({ children }: { children: React.ReactNode 
                 // Create embedded wallets for users who don't have a wallet
                 embeddedWallets: {
                     createOnLogin: "users-without-wallets",
-                    noPromptOnSignature: false
+                    noPromptOnSignature: true
                 },
                 externalWallets: {
                     coinbaseWallet: {
@@ -50,7 +50,6 @@ export default function PrivyProvider({ children }: { children: React.ReactNode 
                 supportedChains: [mainnet, sepolia, base, baseGoerli, polygon, polygonMumbai],
                 fundingMethodConfig: {
                     moonpay: {
-
                         useSandbox: true,
                         paymentMethod: "credit_debit_card",
                         uiConfig: {

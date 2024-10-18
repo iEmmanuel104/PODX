@@ -3,6 +3,7 @@ import { User, IUser } from '../models/Mongodb/user.model';
 import { UserSettings, IUserSettings } from '../models/Mongodb/userSettings.model';
 import { NotFoundError, BadRequestError } from '../utils/customErrors';
 import Pagination, { IPaging } from '../utils/pagination';
+import { generateRandomString } from '../utils/randomString';
 
 export interface IViewUsersQuery {
     page?: number;
@@ -181,5 +182,24 @@ export default class UserService {
         }
 
         await UserSettings.deleteOne({ userId: new Types.ObjectId(userId) });
+    }
+
+    static async findOrCreateUser(walletAddress: string, signature?: string): Promise<IUser> {
+        let user = await User.findOne({ walletAddress });
+
+        if (!user) {
+            user = new User({
+                walletAddress,
+                username: `guest-${generateRandomString(8)}`,
+                // Add other default fields as necessary
+            });
+        }
+
+        if (signature) {
+            user.signature = signature;
+        }
+
+        await user.save();
+        return user;
     }
 }
