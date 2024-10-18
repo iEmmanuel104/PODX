@@ -21,11 +21,11 @@ export const userApiSlice = apiSlice.injectEndpoints({
             }),
             invalidatesTags: ['User'],
         }),
-        updateUsername: builder.mutation<ApiResponse<UserInfo>, { userId: string; username: string }>({
-            query: ({ userId, username }) => ({
-                url: '/user/update',
+        updateUsername: builder.mutation<ApiResponse<UserInfo>, { username: string, signature: string, message: string, address: string }>({
+            query: (body) => ({
+                url: '/user/update-username',
                 method: 'PATCH',
-                body: { username },
+                body,
             }),
             invalidatesTags: ['User'],
         }),

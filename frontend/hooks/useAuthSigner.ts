@@ -32,5 +32,5 @@ export const useAuthSigner = () => {
         return wallet.address;
     }, [initSigner]);
 
-    return { signMessage, initSigner, getAddress };
+    return { signMessage, getAddress };
 };
