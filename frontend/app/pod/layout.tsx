@@ -1,5 +1,5 @@
 "use client";
-import { ReactNode, useEffect } from "react";
+import { ReactNode } from "react";
 import { useParams, useRouter, usePathname } from "next/navigation";
 import MeetProvider from "@/providers/meetProvider";
 import { Suspense } from "react";
@@ -8,7 +8,7 @@ import { LoadingOverlay } from "@/components/ui/loading";
 type LayoutProps = {
     children: ReactNode;
     params: {
-        id: string;
+        id?: string;
     };
 };
 
@@ -17,21 +17,25 @@ function LayoutContent({ children, params }: LayoutProps) {
     const router = useRouter();
     const pathname = usePathname();
 
-    const meetingId = (id as string) || params.id;
+    // Use the ID from params if available, otherwise it will be undefined
+    const meetingId = id as string | undefined;
 
     console.log({ LayoutFile: meetingId, pathname });
 
-    useEffect(() => {
-        const shouldRedirect = pathname === "/pod" || pathname === "/pod/join" || (pathname.startsWith("/pod") && !meetingId);
+    // Validate meetingId format if it exists
+    const isValidMeetingId = meetingId ? /^[a-z]{3}-[a-z]{4}-[a-z]{3}$/.test(meetingId) : true;
 
-        if (shouldRedirect) {
-            console.log("Redirecting to landing page");
-            router.push("/landing");
-        }
-    }, [meetingId, router, pathname]);
+    // If we're not already on the /pod page and there's no valid meeting ID, redirect to /pod
+    if (pathname !== "/pod" && !isValidMeetingId) {
+        console.log("Redirecting to /pod");
+        router.push("/pod");
+        return null; // Return null to prevent rendering while redirecting
+    }
 
-    if (!meetingId) {
-        return null;
+    // If there's an invalid meeting ID, render without it
+    if (meetingId && !isValidMeetingId) {
+        console.error("Invalid meeting ID format");
+        return <MeetProvider>{children}</MeetProvider>;
     }
 
     return <MeetProvider meetingId={meetingId}>{children}</MeetProvider>;
