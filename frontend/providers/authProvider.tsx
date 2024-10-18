@@ -72,7 +72,12 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
             localStorage.removeItem("pendingSessionCode");
             router.push(`/pod/join/${pendingSessionCode}`);
         } else if (pathname && !pathname.startsWith("/pod")) {
+            console.log("Redirecting to pod page for path:", pathname);
             router.push("/pod");
+        } else {
+            logout();
+            dispatch(logOut());
+            router.push("/");
         }
     };
 
@@ -83,7 +88,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         if (!ready) {
             loadingText = "Initializing...";
         } else if (!walletsReady) {
-            loadingText = "Connecting to wallet...";
+            loadingText = "Connecting to web3...";
         } else if (isAuthenticating) {
             loadingText = "Authenticating...";
         }
