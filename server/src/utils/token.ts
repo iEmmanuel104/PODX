@@ -4,7 +4,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { redisClient } from './redis';
 import { UnauthorizedError, TokenExpiredError, JsonWebTokenError } from './customErrors';
 import { CompareTokenData, DecodedTokenData, ENCRYPTEDTOKEN, GenerateCodeData, GenerateTokenData, SaveTokenToCache, GenerateAdminTokenData, CompareAdminTokenData } from './interface';
-import { ethers } from 'ethers';
 import { verifyMessage } from '@ethersproject/wallet';
 
 class TokenCacheUtil {
@@ -77,18 +76,18 @@ class AuthUtil {
 
     static getSecretKeyForTokenType(type: ENCRYPTEDTOKEN): { secretKey: string, expiry: number } {
         switch (type) {
-            case 'access':
-                // 1day
-                return { secretKey: JWT_ACCESS_SECRET, expiry: 60 * 60 * 24 };
-            case 'refresh':
-                // 7days
-                return { secretKey: JWT_REFRESH_SECRET, expiry: 60 * 60 * 24 * 7 };
-            case 'admin':
-                // 7days
-                return { secretKey: JWT_ADMIN_ACCESS_SECRET, expiry: 60 * 60 * 24 * 7 };
-            default:
-                // 20min
-                return { secretKey: JWT_SECRET, expiry: 60 * 20 };
+        case 'access':
+            // 1day
+            return { secretKey: JWT_ACCESS_SECRET, expiry: 60 * 60 * 24 };
+        case 'refresh':
+            // 7days
+            return { secretKey: JWT_REFRESH_SECRET, expiry: 60 * 60 * 24 * 7 };
+        case 'admin':
+            // 7days
+            return { secretKey: JWT_ADMIN_ACCESS_SECRET, expiry: 60 * 60 * 24 * 7 };
+        default:
+            // 20min
+            return { secretKey: JWT_SECRET, expiry: 60 * 20 };
         }
     }
 

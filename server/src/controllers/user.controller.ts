@@ -1,10 +1,9 @@
 import { Request, Response } from 'express';
 import UserService from '../services/user.service';
-import { BadRequestError, UnauthorizedError } from '../utils/customErrors';
+import { BadRequestError } from '../utils/customErrors';
 import { AuthenticatedRequest } from '../middlewares/authMiddleware';
 import CloudinaryClientConfig from '../clients/cloudinary.config';
 import StreamIOConfig from '../clients/streamio.config';
-import AuthUtil from '../utils/auth.util';
 
 export default class UserController {
 
@@ -142,27 +141,6 @@ export default class UserController {
                 ...userObject,
                 streamToken,
             },
-        });
-    }
-
-    static async updateUsername(req: Request, res: Response) {
-        const { username, signature, message, address } = req.body;
-
-        if (!username || !signature || !message || !address) {
-            throw new BadRequestError('Username, signature, message, and address are required');
-        }
-
-        const isValid = AuthUtil.verifyWalletSignature(address, signature, message);
-        if (!isValid) {
-            throw new UnauthorizedError('Invalid signature');
-        }
-
-        const user = await UserService.updateUsername(address, username);
-
-        res.status(200).json({
-            status: 'success',
-            message: 'Username updated successfully',
-            data: user,
         });
     }
 }

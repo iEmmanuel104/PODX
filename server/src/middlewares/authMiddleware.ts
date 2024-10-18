@@ -5,10 +5,10 @@ import { IUser } from '../models/Mongodb/user.model';
 import UserService from '../services/user.service';
 import { logger } from '../utils/logger';
 import { AuthUtil } from '../utils/token';
-import { ethers } from 'ethers';
 import { IAdmin } from '../models/Mongodb/admin.model';
 import { ADMIN_EMAIL, SIGNATURE_MESSAGE } from '../utils/constants';
 import AdminService from '../services/AdminServices/admin.service';
+import { verifyMessage } from '@ethersproject/wallet';
 
 export interface AuthenticatedRequest extends Request {
     user: IUser;
@@ -41,7 +41,8 @@ export function AdminAuthenticatedController<T = AdminAuthenticatedRequest>(
 
 export async function authenticateUser(signature: string): Promise<IUser> {
     const message = SIGNATURE_MESSAGE;
-    const recoveredAddress = ethers.verifyMessage(message, signature);
+
+    const recoveredAddress = verifyMessage(message, signature);
 
     const user = await UserService.viewSingleUserByWalletAddress(recoveredAddress);
 
