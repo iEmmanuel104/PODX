@@ -120,7 +120,7 @@ export default class UserController {
 
         if (!user) {
             // Create a new user
-            const username = `guest-${walletAddress.slice(0, 4)}`;
+            const username = `guest-${walletAddress}`;
             user = await UserService.addUser({ walletAddress, username });
         }
 
