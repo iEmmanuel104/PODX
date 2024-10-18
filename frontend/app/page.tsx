@@ -4,21 +4,10 @@ import { useState, useEffect } from "react";
 import { Wallet } from "lucide-react";
 import { usePrivy } from "@privy-io/react-auth";
 import Logo from "@/components/ui/logo";
-import { useAppSelector } from "@/store/hooks";
-// import UserInfoModal from "@/components/user/userInfoModal";
-import { LoadingOverlay } from "@/components/ui/loading";
 
 export default function Home() {
-    const [showUsernameModal, setShowUsernameModal] = useState(false);
     const [isConnecting, setIsConnecting] = useState(false);
     const { login, ready, authenticated } = usePrivy();
-    const user = useAppSelector((state) => state.user.user);
-
-    useEffect(() => {
-        if (ready && authenticated && user && user.username.startsWith("guest-")) {
-            setShowUsernameModal(true);
-        }
-    }, [ready, authenticated, user]);
 
     const handleConnect = async () => {
         setIsConnecting(true);
@@ -31,24 +20,6 @@ export default function Home() {
             setIsConnecting(false);
         }
     };
-
-    // const handleUsernameUpdate = (newUsername: string) => {
-    //     // Implement username update logic here
-    //     setShowUsernameModal(false);
-    //     // Redirect or update UI as needed
-    // };
-
-    if (!ready) {
-        return <LoadingOverlay />;
-    }
-
-    if (authenticated ) {
-        return (
-            <div className="h-screen w-screen bg-[#121212]">
-                <LoadingOverlay />
-            </div>
-        );
-    }
 
     return (
         <div className="min-h-screen bg-[#121212] text-white flex flex-col items-center justify-center p-4">
@@ -89,15 +60,6 @@ export default function Home() {
                     </button>
                 </div>
             </div>
-{/* 
-            {showUsernameModal && user && (
-                <UserInfoModal
-                    isOpen={showUsernameModal}
-                    onClose={() => setShowUsernameModal(false)}
-                    initialUsername={user.username}
-                    onUpdate={handleUsernameUpdate}
-                />
-            )} */}
         </div>
     );
 }
