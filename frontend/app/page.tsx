@@ -5,7 +5,7 @@ import { Wallet } from "lucide-react";
 import { usePrivy } from "@privy-io/react-auth";
 import Logo from "@/components/ui/logo";
 import { useAppSelector } from "@/store/hooks";
-import UserInfoModal from "@/components/user/userInfoModal";
+// import UserInfoModal from "@/components/user/userInfoModal";
 import { LoadingOverlay } from "@/components/ui/loading";
 
 export default function Home() {
@@ -32,17 +32,17 @@ export default function Home() {
         }
     };
 
-    const handleUsernameUpdate = (newUsername: string) => {
-        // Implement username update logic here
-        setShowUsernameModal(false);
-        // Redirect or update UI as needed
-    };
+    // const handleUsernameUpdate = (newUsername: string) => {
+    //     // Implement username update logic here
+    //     setShowUsernameModal(false);
+    //     // Redirect or update UI as needed
+    // };
 
     if (!ready) {
         return <LoadingOverlay />;
     }
 
-    if (authenticated && !showUsernameModal) {
+    if (authenticated ) {
         return (
             <div className="h-screen w-screen bg-[#121212]">
                 <LoadingOverlay />
@@ -89,7 +89,7 @@ export default function Home() {
                     </button>
                 </div>
             </div>
-
+{/* 
             {showUsernameModal && user && (
                 <UserInfoModal
                     isOpen={showUsernameModal}
@@ -97,7 +97,7 @@ export default function Home() {
                     initialUsername={user.username}
                     onUpdate={handleUsernameUpdate}
                 />
-            )}
+            )} */}
         </div>
     );
 }
