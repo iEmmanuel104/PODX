@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { ChevronDown, Mic, MicOff, Video, VideoOff, DollarSign } from "lucide-react";
-import { StreamVideoParticipant, OwnUserResponse, useCallStateHooks } from "@stream-io/video-react-sdk";
+import { StreamVideoParticipant, OwnUserResponse } from "@stream-io/video-react-sdk";
 
 interface ParticipantsSidebarProps {
     participants: StreamVideoParticipant[];
@@ -18,7 +18,6 @@ const ParticipantsSidebar: React.FC<ParticipantsSidebarProps> = ({
     handleJoinRequest,
 }) => {
     const [expandedParticipant, setExpandedParticipant] = useState<string | null>(null);
-    const { useCameraState, useMicrophoneState } = useCallStateHooks();
 
     const sortedParticipants = useMemo(() => {
         return [...participants].sort((a, b) => {
@@ -33,8 +32,6 @@ const ParticipantsSidebar: React.FC<ParticipantsSidebarProps> = ({
     }, [participants]);
 
     const ParticipantItem: React.FC<{ participant: StreamVideoParticipant }> = ({ participant }) => {
-        const { isMute: isAudioMuted } = useMicrophoneState();
-        const { isMute: isVideoMuted } = useCameraState();
         const isCurrentUser = participant.userId === currentUser?.id;
         const role = participant.roles.includes("host")
             ? "host"
@@ -47,6 +44,9 @@ const ParticipantsSidebar: React.FC<ParticipantsSidebarProps> = ({
         const isHost = role === "host";
         const isCohost = role === "cohost";
         const canPromote = (currentUser?.role.includes("host") || currentUser?.role.includes("cohost")) && !isHost && !isCohost;
+
+        const isAudioActive = participant.publishedTracks.includes(1);
+        const isVideoActive = participant.publishedTracks.includes(2);
 
         return (
             <div className="bg-[#2C2C2C] rounded-lg hover:bg-[#3C3C3C] transition-colors duration-200">
@@ -61,13 +61,13 @@ const ParticipantsSidebar: React.FC<ParticipantsSidebarProps> = ({
                         </div>
                     </div>
                     <div className="flex items-center">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${!isAudioMuted ? "bg-[#7C3AED]" : "bg-red-500"}`}>
-                            {!isAudioMuted ? <Mic className="w-4 h-4 text-white" /> : <MicOff className="w-4 h-4 text-white" />}
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isAudioActive ? "bg-[#7C3AED]" : "bg-red-500"}`}>
+                            {isAudioActive ? <Mic className="w-4 h-4 text-white" /> : <MicOff className="w-4 h-4 text-white" />}
                         </div>
                         <div
-                            className={`w-8 h-8 rounded-full flex items-center justify-center ml-2 ${!isVideoMuted ? "bg-[#7C3AED]" : "bg-red-500"}`}
+                            className={`w-8 h-8 rounded-full flex items-center justify-center ml-2 ${isVideoActive ? "bg-[#7C3AED]" : "bg-red-500"}`}
                         >
-                            {!isVideoMuted ? <Video className="w-4 h-4 text-white" /> : <VideoOff className="w-4 h-4 text-white" />}
+                            {isVideoActive ? <Video className="w-4 h-4 text-white" /> : <VideoOff className="w-4 h-4 text-white" />}
                         </div>
                         <ChevronDown
                             className="w-4 h-4 text-gray-400 ml-2 cursor-pointer"
