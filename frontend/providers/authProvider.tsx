@@ -52,6 +52,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
                     } catch (error) {
                         console.error("Authentication error:", error);
                         logout();
+                        dispatch(logOut());
                         router.push("/");
                     }
                 } else {
