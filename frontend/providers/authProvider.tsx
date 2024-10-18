@@ -31,9 +31,6 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
                     console.log("Authenticated user detected");
                     if (!storeUser.user || !storeUser.isLoggedIn) {
                         console.log("Authenticating user to get store data");
-                        if (typeof initSigner !== 'function') {
-                            throw new Error("initSigner is not a function");
-                        }
                         const wallet = await initSigner();
                         console.log("Wallet initialized:", wallet);
                         if (!wallet) {
@@ -49,8 +46,14 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
                         dispatch(setUser(userData));
 
                         const message = SIGNATURE_MESSAGE || "Sign this message to authenticate";
-                        const signature = await signMessage(message);
-                        dispatch(setSignature(signature));
+                        try {
+                            const signature = await signMessage(message);
+                            dispatch(setSignature(signature));
+                        } catch (signError) {
+                            console.error("Error signing message:", signError);
+                            // Handle signature error (e.g., user rejected signing)
+                            // You might want to show a message to the user or take appropriate action
+                        }
 
                         userData.username.startsWith("guest-") ? router.push("/") : redirectUser();
                     } else {

@@ -3,7 +3,7 @@ import { useCallback } from 'react';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 
 export const useAuthSigner = () => {
-    const { user } = usePrivy();
+    const { user, signMessage: privySignMessage } = usePrivy();
     const { wallets } = useWallets();
 
     const initSigner = useCallback(async () => {
@@ -17,12 +17,11 @@ export const useAuthSigner = () => {
     }, [user, wallets]);
 
     const signMessage = useCallback(async (message: string): Promise<string> => {
-        const wallet = await initSigner();
-        if (!wallet) {
-            throw new Error('Signer not initialized');
+        if (!user) {
+            throw new Error('User not authenticated');
         }
-        return await wallet.signMessage(message);
-    }, [initSigner]);
+        return await privySignMessage(message);
+    }, [user, privySignMessage]);
 
     const getAddress = useCallback(async (): Promise<string> => {
         const wallet = await initSigner();
