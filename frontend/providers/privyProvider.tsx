@@ -38,6 +38,7 @@ export default function PrivyProvider({ children }: { children: React.ReactNode 
                 // Create embedded wallets for users who don't have a wallet
                 embeddedWallets: {
                     createOnLogin: "users-without-wallets",
+                    noPromptOnSignature: false,
                 },
                 externalWallets: {
                     coinbaseWallet: {
@@ -45,11 +46,10 @@ export default function PrivyProvider({ children }: { children: React.ReactNode 
                     },
                 },
                 defaultChain: base,
-                loginMethods: ["wallet", "email"],
+                loginMethods: ["email", "wallet"],
                 supportedChains: [mainnet, sepolia, base, baseGoerli, polygon, polygonMumbai],
                 fundingMethodConfig: {
                     moonpay: {
-            
                         useSandbox: true,
                         paymentMethod: "credit_debit_card",
                         uiConfig: {
