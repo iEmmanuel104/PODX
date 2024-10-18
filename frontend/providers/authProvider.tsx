@@ -69,7 +69,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
             localStorage.removeItem("pendingSessionCode");
             router.push(`/pod/join/${pendingSessionCode}`);
         } else if (!pathname.startsWith("/pod")) {
-            router.push("/landing");
+            router.push("/pod");
         }
     };
 
