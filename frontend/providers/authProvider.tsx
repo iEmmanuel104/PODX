@@ -16,7 +16,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     const router = useRouter();
     const pathname = usePathname();
     const [findOrCreateUser] = useFindOrCreateUserMutation();
-    const { signMessage, initSigner } = useAuthSigner();
+    const { signMessage, initSigner, getAddress } = useAuthSigner();
     const [isAuthenticating, setIsAuthenticating] = useState(false);
     const { wallets } = useWallets();
 
@@ -26,11 +26,19 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         const handleAuth = async () => {
             setIsAuthenticating(true);
             try {
+                console.log("AuthSigner:", { signMessage, initSigner, getAddress });
                 if (authenticated && privyUser && wallets.length > 0) {
                     console.log("Authenticated user detected");
                     if (!storeUser.user || !storeUser.isLoggedIn) {
                         console.log("Authenticating user to get store data");
-                        await initSigner();
+                        if (typeof initSigner !== 'function') {
+                            throw new Error("initSigner is not a function");
+                        }
+                        const wallet = await initSigner();
+                        console.log("Wallet initialized:", wallet);
+                        if (!wallet) {
+                            throw new Error("Failed to initialize signer");
+                        }
                         const smartWallet = privyUser.smartWallet || privyUser.linkedAccounts.find((account) => account.type === "smart_wallet");
                         const walletAddress = smartWallet?.address || privyUser.wallet?.address;
 
@@ -59,7 +67,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         };
 
         handleAuth();
-    }, [authenticated, privyUser, ready, wallets]);
+    }, [authenticated, privyUser, ready, wallets, initSigner, signMessage, getAddress, storeUser, dispatch, router]);
 
     const redirectUser = () => {
         console.log("Redirecting user");
@@ -68,7 +76,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
             console.log("Redirecting to pending session");
             localStorage.removeItem("pendingSessionCode");
             router.push(`/pod/join/${pendingSessionCode}`);
-        } else if (!pathname.startsWith("/pod")) {
+        } else if (pathname && !pathname.startsWith("/pod")) {
             router.push("/pod");
         }
     };
