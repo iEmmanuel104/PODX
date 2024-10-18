@@ -79,4 +79,17 @@ body {
 
 .str-video {
   --str-video__primary-color: #6032f6;
+    --str-video__secondary-color: #252525;
+
+  --str-video__background-color0: #252525;
+  --str-video__background-color1: #1c1e22;
+  --str-video__background-color2: #272a30;
+  --str-video__background-color3: #252525;
+  --str-video__background-color4: #121416;
+  --str-video__background-color5: #1d2938;
+  --str-video__background-color6: #252525;
+  --str-video__background-color7: #252525;
+  --str-video__overlay-color: rgba(39, 42, 48, 0.75);
+  --str-video__livestream-overlay-color: rgba(39, 42, 48, 0.25);
+  --str-video__livestream-overlay-color-hovered: rgba(37, 37, 37, 0.5);
 }
