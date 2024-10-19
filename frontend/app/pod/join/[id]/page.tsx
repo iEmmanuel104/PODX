@@ -59,7 +59,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
     }, [isLoggedIn, user]);
 
     useEffect(() => {
-        // console.log("from lobby3");
+        console.log("from lobby3");
         const leavePreviousCall = async () => {
             if (callingState === CallingState.JOINED) {
                 await call?.leave();
@@ -71,7 +71,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                 try {
                     const callData = await call.get();
 
-                    // console.log({ currentCall: callData });
+                    console.log({ currentCall: callData });
                     setParticipants(callData.members || []);
                 } catch (e) {
                     const err = e as ErrorFromResponse<GetCallResponse>;
@@ -115,7 +115,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                     ...(sessionType === "Audio Session" && { video: false }),
                 });
 
-                // console.log("call create success");
+                console.log("call create success");
             }
             setLoading(false);
         };
@@ -154,7 +154,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
     }, [isLoggedIn, user, chatClient, tokenProvider]);
 
     const handleJoinSession = useCallback(async () => {
-        // console.log("join clicked");
+        console.log("join clicked");
         if (code) {
             setJoining(true);
             if (isLoggedIn && user) {
