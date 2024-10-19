@@ -30,6 +30,7 @@ const StreamMeetProvider: React.FC<{ meetingId: string; children: React.ReactNod
     const chatClientRef = useRef<StreamChat>();
     const videoClientRef = useRef<StreamVideoClient>();
     const callRef = useRef<Call>();
+    console.log({ videoClientRef, callRef, chatClientRef });
     const tokenProvider = useStreamTokenProvider();
     const router = useRouter();
 
@@ -77,14 +78,15 @@ const StreamMeetProvider: React.FC<{ meetingId: string; children: React.ReactNod
     );
 
     useEffect(() => {
-        // console.log("MeetProvider mounted");
+        console.log("MeetProvider mounted");
         const setupClients = async () => {
             if (isLoggedIn && appUser) {
-                // console.log("Setting up clients for found user:", appUser);
+                console.log("Setting up clients for found user:", appUser);
                 try {
                     const token = await tokenProvider(appUser.walletAddress);
                     await connectChatClient(token);
                     await connectVideoClient(token);
+                    console.log(await callRef?.current?.get());
                     setLoading(false);
                 } catch (error) {
                     console.error("Error setting up clients:", error);
