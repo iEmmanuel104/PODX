@@ -20,14 +20,14 @@ function LayoutContent({ children, params }: LayoutProps) {
     // Use the ID from params if available, otherwise it will be undefined
     const meetingId = id as string | undefined;
 
-    // console.log({ LayoutFile: meetingId, pathname });
+    console.log({ LayoutFile: meetingId, pathname });
 
     // Validate meetingId format if it exists
     const isValidMeetingId = meetingId ? /^[a-z]{3}-[a-z]{4}-[a-z]{3}$/.test(meetingId) : true;
 
     // If we're not already on the /pod page and there's no valid meeting ID, redirect to /pod
     if (pathname !== "/pod" && !isValidMeetingId) {
-        // console.log("Redirecting to /pod");
+        console.log("Redirecting to /pod");
         router.push("/pod");
         return null; // Return null to prevent rendering while redirecting
     }
