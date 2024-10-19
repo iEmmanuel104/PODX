@@ -23,18 +23,18 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         const handleAuth = async () => {
             setIsAuthenticating(true);
             try {
-                // console.log({ authenticated, privyUser, storeUser, wallets });
+                console.log({ authenticated, privyUser, storeUser, wallets });
                 if (authenticated && privyUser && privyUser.wallet && wallets.length > 0) {
-                    // console.log("Authenticated user detected");
+                    console.log("Authenticated user detected");
                     if (!storeUser.user || !storeUser.isLoggedIn) {
-                        // console.log("Authenticating user to get store data");
+                        console.log("Authenticating user to get store data");
 
                         const smartWallet = privyUser.smartWallet || privyUser.linkedAccounts.find((account) => account.type === "smart_wallet");
                         const walletAddress = smartWallet?.address || privyUser.wallet?.address;
 
                         if (!walletAddress) throw new Error("No wallet address found");
 
-                        // console.log({ walletToUseAuthprovider: walletAddress });
+                        console.log({ walletToUseAuthprovider: walletAddress });
                         
                         const result = await findOrCreateUser({ walletAddress, hash: true }).unwrap();
                         const userData = result.data as UserInfo;
@@ -46,7 +46,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
                         // Always redirect to pod page after authentication
                         router.push("/pod");
                     } else {
-                        // console.log("Store user found, redirecting");
+                        console.log("Store user found, redirecting");
                         redirectUser();
                     }
                 }
@@ -64,14 +64,14 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     }, [authenticated, privyUser, ready, walletsReady, wallets]);
 
     const redirectUser = () => {
-        // console.log("Redirecting user");
+        console.log("Redirecting user");
         const pendingSessionCode = localStorage.getItem("pendingSessionCode");
         if (pendingSessionCode) {
-            // console.log("Redirecting to pending session");
+            console.log("Redirecting to pending session");
             localStorage.removeItem("pendingSessionCode");
             router.push(`/pod/join/${pendingSessionCode}`);
         } else if (pathname && !pathname.startsWith("/pod")) {
-            // console.log("Redirecting to pod page for path:", pathname);
+            console.log("Redirecting to pod page for path:", pathname);
             router.push("/pod");
         }
         //  else {
@@ -82,7 +82,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     };
 
     if (!ready || !walletsReady || isAuthenticating) {
-        // console.log("Displaying loading overlay");
+        console.log("Displaying loading overlay");
         let loadingText = "";
 
         if (!ready) {
