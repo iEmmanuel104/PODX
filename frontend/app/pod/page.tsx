@@ -70,7 +70,7 @@ export default function PodPage() {
         async (title: string, type: "Audio Session" | "Video Session") => {
             setNewMeeting(true);
             const newSessionCode = getMeetingId();
-            setInviteLink(`https://podx-pi.vercel.app/pod/${newSessionCode}`);
+            setInviteLink(`https://podx-pi.vercel.app/pod/join/${newSessionCode}`);
             setSessionCode(newSessionCode);
             dispatch(setSessionInfo({ title, type, sessionId: newSessionCode }));
             closeCreateModal();
@@ -82,7 +82,7 @@ export default function PodPage() {
     const handleJoinSession = useCallback(async () => {
         if (!meetingCode) return;
         setIsJoining(true);
-        // console.log("Joining session with code: ", meetingCode);
+        console.log("Joining session with code: ", meetingCode);
 
         const client = new StreamVideoClient({
             apiKey: API_KEY,
@@ -93,7 +93,7 @@ export default function PodPage() {
 
         try {
             const response: GetCallResponse = await call.get();
-            // console.log({ responseCallFound: response });
+            console.log({ responseCallFound: response });
             if (response.call && meetingCode === response.call.custom.sessionId) {
                 dispatch(
                     setSessionInfo({
