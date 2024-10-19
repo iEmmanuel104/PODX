@@ -25,14 +25,14 @@ async function startServer(): Promise<void> {
             logger.info(`Server is running on Port ${port}`);
         });
     } catch (err) {
-        // console.log(err);
+        console.log(err);
         logger.error(err);
         // exit redis client
         redisClient.quit((err, result) => {
             if (err) {
-                console.error('Error quitting Redis:', err);
+                logger.error('Error quitting Redis:', err);
             } else {
-                // console.log('Redis instance has been stopped:', result);
+                logger.info('Redis instance has been stopped:', result);
             }
         });
         // Exit the process with a non-zero status code to indicate an error
