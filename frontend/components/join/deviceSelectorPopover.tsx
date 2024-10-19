@@ -10,7 +10,7 @@ interface DeviceSelectorPopoverProps {
 const DeviceSelectorPopover: React.FC<DeviceSelectorPopoverProps> = ({ icon, children }) => (
     <Popover>
         <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="bg-[#2C2C2C] text-white border-none rounded-full px-3 py-1 flex items-center space-x-2">
+            <Button variant="outline" size="sm" className="w-full bg-[#2C2C2C] text-white border-none rounded-full px-3 py-1 flex items-center space-x-2">
                 {icon}
                 <ChevronDown className="h-4 w-4" />
             </Button>
