@@ -14,7 +14,7 @@ export type AWSUploadType = 'profile' | 'posts' | 'document' | 'other';
 
 export interface GenerateTokenData {
     type: AuthToken,
-    user: IUser,
+    user: DecodedUser,
 }
 export interface GenerateAdminTokenData {
     type: AuthToken,
@@ -51,6 +51,9 @@ export interface DecodedTokenData {
     token: string,
     tokenType: AuthToken
     authKey?: string
+    timestamp: number
+    nonce: string
+    walletHash: string
 }
 
 export interface AWSKeyData {
