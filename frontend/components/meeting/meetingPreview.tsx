@@ -140,7 +140,7 @@ const MeetingPreview: React.FC = () => {
                             <Button
                                 variant="outline"
                                 size="icon"
-                                className="w-8 h-8 rounded-full bg-black/20 border-white/10 hover:bg-black/30 hover:border-white/20"
+                                className="w-full h-8 rounded-full bg-black/20 border-white/10 hover:bg-black/30 hover:border-white/20"
                                 onClick={toggleVideo}
                             >
                                 {isVideoEnabled ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
@@ -155,7 +155,7 @@ const MeetingPreview: React.FC = () => {
                             <Button
                                 variant="outline"
                                 size="icon"
-                                className="w-8 h-8 rounded-full bg-black/20 border-white/10 hover:bg-black/30 hover:border-white/20"
+                                className="w-full h-8 rounded-full bg-black/20 border-white/10 hover:bg-black/30 hover:border-white/20"
                                 onClick={toggleAudio}
                             >
                                 {isAudioEnabled ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
@@ -170,7 +170,7 @@ const MeetingPreview: React.FC = () => {
                             <Button
                                 variant="outline"
                                 size="icon"
-                                className="w-8 h-8 rounded-full bg-black/20 border-white/10 hover:bg-black/30 hover:border-white/20"
+                                className="w-full h-8 rounded-full bg-black/20 border-white/10 hover:bg-black/30 hover:border-white/20"
                                 onClick={toggleAudio}
                             >
                                 {isAudioEnabled ? <Volume2 className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
