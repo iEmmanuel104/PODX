@@ -159,7 +159,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
                     {/** Main content */}
                     <div className="flex-grow flex overflow-hidden relative">
-                        <div className="flex-1 hover:bg-white hover:cursor-pointer w-fit h-fit">
+                        <div className="flex-1 hover:cursor-pointer w-fit h-fit">
                             {isSpeakerView ? <SpeakerLayout /> : <PaginatedGridLayout />}
                         </div>
                         <div
