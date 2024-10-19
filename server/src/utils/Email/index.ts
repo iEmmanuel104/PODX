@@ -125,7 +125,7 @@ export default class EmailService {
     //             && options.email === 'batch'
     //         ) {
     //             logger.info('Using Postmark Template');
-    //             // console.log('options.postmarkInfo', options.postmarkInfo);
+    //             console.log('options.postmarkInfo', options.postmarkInfo);
     //             emailsWithTemplateMessages = (options.postmarkInfo).map((recipient) => {
     //                 const message: postmark.TemplatedMessage = {
     //                     From: senderEmail,
@@ -156,7 +156,7 @@ export default class EmailService {
     //         try {
     //             let response;
     //             if (options.isPostmarkTemplate && emailsWithTemplateMessages.length > 0) {
-    //                 // console.log('emailsWithTemplateMessages', emailsWithTemplateMessages);
+    //                 console.log('emailsWithTemplateMessages', emailsWithTemplateMessages);
     //                 response = await postmarkClient.sendEmailBatchWithTemplates(emailsWithTemplateMessages);
     //             } else {
     //                 response = await postmarkClient.sendEmailBatch(emailMessages);
@@ -176,7 +176,7 @@ export default class EmailService {
 
 
     public send(options: EmailOptions): Promise<void | Error> {
-        // console.log('sending email');
+        console.log('sending email');
         return this.sendEmail(options);
     }
 }
@@ -186,12 +186,12 @@ const emailService = new EmailService('nodemailer');
 // let emailService: EmailService;
 
 // if (NODE_ENV === 'production') {
-//     // console.log('Using LIVE - postmark');
+//     console.log('Using LIVE - postmark');
 //     // emailService = new EmailService('postmark');
-//     // // console.log('Using DEV - Nodemailer');
+//     // console.log('Using DEV - Nodemailer');
 //     emailService = new EmailService('nodemailer');
 // } else {
-//     // console.log('Using DEV - Nodemailer');
+//     console.log('Using DEV - Nodemailer');
 //     // emailService = new EmailService('postmark');
 //     emailService = new EmailService('nodemailer');
 // }

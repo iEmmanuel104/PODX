@@ -28,14 +28,14 @@
 //             redisClient.expire(emailCounterKey, secondsLimit),
 //         ]);
 
-//         // console.log('incrResult', incrResult);
-//         // console.log('expireResult', expireResult);
+//         console.log('incrResult', incrResult);
+//         console.log('expireResult', expireResult);
 //         // Check if the increment result exceeds the limit
 //         if (incrResult > limitAmount) {
 //             const cachedAttempts = await redisClient.hgetall(emailHashKey);
 //             const attempts = Object.values(cachedAttempts).map((attempt: string) => JSON.parse(attempt));
 
-//             // console.log('Sending suspicious email notification', attempts);
+//             console.log('Sending suspicious email notification', attempts);
 //             // await suspiciousActivityEmail(email, attempts);
 //             throw new BadRequestError('Too many attempts. Please try again later.');
 //         } else {

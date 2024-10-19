@@ -133,7 +133,7 @@ export default class UserController {
         // Remove any fields you don't want to send to the client
         delete userObject.__v;
 
-        // console.log({ user: userObject, streamToken });
+        console.log({ user: userObject, streamToken });
         let signature = undefined;
 
         if (hash === 'true') {
@@ -147,7 +147,7 @@ export default class UserController {
             });
         }
 
-        // console.log({ user: userObject, streamToken, signature });
+        console.log({ user: userObject, streamToken, signature });
 
         res.status(200).json({
             status: 'success',

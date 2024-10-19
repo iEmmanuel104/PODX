@@ -26,7 +26,7 @@ export default class StreamIOConfig {
                 },
             ]);
 
-            // console.log('Streamio User created successfully:', response);
+            console.log('Streamio User created successfully:', response);
             return { message: 'User created successfully' };
         } catch (error) {
             console.error('Error creating user:', error);
@@ -53,7 +53,7 @@ export default class StreamIOConfig {
         // return this.client.generateUserToken({ user_id: userId, validity_in_seconds: validity });
         const newToken = this.client.generateUserToken({ user_id: userId, validity_in_seconds: validity });
         await redisClient.set(`stream_token_${userId}`, newToken);
-        
+
         return newToken;
     }
 
@@ -73,8 +73,8 @@ export default class StreamIOConfig {
                 ],
             });
 
-            // console.log('Streamio User updated successfully:', response);
-            
+            console.log('Streamio User updated successfully:', response);
+
             return { message: 'User updated successfully' };
         } catch (error) {
             console.error('Error updating user:', error);

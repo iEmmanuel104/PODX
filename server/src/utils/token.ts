@@ -76,18 +76,18 @@ class AuthUtil {
 
     static getSecretKeyForTokenType(type: ENCRYPTEDTOKEN): { secretKey: string, expiry: number } {
         switch (type) {
-        case 'access':
-            // 1day
-            return { secretKey: JWT_ACCESS_SECRET, expiry: 60 * 60 * 24 };
-        case 'refresh':
-            // 7days
-            return { secretKey: JWT_REFRESH_SECRET, expiry: 60 * 60 * 24 * 7 };
-        case 'admin':
-            // 7days
-            return { secretKey: JWT_ADMIN_ACCESS_SECRET, expiry: 60 * 60 * 24 * 7 };
-        default:
-            // 20min
-            return { secretKey: JWT_SECRET, expiry: 60 * 20 };
+            case 'access':
+                // 1day
+                return { secretKey: JWT_ACCESS_SECRET, expiry: 60 * 60 * 24 };
+            case 'refresh':
+                // 7days
+                return { secretKey: JWT_REFRESH_SECRET, expiry: 60 * 60 * 24 * 7 };
+            case 'admin':
+                // 7days
+                return { secretKey: JWT_ADMIN_ACCESS_SECRET, expiry: 60 * 60 * 24 * 7 };
+            default:
+                // 20min
+                return { secretKey: JWT_SECRET, expiry: 60 * 20 };
         }
     }
 
@@ -104,7 +104,7 @@ class AuthUtil {
             token = Math.floor(100000 + Math.random() * 900000).toString();
         }
 
-        // console.log({ expiry, identifier });
+        console.log({ expiry, identifier });
 
         // await TokenCacheUtil.saveTokenToCache({ key: tokenKey, token, expiry });
 

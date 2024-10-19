@@ -9,32 +9,32 @@ async function createSequelizeInstance(): Promise<Sequelize> {
     if (NODE_ENV === 'production') {
         return new Sequelize(
             DB_CONFIG.URL, {
-                logging: false,
-                dialect: 'postgres',
-                pool: {
-                    max: 5,
-                    min: 1,
-                    idle: 10000,
+            logging: false,
+            dialect: 'postgres',
+            pool: {
+                max: 5,
+                min: 1,
+                idle: 10000,
+            },
+            dialectOptions: {
+                ssl: {
+                    require: true,
+                    rejectUnauthorized: true,
                 },
-                dialectOptions: {
-                    ssl: {
-                        require: true,
-                        rejectUnauthorized: true,
-                    },
-                },
-            }
+            },
+        }
         );
     } else {
         return new Sequelize(
             DB_CONFIG.URL, {
-                logging: false,
-                dialect: 'postgres',
-                pool: {
-                    max: 5,
-                    min: 1,
-                    idle: 10000,
-                },
-            }
+            logging: false,
+            dialect: 'postgres',
+            pool: {
+                max: 5,
+                min: 1,
+                idle: 10000,
+            },
+        }
         );
     }
 }
@@ -80,7 +80,7 @@ async function initiateDB(): Promise<void> {
         logger.info('Database Sync Completed');
 
     } catch (error) {
-        // console.log(error);
+        console.log(error);
         // Handle errors if unable to connect to the database
         logger.error('Unable to connect to the database:', error);
     }
