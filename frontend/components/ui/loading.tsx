@@ -1,4 +1,5 @@
 import * as React from "react";
+import Image from "next/image";
 
 interface LoadingOverlayProps extends React.HTMLAttributes<HTMLDivElement> {
     text?: string;
@@ -20,10 +21,10 @@ const LoadingOverlay = React.forwardRef<HTMLDivElement, LoadingOverlayProps>(({ 
                     d
                 </span>
                 <div
-                    className="inline-flex items-center justify-center w-10 h-10 bg-[#6032F6] rounded-full ml-1 animate-pulse-fade"
+                    className="relative inline-flex items-center justify-center w-10 h-10 rounded-full ml-1 animate-pulse-fade overflow-hidden"
                     style={{ animationDelay: "0.6s" }}
                 >
-                    <span className="text-black font-bold">X</span>
+                    <Image src="/logo.png" alt="PodX Logo" layout="fill" objectFit="contain" />
                 </div>
             </div>
             <p className="text-lg font-medium text-white animate-pulse-fade" style={{ animationDelay: "0.8s" }}>
