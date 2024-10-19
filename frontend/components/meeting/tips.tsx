@@ -25,7 +25,7 @@ const TipModal: React.FC<TipModalProps> = ({ selectedTipRecipient, tipAmount, se
         <div className="flex mb-4">
             <input
                 type="text"
-                placeholder="Enter Tip in USDC"
+                placeholder="Enter Tip in ETH"
                 value={tipAmount}
                 onChange={(e) => setTipAmount(e.target.value)}
                 className="flex-1 bg-[#2C2C2C] rounded-l-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
@@ -37,7 +37,7 @@ const TipModal: React.FC<TipModalProps> = ({ selectedTipRecipient, tipAmount, se
                 Tip
             </button>
         </div>
-        <p className="text-[#A3A3A3]">Balance: 100 USDC</p>
+        <p className="text-[#A3A3A3]">Balance: 100 ETH</p>
     </Modal>
 )
 

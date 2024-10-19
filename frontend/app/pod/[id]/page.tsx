@@ -25,7 +25,8 @@ import { Avatar, Identity, Name, Address } from '@coinbase/onchainkit/identity';
 import { base } from 'viem/chains';
 import { usePrivy } from "@privy-io/react-auth";
 import { useSendTransaction } from "@privy-io/react-auth";
-import { parseUnits, Interface } from 'ethers';
+import { parseUnits, Interface, isAddress, parseEther } from 'ethers';
+import { useSmartWallets } from "@privy-io/react-auth/smart-wallets";
 
 interface MeetingProps {
     params: {
@@ -60,40 +61,41 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const userAddress = user?.wallet?.address;
     const [showTipButton, setShowTipButton] = useState(false);
 
-    const [recipient, setRecipient] = useState('');
-    const { sendTransaction } = useSendTransaction();
+    // Sending the transaction
+    const { sendTransaction } = useSendTransaction({
+        onError: (error) => {
+            console.error('Transaction failed:', error);
+        },
+        onSuccess: (response) => {
+            console.log('Transaction successful:', response);
+            setShowTipSuccess(true);
+            setTimeout(() => setShowTipSuccess(false), 3000);
+        }
+    });
 
-    const sendERC20 = async (recipient: string, amount: string) => {
+    const sendETH = async (recipient: string, amount: string) => {
         try {
-            const erc20ABI = [
-                "function transfer(address to, uint256 amount) external returns (bool)"
-            ];
+            // Validate recipient address
+            if (!isAddress(recipient)) {
+                throw new Error('Invalid recipient address');
+            }
 
-            const erc20ContractAddress = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
-
-            const decimals = 6;
-            const parsedAmount = parseUnits(amount.toString(), decimals);
-            console.log("Parsed amount (in token's smallest units):", parsedAmount);
-
-            const iface = new Interface(erc20ABI);
-
-            const data = iface.encodeFunctionData("transfer", [recipient, parsedAmount]);
-            console.log("Encoded data for transfer:", data);
+            // Convert amount to smallest unit (ETH uses 18 decimals)
+            const parsedAmount = parseEther(amount.toString()); // This converts the amount to wei            
 
             const tx = await sendTransaction({
-                chainId: '8453',
-                to: erc20ContractAddress,
-                data: data,
-                value: "0x0",
-                gasLimit: 100000,
+                chainId: 8453, // Chain ID for Base mainnet
+                to: recipient, // ETH recipient address
+                value: parsedAmount, // ETH value in wei, converted to hex
+                gasLimit: 21000, // Typical gas limit for ETH transfer
             });
 
             console.log("Transaction receipt:", tx);
-            router.refresh();
         } catch (error) {
-            console.error("Error sending ERC-20 tokens:", error);
+            console.error("Error sending ETH:", error);
         }
     };
+
 
     const { data: balance, isError, isLoading } = useBalance({
         address: userAddress,
@@ -101,7 +103,6 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const formattedBalance = balance ? Number(balance.value) / 1e18 : 0;
     const displayBalance = formattedBalance.toFixed(4);
 
-    console.log(balance?.value, displayBalance);
     console.log({ userAddress })
 
     const isSpeakerView = useMemo(() => {
@@ -131,10 +132,8 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
     const handleTip = async () => {
         if (selectedTipRecipient && tipAmount) {
-            await sendERC20("0x0A0BA79ee5e33561527A4458a3E57fa2fAcA9fef", tipAmount);
+            await sendETH("address here" as `0x${string}`, tipAmount);
             setShowTipModal(false);
-            setShowTipSuccess(true);
-            setTimeout(() => setShowTipSuccess(false), 3000);
         }
     };
 
@@ -277,7 +276,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
                     {/** Main content */}
                     <div className="flex-grow flex overflow-hidden relative w-[90%] mx-auto">
-                        <div 
+                        <div
                             className="flex-1 hover:cursor-pointer w-fit h-fit relative"
                             onMouseEnter={() => setShowTipButton(true)}
                             onMouseLeave={() => setShowTipButton(false)}
