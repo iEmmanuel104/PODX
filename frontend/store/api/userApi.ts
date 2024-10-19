@@ -9,15 +9,23 @@ export interface UserInfo {
     displayImage?: string;
     smartWalletAddress?: string;
     smartWalletType?: string;
+    signature?: string;
 }
+
+interface FindOrCreateUserArgs {
+    walletAddress: string;
+    hash?: boolean;
+}
+
+type FindOrCreateUserResponse = ApiResponse<UserInfo & { signature?: string }>;
 
 export const userApiSlice = apiSlice.injectEndpoints({
     endpoints: (builder) => ({
-        findOrCreateUser: builder.mutation<ApiResponse<UserInfo>, { walletAddress: string }>({
-            query: (body) => ({
+        findOrCreateUser: builder.mutation<FindOrCreateUserResponse, FindOrCreateUserArgs>({
+            query: ({ walletAddress, hash }) => ({
                 url: '/user/validate',
                 method: 'POST',
-                body,
+                body: { walletAddress, ...(hash ? { hash: 'true' } : {}) },
             }),
             invalidatesTags: ['User'],
         }),
