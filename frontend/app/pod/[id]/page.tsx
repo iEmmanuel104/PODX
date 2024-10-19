@@ -24,7 +24,8 @@ import { Avatar, Identity, Name, Address } from "@coinbase/onchainkit/identity";
 import { base } from "viem/chains";
 import { usePrivy } from "@privy-io/react-auth";
 import { useSendTransaction } from "@privy-io/react-auth";
-import { isAddress, parseEther } from "ethers/lib/utils";
+import { isAddress } from "@ethersproject/address";
+import { parseEther } from "@ethersproject/units";
 import Image from "next/image";
 import Logo from "@/components/ui/logo";
 
