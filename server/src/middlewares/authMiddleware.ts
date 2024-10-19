@@ -38,7 +38,7 @@ export function AdminAuthenticatedController<T = AdminAuthenticatedRequest>(
     };
 }
 
-async function authenticateUser(token: string): Promise<IUser> {
+export async function authenticateUser(token: string): Promise<IUser> {
     const decoded = AuthUtil.verifyTokenWithHash(token);
 
     const user = await UserService.viewSingleUserByWalletAddress(decoded.user.walletAddress);

@@ -53,12 +53,13 @@ export default class AdminController {
         }
 
         // Generate admin token
-        const adminToken = await AuthUtil.generateAdminToken({ type: 'admin', identifier: checkAdmin.email });
+        // const adminToken = await AuthUtil.generateAdminToken({ type: 'admin', identifier: checkAdmin.email });
 
         res.status(200).json({
             status: 'success',
             message: 'Admin login successful',
-            data: { adminToken, admin: checkAdmin },
+            data: { admin: checkAdmin },
+            // data: { adminToken, admin: checkAdmin },
         });
     }
 
