@@ -1,6 +1,6 @@
 "use client";
-import React, { useState, useEffect, useMemo } from "react";
-import { Settings, CheckCircle2, Menu, LogOut, ChevronDown, Copy, LogOutIcon, DollarSign } from "lucide-react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { CheckCircle2, Menu, LogOut, ChevronDown, Copy, LogOutIcon, DollarSign } from "lucide-react";
 import TipModal from "@/components/meeting/tips";
 import ParticipantsSidebar from "@/components/meeting/participantList";
 import ThankYouModal from "@/components/meeting/thankYou";
@@ -15,18 +15,18 @@ import {
     PaginatedGridLayout,
     SpeakerLayout,
     CallControls,
+    CallingState,
 } from "@stream-io/video-react-sdk";
-import '@stream-io/video-react-sdk/dist/css/styles.css';
-import { Channel, ChannelHeader, MessageInput, MessageList, useChatContext, Window } from "stream-chat-react";
+import "@stream-io/video-react-sdk/dist/css/styles.css";
 import { useRouter } from "next/navigation";
-import Logo from "@/components/ui/logo";
-import { useAccount, useBalance } from 'wagmi'
-import { Avatar, Identity, Name, Address } from '@coinbase/onchainkit/identity';
-import { base } from 'viem/chains';
+import { useBalance } from "wagmi";
+import { Avatar, Identity, Name, Address } from "@coinbase/onchainkit/identity";
+import { base } from "viem/chains";
 import { usePrivy } from "@privy-io/react-auth";
 import { useSendTransaction } from "@privy-io/react-auth";
-import { parseUnits, Interface, isAddress, parseEther } from 'ethers';
-import { useSmartWallets } from "@privy-io/react-auth/smart-wallets";
+import { isAddress, parseEther } from "ethers/lib/utils";
+import Image from "next/image";
+import Logo from "@/components/ui/logo";
 
 interface MeetingProps {
     params: {
@@ -36,18 +36,21 @@ interface MeetingProps {
 
 export default function MeetingInterface({ params }: MeetingProps) {
     const call = useCall();
+
     const { id } = params;
     const router = useRouter();
     const { useParticipants, useCallMembers, useIsCallLive, useCallCustomData, useHasOngoingScreenShare, useCallCallingState } = useCallStateHooks();
-
+    
     const participants = useParticipants();
     const members = useCallMembers();
     const customData = useCallCustomData();
     const live = useIsCallLive();
-
+    
     const connectedUser = useConnectedUser();
     const hasOngoingScreenShare = useHasOngoingScreenShare();
     const callingState = useCallCallingState();
+    
+    console.log({ callingState, connectedUser, live });
     const [showTipModal, setShowTipModal] = useState(false);
     const [tipAmount, setTipAmount] = useState("");
     const [showTipSuccess, setShowTipSuccess] = useState(false);
@@ -58,30 +61,30 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const [showSidebar, setShowSidebar] = useState(false);
     const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
     const { user } = usePrivy();
-    const userAddress = user?.wallet?.address;
+    const userAddress = user?.wallet?.address as '0x${string}';
     const [showTipButton, setShowTipButton] = useState(false);
 
     // Sending the transaction
     const { sendTransaction } = useSendTransaction({
         onError: (error) => {
-            console.error('Transaction failed:', error);
+            console.error("Transaction failed:", error);
         },
         onSuccess: (response) => {
-            console.log('Transaction successful:', response);
+            console.log("Transaction successful:", response);
             setShowTipSuccess(true);
             setTimeout(() => setShowTipSuccess(false), 3000);
-        }
+        },
     });
 
     const sendETH = async (recipient: string, amount: string) => {
         try {
             // Validate recipient address
             if (!isAddress(recipient)) {
-                throw new Error('Invalid recipient address');
+                throw new Error("Invalid recipient address");
             }
 
             // Convert amount to smallest unit (ETH uses 18 decimals)
-            const parsedAmount = parseEther(amount.toString()); // This converts the amount to wei            
+            const parsedAmount = parseEther(amount.toString()); // This converts the amount to wei
 
             const tx = await sendTransaction({
                 chainId: 8453, // Chain ID for Base mainnet
@@ -96,14 +99,18 @@ export default function MeetingInterface({ params }: MeetingProps) {
         }
     };
 
-
-    const { data: balance, isError, isLoading } = useBalance({
+    const {
+        data: balance,
+        isError,
+        isLoading,
+    } = useBalance({
         address: userAddress,
-    })
+    });
+
     const formattedBalance = balance ? Number(balance.value) / 1e18 : 0;
     const displayBalance = formattedBalance.toFixed(4);
 
-    console.log({ userAddress })
+    console.log({ userAddress });
 
     const isSpeakerView = useMemo(() => {
         return hasOngoingScreenShare || participants.length > 1;
@@ -130,6 +137,29 @@ export default function MeetingInterface({ params }: MeetingProps) {
         };
     }, [call]);
 
+    const handleJoinSession = useCallback(async () => {
+        if (id && callingState !== CallingState.JOINED) {
+            try {
+                await call?.join({
+                    data: {
+                        members: [{ user_id: connectedUser?.id!, role: "guest" }],
+                    },
+                });
+                console.log("Successfully joined the call");
+            } catch (error) {
+                console.error("Error joining the call:", error);
+            };
+        }
+    }, [id, callingState, call, connectedUser]);
+
+    useEffect(() => {
+        if (connectedUser && live && callingState !== CallingState.JOINED) {
+            handleJoinSession();
+        }
+    }, [connectedUser, live, callingState, handleJoinSession]);
+
+
+
     const handleTip = async () => {
         if (selectedTipRecipient && tipAmount) {
             await sendETH("address here" as `0x${string}`, tipAmount);
@@ -151,7 +181,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
     };
 
     const updateParticipantRole = (userId: string, newRole: string) => {
-        // console.log(`Updating ${userId} to ${newRole}`);
+        console.log(`Updating ${userId} to ${newRole}`);
     };
 
     const handleJoinRequest = (userId: string, accept: boolean) => {
@@ -201,7 +231,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                     {/** Header Title*/}
                     <header className="flex justify-between items-center px-4 py-2 bg-[#1d1d1d] rounded-full w-[90%] mx-auto my-4">
                         <div className="flex items-center justify-between gap-4">
-                            <img src="/logo.png" alt="Pod" className="w-full h-full border-r border-white pr-4" />
+                            <Logo />
                             <p className="text-sm mr-2 hidden sm:inline w-full">{customData.title}</p>
                             <p className="bg-red-500 text-xs px-2 py-0.5 rounded-full">{live ? "Live" : "Offline"}</p>
                         </div>
@@ -216,6 +246,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                             <div className="relative">
                                 <div className="flex items-center">
                                     <button
+                                        title="toggle profile dropdown"
                                         className="flex items-center text-[#A3A3A3] hover:text-white transition-colors mr-2 sm:mr-4"
                                         onClick={toggleProfileDropdown}
                                     >
@@ -256,12 +287,12 @@ export default function MeetingInterface({ params }: MeetingProps) {
                                                         </p>
                                                     </div>
                                                     <div className="flex items-center justify-between bg-[#1d1d1d] p-2 mb-2 rounded-full">
-                                                        <img src="/images/base.png" alt="Base" className="w-6 h-6" />
+                                                        <Image src="/images/base.png" alt="Base" width={24} height={24} className="w-6 h-6" />{" "}
                                                         <div className="flex items-center">
                                                             <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                                                            <Address address={userAddress} chain={base} className="text-[#A3A3A3] text-xs" />
+                                                            <Address address={userAddress} className="text-[#A3A3A3] text-xs" />
                                                         </div>
-                                                        <button onClick={copyAddress} className="text-[#A3A3A3] hover:text-white">
+                                                        <button title="copy" onClick={copyAddress} className="text-[#A3A3A3] hover:text-white">
                                                             <Copy className="w-4 h-4" />
                                                         </button>
                                                     </div>
@@ -285,7 +316,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                             {showTipButton && (
                                 <button
                                     className="absolute top-4 right-8 bg-violet-500 text-white px-4 py-2 rounded-full flex items-center"
-                                    onClick={() => openTipModal(connectedUser?.id || '')}
+                                    onClick={() => openTipModal(connectedUser?.id || "")}
                                 >
                                     <DollarSign className="w-4 h-4 mr-2" />
                                     Tip
