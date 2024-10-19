@@ -3,7 +3,7 @@ import { JWT_SECRET, JWT_ACCESS_SECRET, JWT_ADMIN_ACCESS_SECRET, JWT_REFRESH_SEC
 import { v4 as uuidv4 } from 'uuid';
 import { redisClient } from './redis';
 import { UnauthorizedError, TokenExpiredError, JsonWebTokenError } from './customErrors';
-import { CompareTokenData, DecodedTokenData, ENCRYPTEDTOKEN, GenerateCodeData, GenerateTokenData, SaveTokenToCache, GenerateAdminTokenData, CompareAdminTokenData } from './interface';
+import { CompareTokenData, DecodedTokenData, ENCRYPTEDTOKEN, GenerateCodeData, GenerateTokenData, SaveTokenToCache, CompareAdminTokenData } from './interface';
 import { ethers } from 'ethers';
 
 class TokenCacheUtil {
@@ -45,7 +45,7 @@ class TokenCacheUtil {
         const { token, state } = JSON.parse(dataString);
 
         if (state !== 'active') {
-            throw new UnauthorizedError('Unauthorized token');  
+            throw new UnauthorizedError('Unauthorized token');
         }
 
         // Save updated state along with the existing token and remaining TTL
@@ -59,7 +59,7 @@ class TokenCacheUtil {
         const tokenString = await redisClient.get(key);
         if (!tokenString) {
             return null;
-        }            
+        }
         return tokenString;
     }
 
@@ -78,7 +78,7 @@ class AuthUtil {
         switch (type) {
         case 'access':
             // 1day
-            return { secretKey: JWT_ACCESS_SECRET, expiry: 60 * 60 * 24 }; 
+            return { secretKey: JWT_ACCESS_SECRET, expiry: 60 * 60 * 24 };
         case 'refresh':
             // 7days
             return { secretKey: JWT_REFRESH_SECRET, expiry: 60 * 60 * 24 * 7 };
@@ -91,48 +91,13 @@ class AuthUtil {
         }
     }
 
-    static async generateToken(info: GenerateTokenData) {
-        const { type, user } = info;
-
-        const { expiry } = this.getSecretKeyForTokenType(type);
-
-        const tokenData: Omit<DecodedTokenData, 'token'> = {
-            user: {
-                id: user.id,
-                walletAddress: user.walletAddress,
-            },
-            tokenType: type,
-        };
-        // const tokenKey = `${type}_token:${user.id}`;
-        const token = jwt.sign(tokenData, user.walletAddress, { expiresIn: expiry });
-        // await TokenCacheUtil.saveTokenToCache({ key: tokenKey, token, expiry });
-
-        return token;
-    }
-
     static async decodeToken(token: string) {
         return jwt.decode(token) as DecodedTokenData;
     }
 
-    static async generateAdminToken(info: GenerateAdminTokenData) {
-        const { type, identifier } = info;
-        const { secretKey, expiry } = this.getSecretKeyForTokenType(type);
-
-        //omit token and user
-        const tokenData: Omit<DecodedTokenData, 'token' | 'user'> = {
-            authKey: identifier,
-            tokenType: type,
-        };
-        // const tokenKey = `${type}_token:${identifier}`;
-        const token = jwt.sign(tokenData, secretKey, { expiresIn: expiry });
-        // await TokenCacheUtil.saveTokenToCache({ key: tokenKey, token, expiry });
-
-        return token;
-    }
-
     static async generateCode({ type, identifier, expiry }: GenerateCodeData) {
         // const tokenKey = `${type}_code:${identifier}`;
-        let token:number | string;
+        let token: number | string;
         if (type === 'passwordreset') {
             token = uuidv4();
         } else {
@@ -151,10 +116,69 @@ class AuthUtil {
         return TokenCacheUtil.compareToken(tokenKey, token);
     }
 
-    // static compareCode({ user, tokenType, token }: CompareTokenData) {
-    //     const tokenKey = `${tokenType}_code:${user.id}`;
-    //     return TokenCacheUtil.compareToken(tokenKey, token);
-    // }
+    static createWalletHash(walletAddress: string): { hash: string, timestamp: number, nonce: string } {
+        const timestamp = Date.now();
+        const nonce = uuidv4();
+        const message = `Create hash for wallet: ${walletAddress} at ${timestamp} with nonce ${nonce}`;
+        const hash = ethers.id(message);
+        return { hash, timestamp, nonce };
+    }
+
+    static verifyWalletHash(walletAddress: string, hash: string, timestamp: number, nonce: string): boolean {
+        const message = `Create hash for wallet: ${walletAddress} at ${timestamp} with nonce ${nonce}`;
+        const expectedHash = ethers.id(message);
+        return expectedHash === hash;
+    }
+
+    static async generateTokenWithHash(info: GenerateTokenData) {
+        const { type, user } = info;
+        const { expiry } = this.getSecretKeyForTokenType(type);
+
+        const { hash: walletHash, timestamp, nonce } = this.createWalletHash(user.walletAddress);
+
+        const tokenData: Omit<DecodedTokenData, 'token'> = {
+            user: {
+                id: user.id,
+                walletAddress: user.walletAddress,
+            },
+            tokenType: type,
+            walletHash,
+            timestamp,
+            nonce,
+        };
+
+        const token = jwt.sign(tokenData, JWT_SECRET, { expiresIn: expiry });
+        return token;
+    }
+
+    static verifyTokenWithHash(token: string): DecodedTokenData {
+        try {
+            const decoded = jwt.verify(token, JWT_SECRET) as DecodedTokenData;
+            if (!this.verifyWalletHash(decoded.user.walletAddress, decoded.walletHash, decoded.timestamp, decoded.nonce)) {
+                throw new UnauthorizedError('Invalid wallet hash');
+            }
+
+            // Optional: Check if the token is too old based on the timestamp
+            const currentTime = Date.now();
+            const tokenAge = currentTime - decoded.timestamp;
+            const maxAge = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+            if (tokenAge > maxAge) {
+                throw new TokenExpiredError('Token has exceeded the maximum age');
+            }
+
+            return decoded;
+        } catch (error) {
+            if (error instanceof jwt.TokenExpiredError) {
+                throw new TokenExpiredError('Token expired');
+            } else if (error instanceof jwt.JsonWebTokenError) {
+                throw new JsonWebTokenError('Invalid token');
+            } else if (error instanceof jwt.NotBeforeError) {
+                throw new UnauthorizedError('Token not yet active');
+            } else {
+                throw error;
+            }
+        }
+    }
 
     static compareAdminCode({ identifier, tokenType, token }: CompareAdminTokenData) {
         const tokenKey = `${tokenType}_code:${identifier}`;
@@ -205,11 +229,6 @@ class AuthUtil {
             }
         }
     }
-
-    // static async deleteToken({ user, tokenType, tokenClass }: DeleteToken) {
-    //     const tokenKey = `${tokenType}_${tokenClass}:${user.id}`;
-    //     await TokenCacheUtil.deleteTokenFromCache(tokenKey);
-    // }
 
 }
 
