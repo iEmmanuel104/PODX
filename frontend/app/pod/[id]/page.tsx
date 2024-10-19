@@ -45,12 +45,10 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const members = useCallMembers();
     const customData = useCallCustomData();
     const live = useIsCallLive();
-    
     const connectedUser = useConnectedUser();
     const hasOngoingScreenShare = useHasOngoingScreenShare();
     const callingState = useCallCallingState();
-    
-    console.log({ callingState, connectedUser, live });
+
     const [showTipModal, setShowTipModal] = useState(false);
     const [tipAmount, setTipAmount] = useState("");
     const [showTipSuccess, setShowTipSuccess] = useState(false);
@@ -109,8 +107,6 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
     const formattedBalance = balance ? Number(balance.value) / 1e18 : 0;
     const displayBalance = formattedBalance.toFixed(4);
-
-    console.log({ userAddress });
 
     const isSpeakerView = useMemo(() => {
         return hasOngoingScreenShare || participants.length > 1;
