@@ -4,6 +4,7 @@ import { BadRequestError } from '../utils/customErrors';
 import { AuthenticatedRequest } from '../middlewares/authMiddleware';
 import CloudinaryClientConfig from '../clients/cloudinary.config';
 import StreamIOConfig from '../clients/streamio.config';
+import { AuthUtil } from '../utils/token';
 
 export default class UserController {
 
@@ -110,7 +111,7 @@ export default class UserController {
     }
 
     static async findOrCreateUser(req: Request, res: Response) {
-        const { walletAddress } = req.body;
+        const { walletAddress, hash } = req.body;
 
         if (!walletAddress) {
             throw new BadRequestError('Wallet address is required');
@@ -133,6 +134,20 @@ export default class UserController {
         delete userObject.__v;
 
         console.log({ user: userObject, streamToken });
+        let signature = undefined;
+
+        if (hash === 'true') {
+            // Generate a new auth token with a unique hash
+            signature = await AuthUtil.generateTokenWithHash({
+                type: 'access',
+                user: {
+                    id: user.id,
+                    walletAddress: user.walletAddress,
+                },
+            });
+        }
+
+        console.log({ user: userObject, streamToken, signature });
 
         res.status(200).json({
             status: 'success',
@@ -140,6 +155,7 @@ export default class UserController {
             data: {
                 ...userObject,
                 streamToken,
+                signature,
             },
         });
     }
