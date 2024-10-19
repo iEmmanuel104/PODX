@@ -18,7 +18,7 @@ const DeviceSelector: React.FC<DeviceSelectorProps> = ({ devices, selectedDevice
 
     return (
         <Select disabled={disabled} value={selectedDeviceId} onValueChange={onSelect}>
-            <SelectTrigger className={cn("w-[200px] bg-[#2C2C2C] text-white", className)}>
+            <SelectTrigger className={cn("bg-[#2C2C2C] text-white", className)}>
                 {icon}
                 <SelectValue placeholder={disabled ? "Permission needed" : label} />
             </SelectTrigger>
