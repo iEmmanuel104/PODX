@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
-import { Settings, CheckCircle2, Menu, LogOut, ChevronDown, Copy, LogOutIcon } from "lucide-react";
+import { Settings, CheckCircle2, Menu, LogOut, ChevronDown, Copy, LogOutIcon, DollarSign } from "lucide-react";
 import TipModal from "@/components/meeting/tips";
 import ParticipantsSidebar from "@/components/meeting/participantList";
 import ThankYouModal from "@/components/meeting/thankYou";
@@ -24,6 +24,8 @@ import { useAccount, useBalance } from 'wagmi'
 import { Avatar, Identity, Name, Address } from '@coinbase/onchainkit/identity';
 import { base } from 'viem/chains';
 import { usePrivy } from "@privy-io/react-auth";
+import { useSendTransaction } from "@privy-io/react-auth";
+import { parseUnits, Interface } from 'ethers';
 
 interface MeetingProps {
     params: {
@@ -39,7 +41,6 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
     const participants = useParticipants();
     const members = useCallMembers();
-    // console.log({ participants, members });
     const customData = useCallCustomData();
     const live = useIsCallLive();
 
@@ -57,13 +58,48 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
     const { user } = usePrivy();
     const userAddress = user?.wallet?.address;
+    const [showTipButton, setShowTipButton] = useState(false);
+
+    const [recipient, setRecipient] = useState('');
+    const { sendTransaction } = useSendTransaction();
+
+    const sendERC20 = async (recipient: string, amount: string) => {
+        try {
+            const erc20ABI = [
+                "function transfer(address to, uint256 amount) external returns (bool)"
+            ];
+
+            const erc20ContractAddress = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
+
+            const decimals = 6;
+            const parsedAmount = parseUnits(amount.toString(), decimals);
+            console.log("Parsed amount (in token's smallest units):", parsedAmount);
+
+            const iface = new Interface(erc20ABI);
+
+            const data = iface.encodeFunctionData("transfer", [recipient, parsedAmount]);
+            console.log("Encoded data for transfer:", data);
+
+            const tx = await sendTransaction({
+                chainId: '8453',
+                to: erc20ContractAddress,
+                data: data,
+                value: "0x0",
+                gasLimit: 100000,
+            });
+
+            console.log("Transaction receipt:", tx);
+            router.refresh();
+        } catch (error) {
+            console.error("Error sending ERC-20 tokens:", error);
+        }
+    };
 
     const { data: balance, isError, isLoading } = useBalance({
         address: userAddress,
     })
     const formattedBalance = balance ? Number(balance.value) / 1e18 : 0;
     const displayBalance = formattedBalance.toFixed(4);
-
 
     console.log(balance?.value, displayBalance);
     console.log({ userAddress })
@@ -83,7 +119,6 @@ export default function MeetingInterface({ params }: MeetingProps) {
                 case "call.ring":
                     setJoinRequests((prev) => [...prev, event.user.id]);
                     break;
-                // ... other event handlers remain the same
             }
         };
 
@@ -94,10 +129,13 @@ export default function MeetingInterface({ params }: MeetingProps) {
         };
     }, [call]);
 
-    const handleTip = () => {
-        setShowTipModal(false);
-        setShowTipSuccess(true);
-        setTimeout(() => setShowTipSuccess(false), 3000);
+    const handleTip = async () => {
+        if (selectedTipRecipient && tipAmount) {
+            await sendERC20("0x0A0BA79ee5e33561527A4458a3E57fa2fAcA9fef", tipAmount);
+            setShowTipModal(false);
+            setShowTipSuccess(true);
+            setTimeout(() => setShowTipSuccess(false), 3000);
+        }
     };
 
     const openTipModal = (participantName: string) => {
@@ -127,7 +165,6 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
     const onAcceptJoin = (user: string) => {
         setJoinRequests((prev) => prev.filter((u) => u !== user));
-        // console.log(`Accepted join request for ${user}`);
     };
 
     const onRejectJoin = (user: string) => {
@@ -136,7 +173,6 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
     const onAcceptSpeak = (user: string) => {
         setSpeakRequests((prev) => prev.filter((u) => u !== user));
-        // console.log(`Accepted speak request for ${user}`);
     };
 
     const onRejectSpeak = (user: string) => {
@@ -153,12 +189,10 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
     const handleLogout = () => {
         // Implement logout logic here
-        // console.log("Logging out...");
     };
 
     const copyAddress = () => {
         // Implement copy to clipboard functionality
-        // console.log("Address copied to clipboard");
     };
 
     return (
@@ -219,7 +253,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                                                     <div className="flex items-center justify-between gap-2">
                                                         <Name address={userAddress} chain={base} className="text-white font-semibold" />
                                                         <p className="text-white text-sm bg-violet-500 rounded-full px-2 py-0.5">
-                                                            {displayBalance} {balance?.symbol} lol
+                                                            {displayBalance} {balance?.symbol}
                                                         </p>
                                                     </div>
                                                     <div className="flex items-center justify-between bg-[#1d1d1d] p-2 mb-2 rounded-full">
@@ -234,9 +268,6 @@ export default function MeetingInterface({ params }: MeetingProps) {
                                                     </div>
                                                 </div>
                                             </Identity>
-                                            <p className="text-white text-sm bg-violet-500 rounded-full px-2 py-0.5">
-                                                {displayBalance} {balance?.symbol} lol
-                                            </p>
                                         </div>
                                     </div>
                                 )}
@@ -246,8 +277,21 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
                     {/** Main content */}
                     <div className="flex-grow flex overflow-hidden relative w-[90%] mx-auto">
-                        <div className="flex-1 hover:cursor-pointer w-fit h-fit">
+                        <div 
+                            className="flex-1 hover:cursor-pointer w-fit h-fit relative"
+                            onMouseEnter={() => setShowTipButton(true)}
+                            onMouseLeave={() => setShowTipButton(false)}
+                        >
                             {isSpeakerView ? <SpeakerLayout /> : <PaginatedGridLayout />}
+                            {showTipButton && (
+                                <button
+                                    className="absolute top-4 right-8 bg-violet-500 text-white px-4 py-2 rounded-full flex items-center"
+                                    onClick={() => openTipModal(connectedUser?.id || '')}
+                                >
+                                    <DollarSign className="w-4 h-4 mr-2" />
+                                    Tip
+                                </button>
+                            )}
                         </div>
                         <div
                             className={`
@@ -274,8 +318,6 @@ export default function MeetingInterface({ params }: MeetingProps) {
                     <footer className="bg-[#1E1E1E] p-4 flex justify-center items-center gap-4 h-20">
                         <CallControls onLeave={handleLeave} />
                     </footer>
-                    {/* <CustomRingingCall showMemberCount={3} /> */}
-                    {/* Modals and Notifications */}
                     {showTipModal && (
                         <TipModal
                             selectedTipRecipient={selectedTipRecipient}
@@ -297,7 +339,6 @@ export default function MeetingInterface({ params }: MeetingProps) {
                         callingState={callingState}
                     />
 
-                    {/* Tip success notification */}
                     {showTipSuccess && (
                         <div className="fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md flex items-center">
                             <CheckCircle2 className="w-5 h-5 mr-2" />
