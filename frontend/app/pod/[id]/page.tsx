@@ -20,7 +20,10 @@ import '@stream-io/video-react-sdk/dist/css/styles.css';
 import { Channel, ChannelHeader, MessageInput, MessageList, useChatContext, Window } from "stream-chat-react";
 import { useRouter } from "next/navigation";
 import Logo from "@/components/ui/logo";
-// import CustomRingingCall from "@/components/meeting/customRingingCall";
+import { useAccount, useBalance } from 'wagmi'
+import { Avatar, Identity, Name, Address } from '@coinbase/onchainkit/identity';
+import { base } from 'viem/chains';
+import { usePrivy } from "@privy-io/react-auth";
 
 interface MeetingProps {
     params: {
@@ -36,7 +39,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
     const participants = useParticipants();
     const members = useCallMembers();
-    console.log({ participants, members });
+    // console.log({ participants, members });
     const customData = useCallCustomData();
     const live = useIsCallLive();
 
@@ -52,6 +55,18 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const [speakRequests, setSpeakRequests] = useState<string[]>([]);
     const [showSidebar, setShowSidebar] = useState(false);
     const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+    const { user } = usePrivy();
+    const userAddress = user?.wallet?.address;
+
+    const { data: balance, isError, isLoading } = useBalance({
+        address: userAddress,
+    })
+    const formattedBalance = balance ? Number(balance.value) / 1e18 : 0;
+    const displayBalance = formattedBalance.toFixed(4);
+
+
+    console.log(balance?.value, displayBalance);
+    console.log({ userAddress })
 
     const isSpeakerView = useMemo(() => {
         return hasOngoingScreenShare || participants.length > 1;
@@ -99,7 +114,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
     };
 
     const updateParticipantRole = (userId: string, newRole: string) => {
-        console.log(`Updating ${userId} to ${newRole}`);
+        // console.log(`Updating ${userId} to ${newRole}`);
     };
 
     const handleJoinRequest = (userId: string, accept: boolean) => {
@@ -112,7 +127,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
     const onAcceptJoin = (user: string) => {
         setJoinRequests((prev) => prev.filter((u) => u !== user));
-        console.log(`Accepted join request for ${user}`);
+        // console.log(`Accepted join request for ${user}`);
     };
 
     const onRejectJoin = (user: string) => {
@@ -121,7 +136,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
     const onAcceptSpeak = (user: string) => {
         setSpeakRequests((prev) => prev.filter((u) => u !== user));
-        console.log(`Accepted speak request for ${user}`);
+        // console.log(`Accepted speak request for ${user}`);
     };
 
     const onRejectSpeak = (user: string) => {
@@ -138,12 +153,12 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
     const handleLogout = () => {
         // Implement logout logic here
-        console.log("Logging out...");
+        // console.log("Logging out...");
     };
 
     const copyAddress = () => {
         // Implement copy to clipboard functionality
-        console.log("Address copied to clipboard");
+        // console.log("Address copied to clipboard");
     };
 
     return (
@@ -171,7 +186,14 @@ export default function MeetingInterface({ params }: MeetingProps) {
                                         className="flex items-center text-[#A3A3A3] hover:text-white transition-colors mr-2 sm:mr-4"
                                         onClick={toggleProfileDropdown}
                                     >
-                                        <img src="/avatar-placeholder.png" alt="Profile" className="w-8 h-8 rounded-full mr-2" />
+                                        <Identity
+                                            address={userAddress}
+                                            chain={base}
+                                            schemaId="0xf8b05c79f090979bf4a80270aba232dff11a10d9ca55c4f88de95317970f0de9"
+                                        >
+                                            <Avatar address={userAddress} chain={base} className="w-8 h-8 rounded-full mr-2" />
+                                            <Name address={userAddress} chain={base} className="mr-2" />
+                                        </Identity>
                                         <ChevronDown className="w-4 h-4" />
                                     </button>
                                     <div className="flex justify-between items-center">
@@ -187,23 +209,34 @@ export default function MeetingInterface({ params }: MeetingProps) {
                                 {isProfileDropdownOpen && (
                                     <div className="absolute right-0 mt-2 w-64 bg-[#2d2d2d] rounded-xl shadow-lg py-3 px-4 z-10">
                                         <div className="flex items-center">
-                                            <img src="/avatar-placeholder.png" alt="Profile" className="w-10 h-10 rounded-full mr-3" />
-                                            <div className="space-y-2">
-                                                <div className="flex items-center justify-between gap-2">
-                                                    <p className="text-white font-semibold">folajindayo.base.eth</p>
-                                                    <p className="text-wwhite text-sm bg-violet-500 rounded-full px-2 py-0.5">$2.11</p>
-                                                </div>
-                                                <div className="flex items-center justify-between bg-[#1d1d1d] p-2 mb-2 rounded-full">
-                                                    <img src="/base-logo.png" alt="Base" className="w-6 h-6" />
-                                                    <div className="flex items-center">
-                                                        <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                                                        <span className="text-[#A3A3A3] text-xs">0xd23D4...d95d20</span>
+                                            <Identity
+                                                address={userAddress}
+                                                chain={base}
+                                                schemaId="0xf8b05c79f090979bf4a80270aba232dff11a10d9ca55c4f88de95317970f0de9"
+                                            >
+                                                <Avatar address={userAddress} chain={base} className="w-10 h-10 rounded-full mr-3" />
+                                                <div className="space-y-2">
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <Name address={userAddress} chain={base} className="text-white font-semibold" />
+                                                        <p className="text-white text-sm bg-violet-500 rounded-full px-2 py-0.5">
+                                                            {displayBalance} {balance?.symbol} lol
+                                                        </p>
                                                     </div>
-                                                    <button onClick={copyAddress} className="text-[#A3A3A3] hover:text-white">
-                                                        <Copy className="w-4 h-4" />
-                                                    </button>
+                                                    <div className="flex items-center justify-between bg-[#1d1d1d] p-2 mb-2 rounded-full">
+                                                        <img src="/images/base.png" alt="Base" className="w-6 h-6" />
+                                                        <div className="flex items-center">
+                                                            <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                                                            <Address address={userAddress} chain={base} className="text-[#A3A3A3] text-xs" />
+                                                        </div>
+                                                        <button onClick={copyAddress} className="text-[#A3A3A3] hover:text-white">
+                                                            <Copy className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                            </div>
+                                            </Identity>
+                                            <p className="text-white text-sm bg-violet-500 rounded-full px-2 py-0.5">
+                                                {displayBalance} {balance?.symbol} lol
+                                            </p>
                                         </div>
                                     </div>
                                 )}

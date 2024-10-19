@@ -77,10 +77,10 @@ const StreamMeetProvider: React.FC<{ meetingId: string; children: React.ReactNod
     );
 
     useEffect(() => {
-        console.log("MeetProvider mounted");
+        // console.log("MeetProvider mounted");
         const setupClients = async () => {
             if (isLoggedIn && appUser) {
-                console.log("Setting up clients for found user:", appUser);
+                // console.log("Setting up clients for found user:", appUser);
                 try {
                     const token = await tokenProvider(appUser.walletAddress);
                     await connectChatClient(token);

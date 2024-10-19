@@ -80,7 +80,7 @@ async function initiateDB(): Promise<void> {
         logger.info('Database Sync Completed');
 
     } catch (error) {
-        console.log(error);
+        // console.log(error);
         // Handle errors if unable to connect to the database
         logger.error('Unable to connect to the database:', error);
     }

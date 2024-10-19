@@ -19,6 +19,8 @@ export default function UserInfoModal({ isOpen, onClose, initialUsername, onUpda
     const userId = useAppSelector((state) => state.user.user?.id);
     const dispatch = useAppDispatch();
 
+    
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (userId) {

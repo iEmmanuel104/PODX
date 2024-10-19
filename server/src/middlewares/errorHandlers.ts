@@ -9,7 +9,7 @@ class Middlewares {
     static errorHandler(err: Error | any, req: Request, res: Response, next: NextFunction ): Response {
         logger.error('Error handler');
         logger.error(err);
-        console.log(err);
+        // console.log(err);
         
         const customError = {
             // set default

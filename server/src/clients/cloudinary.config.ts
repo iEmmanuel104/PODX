@@ -24,10 +24,10 @@ export default class CloudinaryClientConfig {
                 cloudinary.uploader
                     .upload_stream(options, (error, result) => {
                         if (error) {
-                            console.log('error from uploads ::::::::: ', error);
+                            // console.log('error from uploads ::::::::: ', error);
                             reject(error);
                         } else {
-                            console.log('result from upload :::::::: ', result);
+                            // console.log('result from upload :::::::: ', result);
                             resolve({ message: 'success', url: result?.secure_url });
                         }
                     })
@@ -36,7 +36,7 @@ export default class CloudinaryClientConfig {
 
             return result;
         } catch (error) {
-            console.log(error);
+            // console.log(error);
             return { message: 'error', error };
         }
     }
@@ -57,7 +57,7 @@ export default class CloudinaryClientConfig {
             const result = await new Promise<{ result: string }>((resolve, reject) => {
                 cloudinary.uploader.destroy(publicId, (error, result) => {
                     if (error) {
-                        console.log('Error deleting file from Cloudinary:', error);
+                        // console.log('Error deleting file from Cloudinary:', error);
                         reject(error);
                     } else {
                         resolve(result);
@@ -71,7 +71,7 @@ export default class CloudinaryClientConfig {
                 return { message: 'File deletion failed', error: result };
             }
         } catch (error) {
-            console.log('Error in deleteFromCloudinary:', error);
+            // console.log('Error in deleteFromCloudinary:', error);
             return { message: 'error', error };
         }
     }

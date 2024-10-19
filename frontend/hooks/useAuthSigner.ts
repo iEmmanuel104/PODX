@@ -12,7 +12,7 @@ export const useAuthSigner = () => {
         const walletAddress = smartWallet?.address || user?.wallet?.address;
         if (walletAddress && window.ethereum) {
             try {
-                console.log({ useAuthSigner: walletAddress });
+                // console.log({ useAuthSigner: walletAddress });
                 const provider = new ethers.providers.Web3Provider(window.ethereum);
                 await provider.send("eth_requestAccounts", []);
                 const newSigner = provider.getSigner();

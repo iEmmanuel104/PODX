@@ -104,7 +104,7 @@ class AuthUtil {
             token = Math.floor(100000 + Math.random() * 900000).toString();
         }
 
-        console.log({ expiry, identifier });
+        // console.log({ expiry, identifier });
 
         // await TokenCacheUtil.saveTokenToCache({ key: tokenKey, token, expiry });
 

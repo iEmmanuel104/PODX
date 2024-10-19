@@ -8,14 +8,14 @@ export const useStreamTokenProvider = () => {
 
     const tokenProvider = useCallback(
         async (walletAddress: string = "") => {
-            console.log("token provider hit", {tokenCache});
+            // console.log("token provider hit", {tokenCache});
             if (tokenCache.current[walletAddress]) {
                 return tokenCache.current[walletAddress];
             }
 
             try {
                 const response = await findOrCreateUser({ walletAddress }).unwrap();
-                console.log({ response });
+                // console.log({ response });
                 const userData = response.data as UserInfo;
                 tokenCache.current[walletAddress] = userData.streamToken;
                 return userData.streamToken;

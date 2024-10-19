@@ -82,7 +82,7 @@ export default function PodPage() {
     const handleJoinSession = useCallback(async () => {
         if (!meetingCode) return;
         setIsJoining(true);
-        console.log("Joining session with code: ", meetingCode);
+        // console.log("Joining session with code: ", meetingCode);
 
         const client = new StreamVideoClient({
             apiKey: API_KEY,
@@ -93,7 +93,7 @@ export default function PodPage() {
 
         try {
             const response: GetCallResponse = await call.get();
-            console.log({ responseCallFound: response });
+            // console.log({ responseCallFound: response });
             if (response.call && meetingCode === response.call.custom.sessionId) {
                 dispatch(
                     setSessionInfo({

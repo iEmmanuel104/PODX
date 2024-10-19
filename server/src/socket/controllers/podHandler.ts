@@ -17,14 +17,14 @@ export default function attachPodHandlers(io: Server, socket: AuthenticatedSocke
         try {
             const newPod = await podManager.createPod(user, socket.id, ipfsContentHash);
 
-            console.log({ newPod });
-            console.log('web3');
+            // console.log({ newPod });
+            // console.log('web3');
             // const signer = await getSignerForAddress(userWallet);
             // const connectedContract = getPodXContractInstance(signer);
 
             // const tx = await connectedContract.createPodcast(ethers.encodeBytes32String(newPod.id), ipfsContentHash);
             // await tx.wait();
-            console.log('web3 end');
+            // console.log('web3 end');
 
             socket.join(newPod.id);
             callback({ success: true, podId: newPod.id });

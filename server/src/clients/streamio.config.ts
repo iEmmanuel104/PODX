@@ -26,7 +26,7 @@ export default class StreamIOConfig {
                 },
             ]);
 
-            console.log('Streamio User created successfully:', response);
+            // console.log('Streamio User created successfully:', response);
             return { message: 'User created successfully' };
         } catch (error) {
             console.error('Error creating user:', error);
@@ -73,7 +73,7 @@ export default class StreamIOConfig {
                 ],
             });
 
-            console.log('Streamio User updated successfully:', response);
+            // console.log('Streamio User updated successfully:', response);
             
             return { message: 'User updated successfully' };
         } catch (error) {

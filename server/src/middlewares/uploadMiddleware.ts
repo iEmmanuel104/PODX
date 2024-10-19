@@ -48,7 +48,7 @@ const multer = Multer({
 
 export const uploadMiddleware = function (type: UploadType, nameOrFields: string | Multer.Field[], maxCount?: number) {
     return (req: Request, res: Response, next: NextFunction) => {
-        console.log('uploadMiddleware triggered');
+        // console.log('uploadMiddleware triggered');
 
         
         let multerMiddleware;
@@ -68,9 +68,9 @@ export const uploadMiddleware = function (type: UploadType, nameOrFields: string
         }
             
         if (!req.file && (!req.files || (Array.isArray(req.files) && req.files.length === 0) || Object.keys(req.files).length === 0)) {
-            console.log('No file uploaded, proceeding to next middleware');
+            // console.log('No file uploaded, proceeding to next middleware');
         } else {
-            console.log('File uploaded, proceeding to multer middleware');
+            // console.log('File uploaded, proceeding to multer middleware');
         }
     
             
@@ -78,7 +78,7 @@ export const uploadMiddleware = function (type: UploadType, nameOrFields: string
             if (err) {
                 return next(err);
             }
-            console.log('Multer middleware completed, proceeding to next middleware');
+            // console.log('Multer middleware completed, proceeding to next middleware');
             next();
         });
     };
