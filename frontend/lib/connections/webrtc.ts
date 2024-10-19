@@ -45,7 +45,7 @@
 
 //     peerConnection.onconnectionstatechange = () => {
 //         if (peerConnection.connectionState === 'failed') {
-//             // console.log('Connection failed, attempting to restart ICE');
+//             console.log('Connection failed, attempting to restart ICE');
 //             peerConnection.restartIce();
 //         }
 //     };
