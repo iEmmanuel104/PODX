@@ -5,9 +5,8 @@ import { IUser } from '../models/Mongodb/user.model';
 import UserService from '../services/user.service';
 import { logger } from '../utils/logger';
 import { AuthUtil } from '../utils/token';
-import { ethers } from 'ethers';
 import { IAdmin } from '../models/Mongodb/admin.model';
-import { ADMIN_EMAIL, SIGNATURE_MESSAGE } from '../utils/constants';
+import { ADMIN_EMAIL } from '../utils/constants';
 import AdminService from '../services/AdminServices/admin.service';
 
 export interface AuthenticatedRequest extends Request {
@@ -39,14 +38,13 @@ export function AdminAuthenticatedController<T = AdminAuthenticatedRequest>(
     };
 }
 
-export async function authenticateUser(signature: string): Promise<IUser> {
-    const message = SIGNATURE_MESSAGE;
-    const recoveredAddress = ethers.verifyMessage(message, signature);
+async function authenticateUser(token: string): Promise<IUser> {
+    const decoded = AuthUtil.verifyTokenWithHash(token);
 
-    const user = await UserService.viewSingleUserByWalletAddress(recoveredAddress);
+    const user = await UserService.viewSingleUserByWalletAddress(decoded.user.walletAddress);
 
     if (!user || !user.walletAddress) {
-        throw new UnauthorizedError('Invalid signature');
+        throw new UnauthorizedError('Invalid user');
     }
 
     if (user.settings?.isBlocked) {
@@ -62,18 +60,28 @@ export async function authenticateUser(signature: string): Promise<IUser> {
 
 export const basicAuth = function () {
     return async (req: Request, res: Response, next: NextFunction) => {
-        const signature = req.headers['x-wallet-signature'] as string;
+        const authHeader = req.headers.authorization;
 
-        if (!signature) {
-            return next(new UnauthorizedError('Missing signature'));
+        if (!authHeader?.startsWith('Bearer ')) {
+            return next(new UnauthorizedError('Missing or invalid authorization header'));
+        }
+
+        const token = authHeader.split(' ')[1];
+
+        if (!token) {
+            return next(new UnauthorizedError('Missing token'));
         }
 
         try {
-            const user = await authenticateUser(signature);
+            const user = await authenticateUser(token);
             (req as AuthenticatedRequest).user = user;
             next();
         } catch (error) {
-            next(error);
+            if (error instanceof UnauthorizedError || error instanceof ForbiddenError) {
+                next(error);
+            } else {
+                next(new UnauthorizedError('Authentication failed'));
+            }
         }
     };
 };
