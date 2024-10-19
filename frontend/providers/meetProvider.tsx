@@ -111,7 +111,7 @@ const StreamMeetProvider: React.FC<{ meetingId: string; children: React.ReactNod
     if (loading || !chatClientRef.current || !videoClientRef.current || !callRef.current) {
         return (
             <div className="h-screen w-screen bg-[#121212]">
-                <LoadingOverlay />
+                <LoadingOverlay text="Preparing your meeting space... Just a moment while we set everything up for you!" />
             </div>
         );
     }
