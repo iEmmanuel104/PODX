@@ -9,12 +9,12 @@
 // let socket: Socket | null = null;
 
 // export const initializeSocketConnection = (token: string): Socket | null => {
-//     // console.log('Initializing socket connection');
+//     console.log('Initializing socket connection');
 
 //     if (typeof window === 'undefined') return null;
 
 //     if (socket?.connected) {
-//         // console.log('Socket already connected');
+//         console.log('Socket already connected');
 //         return socket;
 //     }
 
@@ -34,7 +34,7 @@
 //     });
 
 //     socket.on('connect', () => {
-//         // console.log('Connected to socket server');
+//         console.log('Connected to socket server');
 //         store.dispatch(setSocketConnected(true));
 //     });
 
@@ -44,7 +44,7 @@
 //     });
 
 //     socket.on('disconnect', () => {
-//         // console.log('Disconnected from socket server');
+//         console.log('Disconnected from socket server');
 //         store.dispatch(setSocketConnected(false));
 //     });
 
