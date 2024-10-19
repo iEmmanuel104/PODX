@@ -43,7 +43,7 @@
 //                 dispatch(updatePodContent({ podId, newIpfsContentHash }));
 //             },
 //             'co-host-approved': ({ approvedUserId, podId }: { approvedUserId: string, podId: string }) => {
-//                 // console.log(`User ${approvedUserId} is now a co-host for pod ${podId}`);
+//                 console.log(`User ${approvedUserId} is now a co-host for pod ${podId}`);
 //             },
 //             'join-request-approved': ({ approvedUserId, podId }: { approvedUserId: string, podId: string }) => {
 //                 dispatch(addParticipant({ userId: approvedUserId, socketId: 'unknown' }));
@@ -68,16 +68,16 @@
 //                 }
 //             },
 //             'all-users-muted': ({ muteType, isMuted }: { muteType: 'audio' | 'video', isMuted: boolean }) => {
-//                 // console.log(`All users ${muteType} ${isMuted ? 'muted' : 'unmuted'}`);
+//                 console.log(`All users ${muteType} ${isMuted ? 'muted' : 'unmuted'}`);
 //             },
 //             'pod-stats-updated': (stats: any) => {
 //                 dispatch(updatePodStats(stats));
 //             },
 //             'pod-owner-changed': ({ podId, newOwnerId }: { podId: string, newOwnerId: string }) => {
-//                 // console.log(`New owner for pod ${podId}: ${newOwnerId}`);
+//                 console.log(`New owner for pod ${podId}: ${newOwnerId}`);
 //             },
 //             'tip-sent': ({ from, to, amount, transactionHash }: { from: string, to: string, amount: string, transactionHash: string }) => {
-//                 // console.log(`Tip sent from ${from} to ${to}, amount: ${amount}, tx: ${transactionHash}`);
+//                 console.log(`Tip sent from ${from} to ${to}, amount: ${amount}, tx: ${transactionHash}`);
 //             },
 //             'tip-failed': ({ error }: { error: string }) => {
 //                 console.error('Tip failed:', error);
@@ -85,7 +85,7 @@
 //             'signal': ({ from, signal }: { from: string, signal: any }) => {
 //                 handleSignal(from, signal, (event: RTCTrackEvent) => {
 //                     // Handle the new track
-//                     // console.log('Received new track:', event.track.kind, 'from', from);
+//                     console.log('Received new track:', event.track.kind, 'from', from);
 //                     // You might want to dispatch an action here to update the UI
 //                     // For example:
 //                     // dispatch(addRemoteTrack({ userId: from, track: event.track }));
@@ -107,7 +107,7 @@
 //                 dispatch(setError({ type: 'muteAll', message: error }));
 //             },
 //             'tip-pending': ({ transactionHash }: { transactionHash: string }) => {
-//                 // console.log(`Tip transaction pending: ${transactionHash}`);
+//                 console.log(`Tip transaction pending: ${transactionHash}`);
 //             },
 //         };
 
