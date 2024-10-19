@@ -69,7 +69,7 @@ const baseQuery: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> =
     }
 
     const successData = result.data as ApiResponse<unknown>;
-    // console.log('API Success:', successData);
+    console.log('API Success:', successData);
 
     return { data: successData };
 };
