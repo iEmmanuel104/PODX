@@ -5,8 +5,6 @@ import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { setUser, setSignature, logOut } from "@/store/slices/userSlice";
 import { useRouter, usePathname } from "next/navigation";
 import { useFindOrCreateUserMutation, UserInfo } from "@/store/api/userApi";
-import { useAuthSigner } from "@/hooks/useAuthSigner";
-import { SIGNATURE_MESSAGE } from "@/constants";
 import { LoadingOverlay } from "@/components/ui/loading";
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -17,7 +15,6 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     const router = useRouter();
     const pathname = usePathname();
     const [findOrCreateUser] = useFindOrCreateUserMutation();
-    const { signMessage, initSigner } = useAuthSigner();
     const [isAuthenticating, setIsAuthenticating] = useState(false);
 
     useEffect(() => {
@@ -26,24 +23,26 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         const handleAuth = async () => {
             setIsAuthenticating(true);
             try {
-                if (authenticated && privyUser && wallets.length > 0) {
+                console.log({ authenticated, privyUser, storeUser, wallets });
+                if (authenticated && privyUser && privyUser.wallet && wallets.length > 0) {
                     console.log("Authenticated user detected");
                     if (!storeUser.user || !storeUser.isLoggedIn) {
                         console.log("Authenticating user to get store data");
-                        await initSigner();
-                        const wallet = wallets[0];
-                        const walletAddress = wallet.address;
+
+                        const smartWallet = privyUser.smartWallet || privyUser.linkedAccounts.find((account) => account.type === "smart_wallet");
+                        const walletAddress = smartWallet?.address || privyUser.wallet?.address;
 
                         if (!walletAddress) throw new Error("No wallet address found");
 
-                        const result = await findOrCreateUser({ walletAddress }).unwrap();
+                        console.log({ walletToUseAuthprovider: walletAddress });
+                        
+                        const result = await findOrCreateUser({ walletAddress, hash: true }).unwrap();
                         const userData = result.data as UserInfo;
                         dispatch(setUser(userData));
-
-                        const message = SIGNATURE_MESSAGE || "Sign this message to authenticate";
-                        const signature = await signMessage(message);
-                        dispatch(setSignature(signature));
-
+                        if (userData?.signature) {
+                            dispatch(setSignature(userData.signature));
+                        }
+                        
                         // Always redirect to pod page after authentication
                         router.push("/pod");
                     } else {
