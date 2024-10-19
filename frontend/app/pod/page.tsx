@@ -2,7 +2,7 @@
 import React, { useState, useCallback, useContext, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Settings, Edit2 } from "lucide-react";
+import { Settings, Edit2, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import CreateSessionModal from "@/components/pod/createSessionModal";

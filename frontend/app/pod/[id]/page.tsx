@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
-import { Settings, CheckCircle2, Menu } from "lucide-react";
+import { Settings, CheckCircle2, Menu, LogOut, ChevronDown, Copy, LogOutIcon } from "lucide-react";
 import TipModal from "@/components/meeting/tips";
 import ParticipantsSidebar from "@/components/meeting/participantList";
 import ThankYouModal from "@/components/meeting/thankYou";
@@ -19,6 +19,7 @@ import {
 import '@stream-io/video-react-sdk/dist/css/styles.css';
 import { Channel, ChannelHeader, MessageInput, MessageList, useChatContext, Window } from "stream-chat-react";
 import { useRouter } from "next/navigation";
+import Logo from "@/components/ui/logo";
 // import CustomRingingCall from "@/components/meeting/customRingingCall";
 
 interface MeetingProps {
@@ -35,7 +36,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
     const participants = useParticipants();
     const members = useCallMembers();
-    console.log({participants, members});
+    console.log({ participants, members });
     const customData = useCallCustomData();
     const live = useIsCallLive();
 
@@ -50,6 +51,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const [joinRequests, setJoinRequests] = useState<string[]>([]);
     const [speakRequests, setSpeakRequests] = useState<string[]>([]);
     const [showSidebar, setShowSidebar] = useState(false);
+    const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
 
     const isSpeakerView = useMemo(() => {
         return hasOngoingScreenShare || participants.length > 1;
@@ -130,35 +132,87 @@ export default function MeetingInterface({ params }: MeetingProps) {
         setShowSidebar(!showSidebar);
     };
 
+    const toggleProfileDropdown = () => {
+        setIsProfileDropdownOpen(!isProfileDropdownOpen);
+    };
+
+    const handleLogout = () => {
+        // Implement logout logic here
+        console.log("Logging out...");
+    };
+
+    const copyAddress = () => {
+        // Implement copy to clipboard functionality
+        console.log("Address copied to clipboard");
+    };
+
     return (
         <StreamTheme className="root-theme">
             <StreamCall call={call}>
                 <div className="h-screen bg-[#121212] text-white flex flex-col">
                     {/** Header Title*/}
-                    <header className="flex justify-between items-center p-4 h-16">
-                        <div className="flex items-center">
-                            <h1 className="text-xl font-bold mr-4">
-                                Pod<span className="text-[#7C3AED]">X</span>
-                            </h1>
-                            <span className="text-sm mr-2 hidden sm:inline">{customData.title}</span>
-                            <span className="bg-red-500 text-xs px-2 py-0.5 rounded-full">{live ? "Live" : "Offline"}</span>
+                    <header className="flex justify-between items-center px-4 py-2 bg-[#1d1d1d] rounded-full w-[90%] mx-auto my-4">
+                        <div className="flex items-center justify-between gap-4">
+                            <img src="/logo.png" alt="Pod" className="w-full h-full border-r border-white pr-4" />
+                            <p className="text-sm mr-2 hidden sm:inline w-full">{customData.title}</p>
+                            <p className="bg-red-500 text-xs px-2 py-0.5 rounded-full">{live ? "Live" : "Offline"}</p>
                         </div>
                         <div className="flex items-center">
-                            <button title="settings" className="text-[#A3A3A3] hover:text-white transition-colors mr-2 sm:mr-4">
-                                <Settings className="w-6 h-6" />
-                            </button>
                             <button
                                 title="toggle sidebar"
-                                className="text-[#A3A3A3] hover:text-white transition-colors sm:hidden"
+                                className="text-[#A3A3A3] hover:text-white transition-colors sm:hidden mr-2 sm:mr-4"
                                 onClick={toggleSidebar}
                             >
                                 <Menu className="w-6 h-6" />
                             </button>
+                            <div className="relative">
+                                <div className="flex items-center">
+                                    <button
+                                        className="flex items-center text-[#A3A3A3] hover:text-white transition-colors mr-2 sm:mr-4"
+                                        onClick={toggleProfileDropdown}
+                                    >
+                                        <img src="/avatar-placeholder.png" alt="Profile" className="w-8 h-8 rounded-full mr-2" />
+                                        <ChevronDown className="w-4 h-4" />
+                                    </button>
+                                    <div className="flex justify-between items-center">
+                                        <LogOutIcon className="w-4 h-4 text-red-500" />
+                                        <button
+                                            onClick={handleLogout}
+                                            className="text-red-500 px-3 py-1 rounded hover:bg-[#3d3d3d] transition-colors"
+                                        >
+                                            Logout
+                                        </button>
+                                    </div>
+                                </div>
+                                {isProfileDropdownOpen && (
+                                    <div className="absolute right-0 mt-2 w-64 bg-[#2d2d2d] rounded-xl shadow-lg py-3 px-4 z-10">
+                                        <div className="flex items-center">
+                                            <img src="/avatar-placeholder.png" alt="Profile" className="w-10 h-10 rounded-full mr-3" />
+                                            <div className="space-y-2">
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <p className="text-white font-semibold">folajindayo.base.eth</p>
+                                                    <p className="text-wwhite text-sm bg-violet-500 rounded-full px-2 py-0.5">$2.11</p>
+                                                </div>
+                                                <div className="flex items-center justify-between bg-[#1d1d1d] p-2 mb-2 rounded-full">
+                                                    <img src="/base-logo.png" alt="Base" className="w-6 h-6" />
+                                                    <div className="flex items-center">
+                                                        <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                                                        <span className="text-[#A3A3A3] text-xs">0xd23D4...d95d20</span>
+                                                    </div>
+                                                    <button onClick={copyAddress} className="text-[#A3A3A3] hover:text-white">
+                                                        <Copy className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </header>
 
                     {/** Main content */}
-                    <div className="flex-grow flex overflow-hidden relative">
+                    <div className="flex-grow flex overflow-hidden relative w-[90%] mx-auto">
                         <div className="flex-1 hover:cursor-pointer w-fit h-fit">
                             {isSpeakerView ? <SpeakerLayout /> : <PaginatedGridLayout />}
                         </div>
