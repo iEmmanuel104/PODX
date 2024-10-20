@@ -20,9 +20,10 @@ interface TipModalProps {
     walletAddress: string
     setTipAmount: (amount: string) => void
     handleTip: () => void
+    onCancel: () => void
 }
 
-const TipModal: React.FC<TipModalProps> = ({ selectedTipRecipient, tipAmount, setTipAmount, handleTip, walletAddress }) => {
+const TipModal: React.FC<TipModalProps> = ({ selectedTipRecipient, tipAmount, setTipAmount, handleTip, walletAddress, onCancel }) => {
     // const walletAddress = selectedTipRecipient?.custom?.fields?.walletAddress?.kind?.stringValue;
     console.log({ walletAddress })
 
@@ -40,12 +41,18 @@ const TipModal: React.FC<TipModalProps> = ({ selectedTipRecipient, tipAmount, se
             />
             <button
                 onClick={handleTip}
-                className="bg-[#7C3AED] text-white px-4 py-2 rounded-r-md hover:bg-[#6D28D9] transition-colors"
+                className="bg-[#7C3AED] text-white px-4 py-2 hover:bg-[#6D28D9] transition-colors"
             >
                 Tip
             </button>
+            <button
+                onClick={onCancel}
+                className="bg-[#4A5568] text-white px-4 py-2 rounded-r-md hover:bg-[#2D3748] transition-colors"
+            >
+                Cancel
+            </button>
         </div>
-        <p className="text-[#A3A3A3]">Balance: 100 ETH</p>
+        <p className="text-[#A3A3A3]">Balance: {walletAddress} ETH</p>
     </Modal>
 }
 

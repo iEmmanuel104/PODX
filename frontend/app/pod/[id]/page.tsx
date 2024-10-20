@@ -153,6 +153,12 @@ export default function MeetingInterface({ params }: MeetingProps) {
         }
     };
 
+    const handleCancelTip = () => {
+        setShowTipModal(false);
+        setTipAmount("");
+        setSelectedTipRecipient(null);
+    }
+
     const openTipModal = (participant: StreamVideoParticipant) => {
         setSelectedTipRecipient(participant);
         setShowTipModal(true);
@@ -257,6 +263,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                             tipAmount={tipAmount}
                             setTipAmount={setTipAmount}
                             handleTip={handleTip}
+                            onCancel={handleCancelTip}
                         />
                     )}
 
