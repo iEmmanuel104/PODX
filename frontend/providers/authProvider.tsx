@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { usePrivy, useWallets } from "@privy-io/react-auth";
+import { usePrivy } from "@privy-io/react-auth";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { setUser, setSignature, logOut } from "@/store/slices/userSlice";
 import { useRouter, usePathname } from "next/navigation";
@@ -9,7 +9,6 @@ import { LoadingOverlay } from "@/components/ui/loading";
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
     const { user: privyUser, authenticated, ready, logout } = usePrivy();
-    const { wallets, ready: walletsReady } = useWallets();
     const storeUser = useAppSelector((state) => state.user);
     const dispatch = useAppDispatch();
     const router = useRouter();
@@ -18,13 +17,12 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     const [isAuthenticating, setIsAuthenticating] = useState(false);
 
     useEffect(() => {
-        if (!ready || !walletsReady || isAuthenticating) return;
+        if (!ready || isAuthenticating) return;
 
         const handleAuth = async () => {
             setIsAuthenticating(true);
             try {
-                console.log({ authenticated, privyUser, storeUser, wallets });
-                if (authenticated && privyUser && privyUser.wallet && wallets.length > 0) {
+                if (authenticated && privyUser && privyUser.wallet) {
                     console.log("Authenticated user detected");
                     if (!storeUser.user || !storeUser.isLoggedIn) {
                         console.log("Authenticating user to get store data");
@@ -61,7 +59,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         };
 
         handleAuth();
-    }, [authenticated, privyUser, ready, walletsReady, wallets]);
+    }, [authenticated, dispatch, logout, ready, privyUser, router, storeUser]);
 
     const redirectUser = () => {
         console.log("Redirecting user");
@@ -81,14 +79,12 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         // }
     };
 
-    if (!ready || !walletsReady || isAuthenticating) {
+    if (!ready || isAuthenticating) {
         console.log("Displaying loading overlay");
         let loadingText = "";
 
         if (!ready) {
             loadingText = "Initializing...";
-        } else if (!walletsReady) {
-            loadingText = "Connecting to web3...";
         } else if (isAuthenticating) {
             loadingText = "Authenticating...";
         }
