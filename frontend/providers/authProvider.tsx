@@ -1,48 +1,100 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
-import { useAppSelector } from "@/store/hooks";
+import { useEffect, useState } from "react";
+import { usePrivy } from "@privy-io/react-auth";
+import { useAppSelector, useAppDispatch } from "@/store/hooks";
+import { setUser, setSignature, logOut } from "@/store/slices/userSlice";
 import { useRouter, usePathname } from "next/navigation";
+import { useFindOrCreateUserMutation, UserInfo } from "@/store/api/userApi";
 import { LoadingOverlay } from "@/components/ui/loading";
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
+    const { user: privyUser, authenticated, ready, logout } = usePrivy();
     const storeUser = useAppSelector((state) => state.user);
+    const dispatch = useAppDispatch();
     const router = useRouter();
     const pathname = usePathname();
-    const [isAuthChecked, setIsAuthChecked] = useState(false);
-
-    const handleAuth = useCallback(() => {
-        console.log("AuthProvider handleAuth");
-        console.log({ storeUser, pathname });
-
-        if (!storeUser.isLoggedIn) {
-            if (pathname.startsWith("/pod") && !pathname.startsWith("/pod/join")) {
-                console.log("User not logged in, attempting to access protected pod page. Redirecting to home page");
-                router.push("/");
-            } else {
-                setIsAuthChecked(true);
-            }
-        } else {
-            if (pathname === "/") {
-                console.log("Logged in user on home page, redirecting to pod page");
-                const pendingSessionCode = localStorage.getItem("pendingSessionCode");
-                if (pendingSessionCode) {
-                    localStorage.removeItem("pendingSessionCode");
-                    router.push(`/pod/join/${pendingSessionCode}`);
-                } else {
-                    router.push("/pod");
-                }
-            } else {
-                setIsAuthChecked(true);
-            }
-        }
-    }, [storeUser.isLoggedIn, router, pathname]);
+    const [findOrCreateUser] = useFindOrCreateUserMutation();
+    const [isAuthenticating, setIsAuthenticating] = useState(false);
 
     useEffect(() => {
-        handleAuth();
-    }, [handleAuth]);
+        if (!ready || isAuthenticating) return;
 
-    if (!isAuthChecked) {
-        return <LoadingOverlay text="Authenticating..." />;
+        const handleAuth = async () => {
+            setIsAuthenticating(true);
+            try {
+                if (authenticated && privyUser && privyUser.wallet) {
+                    console.log("Authenticated user detected");
+                    if (!storeUser.user || !storeUser.isLoggedIn) {
+                        console.log("Authenticating user to get store data");
+
+                        // const smartWallet = privyUser?.smartWallet || privyUser?.linkedAccounts.find((account) => account.type === "smart_wallet");
+                        const walletAddress = privyUser?.wallet?.address;
+                        const walletClientType = privyUser?.wallet?.walletClientType;
+
+                        if (!walletAddress) throw new Error("No wallet address found");
+
+                        console.log({ walletToUseAuthprovider: walletAddress });
+
+                        const result = await findOrCreateUser({ walletAddress, hash: true }).unwrap();
+                        const userData = result.data as UserInfo;
+                        dispatch(setUser(userData));
+                        if (userData?.signature) {
+                            dispatch(setSignature(userData.signature));
+                        }
+
+                        // Always redirect to pod page after authentication
+                        router.push("/pod");
+                    } else {
+                        console.log("Store user found, redirecting");
+                        redirectUser();
+                    }
+                }
+            } catch (error) {
+                console.error("Authentication error:", error);
+                logout();
+                dispatch(logOut());
+                router.push("/");
+            } finally {
+                setIsAuthenticating(false);
+            }
+        };
+
+        handleAuth();
+    }, [authenticated, dispatch, logout, ready, privyUser, router, storeUser]);
+
+    const redirectUser = () => {
+        console.log("Redirecting user");
+        const pendingSessionCode = localStorage.getItem("pendingSessionCode");
+        if (pendingSessionCode) {
+            console.log("Redirecting to pending session");
+            localStorage.removeItem("pendingSessionCode");
+            router.push(`/pod/join/${pendingSessionCode}`);
+        } else if (pathname && !pathname.startsWith("/pod")) {
+            console.log("Redirecting to pod page for path:", pathname);
+            router.push("/pod");
+        }
+        //  else {
+        //     logout();
+        //     dispatch(logOut());
+        //     router.push("/");
+        // }
+    };
+
+    if (!ready || isAuthenticating) {
+        console.log("Displaying loading overlay");
+        let loadingText = "";
+
+        if (!ready) {
+            loadingText = "Initializing...";
+        } else if (isAuthenticating) {
+            loadingText = "Authenticating...";
+        }
+
+        return (
+            <div className="h-screen w-screen bg-[#121212]">
+                <LoadingOverlay text={loadingText} />
+            </div>
+        );
     }
 
     return <>{children}</>;
