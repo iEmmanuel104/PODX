@@ -50,27 +50,41 @@ const ParticipantsSidebar: React.FC<ParticipantsSidebarProps> = ({
 
         return (
             <div className="bg-[#2C2C2C] rounded-lg hover:bg-[#3C3C3C] transition-colors duration-200">
-                <div className="flex items-center justify-between py-3 px-4">
+                <div className="flex items-center justify-between py-2 px-3 sm:py-3 sm:px-4">
                     <div className="flex items-center">
                         <div className="flex flex-col">
-                            <span className="text-white text-sm font-medium">
+                            <span className="text-white text-xs sm:text-sm font-medium truncate max-w-[120px] sm:max-w-[150px]">
                                 {participant.name || participant.userId}
                                 {isCurrentUser && <span className="text-gray-400 text-xs ml-1">(You)</span>}
                             </span>
-                            <span className="text-gray-400 text-xs">{role.charAt(0).toUpperCase() + role.slice(1)}</span>
+                            <span className="text-gray-400 text-xs hidden sm:inline">{role.charAt(0).toUpperCase() + role.slice(1)}</span>
                         </div>
                     </div>
                     <div className="flex items-center">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isAudioActive ? "bg-[#7C3AED]" : "bg-red-500"}`}>
-                            {isAudioActive ? <Mic className="w-4 h-4 text-white" /> : <MicOff className="w-4 h-4 text-white" />}
+                        <div
+                            className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center ${
+                                isAudioActive ? "bg-[#7C3AED]" : "bg-red-500"
+                            }`}
+                        >
+                            {isAudioActive ? (
+                                <Mic className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
+                            ) : (
+                                <MicOff className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
+                            )}
                         </div>
                         <div
-                            className={`w-8 h-8 rounded-full flex items-center justify-center ml-2 ${isVideoActive ? "bg-[#7C3AED]" : "bg-red-500"}`}
+                            className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center ml-1 sm:ml-2 ${
+                                isVideoActive ? "bg-[#7C3AED]" : "bg-red-500"
+                            }`}
                         >
-                            {isVideoActive ? <Video className="w-4 h-4 text-white" /> : <VideoOff className="w-4 h-4 text-white" />}
+                            {isVideoActive ? (
+                                <Video className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
+                            ) : (
+                                <VideoOff className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
+                            )}
                         </div>
                         <ChevronDown
-                            className="w-4 h-4 text-gray-400 ml-2 cursor-pointer"
+                            className="w-4 h-4 text-gray-400 ml-1 sm:ml-2 cursor-pointer"
                             onClick={() => setExpandedParticipant(expandedParticipant === participant.userId ? null : participant.userId)}
                         />
                     </div>
@@ -78,15 +92,15 @@ const ParticipantsSidebar: React.FC<ParticipantsSidebarProps> = ({
                 {expandedParticipant === participant.userId && !isCurrentUser && (
                     <div className="bg-[#3C3C3C] p-2 rounded-b-lg">
                         <button
-                            className="w-full text-left text-white text-sm py-1 px-2 hover:bg-[#4C4C4C] rounded flex items-center"
+                            className="w-full text-left text-white text-xs sm:text-sm py-1 px-2 hover:bg-[#4C4C4C] rounded flex items-center"
                             onClick={() => openTipModal(participant.name || participant.userId)}
                         >
-                            <DollarSign className="w-4 h-4 mr-2 text-green-500" />
+                            <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 mr-2 text-green-500" />
                             Tip
                         </button>
                         {canPromote && (
                             <button
-                                className="w-full text-left text-white text-sm py-1 px-2 hover:bg-[#4C4C4C] rounded"
+                                className="w-full text-left text-white text-xs sm:text-sm py-1 px-2 hover:bg-[#4C4C4C] rounded"
                                 onClick={() => updateParticipantRole(participant.userId, "cohost")}
                             >
                                 Promote to Co-host
@@ -101,26 +115,28 @@ const ParticipantsSidebar: React.FC<ParticipantsSidebarProps> = ({
     const pendingParticipants = sortedParticipants.filter((p) => p.roles.includes("pending"));
 
     return (
-        <div className="w-full bg-[#1E1E1E] p-4 mt-4 flex flex-col rounded-lg">
-            <h2 className="text-white text-lg font-semibold mb-4 flex items-center">
+        <div className="w-full bg-[#1E1E1E] p-2 sm:p-4 mt-2 sm:mt-4 flex flex-col rounded-lg">
+            <h2 className="text-white text-base sm:text-lg font-semibold mb-2 sm:mb-4 flex items-center">
                 Participants
                 <span className="bg-[#7C3AED] text-white text-xs px-2 py-0.5 rounded-full ml-2">{sortedParticipants.length}</span>
             </h2>
             {pendingParticipants.length > 0 && (
-                <div className="mb-4">
-                    <h3 className="text-[#AFAFAF] text-sm font-semibold mb-2">Pending Requests</h3>
+                <div className="mb-2 sm:mb-4">
+                    <h3 className="text-[#AFAFAF] text-xs sm:text-sm font-semibold mb-1 sm:mb-2">Pending Requests</h3>
                     {pendingParticipants.map((participant) => (
-                        <div key={participant.userId} className="flex items-center justify-between bg-[#2C2C2C] p-2 rounded-lg mb-2">
-                            <span className="text-white text-sm">{participant.name || participant.userId}</span>
+                        <div key={participant.userId} className="flex items-center justify-between bg-[#2C2C2C] p-1 sm:p-2 rounded-lg mb-1 sm:mb-2">
+                            <span className="text-white text-xs sm:text-sm truncate max-w-[120px] sm:max-w-[150px]">
+                                {participant.name || participant.userId}
+                            </span>
                             <div>
                                 <button
-                                    className="bg-green-500 text-white text-xs px-2 py-1 rounded mr-2"
+                                    className="bg-green-500 text-white text-xs px-1 sm:px-2 py-0.5 sm:py-1 rounded mr-1 sm:mr-2"
                                     onClick={() => handleJoinRequest(participant.userId, true)}
                                 >
                                     Accept
                                 </button>
                                 <button
-                                    className="bg-red-500 text-white text-xs px-2 py-1 rounded"
+                                    className="bg-red-500 text-white text-xs px-1 sm:px-2 py-0.5 sm:py-1 rounded"
                                     onClick={() => handleJoinRequest(participant.userId, false)}
                                 >
                                     Reject
@@ -130,8 +146,8 @@ const ParticipantsSidebar: React.FC<ParticipantsSidebarProps> = ({
                     ))}
                 </div>
             )}
-            <h2 className="text-[#AFAFAF] text-medium font-semibold mb-4 mt-4 flex items-center">On the call</h2>
-            <div className="flex-grow overflow-y-auto space-y-2">
+            <h2 className="text-[#AFAFAF] text-sm sm:text-medium font-semibold mb-2 sm:mb-4 mt-2 sm:mt-4 flex items-center">On the call</h2>
+            <div className="flex-grow overflow-y-auto space-y-1 sm:space-y-2 max-h-[calc(100vh-300px)] sm:max-h-[calc(100vh-350px)]">
                 {sortedParticipants
                     .filter((p) => !p.roles.includes("pending"))
                     .map((participant) => (
