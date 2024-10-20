@@ -170,7 +170,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
             }
             router.push(`/pod/${code}`);
         }
-    }, [code, isLoggedIn, user, call, callingState, router, updateGuestName]);
+    }, [code, isLoggedIn, user, call, callingState, router, updateGuestName, sessionType]);
 
     const participantsUI = useMemo(() => {
         switch (true) {
