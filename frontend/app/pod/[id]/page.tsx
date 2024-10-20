@@ -147,12 +147,9 @@ export default function MeetingInterface({ params }: MeetingProps) {
     }, [id, callingState, call, connectedUser]);
 
     useEffect(() => {
-        if (connectedUser && live && callingState !== CallingState.JOINED && user) {
+        if (connectedUser && live && callingState !== CallingState.JOINED) {
             handleJoinSession();
-        } else {
-            console.log("Not joining the call");
-            router.push("/");
-        }
+        } 
     }, [connectedUser, live, callingState, handleJoinSession, user, router]);
 
     const handleTip = async () => {
