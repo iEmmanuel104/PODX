@@ -27,6 +27,7 @@ import { useAppSelector } from "@/store/hooks";
 import { StreamVideoParticipant } from "@stream-io/video-react-sdk";
 import { useSendTransaction as useSendTransactionWagmi } from 'wagmi'
 import toast, { Toaster } from 'react-hot-toast';
+import EndScreen from "@/components/meeting/end-screen";
 
 interface MeetingProps {
     params: {
@@ -345,7 +346,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                         />
                     )}
 
-                    {showThankYouModal && <ThankYouModal onClose={confirmLeave} />}
+                    {showThankYouModal && <EndScreen onClose={confirmLeave} />}
 
                     <Notifications
                         joinRequests={joinRequests}
