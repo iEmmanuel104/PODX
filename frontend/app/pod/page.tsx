@@ -39,7 +39,6 @@ export default function PodPage() {
     const [sessionCode, setSessionCode] = useState("");
     const [isJoining, setIsJoining] = useState(false);
     const [showEditIcon, setShowEditIcon] = useState(false);
-    const [isJoiningCreated, setIsJoiningCreated] = useState(false);
 
     const { isLoggedIn, user } = useAppSelector((state) => state.user);
 
@@ -84,14 +83,14 @@ export default function PodPage() {
         setIsJoining(true);
         console.log("Joining session with code: ", meetingCode);
 
-        const client = new StreamVideoClient({
-            apiKey: API_KEY,
-            user: GUEST_USER,
-        });
-
-        const call = client.call(CALL_TYPE, meetingCode);
-
         try {
+            const client = new StreamVideoClient({
+                apiKey: API_KEY,
+                user: GUEST_USER,
+            });
+    
+            const call = client.call(CALL_TYPE, meetingCode);
+
             const response: GetCallResponse = await call.get();
             if (response.call && meetingCode === response.call.custom.sessionId) {
                 dispatch(
@@ -115,17 +114,6 @@ export default function PodPage() {
         }
     }, [meetingCode, router, dispatch]);
 
-    const handleJoinCreatedSession = useCallback(async () => {
-        setIsJoiningCreated(true);
-        try {
-            router.push(`/pod/join/${sessionCode}`);
-        } catch (error) {
-            console.error("Failed to join created session:", error);
-        } finally {
-            setIsJoiningCreated(false);
-        }
-    }, [router, sessionCode]);
-
     const handleUpdateUsername = useCallback(
         (newUsername: string) => {
             setShowUsernameModal(false);
@@ -136,8 +124,13 @@ export default function PodPage() {
 
     const openUsernameModal = () => setShowUsernameModal(true);
 
-    const displayName = user?.username || `${user?.walletAddress.slice(0, 6)}...${user?.walletAddress.slice(-4)}`;
-    const initials = user?.username ? user?.username.slice(0, 2).toUpperCase() : user?.walletAddress.slice(0, 2).toUpperCase();
+    if (!isLoggedIn || !user) {
+        router.push("/");
+        return null;
+    }
+
+    const displayName = user.username || `${user.walletAddress.slice(0, 6)}...${user.walletAddress.slice(-4)}`;
+    const initials = user.username ? user.username.slice(0, 2).toUpperCase() : user.walletAddress.slice(0, 2).toUpperCase();
 
     return (
         <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4 relative">
@@ -204,13 +197,18 @@ export default function PodPage() {
                     </div>
                 </div>
             </div>
-
             <button className="text-[#A3A3A3] hover:text-white transition-colors flex items-center gap-2 text-sm">
                 <Settings className="w-4 h-4" /> Settings
             </button>
-
             <CreateSessionModal isOpen={isCreateModalOpen} onClose={closeCreateModal} onCreateSession={handleCreateSession} />
-            <CreatedSessionModal isOpen={isCreatedModalOpen} onClose={closeCreatedModal} inviteLink={inviteLink} sessionCode={sessionCode} />
+            <CreatedSessionModal
+                isOpen={isCreatedModalOpen}
+                onClose={closeCreatedModal}
+                inviteLink={inviteLink}
+                sessionCode={sessionCode}
+                isJoining={isJoining}
+                onJoinSession={handleJoinSession}
+            />
             {user && (
                 <UserInfoModal
                     isOpen={showUsernameModal}
