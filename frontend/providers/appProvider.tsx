@@ -1,6 +1,6 @@
 "use client";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { getConfig } from "@/lib/config";
+import { config } from "@/lib/config";
 import { createContext, ReactNode, useState } from "react";
 import { WagmiProvider } from 'wagmi'
 
@@ -27,7 +27,7 @@ const queryClient = new QueryClient()
 const AppProvider = ({ children }: AppProviderProps) => {
     const [newMeeting, setNewMeeting] = useState(false);
     return (
-        <WagmiProvider config={getConfig()}>
+        <WagmiProvider config={config}>
             <QueryClientProvider client={queryClient}>
             <AppContext.Provider
                 value={{

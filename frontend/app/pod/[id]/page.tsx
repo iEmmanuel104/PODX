@@ -26,6 +26,8 @@ import { isAddress, parseEther } from "ethers";
 import { useAppSelector } from "@/store/hooks";
 import { StreamVideoParticipant } from "@stream-io/video-react-sdk";
 import { useWallets } from '@privy-io/react-auth';
+import { useSendTransaction as useSendTransactionWagmi } from 'wagmi'
+
 
 interface MeetingProps {
     params: {
@@ -70,44 +72,49 @@ export default function MeetingInterface({ params }: MeetingProps) {
         },
     });
 
-    const { wallets } = useWallets();
-    const wallet = wallets[0];
-    const walletClientType = wallet.walletClientType;
+    // const { wallets } = useWallets();
+    // const wallet = wallets[0];
+    // const walletClientType = wallet.walletClientType;
+
+    const walletClientType = useAppSelector((state) => state.user.user?.walletType)
+    const provider = useAppSelector((state) => state.user.user)
+
     const isEmbeddedWallet = walletClientType === 'privy';
 
+    const { data: hash, sendTransaction: sendTransactionWagmi, isSuccess, isPending, error } = useSendTransactionWagmi()
+    console.log({ hash, isSuccess, error, isPending })
+
     const sendETHExternal = async (recipient: string, amount: string) => {
-        console.log("external wallet tipping flow")
+        console.log("external wallet tipping flow");
         try {
             console.log("recipient address", recipient);
             if (!isAddress(recipient)) {
                 throw new Error("Invalid recipient address");
             }
-            const parsedAmount = parseEther(amount.toString());
+            const parsedAmount = parseEther(amount);
 
-            if (wallets.length === 0) {
-                throw new Error("No wallet connected");
+            if (sendTransactionWagmi) {
+                sendTransactionWagmi({
+                    to: recipient as `0x{string}`,
+                    value: parsedAmount,
+                });
+            } else {
+                throw new Error("Transaction cannot be sent. Make sure you're connected to a wallet.");
             }
 
-            const wallet = wallets[0]; // Use the first connected wallet
-            const provider = await wallet.getEthereumProvider();
+            if (isSuccess) {
+                setShowTipSuccess(true);
+                setTimeout(() => setShowTipSuccess(false), 3000);
+                console.log("Transaction successful:");
+            }
 
-            console.log(recipient, provider)
-            const transactionRequest = {
-                to: recipient,
-                value: parsedAmount.toString(16), // Convert to hex string
-                gasLimit: '0x5208', // 21000 in hex
-            };
+            if (isError) {
+                throw new Error(`Transaction failed`);
+            }
 
-            const transactionHash = await provider.request({
-                method: 'eth_sendTransaction',
-                params: [transactionRequest],
-            });
-
-            console.log("Transaction hash:", transactionHash);
-            setShowTipSuccess(true);
-            setTimeout(() => setShowTipSuccess(false), 3000);
         } catch (error) {
             console.error("Error sending ETH:", error);
+            return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
         }
     };
 
@@ -132,8 +139,8 @@ export default function MeetingInterface({ params }: MeetingProps) {
         }
     };
 
-    const sendETH =  async (recipient: string, amount: string) => {
-        if (isEmbeddedWallet){
+    const sendETH = async (recipient: string, amount: string) => {
+        if (isEmbeddedWallet) {
             sendETHEmbedded(recipient, amount)
         } else {
             sendETHExternal(recipient, amount)
