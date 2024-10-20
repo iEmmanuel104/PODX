@@ -3,6 +3,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { config } from "@/lib/config";
 import { createContext, ReactNode, useState } from "react";
 import { WagmiProvider } from 'wagmi'
+import { Toaster } from 'react-hot-toast';
+
 
 export const MEETING_ID_REGEX = /^[a-z]{3}-[a-z]{4}-[a-z]{3}$/;
 
@@ -36,6 +38,7 @@ const AppProvider = ({ children }: AppProviderProps) => {
                 }}
             >
                 {children}
+            <Toaster />
             </AppContext.Provider>
             </QueryClientProvider>
         </WagmiProvider>

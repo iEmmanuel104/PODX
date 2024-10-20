@@ -21,6 +21,7 @@ import { AppContext } from "@/providers/appProvider";
 import { useChatContext } from "stream-chat-react";
 import { useStreamTokenProvider } from "@/hooks/useStreamTokenProvider";
 import Image from "next/image";
+import toast from "react-hot-toast";
 
 interface JoinSessionProps {
     params: {
@@ -37,7 +38,6 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
     const [joining, setJoining] = useState<boolean>(false);
     const [participants, setParticipants] = useState<CallParticipantResponse[] | MemberResponse[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
-    const [errorFetchingMeeting, setErrorFetchingMeeting] = useState<boolean>(false);
     const { sessionTitle, sessionType } = useAppSelector((state) => state.pod);
     const { isLoggedIn, user } = useAppSelector((state) => state.user);
     const { newMeeting, setNewMeeting } = useContext(AppContext);
@@ -75,7 +75,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                 } catch (e) {
                     const err = e as ErrorFromResponse<GetCallResponse>;
                     console.error(err.message);
-                    setErrorFetchingMeeting(true);
+                    toast.error("Error fetching meeting")
                 }
             }
             setLoading(false);
@@ -183,11 +183,6 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                 return null;
         }
     }, [joining, participants]);
-
-    if (errorFetchingMeeting) {
-        router.push(`/pod/join/${code}&invalid=true`);
-        return null;
-    }
 
     const renderContent = () => {
         if (loading) {
