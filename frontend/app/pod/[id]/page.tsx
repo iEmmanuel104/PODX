@@ -25,7 +25,6 @@ import { usePrivy } from "@privy-io/react-auth";
 import { useSendTransaction } from "@privy-io/react-auth";
 import { parseUnits, Interface, isAddress, parseEther } from "ethers";
 
-
 interface MeetingProps {
     params: {
         id: string;
@@ -149,7 +148,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
     useEffect(() => {
         if (connectedUser && live && callingState !== CallingState.JOINED) {
             handleJoinSession();
-        } 
+        }
     }, [connectedUser, live, callingState, handleJoinSession, user, router]);
 
     const handleTip = async () => {
@@ -234,32 +233,35 @@ export default function MeetingInterface({ params }: MeetingProps) {
                     />
 
                     {/** Main content */}
-                    <div className="flex-grow flex overflow-hidden relative w-[90%] mx-auto">
-                        <div
-                            className="flex-1 hover:cursor-pointer w-fit h-fit relative"
-                            onMouseEnter={() => setShowTipButton(true)}
-                            onMouseLeave={() => setShowTipButton(false)}
-                        >
-                            {isSpeakerView ? <SpeakerLayout /> : <PaginatedGridLayout />}
-                            {showTipButton && (
-                                <button
-                                    className="absolute top-4 right-8 bg-violet-500 text-white px-4 py-2 rounded-full flex items-center"
-                                    onClick={() => openTipModal(connectedUser?.id || "")}
-                                >
-                                    <DollarSign className="w-4 h-4 mr-2" />
-                                    Tip
-                                </button>
-                            )}
+                    <div className="flex-grow flex overflow-hidden relative w-[95%] sm:w-[90%] mx-auto">
+                        <div className="flex-1 relative">
+                            <div
+                                className="w-full h-full hover:cursor-pointer"
+                                onMouseEnter={() => setShowTipButton(true)}
+                                onMouseLeave={() => setShowTipButton(false)}
+                            >
+                                {isSpeakerView ? <SpeakerLayout /> : <PaginatedGridLayout />}
+                                {showTipButton && (
+                                    <button
+                                        className="absolute top-4 right-4 sm:right-8 bg-violet-500 text-white px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm rounded-full flex items-center"
+                                        onClick={() => openTipModal(connectedUser?.id || "")}
+                                    >
+                                        <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                                        Tip
+                                    </button>
+                                )}
+                            </div>
                         </div>
                         <div
                             className={`
-                                ${showSidebar ? "translate-y-0" : "translate-y-full sm:translate-y-0"} 
+                                ${showSidebar ? "translate-x-0" : "translate-x-full sm:translate-x-0"} 
                                 transition-transform duration-300 ease-in-out
-                                fixed sm:relative inset-0 sm:inset-auto top-16 sm:top-0 
-                                h-screen sm:h-full w-full sm:w-64 lg:w-80 
+                                fixed sm:relative inset-y-0 right-0 
+                                w-64 sm:w-64 lg:w-80 
                                 bg-[#1E1E1E] sm:bg-transparent 
                                 z-20 sm:z-auto
                                 overflow-y-auto
+                                sm:ml-4
                             `}
                         >
                             <ParticipantsSidebar
@@ -273,9 +275,10 @@ export default function MeetingInterface({ params }: MeetingProps) {
                     </div>
 
                     {/** Footer controls */}
-                    <footer className="bg-[#1E1E1E] p-4 flex justify-center items-center gap-4 h-20">
+                    <footer className="bg-[#1E1E1E] p-2 sm:p-4 flex justify-center items-center gap-2 sm:gap-4 h-16 sm:h-20">
                         <CallControls onLeave={handleLeave} />
                     </footer>
+
                     {showTipModal && (
                         <TipModal
                             selectedTipRecipient={selectedTipRecipient}
@@ -298,8 +301,8 @@ export default function MeetingInterface({ params }: MeetingProps) {
                     />
 
                     {showTipSuccess && (
-                        <div className="fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md flex items-center">
-                            <CheckCircle2 className="w-5 h-5 mr-2" />
+                        <div className="fixed bottom-4 right-4 bg-green-500 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-md flex items-center text-xs sm:text-sm">
+                            <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                             You successfully tipped {selectedTipRecipient} {tipAmount} USDC
                         </div>
                     )}
