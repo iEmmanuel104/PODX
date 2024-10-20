@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { CheckCircle2, DollarSign } from "lucide-react";
+import { AlertCircle, CheckCircle2, DollarSign } from "lucide-react";
 import TipModal from "@/components/meeting/tips";
 import ParticipantsSidebar from "@/components/meeting/participantList";
 import ThankYouModal from "@/components/meeting/thankYou";
@@ -25,9 +25,8 @@ import { useSendTransaction } from "@privy-io/react-auth";
 import { isAddress, parseEther } from "ethers";
 import { useAppSelector } from "@/store/hooks";
 import { StreamVideoParticipant } from "@stream-io/video-react-sdk";
-import { useWallets } from '@privy-io/react-auth';
 import { useSendTransaction as useSendTransactionWagmi } from 'wagmi'
-
+import toast, { Toaster } from 'react-hot-toast';
 
 interface MeetingProps {
     params: {
@@ -42,7 +41,6 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const { useParticipants, useCallMembers, useIsCallLive, useCallCustomData, useHasOngoingScreenShare, useCallCallingState } = useCallStateHooks();
 
     const participants = useParticipants();
-    const members = useCallMembers();
     const customData = useCallCustomData();
     const live = useIsCallLive();
     const connectedUser = useConnectedUser();
@@ -61,91 +59,92 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const userAddress = user?.walletAddress as `0x${string}`;
 
     // Sending the transaction
-    const { sendTransaction } = useSendTransaction({
+    const { sendTransaction: sendTransactionEmbedded } = useSendTransaction({
         onError: (error) => {
-            console.error("Transaction failed:", error);
+            console.error("Embedded wallet transaction failed:", error);
+            toast.error("Transaction failed. Please try again.", { duration: 5000 });
         },
         onSuccess: (response) => {
-            console.log("Transaction successful:", response);
-            setShowTipSuccess(true);
-            setTimeout(() => setShowTipSuccess(false), 3000);
+            console.log("Embedded wallet transaction successful:", response);
+            toast.success(`You successfully tipped ${selectedTipRecipient?.name || selectedTipRecipient?.userId} ${tipAmount} ETH`, { duration: 5000 });
         },
     });
 
-    // const { wallets } = useWallets();
-    // const wallet = wallets[0];
-    // const walletClientType = wallet.walletClientType;
-
     const walletClientType = useAppSelector((state) => state.user.user?.walletType)
-    const provider = useAppSelector((state) => state.user.user)
 
     const isEmbeddedWallet = walletClientType === 'privy';
 
-    const { data: hash, sendTransaction: sendTransactionWagmi, isSuccess, isPending, error } = useSendTransactionWagmi()
-    console.log({ hash, isSuccess, error, isPending })
+    const { sendTransaction: sendTransactionWagmi, isSuccess, isPending, isError: isWagmiError } = useSendTransactionWagmi()
+    useEffect(() => {
+        if (isSuccess) {
+            toast.success(`You successfully tipped ${selectedTipRecipient?.name || selectedTipRecipient?.userId} ${tipAmount} ETH`, { duration: 5000 });
+        } else if (isPending) {
+            toast.loading("Transaction pending...", { duration: 5000 });
+        } else if (isWagmiError) {
+            toast.error("Transaction failed. Please try again.", { duration: 5000 });
+        }
+    }, [isSuccess, isPending, isWagmiError]);
 
     const sendETHExternal = async (recipient: string, amount: string) => {
         console.log("external wallet tipping flow");
+        const notification = toast.loading("Sending tip...", {duration: 9000})
+
         try {
-            console.log("recipient address", recipient);
             if (!isAddress(recipient)) {
                 throw new Error("Invalid recipient address");
             }
             const parsedAmount = parseEther(amount);
 
             if (sendTransactionWagmi) {
-                sendTransactionWagmi({
-                    to: recipient as `0x{string}`,
+                await sendTransactionWagmi({
+                    to: recipient as `0x${string}`,
                     value: parsedAmount,
                 });
             } else {
                 throw new Error("Transaction cannot be sent. Make sure you're connected to a wallet.");
             }
-
-            if (isSuccess) {
-                setShowTipSuccess(true);
-                setTimeout(() => setShowTipSuccess(false), 3000);
-                console.log("Transaction successful:");
-            }
-
-            if (isError) {
-                throw new Error(`Transaction failed`);
-            }
-
         } catch (error) {
             console.error("Error sending ETH:", error);
-            return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+            toast.error("Failed to send tip. Please try again.", { id: notification });
         }
     };
 
+
     const sendETHEmbedded = async (recipient: string, amount: string) => {
         console.log("embedded tipping flow")
+        const notification = toast.loading("Sending tip...", {duration: 9000})
         try {
-            console.log("recipient address", recipient)
-            // Validate recipient address
             if (!isAddress(recipient)) {
                 throw new Error("Invalid recipient address");
             }
             const parsedAmount = parseEther(amount.toString());
-            const tx = await sendTransaction({
+            await sendTransactionEmbedded({
                 chainId: 8453,
                 to: recipient,
                 value: parsedAmount,
                 gasLimit: 21000,
             });
-            console.log("Transaction receipt:", tx);
         } catch (error) {
             console.error("Error sending ETH:", error);
+            toast.error("Failed to send tip. Please try again.",  { id: notification });
         }
     };
 
+
     const sendETH = async (recipient: string, amount: string) => {
         if (isEmbeddedWallet) {
-            sendETHEmbedded(recipient, amount)
+            await sendETHEmbedded(recipient, amount);
         } else {
-            sendETHExternal(recipient, amount)
+            await sendETHExternal(recipient, amount);
         }
-    }
+    };
+
+    const handleTip = async () => {
+        if (selectedTipRecipient && tipAmount) {
+            await sendETH((selectedTipRecipient?.custom?.fields?.walletAddress?.kind as any).stringValue, tipAmount);
+            setShowTipModal(false);
+        }
+    };
 
     const {
         data: balance,
@@ -204,12 +203,6 @@ export default function MeetingInterface({ params }: MeetingProps) {
         }
     }, [connectedUser, live, callingState, handleJoinSession]);
 
-    const handleTip = async () => {
-        if (selectedTipRecipient && tipAmount) {
-            await sendETH((selectedTipRecipient?.custom?.fields?.walletAddress?.kind as any).stringValue, tipAmount);
-            setShowTipModal(false);
-        }
-    };
 
     const handleCancelTip = () => {
         setShowTipModal(false);
@@ -272,6 +265,32 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
     return (
         <StreamTheme className="root-theme">
+            <Toaster position="bottom-right" toastOptions={{
+                success: {
+                    icon: <CheckCircle2 className="w-5 h-5 text-green-500" />,
+                    style: {
+                        background: '#1E1E1E',
+                        color: '#FFFFFF',
+                        border: '1px solid #22C55E'
+                    },
+                },
+                error: {
+                    icon: <AlertCircle className="w-5 h-5 text-red-500" />,
+                    style: {
+                        background: '#1E1E1E',
+                        color: '#FFFFFF',
+                        border: '1px solid #EF4444'
+                    },
+                },
+                loading: {
+                    icon: <DollarSign className="w-5 h-5 text-yellow-500 animate-pulse" />,
+                    style: {
+                        background: '#1E1E1E',
+                        color: '#FFFFFF',
+                        border: '1px solid #EAB308'
+                    },
+                },
+            }} />
             <StreamCall call={call}>
                 <div className="h-screen bg-[#121212] text-white flex flex-col">
                     {/* Header Title */}
