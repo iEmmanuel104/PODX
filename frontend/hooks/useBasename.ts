@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
-import { usePrivy } from '@privy-io/react-auth';
+import { useAppSelector } from '@/store/hooks';
 
-export const useBasename = () => {
+export const useBasename = ({ walletaddress }: { walletaddress: string }) => {
     const [basename, setBasename] = useState<string | null>(null);
-    const { user } = usePrivy();
+    const { user } = useAppSelector((state) => state.user);
 
     useEffect(() => {
         const checkBasename = async () => {
-            if (user?.wallet?.address) {
+            if (walletaddress) {
                 try {
                     // Replace this with the actual API call to check for a basename
-                    const response = await fetch(`https://api.basename.com/check/${user.wallet.address}`);
+                    const response = await fetch(`https://api.basename.com/check/${walletaddress}`);
                     const data = await response.json();
                     if (data.basename) {
                         setBasename(data.basename);
@@ -22,7 +22,7 @@ export const useBasename = () => {
         };
 
         checkBasename();
-    }, [user?.wallet?.address]);
+    }, [walletaddress]);
 
     return basename;
 };
