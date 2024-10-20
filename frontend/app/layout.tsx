@@ -8,7 +8,7 @@ import AuthProvider from "@/providers/authProvider";
 
 import "@stream-io/video-react-sdk/dist/css/styles.css";
 import "stream-chat-react/dist/css/v2/index.css";
-import "./globals.css";
+import { Toaster } from "react-hot-toast";
 
 const clashGroteskRegular = localFont({
     src: "./fonts/ClashGrotesk-Regular.woff",
@@ -37,7 +37,10 @@ export default function RootLayout({
                 <body className={`${clashGroteskRegular.variable} ${clashgroteskMedium.variable} antialiased`}>
                     <StoreProvider>
                         <PrivyProvider>
-                            <AuthProvider>{children}</AuthProvider>
+                            <AuthProvider>
+                                {children}
+                                <Toaster />
+                            </AuthProvider>
                         </PrivyProvider>
                     </StoreProvider>
                 </body>
