@@ -148,7 +148,9 @@ export default function PodPage() {
     return (
         <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4 relative">
             <div className="w-full max-w-2xl flex flex-col items-center">
-                <Logo />
+                <div className="mb-16">
+                    <Logo />
+                </div>
 
                 <div
                     className="flex items-center mb-8 sm:mb-16 relative"
