@@ -7,8 +7,7 @@ export interface UserInfo {
     username: string;
     streamToken: string;
     displayImage?: string;
-    smartWalletAddress?: string;
-    smartWalletType?: string;
+    walletType?: string;
     signature?: string;
 }
 
