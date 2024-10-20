@@ -33,7 +33,7 @@ export default function PrivyProvider({ children }: { children: React.ReactNode 
                     walletList: ["coinbase_wallet", "metamask", "rainbow", "wallet_connect"],
                     theme: "#121212",
                     accentColor: "#6032F6",
-                    logo: "https://res.cloudinary.com/dmisafxa2/image/upload/v1729377456/logo_privy_evmjwu.png",
+                    logo: "https://res.cloudinary.com/dmisafxa2/image/upload/v1729448381/PodX_Logo_uren7q.png",
                 },
                 // Create embedded wallets for users who don't have a wallet
                 embeddedWallets: {

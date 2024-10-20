@@ -22,7 +22,7 @@ interface IUser extends Omit<UserType, '_id'>, Document {
 // Mongoose schema
 const mongooseUserSchema = new Schema<IUser>({
     walletAddress: { type: String, required: true, unique: true, lowercase: true },
-    username: { type: String, required: true, unique: true, lowercase: true },
+    username: { type: String, required: true, lowercase: true },
     displayImage: String,
     ownedPods: [{ type: Schema.Types.ObjectId, ref: 'Pod' }],
     memberPods: [{ type: Schema.Types.ObjectId, ref: 'Pod' }],
