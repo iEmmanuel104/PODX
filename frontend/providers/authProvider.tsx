@@ -6,6 +6,7 @@ import { setUser, setSignature, logOut } from "@/store/slices/userSlice";
 import { useRouter, usePathname } from "next/navigation";
 import { useFindOrCreateUserMutation, UserInfo } from "@/store/api/userApi";
 import { LoadingOverlay } from "@/components/ui/loading";
+import toast from "react-hot-toast";
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
     const { user: privyUser, authenticated, ready, logout } = usePrivy();
@@ -49,6 +50,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
                     }
                 }
             } catch (error) {
+                toast.error("Authentication error")
                 console.error("Authentication error:", error);
                 logout();
                 dispatch(logOut());

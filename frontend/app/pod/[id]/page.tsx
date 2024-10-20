@@ -141,7 +141,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
     const handleTip = async () => {
         if (selectedTipRecipient && tipAmount) {
-            await sendETH((selectedTipRecipient?.custom?.fields?.walletAddress?.kind as any).stringValue, tipAmount);
+            await sendETH((selectedTipRecipient?.custom?.fields?.walletAddress?.kind as any).stringValue || "0xaa", tipAmount);
             setShowTipModal(false);
         }
     };
@@ -336,7 +336,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                     {showTipModal && selectedTipRecipient && (
                         <TipModal
                             selectedTipRecipient={selectedTipRecipient}
-                            walletAddress={(selectedTipRecipient?.custom?.fields?.walletAddress?.kind as any).stringValue}
+                            walletAddress={(selectedTipRecipient?.custom?.fields?.walletAddress?.kind as any).stringValue || "0xaaaaa"}
                             tipAmount={tipAmount}
                             setTipAmount={setTipAmount}
                             handleTip={handleTip}
