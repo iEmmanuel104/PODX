@@ -185,7 +185,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
     }, [joining, participants]);
 
     if (errorFetchingMeeting) {
-        router.push(`/pod/join/${code}&invalid=true`);
+        router.push('/pod');
         return null;
     }
 
