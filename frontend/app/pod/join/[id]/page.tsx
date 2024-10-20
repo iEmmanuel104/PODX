@@ -71,7 +71,6 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                 try {
                     const callData = await call.get();
 
-                    console.log({ currentCall: callData });
                     setParticipants(callData.members || []);
                 } catch (e) {
                     const err = e as ErrorFromResponse<GetCallResponse>;
