@@ -1,10 +1,11 @@
 "use client";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { CheckCircle2, Menu, LogOut, ChevronDown, Copy, LogOutIcon, DollarSign } from "lucide-react";
+import { CheckCircle2, DollarSign } from "lucide-react";
 import TipModal from "@/components/meeting/tips";
 import ParticipantsSidebar from "@/components/meeting/participantList";
 import ThankYouModal from "@/components/meeting/thankYou";
 import Notifications from "@/components/meeting/notifications";
+import Header from "@/components/meeting/header";
 import {
     StreamTheme,
     StreamCall,
@@ -20,15 +21,10 @@ import {
 import "@stream-io/video-react-sdk/dist/css/styles.css";
 import { useRouter } from "next/navigation";
 import { useBalance } from "wagmi";
-import { Avatar, Identity, Name, Address } from "@coinbase/onchainkit/identity";
-import { base } from "viem/chains";
 import { usePrivy } from "@privy-io/react-auth";
 import { useSendTransaction } from "@privy-io/react-auth";
-// import { isAddress } from "@ethersproject/address";
-// import { parseEther } from "@ethersproject/units";
-import { parseUnits, Interface, isAddress, parseEther } from 'ethers';
-import Image from "next/image";
-import Logo from "@/components/ui/logo";
+import { parseUnits, Interface, isAddress, parseEther } from "ethers";
+
 
 interface MeetingProps {
     params: {
@@ -42,7 +38,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const { id } = params;
     const router = useRouter();
     const { useParticipants, useCallMembers, useIsCallLive, useCallCustomData, useHasOngoingScreenShare, useCallCallingState } = useCallStateHooks();
-    
+
     const participants = useParticipants();
     const members = useCallMembers();
     const customData = useCallCustomData();
@@ -61,7 +57,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const [showSidebar, setShowSidebar] = useState(false);
     const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
     const { user } = usePrivy();
-    const userAddress = user?.wallet?.address as '0x${string}';
+    const userAddress = user?.wallet?.address as "0x${string}";
     const [showTipButton, setShowTipButton] = useState(false);
 
     // Sending the transaction
@@ -146,7 +142,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                 console.log("Successfully joined the call");
             } catch (error) {
                 console.error("Error joining the call:", error);
-            };
+            }
         }
     }, [id, callingState, call, connectedUser]);
 
@@ -158,8 +154,6 @@ export default function MeetingInterface({ params }: MeetingProps) {
             router.push("/");
         }
     }, [connectedUser, live, callingState, handleJoinSession, user, router]);
-
-
 
     const handleTip = async () => {
         if (selectedTipRecipient && tipAmount) {
@@ -229,82 +223,18 @@ export default function MeetingInterface({ params }: MeetingProps) {
         <StreamTheme className="root-theme">
             <StreamCall call={call}>
                 <div className="h-screen bg-[#121212] text-white flex flex-col">
-                    {/** Header Title*/}
-                    <header className="flex justify-between items-center px-4 py-2 bg-[#1d1d1d] rounded-full w-[90%] mx-auto my-4">
-                        <div className="flex items-center justify-between gap-4">
-                            <Logo />
-                            <p className="text-sm mr-2 hidden sm:inline w-full">{customData.title}</p>
-                            <p className="bg-red-500 text-xs px-2 py-0.5 rounded-full">{live ? "Live" : "Offline"}</p>
-                        </div>
-                        <div className="flex items-center">
-                            <button
-                                title="toggle sidebar"
-                                className="text-[#A3A3A3] hover:text-white transition-colors sm:hidden mr-2 sm:mr-4"
-                                onClick={toggleSidebar}
-                            >
-                                <Menu className="w-6 h-6" />
-                            </button>
-                            <div className="relative">
-                                <div className="flex items-center">
-                                    <button
-                                        title="toggle profile dropdown"
-                                        className="flex items-center text-[#A3A3A3] hover:text-white transition-colors mr-2 sm:mr-4"
-                                        onClick={toggleProfileDropdown}
-                                    >
-                                        <Identity
-                                            address={userAddress}
-                                            chain={base}
-                                            schemaId="0xf8b05c79f090979bf4a80270aba232dff11a10d9ca55c4f88de95317970f0de9"
-                                        >
-                                            <Avatar address={userAddress} chain={base} className="w-8 h-8 rounded-full mr-2" />
-                                            <Name address={userAddress} chain={base} className="mr-2" />
-                                        </Identity>
-                                        <ChevronDown className="w-4 h-4" />
-                                    </button>
-                                    <div className="flex justify-between items-center">
-                                        <LogOutIcon className="w-4 h-4 text-red-500" />
-                                        <button
-                                            onClick={handleLogout}
-                                            className="text-red-500 px-3 py-1 rounded hover:bg-[#3d3d3d] transition-colors"
-                                        >
-                                            Logout
-                                        </button>
-                                    </div>
-                                </div>
-                                {isProfileDropdownOpen && (
-                                    <div className="absolute right-0 mt-2 w-64 bg-[#2d2d2d] rounded-xl shadow-lg py-3 px-4 z-10">
-                                        <div className="flex items-center">
-                                            <Identity
-                                                address={userAddress}
-                                                chain={base}
-                                                schemaId="0xf8b05c79f090979bf4a80270aba232dff11a10d9ca55c4f88de95317970f0de9"
-                                            >
-                                                <Avatar address={userAddress} chain={base} className="w-10 h-10 rounded-full mr-3" />
-                                                <div className="space-y-2">
-                                                    <div className="flex items-center justify-between gap-2">
-                                                        <Name address={userAddress} chain={base} className="text-white font-semibold" />
-                                                        <p className="text-white text-sm bg-violet-500 rounded-full px-2 py-0.5">
-                                                            {displayBalance} {balance?.symbol}
-                                                        </p>
-                                                    </div>
-                                                    <div className="flex items-center justify-between bg-[#1d1d1d] p-2 mb-2 rounded-full">
-                                                        <Image src="/images/base.png" alt="Base" width={24} height={24} className="w-6 h-6" />{" "}
-                                                        <div className="flex items-center">
-                                                            <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                                                            <Address address={userAddress} className="text-[#A3A3A3] text-xs" />
-                                                        </div>
-                                                        <button title="copy" onClick={copyAddress} className="text-[#A3A3A3] hover:text-white">
-                                                            <Copy className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </Identity>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </header>
+                    <Header
+                        customData={customData}
+                        live={live}
+                        userAddress={userAddress}
+                        displayBalance={displayBalance}
+                        balanceSymbol={balance?.symbol}
+                        toggleSidebar={toggleSidebar}
+                        toggleProfileDropdown={toggleProfileDropdown}
+                        isProfileDropdownOpen={isProfileDropdownOpen}
+                        handleLogout={handleLogout}
+                        copyAddress={copyAddress}
+                    />
 
                     {/** Main content */}
                     <div className="flex-grow flex overflow-hidden relative w-[90%] mx-auto">
@@ -329,7 +259,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                                 ${showSidebar ? "translate-y-0" : "translate-y-full sm:translate-y-0"} 
                                 transition-transform duration-300 ease-in-out
                                 fixed sm:relative inset-0 sm:inset-auto top-16 sm:top-0 
-                                 h-screen sm:h-full w-full sm:w-64 lg:w-80 
+                                h-screen sm:h-full w-full sm:w-64 lg:w-80 
                                 bg-[#1E1E1E] sm:bg-transparent 
                                 z-20 sm:z-auto
                                 overflow-y-auto
@@ -380,8 +310,4 @@ export default function MeetingInterface({ params }: MeetingProps) {
             </StreamCall>
         </StreamTheme>
     );
-}
-
-function useCallCallingState() {
-    throw new Error("Function not implemented.");
 }
