@@ -9,29 +9,31 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     const router = useRouter();
     const pathname = usePathname();
 
-   const handleAuth = useCallback(() => {
-       if (!storeUser.isLoggedIn) {
-           if (pathname.startsWith("/pod")) {
-               console.log("User not logged in, attempting to access pod page. Redirecting to home page");
-               router.push("/");
-           }
-       } else {
-           if (pathname === "/") {
-               console.log("Logged in user on home page, redirecting to pod page");
-               const pendingSessionCode = localStorage.getItem("pendingSessionCode");
-               if (pendingSessionCode) {
-                   localStorage.removeItem("pendingSessionCode");
-                   router.push(`/pod/join/${pendingSessionCode}`);
-               } else {
-                   router.push("/pod");
-               }
-           }
-       }
-   }, [storeUser.isLoggedIn, router, pathname]);
+    const handleAuth = useCallback(() => {
+        console.log("AuthProvider handleAuth");
+        console.log({ storeUser, pathname });
+        if (!storeUser.isLoggedIn) {
+            if (pathname.startsWith("/pod") && !pathname.startsWith("/pod/join")) {
+                console.log("User not logged in, attempting to access protected pod page. Redirecting to home page");
+                router.push("/");
+            }
+        } else {
+            if (pathname === "/") {
+                console.log("Logged in user on home page, redirecting to pod page");
+                const pendingSessionCode = localStorage.getItem("pendingSessionCode");
+                if (pendingSessionCode) {
+                    localStorage.removeItem("pendingSessionCode");
+                    router.push(`/pod/join/${pendingSessionCode}`);
+                } else {
+                    router.push("/pod");
+                }
+            }
+        }
+    }, [storeUser.isLoggedIn, router, pathname]);
 
-   useEffect(() => {
-       handleAuth();
-   }, [handleAuth]);
+    useEffect(() => {
+        handleAuth();
+    }, [handleAuth]);
 
     return <>{children}</>;
 }
