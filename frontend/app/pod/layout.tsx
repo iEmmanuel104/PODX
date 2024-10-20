@@ -25,15 +25,15 @@ function LayoutContent({ children, params }: LayoutProps) {
     // Validate meetingId format if it exists
     const isValidMeetingId = meetingId ? /^[a-z]{3}-[a-z]{4}-[a-z]{3}$/.test(meetingId) : true;
 
-    // If we're not already on the /pod page and there's no valid meeting ID, redirect to /pod
-    if (pathname !== "/pod" && !isValidMeetingId) {
-        console.log("Redirecting to /pod since meetingId is invalid");
+    // If we're not on the /pod page, not on the /pod/join page, and there's no valid meeting ID, redirect to /pod
+    if (pathname !== "/pod" && !pathname.startsWith("/pod/join") && !isValidMeetingId) {
+        console.log("Redirecting to /pod since meetingId is invalid and not on join page");
         router.push("/pod");
         return null; // Return null to prevent rendering while redirecting
     }
 
-    // If there's an invalid meeting ID, render without it
-    if (meetingId && !isValidMeetingId) {
+    // If there's an invalid meeting ID and we're not on the join page, render without it
+    if (meetingId && !isValidMeetingId && !pathname.startsWith("/pod/join")) {
         console.error("Invalid meeting ID format");
         return <MeetProvider>{children}</MeetProvider>;
     }
@@ -43,7 +43,13 @@ function LayoutContent({ children, params }: LayoutProps) {
 
 export default function Layout(props: LayoutProps) {
     return (
-        <Suspense fallback={<div className="h-screen w-screen bg-[#121212]"><LoadingOverlay text="Preparing your session..." /> </div>}>
+        <Suspense
+            fallback={
+                <div className="h-screen w-screen bg-[#121212]">
+                    <LoadingOverlay text="Preparing your session..." />{" "}
+                </div>
+            }
+        >
             <LayoutContent {...props} />
         </Suspense>
     );
