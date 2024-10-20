@@ -21,9 +21,9 @@ import {
 import "@stream-io/video-react-sdk/dist/css/styles.css";
 import { useRouter } from "next/navigation";
 import { useBalance } from "wagmi";
-import { usePrivy } from "@privy-io/react-auth";
 import { useSendTransaction } from "@privy-io/react-auth";
 import { isAddress, parseEther } from "ethers";
+import { useAppSelector } from "@/store/hooks";
 
 interface MeetingProps {
     params: {
@@ -53,8 +53,8 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const [joinRequests, setJoinRequests] = useState<string[]>([]);
     const [speakRequests, setSpeakRequests] = useState<string[]>([]);
     const [showSidebar, setShowSidebar] = useState(false);
-    const { user } = usePrivy();
-    const userAddress = user?.wallet?.address as `0x${string}`;
+    const { user } = useAppSelector((state) => state.user);
+    const userAddress = user?.walletAddress as `0x${string}`;
 
     // Sending the transaction
     const { sendTransaction } = useSendTransaction({
