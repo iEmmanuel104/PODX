@@ -27,7 +27,7 @@ function LayoutContent({ children, params }: LayoutProps) {
 
     // If we're not already on the /pod page and there's no valid meeting ID, redirect to /pod
     if (pathname !== "/pod" && !isValidMeetingId) {
-        console.log("Redirecting to /pod");
+        console.log("Redirecting to /pod since meetingId is invalid");
         router.push("/pod");
         return null; // Return null to prevent rendering while redirecting
     }

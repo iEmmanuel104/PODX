@@ -9,7 +9,6 @@ import { STREAM_API_KEY } from "@/constants";
 import { LoadingOverlay } from "@/components/ui/loading";
 import { useStreamTokenProvider } from "@/hooks/useStreamTokenProvider";
 import { useRouter } from "next/navigation";
-import { usePrivy } from "@privy-io/react-auth";
 
 export const CALL_TYPE = "default";
 export const API_KEY = STREAM_API_KEY as string;
@@ -27,7 +26,6 @@ const SimpleMeetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
 const StreamMeetProvider: React.FC<{ meetingId: string; children: React.ReactNode; language: string }> = ({ meetingId, children, language }) => {
     const { user: appUser, isLoggedIn } = useAppSelector((state) => state.user);
-    const { user: privyUser } = usePrivy();
     const [loading, setLoading] = useState(true);
     const chatClientRef = useRef<StreamChat>();
     const videoClientRef = useRef<StreamVideoClient>();
@@ -81,7 +79,7 @@ const StreamMeetProvider: React.FC<{ meetingId: string; children: React.ReactNod
     useEffect(() => {
         console.log("MeetProvider mounted");
         const setupClients = async () => {
-            if (isLoggedIn && appUser && privyUser) {
+            if (isLoggedIn && appUser) {
                 console.log("Setting up clients for found user:", appUser);
                 try {
                     const token = await tokenProvider(appUser.walletAddress);
@@ -108,7 +106,7 @@ const StreamMeetProvider: React.FC<{ meetingId: string; children: React.ReactNod
             chatClientRef.current?.disconnectUser();
             videoClientRef.current?.disconnectUser();
         };
-    }, [isLoggedIn, appUser, privyUser, tokenProvider, connectChatClient, connectVideoClient, router, meetingId]);
+    }, [isLoggedIn, appUser, tokenProvider, connectChatClient, connectVideoClient, router, meetingId]);
 
     if (loading || !chatClientRef.current || !videoClientRef.current || !callRef.current) {
         return (
