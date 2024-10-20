@@ -90,7 +90,7 @@ const ParticipantsSidebar: React.FC<ParticipantsSidebarProps> = ({
                         />
                     </div>
                 </div>
-                {isHovered && (
+                {isHovered && isHostOrCohost && !isCurrentUser && (
                     <button
                         className="absolute right-2 top-2 bg-[#7C3AED] text-white p-1 rounded-full hover:bg-[#6D28D9] transition-colors"
                         onClick={() => openTipModal(participant)}
