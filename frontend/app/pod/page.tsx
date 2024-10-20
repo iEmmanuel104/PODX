@@ -70,7 +70,7 @@ export default function PodPage() {
         async (title: string, type: "Audio Session" | "Video Session") => {
             setNewMeeting(true);
             const newSessionCode = getMeetingId();
-            setInviteLink(`https://podx-pi.vercel.app/pod/${newSessionCode}`);
+            setInviteLink(`https://podx.fun/pod/${newSessionCode}`);
             setSessionCode(newSessionCode);
             dispatch(setSessionInfo({ title, type, sessionId: newSessionCode }));
             closeCreateModal();
