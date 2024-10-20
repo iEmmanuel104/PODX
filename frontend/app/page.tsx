@@ -4,13 +4,26 @@ import { useState, useEffect } from "react";
 import { Wallet } from "lucide-react";
 import { usePrivy } from "@privy-io/react-auth";
 import Logo from "@/components/ui/logo";
-import { useAppDispatch } from "@/store/hooks";
-import { logOut } from "@/store/slices/userSlice";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { logOut, setUser, setSignature } from "@/store/slices/userSlice";
+import { useFindOrCreateUserMutation } from "@/store/api/userApi";
+import { useRouter } from "next/navigation";
+import { LoadingOverlay } from "@/components/ui/loading";
 
 export default function Home() {
     const dispatch = useAppDispatch();
     const [isConnecting, setIsConnecting] = useState(false);
-    const { login, logout} = usePrivy();
+    const [isAuthenticating, setIsAuthenticating] = useState(false);
+    const { login, logout, ready, authenticated, user: privyUser } = usePrivy();
+    const [findOrCreateUser] = useFindOrCreateUserMutation();
+    const router = useRouter();
+    const storeUser = useAppSelector((state) => state.user);
+
+    useEffect(() => {
+        if (ready && authenticated && privyUser && !storeUser.isLoggedIn) {
+            handleAuthenticatedUser();
+        }
+    }, [ready, authenticated, privyUser, storeUser.isLoggedIn]);
 
     const handleConnect = async () => {
         setIsConnecting(true);
@@ -26,13 +39,72 @@ export default function Home() {
         }
     };
 
+    const handleAuthenticatedUser = async () => {
+        setIsAuthenticating(true);
+        try {
+            const smartWallet = privyUser?.smartWallet || privyUser?.linkedAccounts.find((account) => account.type === "smart_wallet");
+            const walletAddress = smartWallet?.address || privyUser?.wallet?.address;
+
+            if (!walletAddress) throw new Error("No wallet address found");
+
+            const result = await findOrCreateUser({ walletAddress, hash: true }).unwrap();
+            if (result.data) {
+                dispatch(setUser(result.data));
+                if (result.data.signature) {
+                    dispatch(setSignature(result.data.signature));
+                }
+            }
+
+            // Check for pending session code
+            const pendingSessionCode = localStorage.getItem("pendingSessionCode");
+            if (pendingSessionCode) {
+                console.log("Redirecting to pending session");
+                localStorage.removeItem("pendingSessionCode");
+                router.push(`/pod/join/${pendingSessionCode}`);
+            } else {
+                router.push("/pod");
+            }
+        } catch (error) {
+            console.error("Error handling authenticated user:", error);
+            logout();
+            dispatch(logOut());
+        } finally {
+            setIsAuthenticating(false);
+        }
+    };
+
+    if (!ready) {
+        return (
+            <div className="h-screen w-screen bg-[#121212]">
+                <LoadingOverlay text="Initializing..." />
+            </div>
+        );
+    }
+
+    if (isAuthenticating) {
+        return (
+            <div className="h-screen w-screen bg-[#121212]">
+                <LoadingOverlay text="Authenticating..." />
+            </div>
+        );
+    }
+
+    if (storeUser.isLoggedIn) {
+        const pendingSessionCode = localStorage.getItem("pendingSessionCode");
+        if (pendingSessionCode) {
+            localStorage.removeItem("pendingSessionCode");
+            router.push(`/pod/join/${pendingSessionCode}`);
+        } else {
+            router.push("/pod");
+        }
+        return null;
+    }
+
     return (
         <div className="min-h-screen bg-[#121212] text-white flex flex-col items-center justify-center p-4">
             <div className="w-full max-w-md flex flex-col items-center">
                 <Logo />
-
                 <p className="text-xl text-center mb-12">Connect onchain to a world of decentralized applications.</p>
-
                 <div className="w-full space-y-4">
                     <button
                         className="w-full py-3 px-4 rounded-md flex items-center justify-center transition-colors bg-[#6032f6] hover:bg-[#3C3C3C] disabled:opacity-50 disabled:cursor-not-allowed"

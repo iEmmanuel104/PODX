@@ -136,13 +136,8 @@ export default function PodPage() {
 
     const openUsernameModal = () => setShowUsernameModal(true);
 
-    if (!isLoggedIn || !user) {
-        router.push("/");
-        return null;
-    }
-
-    const displayName = user.username || `${user.walletAddress.slice(0, 6)}...${user.walletAddress.slice(-4)}`;
-    const initials = user.username ? user.username.slice(0, 2).toUpperCase() : user.walletAddress.slice(0, 2).toUpperCase();
+    const displayName = user?.username || `${user?.walletAddress.slice(0, 6)}...${user?.walletAddress.slice(-4)}`;
+    const initials = user?.username ? user?.username.slice(0, 2).toUpperCase() : user?.walletAddress.slice(0, 2).toUpperCase();
 
     return (
         <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4 relative">
