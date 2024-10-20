@@ -2,13 +2,15 @@ import { Button } from "@/components/ui/button"
 import { LogOut } from "lucide-react"
 import Logo from "../ui/logo"
 import { Modal } from "./tips";
+import { UserInfo } from "@/store/api/userApi";
 
 
 interface EndScreenProps {
     onClose: () => void;
+    user: UserInfo | null
 }
 
-export default function EndScreen({ onClose }: EndScreenProps) {
+export default function EndScreen({ onClose, user }: EndScreenProps) {
     return (
         <Modal>
             <div className="flex flex-col items-center justify-between h-full text-white p-8">
@@ -28,7 +30,7 @@ export default function EndScreen({ onClose }: EndScreenProps) {
                         <div className="w-6 h-6 rounded-full bg-[#6032f6] flex items-center justify-center text-xs font-bold mr-2">
                             F
                         </div>
-                        <span className="text-gray-400">folajindayo.base.eth</span>
+                        <span className="text-gray-400">{user?.username}</span>
                     </div>
                     <button
                         onClick={onClose}

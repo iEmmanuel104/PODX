@@ -346,7 +346,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                         />
                     )}
 
-                    {showThankYouModal && <EndScreen onClose={confirmLeave} />}
+                    {showThankYouModal && <EndScreen onClose={confirmLeave} user={user}/>}
 
                     <Notifications
                         joinRequests={joinRequests}
