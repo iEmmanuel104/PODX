@@ -184,14 +184,6 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
         }
     }, [joining, participants]);
 
-<<<<<<< HEAD
-=======
-    if (errorFetchingMeeting) {
-        router.push('/pod');
-        return null;
-    }
-
->>>>>>> 8deae656fc6f30d798365274b64f1337f9909459
     const renderContent = () => {
         if (loading) {
             return (

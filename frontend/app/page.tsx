@@ -6,6 +6,7 @@ import { usePrivy } from "@privy-io/react-auth";
 import Logo from "@/components/ui/logo";
 import { useAppDispatch } from "@/store/hooks";
 import { logOut } from "@/store/slices/userSlice";
+import toast from "react-hot-toast";
 
 export default function Home() {
     const dispatch = useAppDispatch();
@@ -20,7 +21,7 @@ export default function Home() {
             await login();
         } catch (error) {
             console.error("Error connecting wallet:", error);
-            // Handle error (e.g., show error message to user)
+            toast.error("Error connecting wallet:")
         } finally {
             setIsConnecting(false);
         }
