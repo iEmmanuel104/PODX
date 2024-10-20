@@ -21,9 +21,10 @@ interface TipModalProps {
     setTipAmount: (amount: string) => void
     handleTip: () => void
     onCancel: () => void
+    balance: string
 }
 
-const TipModal: React.FC<TipModalProps> = ({ selectedTipRecipient, tipAmount, setTipAmount, handleTip, walletAddress, onCancel }) => {
+const TipModal: React.FC<TipModalProps> = ({ selectedTipRecipient, tipAmount, setTipAmount, handleTip, walletAddress, onCancel, balance }) => {
     // const walletAddress = selectedTipRecipient?.custom?.fields?.walletAddress?.kind?.stringValue;
     console.log({ walletAddress })
 
@@ -52,7 +53,7 @@ const TipModal: React.FC<TipModalProps> = ({ selectedTipRecipient, tipAmount, se
                 Cancel
             </button>
         </div>
-        <p className="text-[#A3A3A3]">Balance: {walletAddress} ETH</p>
+        <p className="text-[#A3A3A3]">Balance: {balance} ETH</p>
     </Modal>
 }
 

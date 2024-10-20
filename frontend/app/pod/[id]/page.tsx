@@ -25,6 +25,7 @@ import { useSendTransaction } from "@privy-io/react-auth";
 import { isAddress, parseEther } from "ethers";
 import { useAppSelector } from "@/store/hooks";
 import { StreamVideoParticipant } from "@stream-io/video-react-sdk";
+import { useWallets } from '@privy-io/react-auth';
 
 interface MeetingProps {
     params: {
@@ -69,7 +70,49 @@ export default function MeetingInterface({ params }: MeetingProps) {
         },
     });
 
-    const sendETH = async (recipient: string, amount: string) => {
+    const { wallets } = useWallets();
+    const wallet = wallets[0];
+    const walletClientType = wallet.walletClientType;
+    const isEmbeddedWallet = walletClientType === 'privy';
+
+    const sendETHExternal = async (recipient: string, amount: string) => {
+        console.log("external wallet tipping flow")
+        try {
+            console.log("recipient address", recipient);
+            if (!isAddress(recipient)) {
+                throw new Error("Invalid recipient address");
+            }
+            const parsedAmount = parseEther(amount.toString());
+
+            if (wallets.length === 0) {
+                throw new Error("No wallet connected");
+            }
+
+            const wallet = wallets[0]; // Use the first connected wallet
+            const provider = await wallet.getEthereumProvider();
+
+            console.log(recipient, provider)
+            const transactionRequest = {
+                to: recipient,
+                value: parsedAmount.toString(16), // Convert to hex string
+                gasLimit: '0x5208', // 21000 in hex
+            };
+
+            const transactionHash = await provider.request({
+                method: 'eth_sendTransaction',
+                params: [transactionRequest],
+            });
+
+            console.log("Transaction hash:", transactionHash);
+            setShowTipSuccess(true);
+            setTimeout(() => setShowTipSuccess(false), 3000);
+        } catch (error) {
+            console.error("Error sending ETH:", error);
+        }
+    };
+
+    const sendETHEmbedded = async (recipient: string, amount: string) => {
+        console.log("embedded tipping flow")
         try {
             console.log("recipient address", recipient)
             // Validate recipient address
@@ -88,6 +131,14 @@ export default function MeetingInterface({ params }: MeetingProps) {
             console.error("Error sending ETH:", error);
         }
     };
+
+    const sendETH =  async (recipient: string, amount: string) => {
+        if (isEmbeddedWallet){
+            sendETHEmbedded(recipient, amount)
+        } else {
+            sendETHExternal(recipient, amount)
+        }
+    }
 
     const {
         data: balance,
@@ -264,6 +315,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                             setTipAmount={setTipAmount}
                             handleTip={handleTip}
                             onCancel={handleCancelTip}
+                            balance={displayBalance}
                         />
                     )}
 
