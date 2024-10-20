@@ -93,7 +93,6 @@ export default function PodPage() {
 
         try {
             const response: GetCallResponse = await call.get();
-            console.log({ responseCallFound: response });
             if (response.call && meetingCode === response.call.custom.sessionId) {
                 dispatch(
                     setSessionInfo({
@@ -216,13 +215,7 @@ export default function PodPage() {
             </button>
 
             <CreateSessionModal isOpen={isCreateModalOpen} onClose={closeCreateModal} onCreateSession={handleCreateSession} />
-            <CreatedSessionModal
-                isOpen={isCreatedModalOpen}
-                onClose={closeCreatedModal}
-                inviteLink={inviteLink}
-                sessionCode={sessionCode}
-                onJoinSession={handleJoinCreatedSession}
-            />
+            <CreatedSessionModal isOpen={isCreatedModalOpen} onClose={closeCreatedModal} inviteLink={inviteLink} sessionCode={sessionCode} />
             {user && (
                 <UserInfoModal
                     isOpen={showUsernameModal}
