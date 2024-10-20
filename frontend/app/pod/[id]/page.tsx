@@ -23,7 +23,7 @@ import { useRouter } from "next/navigation";
 import { useBalance } from "wagmi";
 import { usePrivy } from "@privy-io/react-auth";
 import { useSendTransaction } from "@privy-io/react-auth";
-import { parseUnits, Interface, isAddress, parseEther } from "ethers";
+import { isAddress, parseEther } from "ethers";
 
 interface MeetingProps {
     params: {
@@ -33,7 +33,6 @@ interface MeetingProps {
 
 export default function MeetingInterface({ params }: MeetingProps) {
     const call = useCall();
-
     const { id } = params;
     const router = useRouter();
     const { useParticipants, useCallMembers, useIsCallLive, useCallCustomData, useHasOngoingScreenShare, useCallCallingState } = useCallStateHooks();
@@ -54,10 +53,8 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const [joinRequests, setJoinRequests] = useState<string[]>([]);
     const [speakRequests, setSpeakRequests] = useState<string[]>([]);
     const [showSidebar, setShowSidebar] = useState(false);
-    const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
     const { user } = usePrivy();
-    const userAddress = user?.wallet?.address as "0x${string}";
-    const [showTipButton, setShowTipButton] = useState(false);
+    const userAddress = user?.wallet?.address as `0x${string}`;
 
     // Sending the transaction
     const { sendTransaction } = useSendTransaction({
@@ -77,17 +74,13 @@ export default function MeetingInterface({ params }: MeetingProps) {
             if (!isAddress(recipient)) {
                 throw new Error("Invalid recipient address");
             }
-
-            // Convert amount to smallest unit (ETH uses 18 decimals)
-            const parsedAmount = parseEther(amount.toString()); // This converts the amount to wei
-
+            const parsedAmount = parseEther(amount.toString());
             const tx = await sendTransaction({
-                chainId: 8453, // Chain ID for Base mainnet
-                to: recipient, // ETH recipient address
-                value: parsedAmount, // ETH value in wei, converted to hex
-                gasLimit: 21000, // Typical gas limit for ETH transfer
+                chainId: 8453,
+                to: recipient,
+                value: parsedAmount,
+                gasLimit: 21000,
             });
-
             console.log("Transaction receipt:", tx);
         } catch (error) {
             console.error("Error sending ETH:", error);
@@ -149,7 +142,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
         if (connectedUser && live && callingState !== CallingState.JOINED) {
             handleJoinSession();
         }
-    }, [connectedUser, live, callingState, handleJoinSession, user, router]);
+    }, [connectedUser, live, callingState, handleJoinSession]);
 
     const handleTip = async () => {
         if (selectedTipRecipient && tipAmount) {
@@ -203,10 +196,6 @@ export default function MeetingInterface({ params }: MeetingProps) {
         setShowSidebar(!showSidebar);
     };
 
-    const toggleProfileDropdown = () => {
-        setIsProfileDropdownOpen(!isProfileDropdownOpen);
-    };
-
     const handleLogout = () => {
         // Implement logout logic here
     };
@@ -219,6 +208,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
         <StreamTheme className="root-theme">
             <StreamCall call={call}>
                 <div className="h-screen bg-[#121212] text-white flex flex-col">
+                    {/* Header Title */}
                     <Header
                         customData={customData}
                         live={live}
@@ -226,42 +216,21 @@ export default function MeetingInterface({ params }: MeetingProps) {
                         displayBalance={displayBalance}
                         balanceSymbol={balance?.symbol}
                         toggleSidebar={toggleSidebar}
-                        toggleProfileDropdown={toggleProfileDropdown}
-                        isProfileDropdownOpen={isProfileDropdownOpen}
                         handleLogout={handleLogout}
                         copyAddress={copyAddress}
                     />
 
-                    {/** Main content */}
-                    <div className="flex-grow flex overflow-hidden relative w-[95%] sm:w-[90%] mx-auto">
-                        <div className="flex-1 relative">
-                            <div
-                                className="w-full h-full hover:cursor-pointer"
-                                onMouseEnter={() => setShowTipButton(true)}
-                                onMouseLeave={() => setShowTipButton(false)}
-                            >
-                                {isSpeakerView ? <SpeakerLayout /> : <PaginatedGridLayout />}
-                                {showTipButton && (
-                                    <button
-                                        className="absolute top-4 right-4 sm:right-8 bg-violet-500 text-white px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm rounded-full flex items-center"
-                                        onClick={() => openTipModal(connectedUser?.id || "")}
-                                    >
-                                        <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                                        Tip
-                                    </button>
-                                )}
-                            </div>
-                        </div>
+                    <div className="flex-grow flex overflow-hidden relative w-full px-2 sm:px-4">
+                        <div className="flex-1 relative">{isSpeakerView ? <SpeakerLayout /> : <PaginatedGridLayout />}</div>
                         <div
                             className={`
-                                ${showSidebar ? "translate-x-0" : "translate-x-full sm:translate-x-0"} 
+                                ${showSidebar ? "translate-y-0" : "translate-y-full sm:translate-y-0"} 
                                 transition-transform duration-300 ease-in-out
-                                fixed sm:relative inset-y-0 right-0 
-                                w-64 sm:w-64 lg:w-80 
+                                fixed sm:relative inset-0 sm:inset-auto top-16 sm:top-0 
+                                h-screen sm:h-full w-full sm:w-56 lg:w-64 xl:w-80 
                                 bg-[#1E1E1E] sm:bg-transparent 
                                 z-20 sm:z-auto
                                 overflow-y-auto
-                                sm:ml-4
                             `}
                         >
                             <ParticipantsSidebar
@@ -274,7 +243,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                         </div>
                     </div>
 
-                    {/** Footer controls */}
+                    {/* Footer controls */}
                     <footer className="bg-[#1E1E1E] p-2 sm:p-4 flex justify-center items-center gap-2 sm:gap-4 h-16 sm:h-20">
                         <CallControls onLeave={handleLeave} />
                     </footer>
@@ -301,7 +270,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                     />
 
                     {showTipSuccess && (
-                        <div className="fixed bottom-4 right-4 bg-green-500 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-md flex items-center text-xs sm:text-sm">
+                        <div className="fixed bottom-4 right-4 bg-green-500 text-white px-3 sm:px-4 py-2 rounded-md flex items-center text-xs sm:text-sm">
                             <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                             You successfully tipped {selectedTipRecipient} {tipAmount} USDC
                         </div>
