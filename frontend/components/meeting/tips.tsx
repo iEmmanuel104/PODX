@@ -1,3 +1,6 @@
+import React from 'react'
+import { DollarSign } from 'lucide-react'
+import { StreamVideoParticipant } from "@stream-io/video-react-sdk";
 
 interface ModalProps {
     children: React.ReactNode
@@ -12,16 +15,21 @@ export const Modal: React.FC<ModalProps> = ({ children }) => (
 )
 
 interface TipModalProps {
-    selectedTipRecipient: string | null
+    selectedTipRecipient: StreamVideoParticipant | null
     tipAmount: string
+    walletAddress: string
     setTipAmount: (amount: string) => void
     handleTip: () => void
 }
 
-const TipModal: React.FC<TipModalProps> = ({ selectedTipRecipient, tipAmount, setTipAmount, handleTip }) => (
-    <Modal>
+const TipModal: React.FC<TipModalProps> = ({ selectedTipRecipient, tipAmount, setTipAmount, handleTip, walletAddress }) => {
+    // const walletAddress = selectedTipRecipient?.custom?.fields?.walletAddress?.kind?.stringValue;
+    console.log({ walletAddress })
+
+    return <Modal>
         <h2 className="text-2xl font-bold mb-4">Tip</h2>
-        <p className="mb-4">{selectedTipRecipient}</p>
+        <p className="mb-4">{selectedTipRecipient?.name || walletAddress}</p>
+        <p className="mb-4 text-sm text-gray-400">Address: {walletAddress}</p>
         <div className="flex mb-4">
             <input
                 type="text"
@@ -39,6 +47,6 @@ const TipModal: React.FC<TipModalProps> = ({ selectedTipRecipient, tipAmount, se
         </div>
         <p className="text-[#A3A3A3]">Balance: 100 ETH</p>
     </Modal>
-)
+}
 
 export default TipModal

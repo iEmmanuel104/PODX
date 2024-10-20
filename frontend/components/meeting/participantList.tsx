@@ -5,7 +5,7 @@ import { StreamVideoParticipant, OwnUserResponse } from "@stream-io/video-react-
 interface ParticipantsSidebarProps {
     participants: StreamVideoParticipant[];
     currentUser: OwnUserResponse | undefined;
-    openTipModal: (name: string) => void;
+    openTipModal: (participant: StreamVideoParticipant) => void;
     updateParticipantRole: (userId: string, newRole: string) => void;
     handleJoinRequest: (userId: string, accept: boolean) => void;
 }
@@ -32,24 +32,27 @@ const ParticipantsSidebar: React.FC<ParticipantsSidebarProps> = ({
     }, [participants]);
 
     const ParticipantItem: React.FC<{ participant: StreamVideoParticipant }> = ({ participant }) => {
+        const [isHovered, setIsHovered] = useState(false);
         const isCurrentUser = participant.userId === currentUser?.id;
         const role = participant.roles.includes("host")
             ? "host"
             : participant.roles.includes("cohost")
-            ? "cohost"
-            : participant.roles.includes("user")
-            ? "user"
-            : "listener";
+                ? "cohost"
+                : participant.roles.includes("user")
+                    ? "user"
+                    : "listener";
 
-        const isHost = role === "host";
-        const isCohost = role === "cohost";
-        const canPromote = (currentUser?.role.includes("host") || currentUser?.role.includes("cohost")) && !isHost && !isCohost;
+        const isHostOrCohost = role === "host" || role === "cohost";
 
         const isAudioActive = participant.publishedTracks.includes(1);
         const isVideoActive = participant.publishedTracks.includes(2);
 
         return (
-            <div className="bg-[#2C2C2C] rounded-lg hover:bg-[#3C3C3C] transition-colors duration-200">
+            <div
+                className="bg-[#2C2C2C] rounded-lg hover:bg-[#3C3C3C] transition-colors duration-200 relative"
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+            >
                 <div className="flex items-center justify-between py-2 px-3 sm:py-3 sm:px-4">
                     <div className="flex items-center">
                         <div className="flex flex-col">
@@ -62,9 +65,8 @@ const ParticipantsSidebar: React.FC<ParticipantsSidebarProps> = ({
                     </div>
                     <div className="flex items-center">
                         <div
-                            className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center ${
-                                isAudioActive ? "bg-[#7C3AED]" : "bg-red-500"
-                            }`}
+                            className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center ${isAudioActive ? "bg-[#7C3AED]" : "bg-red-500"
+                                }`}
                         >
                             {isAudioActive ? (
                                 <Mic className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
@@ -73,9 +75,8 @@ const ParticipantsSidebar: React.FC<ParticipantsSidebarProps> = ({
                             )}
                         </div>
                         <div
-                            className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center ml-1 sm:ml-2 ${
-                                isVideoActive ? "bg-[#7C3AED]" : "bg-red-500"
-                            }`}
+                            className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center ml-1 sm:ml-2 ${isVideoActive ? "bg-[#7C3AED]" : "bg-red-500"
+                                }`}
                         >
                             {isVideoActive ? (
                                 <Video className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
@@ -89,16 +90,26 @@ const ParticipantsSidebar: React.FC<ParticipantsSidebarProps> = ({
                         />
                     </div>
                 </div>
+                {isHovered && (
+                    <button
+                        className="absolute right-2 top-2 bg-[#7C3AED] text-white p-1 rounded-full hover:bg-[#6D28D9] transition-colors"
+                        onClick={() => openTipModal(participant)}
+                    >
+                        <DollarSign className="w-4 h-4" />
+                    </button>
+                )}
                 {expandedParticipant === participant.userId && !isCurrentUser && (
                     <div className="bg-[#3C3C3C] p-2 rounded-b-lg">
-                        <button
-                            className="w-full text-left text-white text-xs sm:text-sm py-1 px-2 hover:bg-[#4C4C4C] rounded flex items-center"
-                            onClick={() => openTipModal(participant.name || participant.userId)}
-                        >
-                            <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 mr-2 text-green-500" />
-                            Tip
-                        </button>
-                        {canPromote && (
+                        {isHostOrCohost && (
+                            <button
+                                className="w-full text-left text-white text-xs sm:text-sm py-1 px-2 hover:bg-[#4C4C4C] rounded flex items-center"
+                                onClick={() => openTipModal(participant)}
+                            >
+                                <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 mr-2 text-green-500" />
+                                Tip
+                            </button>
+                        )}
+                        {currentUser?.role.includes("host") || currentUser?.role.includes("cohost") && role !== "host" && role !== "cohost" && (
                             <button
                                 className="w-full text-left text-white text-xs sm:text-sm py-1 px-2 hover:bg-[#4C4C4C] rounded"
                                 onClick={() => updateParticipantRole(participant.userId, "cohost")}

@@ -24,6 +24,7 @@ import { useBalance } from "wagmi";
 import { useSendTransaction } from "@privy-io/react-auth";
 import { isAddress, parseEther } from "ethers";
 import { useAppSelector } from "@/store/hooks";
+import { StreamVideoParticipant } from "@stream-io/video-react-sdk";
 
 interface MeetingProps {
     params: {
@@ -48,7 +49,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const [showTipModal, setShowTipModal] = useState(false);
     const [tipAmount, setTipAmount] = useState("");
     const [showTipSuccess, setShowTipSuccess] = useState(false);
-    const [selectedTipRecipient, setSelectedTipRecipient] = useState<string | null>(null);
+    const [selectedTipRecipient, setSelectedTipRecipient] = useState<StreamVideoParticipant | null>(null);
     const [showThankYouModal, setShowThankYouModal] = useState(false);
     const [joinRequests, setJoinRequests] = useState<string[]>([]);
     const [speakRequests, setSpeakRequests] = useState<string[]>([]);
@@ -70,6 +71,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
     const sendETH = async (recipient: string, amount: string) => {
         try {
+            console.log("recipient address", recipient)
             // Validate recipient address
             if (!isAddress(recipient)) {
                 throw new Error("Invalid recipient address");
@@ -146,13 +148,13 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
     const handleTip = async () => {
         if (selectedTipRecipient && tipAmount) {
-            await sendETH("address here" as `0x${string}`, tipAmount);
+            await sendETH((selectedTipRecipient?.custom?.fields?.walletAddress?.kind as any).stringValue, tipAmount);
             setShowTipModal(false);
         }
     };
 
-    const openTipModal = (participantName: string) => {
-        setSelectedTipRecipient(participantName);
+    const openTipModal = (participant: StreamVideoParticipant) => {
+        setSelectedTipRecipient(participant);
         setShowTipModal(true);
     };
 
@@ -248,9 +250,10 @@ export default function MeetingInterface({ params }: MeetingProps) {
                         <CallControls onLeave={handleLeave} />
                     </footer>
 
-                    {showTipModal && (
+                    {showTipModal && selectedTipRecipient && (
                         <TipModal
                             selectedTipRecipient={selectedTipRecipient}
+                            walletAddress={(selectedTipRecipient?.custom?.fields?.walletAddress?.kind as any).stringValue}
                             tipAmount={tipAmount}
                             setTipAmount={setTipAmount}
                             handleTip={handleTip}
@@ -269,10 +272,10 @@ export default function MeetingInterface({ params }: MeetingProps) {
                         callingState={callingState}
                     />
 
-                    {showTipSuccess && (
+                    {showTipSuccess && selectedTipRecipient && (
                         <div className="fixed bottom-4 right-4 bg-green-500 text-white px-3 sm:px-4 py-2 rounded-md flex items-center text-xs sm:text-sm">
                             <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                            You successfully tipped {selectedTipRecipient} {tipAmount} USDC
+                            You successfully tipped {selectedTipRecipient.name || selectedTipRecipient.userId} {tipAmount} ETH
                         </div>
                     )}
                 </div>
