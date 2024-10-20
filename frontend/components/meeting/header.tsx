@@ -3,7 +3,6 @@ import { Menu, ChevronDown, LogOutIcon, Copy, User } from "lucide-react";
 import { Avatar, Identity, Name, Address } from "@coinbase/onchainkit/identity";
 import { base } from "viem/chains";
 import Image from "next/image";
-import Logo from "@/components/ui/logo";
 
 interface HeaderProps {
     customData: Record<string, any>;
@@ -35,13 +34,11 @@ const Header: React.FC<HeaderProps> = ({
     return (
         <header className="flex justify-between items-center px-2 sm:px-4 py-2 bg-[#1d1d1d] rounded-full w-[98%] sm:w-[95%] mx-auto my-1 sm:my-2">
             <div className="flex items-center justify-between gap-1 sm:gap-2">
-                <Logo />
-                <p
-                    className="text-xs sm:text-sm mr-1 sm:mr-2 w-24 sm:w-full sm:text-center truncate"
-                >
-                    {customData.title}
-                </p>
-                <p className="bg-red-500 text-[10px] sm:text-xs px-1 sm:px-2 py-0.5 rounded-full">{live ? "Live" : "Offline"}</p>
+                <div className="relative w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 flex-shrink-0">
+                    <Image src="/logo.png" layout="fill" objectFit="contain" alt="Podx" className="p-0.5 sm:p-1" />
+                </div>
+                <p className="text-xs sm:text-sm md:text-base mr-1 sm:mr-2 w-24 sm:w-full sm:text-center truncate">{customData.title}</p>
+                <p className="bg-red-500 text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 py-0.5 rounded-full">{live ? "Live" : "Offline"}</p>
             </div>
             <div className="flex items-center">
                 <div className="relative">
