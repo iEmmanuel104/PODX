@@ -27,15 +27,9 @@ function LayoutContent({ children, params }: LayoutProps) {
 
     // If we're not on the /pod page, not on the /pod/join page, and there's no valid meeting ID, redirect to /pod
     if (pathname !== "/pod" && !pathname.startsWith("/pod/join") && !isValidMeetingId) {
-        console.log("Redirecting to /pod since meetingId is invalid and not on join page");
+        console.log("Invalid meeting ID and not on join page. Redirecting to /pod");
         router.push("/pod");
-        return null; // Return null to prevent rendering while redirecting
-    }
-
-    // If there's an invalid meeting ID and we're not on the join page, render without it
-    if (meetingId && !isValidMeetingId && !pathname.startsWith("/pod/join")) {
-        console.error("Invalid meeting ID format");
-        return <MeetProvider>{children}</MeetProvider>;
+        return null;
     }
 
     return <MeetProvider meetingId={meetingId}>{children}</MeetProvider>;
