@@ -12,13 +12,13 @@ interface CreatedSessionModalProps {
     onClose: () => void;
     inviteLink: string;
     sessionCode: string;
+    isJoining: boolean;
+    onJoinSession: () => void;
 }
 
-const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClose, inviteLink, sessionCode }) => {
-    const router = useRouter();
+const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClose, inviteLink, sessionCode, isJoining, onJoinSession }) => {
     const [linkCopied, setLinkCopied] = useState(false);
     const [codeCopied, setCodeCopied] = useState(false);
-    const [isJoining, setIsJoining] = useState(false);
     const [isCopyingLink, setIsCopyingLink] = useState(false);
     const [isCopyingCode, setIsCopyingCode] = useState(false);
 
@@ -46,18 +46,6 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClo
             } else {
                 setIsCopyingCode(false);
             }
-        }
-    };
-
-    const handleJoinSession = async () => {
-        setIsJoining(true);
-        try {
-            // Navigate to the join session page
-            router.push(`/pod/join/${sessionCode}`);
-        } catch (error) {
-            console.error("Failed to join session: ", error);
-        } finally {
-            setIsJoining(false);
         }
     };
 
@@ -127,7 +115,7 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClo
                         <p>For the best experience, remind participants to connect their wallet when joining through the session link</p>
                     </div>
                     <Button
-                        onClick={handleJoinSession}
+                        onClick={onJoinSession}
                         variant="default"
                         size="lg"
                         className="w-full bg-[#6032F6] text-white hover:bg-[#4C28C4] transition-all duration-300 ease-in-out mt-4"

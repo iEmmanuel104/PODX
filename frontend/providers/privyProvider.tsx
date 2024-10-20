@@ -47,7 +47,7 @@ export default function PrivyProvider({ children }: { children: React.ReactNode 
                 },
                 defaultChain: base,
                 loginMethods: ["email", "wallet"],
-                supportedChains: [mainnet, sepolia, base, baseGoerli, polygon, polygonMumbai],
+                supportedChains: [base, mainnet, sepolia, baseGoerli, polygon, polygonMumbai],
                 fundingMethodConfig: {
                     moonpay: {
                         useSandbox: true,
