@@ -27,7 +27,6 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
                     if (!storeUser.user || !storeUser.isLoggedIn) {
                         console.log("Authenticating user to get store data");
 
-                        // const smartWallet = privyUser?.smartWallet || privyUser?.linkedAccounts.find((account) => account.type === "smart_wallet");
                         const walletAddress = privyUser?.wallet?.address;
                         const walletClientType = privyUser?.wallet?.walletClientType;
 
