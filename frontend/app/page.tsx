@@ -42,14 +42,18 @@ export default function Home() {
     const handleAuthenticatedUser = async () => {
         setIsAuthenticating(true);
         try {
-            const smartWallet = privyUser?.smartWallet || privyUser?.linkedAccounts.find((account) => account.type === "smart_wallet");
-            const walletAddress = smartWallet?.address || privyUser?.wallet?.address;
+            // const smartWallet = privyUser?.smartWallet || privyUser?.linkedAccounts.find((account) => account.type === "smart_wallet");
+            const walletAddress = privyUser?.wallet?.address;
+            const walletClientType = privyUser?.wallet?.walletClientType;
 
             if (!walletAddress) throw new Error("No wallet address found");
 
             const result = await findOrCreateUser({ walletAddress, hash: true }).unwrap();
             if (result.data) {
-                dispatch(setUser(result.data));
+                dispatch(setUser({
+                    ...result.data,
+                    walletType: walletClientType,
+                }));
                 if (result.data.signature) {
                     dispatch(setSignature(result.data.signature));
                 }
