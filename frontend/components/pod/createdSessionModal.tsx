@@ -5,22 +5,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link, AlertCircle, Check, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface CreatedSessionModalProps {
     isOpen: boolean;
     onClose: () => void;
     inviteLink: string;
     sessionCode: string;
-    onJoinSession: () => Promise<void>;
 }
 
-const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({
-    isOpen,
-    onClose,
-    inviteLink,
-    sessionCode,
-    onJoinSession
-}) => {
+const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClose, inviteLink, sessionCode }) => {
+    const router = useRouter();
     const [linkCopied, setLinkCopied] = useState(false);
     const [codeCopied, setCodeCopied] = useState(false);
     const [isJoining, setIsJoining] = useState(false);
@@ -57,7 +52,8 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({
     const handleJoinSession = async () => {
         setIsJoining(true);
         try {
-            await onJoinSession();
+            // Navigate to the join session page
+            router.push(`/pod/join/${sessionCode}`);
         } catch (error) {
             console.error("Failed to join session: ", error);
         } finally {
