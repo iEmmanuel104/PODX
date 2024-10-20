@@ -151,10 +151,10 @@ export default function MeetingInterface({ params }: MeetingProps) {
     }, [id, callingState, call, connectedUser]);
 
     useEffect(() => {
-        if (connectedUser && live && callingState !== CallingState.JOINED) {
+        if (connectedUser && live && callingState !== CallingState.JOINED && user) {
             handleJoinSession();
         }
-    }, [connectedUser, live, callingState, handleJoinSession]);
+    }, [connectedUser, live, callingState, handleJoinSession, user]);
 
 
 
