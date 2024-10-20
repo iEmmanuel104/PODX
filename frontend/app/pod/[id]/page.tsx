@@ -153,8 +153,11 @@ export default function MeetingInterface({ params }: MeetingProps) {
     useEffect(() => {
         if (connectedUser && live && callingState !== CallingState.JOINED && user) {
             handleJoinSession();
+        } else {
+            console.log("Not joining the call");
+            router.push("/");
         }
-    }, [connectedUser, live, callingState, handleJoinSession, user]);
+    }, [connectedUser, live, callingState, handleJoinSession, user, router]);
 
 
 
