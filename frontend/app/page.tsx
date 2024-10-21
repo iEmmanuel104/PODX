@@ -7,11 +7,19 @@ import Logo from "@/components/ui/logo";
 import { useAppDispatch } from "@/store/hooks";
 import { logOut } from "@/store/slices/userSlice";
 import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
     const dispatch = useAppDispatch();
     const [isConnecting, setIsConnecting] = useState(false);
-    const { login, logout } = usePrivy();
+    const { login, logout, authenticated } = usePrivy();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (authenticated) {
+            router.push("/pod");
+        }
+    }, [authenticated, router]);
 
     const handleConnect = async () => {
         setIsConnecting(true);
@@ -21,7 +29,7 @@ export default function Home() {
             await login();
         } catch (error) {
             console.error("Error connecting wallet:", error);
-            toast.error("Error connecting wallet:")
+            toast.error("Error connecting wallet:");
         } finally {
             setIsConnecting(false);
         }
