@@ -1,5 +1,7 @@
+'use client'
+
 import React, { useState, useMemo } from "react";
-import { ChevronDown, Mic, MicOff, Video, VideoOff, DollarSign } from "lucide-react";
+import { ChevronDown, Mic, MicOff, Video, VideoOff, DollarSign, User2, UsersRound } from "lucide-react";
 import { StreamVideoParticipant, OwnUserResponse } from "@stream-io/video-react-sdk";
 
 interface ParticipantsSidebarProps {
@@ -32,7 +34,6 @@ const ParticipantsSidebar: React.FC<ParticipantsSidebarProps> = ({
     }, [participants]);
 
     const ParticipantItem: React.FC<{ participant: StreamVideoParticipant }> = ({ participant }) => {
-        const [isHovered, setIsHovered] = useState(false);
         const isCurrentUser = participant.userId === currentUser?.id;
         const role = participant.roles.includes("host")
             ? "host"
@@ -50,8 +51,6 @@ const ParticipantsSidebar: React.FC<ParticipantsSidebarProps> = ({
         return (
             <div
                 className="bg-[#2C2C2C] rounded-lg hover:bg-[#3C3C3C] transition-colors duration-200 relative"
-                onMouseEnter={() => setIsHovered(true)}
-                onMouseLeave={() => setIsHovered(false)}
             >
                 <div className="flex items-center justify-between py-2 px-3 sm:py-3 sm:px-4">
                     <div className="flex items-center">
@@ -90,25 +89,21 @@ const ParticipantsSidebar: React.FC<ParticipantsSidebarProps> = ({
                         />
                     </div>
                 </div>
-                {isHovered && isHostOrCohost && !isCurrentUser && (
-                    <button
-                        className="absolute right-2 top-2 bg-[#7C3AED] text-white p-1 rounded-full hover:bg-[#6D28D9] transition-colors"
-                        onClick={() => openTipModal(participant)}
-                    >
-                        <DollarSign className="w-4 h-4" />
-                    </button>
-                )}
                 {expandedParticipant === participant.userId && !isCurrentUser && (
-                    <div className="bg-[#3C3C3C] p-2 rounded-b-lg">
+                    <div className="flex justify-between p-2 rounded-b-lg">
                         {isHostOrCohost && (
                             <button
-                                className="w-full text-left text-white text-xs sm:text-sm py-1 px-2 hover:bg-[#4C4C4C] rounded flex items-center"
+                                className="text-left text-white text-xs sm:text-sm py-0 px-4 bg-[#6032F6] rounded-full hover:bg-[#4C4C4C] flex items-center"
                                 onClick={() => openTipModal(participant)}
                             >
-                                <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 mr-2 text-green-500" />
-                                Tip
+                                <DollarSign className="w-3 h-3 sm:w-4 sm:h-4" />
+                                Tip user
                             </button>
                         )}
+                        <div className="bg-[#383838] flex items-center rounded-full px-3 py-1.5 gap-2">
+                            <UsersRound className="text-yellow-500 h-6 w-6"/>
+                            Request co-host
+                        </div>
                         {currentUser?.role.includes("host") || currentUser?.role.includes("cohost") && role !== "host" && role !== "cohost" && (
                             <button
                                 className="w-full text-left text-white text-xs sm:text-sm py-1 px-2 hover:bg-[#4C4C4C] rounded"

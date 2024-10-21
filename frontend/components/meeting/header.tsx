@@ -1,18 +1,27 @@
-import React, { useState } from "react";
-import { Menu, ChevronDown, LogOutIcon, Copy, User } from "lucide-react";
-import { Avatar, Identity, Name, Address } from "@coinbase/onchainkit/identity";
-import { base } from "viem/chains";
-import Image from "next/image";
+import React from "react"
+import { Menu, Copy, User, ArrowUp } from "lucide-react"
+import Image from "next/image"
+import { Button } from "@/components/ui/button"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 interface HeaderProps {
-    customData: Record<string, any>;
-    live: boolean;
-    userAddress: `0x${string}`;
-    displayBalance: string;
-    balanceSymbol: string | undefined;
-    toggleSidebar: () => void;
-    handleLogout: () => void;
-    copyAddress: () => void;
+    customData: Record<string, any>
+    live: boolean
+    userAddress: `0x${string}`
+    displayBalance: string
+    balanceSymbol: string | undefined
+    toggleSidebar: () => void
+    handleLogout: () => void
+    copyAddress: () => void
+}
+
+const truncateAddress = (address: string) => {
+    return `${address.slice(0, 6)}...${address.slice(-4)}`
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -25,11 +34,11 @@ const Header: React.FC<HeaderProps> = ({
     handleLogout,
     copyAddress,
 }) => {
-    const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+    console.log(userAddress, displayBalance, balanceSymbol)
 
-    const toggleProfileDropdown = () => {
-        setIsProfileDropdownOpen(!isProfileDropdownOpen);
-    };
+    const withdrawFunds = () => {
+        console.log("withdrawing funds")
+    }
 
     return (
         <header className="flex justify-between items-center px-2 sm:px-4 py-2 bg-[#1d1d1d] rounded-full w-[98%] sm:w-[95%] mx-auto my-1 sm:my-2">
@@ -41,65 +50,58 @@ const Header: React.FC<HeaderProps> = ({
                 <p className="bg-red-500 text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 py-0.5 rounded-full">{live ? "Live" : "Offline"}</p>
             </div>
             <div className="flex items-center">
-                <div className="relative">
-                    <button
-                        title="toggle profile dropdown"
-                        className="flex items-center text-[#A3A3A3] hover:text-white transition-colors"
-                        onClick={toggleProfileDropdown}
-                    >
-                        <User className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
-                        <button
-                            title="toggle sidebar"
-                            className="text-[#A3A3A3] hover:text-white transition-colors sm:hidden mr-1"
-                            onClick={toggleSidebar}
-                        >
-                            <Menu className="w-4 h-4 sm:w-5 sm:h-5" />
-                        </button>{" "}
-                    </button>
-                    {isProfileDropdownOpen && (
-                        <div className="absolute right-0 mt-2 w-64 bg-[#2d2d2d] rounded-xl shadow-lg py-2 sm:py-3 px-3 sm:px-4 z-10">
-                            <div className="flex items-center">
-                                <Identity
-                                    address={userAddress}
-                                    chain={base}
-                                    schemaId="0xf8b05c79f090979bf4a80270aba232dff11a10d9ca55c4f88de95317970f0de9"
-                                >
-                                    <Avatar address={userAddress} chain={base} className="w-6 h-6 sm:w-8 sm:h-8 rounded-full mr-2" />
-                                    <div className="space-y-1 sm:space-y-2">
-                                        <div className="flex items-center justify-between gap-1 sm:gap-2">
-                                            <Name address={userAddress} chain={base} className="text-white text-xs sm:text-sm font-semibold" />
-                                            <p className="text-white text-[10px] sm:text-xs bg-violet-500 rounded-full px-1 sm:px-2 py-0.5">
-                                                {displayBalance} {balanceSymbol}
-                                            </p>
-                                        </div>
-                                        <div className="flex items-center justify-between bg-[#1d1d1d] p-1 sm:p-2 mb-1 sm:mb-2 rounded-full">
-                                            <Image src="/images/base.png" alt="Base" width={16} height={16} className="w-4 h-4 sm:w-5 sm:h-5" />
-                                            <div className="flex items-center">
-                                                <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-green-500 rounded-full mr-1 sm:mr-2"></div>
-                                                <Address address={userAddress} className="text-[#A3A3A3] text-[10px] sm:text-xs" />
-                                            </div>
-                                            <button title="copy" onClick={copyAddress} className="text-[#A3A3A3] hover:text-white">
-                                                <Copy className="w-3 h-3 sm:w-4 sm:h-4" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                </Identity>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="text-[#A3A3A3] hover:text-white transition-colors">
+                            <User className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-[300px] bg-[#2d2d2d] rounded-xl shadow-lg py-4 sm:py-4 px-4 sm:px-5 border-none">
+                        <div className="flex items-center justify-between mb-4 gap-3">
+                            <div className="w-full h-6 sm:w-8 sm:h-8 rounded-full bg-gray-300 flex items-center justify-center">
+                                <User className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                             </div>
-                            <div className="flex justify-center items-center mt-2">
-                                <LogOutIcon className="w-3 h-3 sm:w-4 sm:h-4 text-red-500 mr-1" />
-                                <button
-                                    onClick={handleLogout}
-                                    className="text-red-500 text-xs sm:text-sm px-2 sm:px-3 py-1 rounded hover:bg-[#3d3d3d] transition-colors"
-                                >
-                                    Logout
-                                </button>
+                            <div className="space-y-1 sm:space-y-2 w-full">
+                                <div className="flex items-center justify-between gap-1 sm:gap-2">
+                                    <span className="text-white text-xs sm:text-sm font-semibold">{truncateAddress(userAddress)}</span>
+                                    <p className="text-white text-[10px] sm:text-xs bg-violet-500 rounded-full px-1 sm:px-2 py-0.5">
+                                        {displayBalance} {balanceSymbol}
+                                    </p>
+                                </div>
+                                <div className="flex items-center justify-between bg-[#1d1d1d] pl-3 mb-0.5 sm:mb-1 rounded-full">
+                                    <Image src="/images/base.png" alt="Base" width={16} height={16} className="w-4 h-4 sm:w-5 sm:h-5" />
+                                    <div className="flex items-center">
+                                        <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-green-500 rounded-full mr-1 sm:mr-2"></div>
+                                        <span className="text-[#A3A3A3] text-[10px] sm:text-xs">{truncateAddress(userAddress)}</span>
+                                    </div>
+                                    <Button variant="ghost" size="icon" onClick={copyAddress} className="text-[#A3A3A3] hover:text-white hover:bg-black">
+                                        <Copy className="w-2 h-2 sm:w-2 sm:h-2" />
+                                    </Button>
+                                </div>
                             </div>
                         </div>
-                    )}
-                </div>
+                        <DropdownMenuItem asChild>
+                            <Button
+                                onClick={withdrawFunds}
+                                className="flex items-center bg-[#6032F6] hover:bg-[#4006fc] hover:cursor-pointer rounded-full px-5 py-2 w-full"
+                            >
+                                <ArrowUp className="h-8 w-8 mr-2" />
+                                Withdraw funds
+                            </Button>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-[#A3A3A3] hover:text-white transition-colors sm:hidden ml-2"
+                    onClick={toggleSidebar}
+                >
+                    <Menu className="w-4 h-4 sm:w-5 sm:h-5" />
+                </Button>
             </div>
         </header>
-    );
-};
+    )
+}
 
-export default Header;
+export default Header

@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { AlertCircle, CheckCircle2, DollarSign } from "lucide-react";
 import TipModal from "@/components/meeting/tips";
@@ -29,6 +30,7 @@ import { StreamVideoParticipant } from "@stream-io/video-react-sdk";
 import { useSendTransaction as useSendTransactionWagmi } from "wagmi";
 import toast, { Toaster } from "react-hot-toast";
 import EndScreen from "@/components/meeting/end-screen";
+import Image from "next/image";
 
 interface MeetingProps {
     params: {
@@ -177,6 +179,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
     } = useBalance({
         address: userAddress,
     });
+
 
     const formattedBalance = balance ? Number(balance.value) / 1e18 : 0;
     const displayBalance = formattedBalance.toFixed(4);
@@ -374,11 +377,14 @@ export default function MeetingInterface({ params }: MeetingProps) {
                     )}
 
                     {receivedTips.length > 0 && (
-                        <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md">
+                        <div className="fixed bottom-4 left-4 text-white px-4 py-2">
                             Recent tips:{" "}
                             {receivedTips.map((tip, index) => (
-                                <div key={index}>
-                                    {tip.amount} ETH from {tip.from}
+                                <div key={index} className="bg-[#6032F6] rounded-full flex items-center">
+                                    <Image src={"/images/confetti.svg"} alt="confetti" className="h-10" width={8} height={8} />
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-semibold">{tip.from}</p> tipped you <p className="text-semibold">{tip.amount}</p>
+                                    </div>
                                 </div>
                             ))}
                         </div>

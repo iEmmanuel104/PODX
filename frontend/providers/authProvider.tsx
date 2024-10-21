@@ -43,7 +43,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
                             dispatch(setSignature(userData.signature));
                         }
 
-                        // Always redirect to pod page after authentication
+                        // Always redirect to pod page after withdrawFundsauthentication
                         router.push("/pod");
                     } else {
                         console.log("Store user found, redirecting");
