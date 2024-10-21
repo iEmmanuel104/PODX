@@ -9,32 +9,32 @@ async function createSequelizeInstance(): Promise<Sequelize> {
     if (NODE_ENV === 'production') {
         return new Sequelize(
             DB_CONFIG.URL, {
-                logging: false,
-                dialect: 'postgres',
-                pool: {
-                    max: 5,
-                    min: 1,
-                    idle: 10000,
+            logging: false,
+            dialect: 'postgres',
+            pool: {
+                max: 5,
+                min: 1,
+                idle: 10000,
+            },
+            dialectOptions: {
+                ssl: {
+                    require: true,
+                    rejectUnauthorized: true,
                 },
-                dialectOptions: {
-                    ssl: {
-                        require: true,
-                        rejectUnauthorized: true,
-                    },
-                },
-            }
+            },
+        }
         );
     } else {
         return new Sequelize(
             DB_CONFIG.URL, {
-                logging: false,
-                dialect: 'postgres',
-                pool: {
-                    max: 5,
-                    min: 1,
-                    idle: 10000,
-                },
-            }
+            logging: false,
+            dialect: 'postgres',
+            pool: {
+                max: 5,
+                min: 1,
+                idle: 10000,
+            },
+        }
         );
     }
 }

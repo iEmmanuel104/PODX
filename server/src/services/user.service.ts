@@ -54,7 +54,7 @@ export default class UserService {
         return true;
     }
 
-    static async addUser(userData: IUser): Promise<IUser> {
+    static async addUser(userData: Partial<IUser>): Promise<IUser> {
         const user = await User.create(userData);
 
         await UserSettings.create({
@@ -73,10 +73,7 @@ export default class UserService {
 
         if (query) {
             filter.$or = [
-                { firstName: { $regex: query, $options: 'i' } },
-                { lastName: { $regex: query, $options: 'i' } },
                 { username: { $regex: query, $options: 'i' } },
-                { $expr: { $regexMatch: { input: { $concat: ['$firstName', ' ', '$lastName'] }, regex: query, options: 'i' } } },
             ];
         }
 
@@ -120,14 +117,8 @@ export default class UserService {
         return user;
     }
 
-    static async viewSingleUserByWalletAddress(walletAddress: string): Promise<IUser> {
-        const user = await User.findOne({ walletAddress }).populate('settings');
-
-        if (!user) {
-            throw new NotFoundError('Oops User not found');
-        }
-
-        return user;
+    static async viewSingleUserByWalletAddress(walletAddress: string): Promise<IUser | null> {
+        return User.findOne({ walletAddress });
     }
 
     static async viewSingleUserByEmail(email: string): Promise<IUser> {
@@ -159,7 +150,7 @@ export default class UserService {
     }
 
     static async updateUser(userId: string, dataToUpdate: Partial<IUser>): Promise<IUser> {
-        const user = await User.findByIdAndUpdate(userId, dataToUpdate, { new: true }).populate('settings');
+        const user = await User.findByIdAndUpdate(userId, dataToUpdate, { new: true });
 
         if (!user) {
             throw new NotFoundError('Oops User not found');

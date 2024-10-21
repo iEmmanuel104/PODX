@@ -2,7 +2,7 @@ import http from 'http';
 import app from './app';
 import { initiateMongoDB } from './models/Mongodb';
 // import { initiateDB } from './models/Postgres';
-import { initializeSocketIO } from './socket';
+// import { initializeSocketIO } from './socket';
 import { logger } from './utils/logger';
 import { redisClient } from './utils/redis';
 
@@ -18,7 +18,7 @@ async function startServer(): Promise<void> {
 
         // Start the server and listen on port 8080
         const server = http.createServer(app);
-        initializeSocketIO(server);
+        // initializeSocketIO(server);
 
         const port = process.env.PORT || 8090;
         server.listen(port, () => {
@@ -30,9 +30,9 @@ async function startServer(): Promise<void> {
         // exit redis client
         redisClient.quit((err, result) => {
             if (err) {
-                console.error('Error quitting Redis:', err);
+                logger.error('Error quitting Redis:', err);
             } else {
-                console.log('Redis instance has been stopped:', result);
+                logger.info('Redis instance has been stopped:', result);
             }
         });
         // Exit the process with a non-zero status code to indicate an error

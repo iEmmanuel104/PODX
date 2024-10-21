@@ -16,7 +16,7 @@ export default class CloudinaryClientConfig {
             });
             const options = {
                 use_filename: true,
-                folder: `Shortlet-Lagos/${type}/${id}`,
+                folder: `PodX/${type}/${id}`,
                 public_id: name,
             };
 

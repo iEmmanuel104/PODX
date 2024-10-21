@@ -6,11 +6,11 @@ import { CustomAPIError } from '../utils/customErrors';
 import { logger } from '../utils/logger';
 
 class Middlewares {
-    static errorHandler(err: Error | any, req: Request, res: Response, next: NextFunction ): Response {
+    static errorHandler(err: Error | any, req: Request, res: Response, next: NextFunction): Response {
         logger.error('Error handler');
         logger.error(err);
         console.log(err);
-        
+
         const customError = {
             // set default
             status: 'error',
@@ -76,7 +76,7 @@ class Middlewares {
             error: customError.error,
             message: customError.message,
         });
-        
+
     }
 
     static notFound(req: Request, res: Response): Response {

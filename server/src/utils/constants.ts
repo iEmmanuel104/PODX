@@ -40,6 +40,10 @@ export const EMAIL_HOST = process.env.EMAIL_HOST as string,
 
 export const WEBSITE_URL = NODE_ENV === 'production' ? process.env.WEBSITE_URL as string : 'http://localhost:5173';
 
+export const STREAM_API_KEY = process.env.STREAM_API_KEY as string;
+
+export const STREAM_API_SECRET = process.env.STREAM_API_SECRET as string;
+
 export const DOCUMENTATION_URL = process.env.DOCUMENTATION_URL as string;
 
 export const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET as string;
@@ -51,6 +55,8 @@ export const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME as string
 export const ADMIN_EMAIL = process.env.ADMIN_EMAIL as string;
 
 export const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS as string;
+
+export const SIGNATURE_MESSAGE = process.env.SIGNATURE_MESSAGE as string;
 
 export const CONTRACT_ADDRESS =  '0x2759794c851901D723dAB6B90AD875Bc01Bd22F5';
 

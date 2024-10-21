@@ -10,7 +10,7 @@ export const forgotPassword = ({ link, name }: { link: string, name: string }) =
                 <h1 style="color: #1e1e2d; margin: 10px 0; font-size: 35px; font-weight: 300; text-transform: capitalize;">
                     Hi ${name},
                 </h1>
-                <p style="color: #1e1e2d; font-size: 18px; margin: 10px 0;">We received a request to reset your password for your Shortlet-Lagos account.</p>
+                <p style="color: #1e1e2d; font-size: 18px; margin: 10px 0;">We received a request to reset your password for your PodX account.</p>
                 <p style="color: #1e1e2d; font-size: 16px; margin: 10px 0;">To reset your password, please click the link below:</p>
             </div>
             <div style="margin-top: 15px;">

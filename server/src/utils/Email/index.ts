@@ -42,14 +42,14 @@ export default class EmailService {
 
     constructor(service: string) {
         switch (service) {
-        case 'nodemailer':
-            this.sendEmail = this.createNodemailerEmail();
-            break;
+            case 'nodemailer':
+                this.sendEmail = this.createNodemailerEmail();
+                break;
             // case 'postmark':
             //     this.sendEmail = this.createPostmarkEmail();
             //     break;
-        default:
-            throw new Error('Invalid email service specified');
+            default:
+                throw new Error('Invalid email service specified');
         }
     }
     private createNodemailerEmail(): SendEmailFunction {
@@ -75,7 +75,7 @@ export default class EmailService {
                 // Use Promise.all to wait for all emails to be sent
                 await Promise.all((options.postmarkInfo ?? []).map(async (recipient) => {
                     const mailOptions = {
-                        from: `Shortlet-Lagos Accounts<${EMAIL_HOST_ADDRESS}>`,
+                        from: `PodX Accounts<${EMAIL_HOST_ADDRESS}>`,
                         to: recipient.receipientEmail,
                         subject: options.subject,
                         html: options.html ? options.html : undefined,
@@ -102,11 +102,11 @@ export default class EmailService {
     //     case 'auth':
     //         return 'accounts@blkat.io';
     //     case 'support':
-    //         return 'support@Shortlet-Lagos.com';
+    //         return 'support@PodX.com';
     //     case 'vibes':
-    //         return 'vibes@Shortlet-Lagos.com';
+    //         return 'vibes@PodX.com';
     //     default:
-    //         return 'accounts@Shortlet-Lagos.com';
+    //         return 'accounts@PodX.com';
     //     }
     // }
 
@@ -133,7 +133,7 @@ export default class EmailService {
     //                     Attachments: options.attachments ? options.attachments : [],
     //                     TemplateModel: recipient.postMarkTemplateData as Record<string, unknown>,
     //                     TemplateAlias: options.postMarkTemplateAlias,
-    //                     ...(senderEmail === 'vibes@Shortlet-Lagos.com' ? { MessageStream: 'vibes' } : {}),
+    //                     ...(senderEmail === 'vibes@PodX.com' ? { MessageStream: 'vibes' } : {}),
     //                 };
     //                 return message;
     //             });

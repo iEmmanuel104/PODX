@@ -35,7 +35,7 @@ const fileFilter = (req: Request, file: Express.Multer.File, cb: Multer.FileFilt
             : fileType === 'video'
                 ? allowedVideoTypes.join(', ')
                 : allowedAudioTypes.join(', ')
-        }`;
+            }`;
         cb(new BadRequestError(`Unsupported ${fileType} type. ${supportedTypes}`));
     }
 };
@@ -50,30 +50,30 @@ export const uploadMiddleware = function (type: UploadType, nameOrFields: string
     return (req: Request, res: Response, next: NextFunction) => {
         console.log('uploadMiddleware triggered');
 
-        
+
         let multerMiddleware;
 
         switch (type) {
-        case UploadType.Single:
-            multerMiddleware = multer.single(nameOrFields as string);
-            break;
-        case UploadType.Array:
-            multerMiddleware = multer.array(nameOrFields as string, maxCount);
-            break;
-        case UploadType.Fields:
-            multerMiddleware = multer.fields(nameOrFields as Multer.Field[]);
-            break;
-        default:
-            throw new Error('Invalid upload type specified');
+            case UploadType.Single:
+                multerMiddleware = multer.single(nameOrFields as string);
+                break;
+            case UploadType.Array:
+                multerMiddleware = multer.array(nameOrFields as string, maxCount);
+                break;
+            case UploadType.Fields:
+                multerMiddleware = multer.fields(nameOrFields as Multer.Field[]);
+                break;
+            default:
+                throw new Error('Invalid upload type specified');
         }
-            
+
         if (!req.file && (!req.files || (Array.isArray(req.files) && req.files.length === 0) || Object.keys(req.files).length === 0)) {
             console.log('No file uploaded, proceeding to next middleware');
         } else {
             console.log('File uploaded, proceeding to multer middleware');
         }
-    
-            
+
+
         multerMiddleware(req, res, (err) => {
             if (err) {
                 return next(err);

@@ -1,58 +1,79 @@
-'use client';
+"use client";
 
-import { useState } from 'react'
-import { Mail, Phone, Wallet } from 'lucide-react'
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from "react";
+import { Wallet } from "lucide-react";
+import { usePrivy } from "@privy-io/react-auth";
+import Logo from "@/components/ui/logo";
+import { useAppDispatch } from "@/store/hooks";
+import { logOut } from "@/store/slices/userSlice";
+import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
-  const [selectedMethod, setSelectedMethod] = useState<'email' | 'phone' | 'wallet' | null>(null)
-  const router = useRouter()
+    const dispatch = useAppDispatch();
+    const [isConnecting, setIsConnecting] = useState(false);
+    const { login, logout, authenticated } = usePrivy();
+    const router = useRouter();
 
-  return (
-    <div className="min-h-screen bg-[#121212] text-white flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-md flex flex-col items-center">
-        <h1 className="text-3xl font-bold mb-16">
-          Pod<span className="text-[#7C3AED]">X</span>
-        </h1>
+    useEffect(() => {
+        if (authenticated) {
+            router.push("/pod");
+        }
+    }, [authenticated, router]);
 
-        <h2 className="text-4xl font-bold mb-4">Privy SDK</h2>
+    const handleConnect = async () => {
+        setIsConnecting(true);
+        try {
+            await logout(); // Log out of existing privy session
+            dispatch(logOut()); // clear user data from store
+            await login();
+        } catch (error) {
+            console.error("Error connecting wallet:", error);
+            toast.error("Error connecting wallet:");
+        } finally {
+            setIsConnecting(false);
+        }
+    };
 
-        <p className="text-xl text-center mb-12">
-          Email, Phone and<br />Connect Wallet
-        </p>
+    return (
+        <div className="min-h-screen bg-[#121212] text-white flex flex-col items-center justify-center p-4">
+            <div className="w-full max-w-md flex flex-col items-center">
+                <Logo />
 
-        <div className="w-full space-y-4">
-          {/* <button
-            className={`w-full py-3 px-4 rounded-md flex items-center justify-center transition-colors ${selectedMethod === 'email' ? 'bg-[#7C3AED]' : 'bg-[#2C2C2C] hover:bg-[#3C3C3C]'
-              }`}
-            onClick={() => setSelectedMethod('email')}
-          >
-            <Mail className="w-5 h-5 mr-2" />
-            Continue with Email
-          </button>
+                <p className="text-xl text-center mb-12">Connect onchain to a world of decentralized applications.</p>
 
-          <button
-            className={`w-full py-3 px-4 rounded-md flex items-center justify-center transition-colors ${selectedMethod === 'phone' ? 'bg-[#7C3AED]' : 'bg-[#2C2C2C] hover:bg-[#3C3C3C]'
-              }`}
-            onClick={() => setSelectedMethod('phone')}
-          >
-            <Phone className="w-5 h-5 mr-2" />
-            Continue with Phone
-          </button> */}
-
-          <button
-            className={`w-full py-3 px-4 rounded-md flex items-center justify-center transition-colors ${selectedMethod === 'wallet' ? 'bg-[#7C3AED]' : 'bg-[#2C2C2C] hover:bg-[#3C3C3C]'
-              }`}
-            onClick={() => {
-              router.push("/podcast")
-              setSelectedMethod('wallet')
-            }}
-          >
-            <Wallet className="w-5 h-5 mr-2" />
-            Connect Wallet
-          </button>
+                <div className="w-full space-y-4">
+                    <button
+                        className="w-full py-3 px-4 rounded-md flex items-center justify-center transition-colors bg-[#6032f6] hover:bg-[#3C3C3C] disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={handleConnect}
+                        disabled={isConnecting}
+                    >
+                        {isConnecting ? (
+                            <>
+                                <svg
+                                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path
+                                        className="opacity-75"
+                                        fill="currentColor"
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                    ></path>
+                                </svg>
+                                Connecting...
+                            </>
+                        ) : (
+                            <>
+                                <Wallet className="w-5 h-5 mr-2" />
+                                Connect
+                            </>
+                        )}
+                    </button>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 }

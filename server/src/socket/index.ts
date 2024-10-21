@@ -26,7 +26,11 @@ export function initializeSocketIO(server: Server): void {
     podManager = new PodManager();
 
     io = new SocketIOServer(server, {
-        cors: corsOptions,
+        cors: {
+            origin: corsOptions.origin,
+            methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+            credentials: true,
+        },
         connectionStateRecovery: {},
         adapter: createAdapter(redisPubClient, redisSubClient),
     });
@@ -43,8 +47,10 @@ export function initializeSocketIO(server: Server): void {
 
     io.on('connection', (socket: Socket) => {
         const authenticatedSocket = socket as AuthenticatedSocket;
+        const user = authenticatedSocket.user;
         const userId = authenticatedSocket.userId;
-        logger.info(`New WebSocket connection: ${socket.id} for user: ${userId}`);
+        const username = user.username;
+        logger.info(`New WebSocket connection: ${socket.id} for user: ${username}`);
 
         // Attach handlers
         attachPodHandlers(io, authenticatedSocket, podManager);

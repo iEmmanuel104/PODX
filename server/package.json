@@ -1,7 +1,7 @@
 {
-    "name": "@shortlet-lagos/api",
+    "name": "@podx/api",
     "version": "1.0.0",
-    "description": "Shortlet-Lagos Application",
+    "description": "PodX Application",
     "main": "src/server.ts",
     "engines": {
         "node": ">=17.0.0"
@@ -26,6 +26,7 @@
     "license": "ISC",
     "dependencies": {
         "@socket.io/redis-adapter": "^8.3.0",
+        "@stream-io/node-sdk": "^0.4.4",
         "bcrypt": "^5.1.1",
         "body-parser": "^1.20.3",
         "cloudinary": "^1.41.3",

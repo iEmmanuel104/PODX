@@ -1,174 +1,140 @@
-# **Shortlet-Lagos Git Workflow Documentation**
-Git Repository Structure
+# PodX Server
 
-Our project follows this workflow to manage code changes and releases. The  branches in the repository are:
+This is the backend server for PodX, a real-time meeting and podcasting platform.
 
-```
-main: Represents the production-ready code.
-feature: Used for developing  features .
-release: Used for final testing and preparing for a new release.
+## Table of Contents
 
-```
+1. [Getting Started](#getting-started)
+2. [Project Structure](#project-structure)
+3. [Key Features](#key-features)
+4. [Technologies Used](#technologies-used)
+5. [Configuration](#configuration)
+6. [Scripts](#scripts)
+7. [API Documentation](#api-documentation)
+8. [Deployment](#deployment)
+9. [Contributing](#contributing)
+10. [License](#license)
 
-**Branch Naming Conventions**
+## Getting Started
 
-```
-Feature Branches: feature/feature-name
-Release Branches: release/version-number
+To run the server locally:
 
-```
-
-Workflow Overview
-
-1. Feature Development
-    
-    Create a New Feature Branch:
-    
-    bash
-    
-
-git checkout -b feature/feature-name
-
-Work on Your Feature:
-
-```
-Make changes, commit locally, and push the feature branch to the remote repository.
-
-```
+1. Clone the repository
+2. Install dependencies:
 
 bash
+npm install
 
-git add .
-git commit -m "Feature: Description of the feature"
-git push origin feature/feature-name
 
-Open a Pull Request:
-
-```
-On the repository hosting platform (e.g., GitHub), open a pull request from the feature branch to the main branch.
-
-```
-
-Code Review:
-
-```
-Request code reviews from team members.
-Address feedback and make necessary changes.
-
-```
-
-Approval and Merge:
-
-```
-After approval, merge the feature branch into the main branch.
-
-```
+3. Set up environment variables (see Configuration section)
+4. Start the development server:
 
 bash
+npm run dev
 
-```
-git checkout main
-git pull origin main
-git merge --no-ff feature/feature-name
-git push origin main
 
-```
-
-1. Release Preparation
-    
-    Create a New Release Branch:
-    
-    bash
-    
-
-git checkout -b release/version-number
-
-Final Testing and Bug Fixes:
-
-```
-Perform final testing and address any critical issues.
-
-```
-
-Open a Pull Request:
-
-```
-On the repository hosting platform (e.g., GitHub), open a pull request from the release branch to the main branch.
-
-```
-
-Code Review:
-
-```
-Request code reviews to ensure the stability of the release.
-Address feedback and make necessary changes.
-
-```
-
-Approval and Merge:
-
-```
-After approval, merge the release branch into the main branch.
-
-```
+For production:
 
 bash
+npm run prod
 
-```
-git checkout main
-git pull origin main
-git merge --no-ff release/version-number
-git push origin main
 
-```
+## Project Structure
 
-1. Hotfixes (if needed)
-    
-    Create a New Hotfix Branch:
-    
-    bash
-    
+- src/: Contains the main server code
+  - server.ts: Main entry point
+  - app.ts: Express application setup
+  - views/: Server-side rendered views (e.g., serverHealthCheck.ts)
+  - utils/: Utility functions and constants
+  - socket/: Socket.IO related code
+  - middlewares/: Express and Socket.IO middlewares
+  - models/: Database models (MongoDB and PostgreSQL)
+  - controllers/: Request handlers
+  - services/: Business logic
+  - routes/: API route definitions
+  - clients/: External service integrations (e.g., Cloudinary, StreamIO)
+  - migrations/: Database migration files
+- config/: Configuration files
+- Dockerfile: Docker configuration for containerization
+- .dockerignore: Specifies files to be excluded from Docker builds
 
-git checkout -b hotfix/fix-description
+## Key Features
 
-Work on the Hotfix:
+- RESTful API for PodX frontend
+- User authentication and authorization
+- Real-time communication support using Socket.IO
+- Database operations with Mongoose (MongoDB) and Sequelize (PostgreSQL)
+- File upload handling with Multer
+- Integration with external services (Cloudinary, StreamIO)
+- Admin management system
+- Rate limiting and error handling
+- Email functionality for notifications
+- Server health check endpoint
 
-```
-Make necessary changes, commit, and push the hotfix branch.
+## Technologies Used
 
-```
+- Node.js
+- TypeScript
+- Express.js
+- Socket.IO for real-time features
+- Mongoose for MongoDB operations
+- Sequelize ORM for PostgreSQL operations
+- Redis for Socket.IO adapter and caching
+- Docker for containerization
+- Winston for logging
+- Zod for schema validation
+- Multer for file upload handling
+
+## Configuration
+
+Create a .env file in the root directory. Required variables include:
+
+
+PORT=8080
+MONGODB_URI=your_mongodb_connection_string
+DATABASE_URL=your_postgres_connection_string
+JWT_SECRET=your_jwt_secret
+STREAM_API_KEY=your_stream_api_key
+STREAM_API_SECRET=your_stream_api_secret
+REDIS_URL=your_redis_url
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+
+
+Adjust these variables according to your specific setup.
+
+## Scripts
+
+- npm run dev: Run the development server with nodemon
+- npm run prod: Run the production server
+- npm run build: Build the TypeScript code
+- npm run lint: Run ESLint
+- npm run db:makemigration: Run database migrations
+- npm run db:undomigration: Undo the last database migration
+- npm run db:newmigration: Generate a new migration file
+- npm run seed: Seed the database
+- npm run down: Undo all migrations
+
+## API Documentation
+
+The server provides a health check endpoint at "/serverhealth". It returns an HTML page with server status and links to documentation, client-side website, and admin dashboard.
+
+For other API endpoints, please refer to the routes/ directory or create separate API documentation.
+
+## Deployment
+
+This server can be deployed using Docker. The Dockerfile is set up to create a production-ready image.
+
+To build and run the Docker image:
 
 bash
+docker build -t podx-server .
+docker run -p 8080:8080 podx-server
 
-git add .
-git commit -m "Hotfix: Description of the fix"
-git push origin hotfix/fix-description
 
-Open a Pull Request:
+Make sure to set up the necessary environment variables when running the container.
 
-```
-On the repository hosting platform (e.g., GitHub), open a pull request from the hotfix branch to the main branch.
+## Contributing
 
-```
-
-Code Review:
-
-```
-Request code reviews to ensure the correctness of the hotfix.
-Address feedback and make necessary changes.
-
-```
-
-Approval and Merge:
-
-```
-After approval, merge the hotfix branch into the main branch.
-
-```
-
-bash
-
-git checkout main
-git pull origin main
-git merge --no-ff hotfix/fix-description
-git push origin main
+Contributions are welcome! Please feel free to submit a Pull Request.

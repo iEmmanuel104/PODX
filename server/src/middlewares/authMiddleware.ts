@@ -1,11 +1,10 @@
 import { DecodedTokenData, ENCRYPTEDTOKEN } from '../utils/interface';
 import { Request, Response, NextFunction } from 'express';
-import { UnauthorizedError, NotFoundError, ForbiddenError } from '../utils/customErrors';
+import { UnauthorizedError, ForbiddenError } from '../utils/customErrors';
 import { IUser } from '../models/Mongodb/user.model';
 import UserService from '../services/user.service';
 import { logger } from '../utils/logger';
 import { AuthUtil } from '../utils/token';
-// import { AuthUtil, TokenCacheUtil } from '../utils/token';
 import { IAdmin } from '../models/Mongodb/admin.model';
 import { ADMIN_EMAIL } from '../utils/constants';
 import AdminService from '../services/AdminServices/admin.service';
@@ -39,61 +38,50 @@ export function AdminAuthenticatedController<T = AdminAuthenticatedRequest>(
     };
 }
 
+export async function authenticateUser(token: string): Promise<IUser> {
+    const decoded = AuthUtil.verifyTokenWithHash(token);
+
+    const user = await UserService.viewSingleUserByWalletAddress(decoded.user.walletAddress);
+
+    if (!user || !user.walletAddress) {
+        throw new UnauthorizedError('Invalid user');
+    }
+
+    if (user.settings?.isBlocked) {
+        throw new ForbiddenError('Account blocked. Please contact support');
+    }
+
+    if (user.settings?.isDeactivated) {
+        throw new ForbiddenError('Account deactivated. Please contact support');
+    }
+
+    return user;
+}
+
 export const basicAuth = function () {
     return async (req: Request, res: Response, next: NextFunction) => {
         const authHeader = req.headers.authorization;
-        if (!authHeader?.startsWith('Bearer'))
-            return next(new UnauthorizedError('Invalid authorization header'));
 
-        const jwtToken = authHeader.split(' ')[1];
+        if (!authHeader?.startsWith('Bearer ')) {
+            return next(new UnauthorizedError('Missing or invalid authorization header'));
+        }
+
+        const token = authHeader.split(' ')[1];
+
+        if (!token) {
+            return next(new UnauthorizedError('Missing token'));
+        }
 
         try {
-            const payload = AuthUtil.decodeToken(jwtToken) as unknown as DecodedTokenData;
-            if (!payload || !payload.user || !payload.user.walletAddress) {
-                throw new UnauthorizedError('Invalid token');
-            }
-
-            const user: IUser | null = await UserService.viewSingleUser(payload.user.id);
-            if (!user) {
-                throw new NotFoundError('User not found');
-            }
-
-            if (req.method === 'GET' && req.path === '/refreshtoken' && payload.tokenType === 'refresh') {
-                AuthUtil.verifyToken(jwtToken, user.walletAddress);
-
-                const newAccessToken = await AuthUtil.generateToken({ type: 'access', user });
-
-                return res.status(200).json({
-                    status: 'success',
-                    message: 'Token refreshed successfully',
-                    data: {
-                        accessToken: newAccessToken,
-                    },
-                });
-            }
-
-            AuthUtil.verifyToken(jwtToken, user.walletAddress);
-
-            // const key = `${payload.tokenType}_token:${user.id}`;
-            // const cachedToken = await TokenCacheUtil.getTokenFromCache(key);
-
-            // if (cachedToken !== jwtToken) {
-            //     throw new UnauthorizedError('Invalid token');
-            // }
-
-            if (user.settings?.isBlocked) {
-                throw new ForbiddenError('Account blocked. Please contact support');
-            }
-
-            if (user.settings?.isDeactivated) {
-                throw new ForbiddenError('Account deactivated. Please contact support');
-            }
-
+            const user = await authenticateUser(token);
             (req as AuthenticatedRequest).user = user;
-
             next();
         } catch (error) {
-            next(error);
+            if (error instanceof UnauthorizedError || error instanceof ForbiddenError) {
+                next(error);
+            } else {
+                next(new UnauthorizedError('Authentication failed'));
+            }
         }
     };
 };
