@@ -1,10 +1,7 @@
 "use client";
-
-import React, { useState, useCallback, useEffect, useMemo, useContext } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import UserInputForm from "@/components/join/user-input-form";
-import WaitingScreen from "@/components/join/waiting-screen";
-import Logo from "@/components/ui/logo";
+import dynamic from "next/dynamic";
 import { useAppSelector } from "@/store/hooks";
 import {
     useCall,
@@ -15,13 +12,21 @@ import {
     GetCallResponse,
     MemberResponse,
 } from "@stream-io/video-react-sdk";
-import MeetingPreview from "@/components/meeting/meetingPreview";
-import CallParticipants from "@/components/meeting/callParticipants";
-import { AppContext } from "@/providers/appProvider";
 import { useChatContext } from "stream-chat-react";
 import { useStreamTokenProvider } from "@/hooks/useStreamTokenProvider";
 import Image from "next/image";
 import toast from "react-hot-toast";
+
+// Dynamically import components
+const UserInputForm = dynamic(() => import("@/components/join/user-input-form"), { ssr: false });
+const WaitingScreen = dynamic(() => import("@/components/join/waiting-screen"), { ssr: false });
+const Logo = dynamic(() => import("@/components/ui/logo"), { ssr: false });
+const MeetingPreview = dynamic(() => import("@/components/meeting/meetingPreview"), { ssr: false });
+const CallParticipants = dynamic(() => import("@/components/meeting/callParticipants"), { ssr: false });
+
+// Import AppContext and use it with useContext hook
+import { useContext } from "react";
+import { AppContext } from "@/providers/appProvider";
 
 interface JoinSessionProps {
     params: {
@@ -59,80 +64,49 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
     }, [isLoggedIn, user]);
 
     useEffect(() => {
-        console.log("from lobby3");
-        const leavePreviousCall = async () => {
+        const initializeCall = async () => {
+            if (joining || !code || !user) return;
+
             if (callingState === CallingState.JOINED) {
                 await call?.leave();
             }
-        };
 
-        const getCurrentCall = async () => {
-            if (call) {
-                try {
-                    const callData = await call.get();
-
-                    setParticipants(callData.members || []);
-                } catch (e) {
-                    const err = e as ErrorFromResponse<GetCallResponse>;
-                    console.error(err.message);
-                    toast.error("Error fetching meeting")
-                }
-            }
-            setLoading(false);
-        };
-
-        const createCall = async () => {
-            if (call && user) {
-                await call.getOrCreate({
-                    data: {
-                        members: [{ user_id: user.id, role: "host" }],
-                        custom: {
-                            sessionId: code,
-                            title: sessionTitle || "New Call",
-                            type: sessionType || "Video Session",
-                        },
-                        settings_override: {
-                            // audio: {
-                            //     mic_default_on: true,
-                            //     speaker_default_on: true,
-                            //     default_device: "speaker"
-                            // },
-                            // video: {
-                            //     camera_default_on: true,
-                            //     target_resolution: {
-                            //         width: 640,
-                            //         height: 480,
-                            //     }
-                            // },
-                            limits: {
-                                max_participants: 20,
-                                max_duration_seconds: 3600,
+            try {
+                if (newMeeting) {
+                    await call?.getOrCreate({
+                        data: {
+                            members: [{ user_id: user.id, role: "host" }],
+                            custom: {
+                                sessionId: code,
+                                title: sessionTitle || "New Call",
+                                type: sessionType || "Video Session",
+                            },
+                            settings_override: {
+                                limits: {
+                                    max_participants: 20,
+                                    max_duration_seconds: 3600,
+                                },
                             },
                         },
-                    },
-                    members_limit: 20,
-                    ...(sessionType === "Audio Session" && { video: false }),
-                });
-
-                console.log("call create success");
-            }
-            setLoading(false);
-        };
-
-        const initializeCall = async () => {
-            if (!joining && code) {
-                await leavePreviousCall();
-                if (!user) return;
-                if (newMeeting) {
-                    await createCall();
+                        members_limit: 20,
+                        ...(sessionType === "Audio Session" && { video: false }),
+                    });
                 } else {
-                    await getCurrentCall();
+                    const callData = await call?.get();
+                    setParticipants(callData?.members || []);
                 }
+            } catch (e) {
+                const err = e as ErrorFromResponse<GetCallResponse>;
+                console.error(err.message);
+                router.push("/pod");
+                toast.error("Error fetching meeting");
             }
+
+            setLoading(false);
         };
 
         initializeCall();
-    }, [call, callingState, user, joining, newMeeting, code, sessionTitle, sessionType]);
+    }, [call, callingState, user, joining, newMeeting, code, sessionTitle, sessionType, router]);
 
     useEffect(() => {
         setNewMeeting(newMeeting);
@@ -153,7 +127,6 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
     }, [isLoggedIn, user, chatClient, tokenProvider]);
 
     const handleJoinSession = useCallback(async () => {
-        console.log("join clicked");
         if (code) {
             setJoining(true);
             if (isLoggedIn && user) {
@@ -184,48 +157,9 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
         }
     }, [joining, participants]);
 
-    const renderContent = () => {
-        if (loading) {
-            return (
-                <div className="w-full flex justify-center">
-                    <WaitingScreen />
-                </div>
-            );
-        }
-        if (isGuest && !isBasenameConfirmed) {
-            return (
-                <UserInputForm
-                    name={name}
-                    setName={setName}
-                    isBasenameConfirmed={isBasenameConfirmed}
-                    setIsBasenameConfirmed={setIsBasenameConfirmed}
-                    handleJoinSession={handleJoinSession}
-                />
-            );
-        } else {
-            return (
-                <div className="flex flex-col lg:flex-row gap-6 lg:gap-10 w-full">
-                    <div className="w-full lg:w-1/2">
-                        <MeetingPreview />
-                    </div>
-                    <div className="w-full lg:w-1/2 flex flex-col justify-center items-center lg:items-start">
-                        <h2 className="text-2xl font-semibold mb-4 text-center lg:text-left">Ready to join?</h2>
-                        <div className="w-full text-center lg:text-left">
-                            {typeof participantsUI === "string" ? <p>{participantsUI}</p> : participantsUI}
-                        </div>
-                        <button
-                            onClick={handleJoinSession}
-                            className="mt-4 w-full max-w-md bg-[#6032F6] text-white px-8 py-3 rounded-md hover:bg-[#4C28C4] transition-all duration-300 ease-in-out text-base font-medium flex items-center justify-center"
-                            disabled={joining || (isGuest && !name)}
-                        >
-                            <Image src="/images/join.svg" alt="Join" width={24} height={24} className="mr-2" />
-                            {joining ? "Joining..." : "Join session"}
-                        </button>
-                    </div>
-                </div>
-            );
-        }
-    };
+    if (loading) {
+        return <WaitingScreen />;
+    }
 
     return (
         <div className="min-h-screen bg-[#121212] text-white flex flex-col items-center justify-center p-4">
@@ -239,7 +173,35 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                         {sessionTitle || "Base Live Build Session"} ({sessionType || "Video Session"})
                     </p>
                 </div>
-                {renderContent()}
+                {isGuest && !isBasenameConfirmed ? (
+                    <UserInputForm
+                        name={name}
+                        setName={setName}
+                        isBasenameConfirmed={isBasenameConfirmed}
+                        setIsBasenameConfirmed={setIsBasenameConfirmed}
+                        handleJoinSession={handleJoinSession}
+                    />
+                ) : (
+                    <div className="flex flex-col lg:flex-row gap-6 lg:gap-10 w-full">
+                        <div className="w-full lg:w-1/2">
+                            <MeetingPreview />
+                        </div>
+                        <div className="w-full lg:w-1/2 flex flex-col justify-center items-center lg:items-start">
+                            <h2 className="text-2xl font-semibold mb-4 text-center lg:text-left">Ready to join?</h2>
+                            <div className="w-full text-center lg:text-left">
+                                {typeof participantsUI === "string" ? <p>{participantsUI}</p> : participantsUI}
+                            </div>
+                            <button
+                                onClick={handleJoinSession}
+                                className="mt-4 w-full max-w-md bg-[#6032F6] text-white px-8 py-3 rounded-md hover:bg-[#4C28C4] transition-all duration-300 ease-in-out text-base font-medium flex items-center justify-center"
+                                disabled={joining || (isGuest && !name)}
+                            >
+                                <Image src="/images/join.svg" alt="Join" width={24} height={24} className="mr-2" />
+                                {joining ? "Joining..." : "Join session"}
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
