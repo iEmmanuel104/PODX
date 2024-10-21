@@ -247,6 +247,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
     };
 
     const openTipModal = (participant: StreamVideoParticipant) => {
+        console.log("person to tip is:", { participant })
         setSelectedTipRecipient(participant);
         setShowTipModal(true);
     };
