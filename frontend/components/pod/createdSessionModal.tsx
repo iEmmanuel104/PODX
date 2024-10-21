@@ -5,7 +5,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link, AlertCircle, Check, Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 interface CreatedSessionModalProps {
     isOpen: boolean;

@@ -36,7 +36,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
                         console.log({ walletToUseAuthprovider: walletAddress });
 
                         const result = await findOrCreateUser({ walletAddress, hash: true }).unwrap();
-                        const userData = result.data as UserInfo;
+                        const userData = { ...result.data, walletType: walletClientType } as UserInfo;
+
                         dispatch(setUser(userData));
                         if (userData?.signature) {
                             dispatch(setSignature(userData.signature));

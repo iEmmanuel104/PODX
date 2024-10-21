@@ -65,7 +65,6 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const { sendTransaction: sendTransactionEmbedded } = useSendTransaction({
         onError: (error) => {
             console.error("Embedded wallet transaction failed:", error);
-            toast.error("Transaction failed. Please try again.", { duration: 5000 });
         },
         onSuccess: (response) => {
             console.log("Embedded wallet transaction successful:", response);
@@ -76,7 +75,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
     });
 
     const walletClientType = useAppSelector((state) => state.user.user?.walletType);
-
+    console.log({ walletClientType })
     const isEmbeddedWallet = walletClientType === "privy";
 
     const { sendTransaction: sendTransactionWagmi, isSuccess, isPending, isError: isWagmiError } = useSendTransactionWagmi();
@@ -113,7 +112,6 @@ export default function MeetingInterface({ params }: MeetingProps) {
             }
         } catch (error) {
             console.error("Error sending ETH:", error);
-            toast.error("Failed to send tip. Please try again.", { id: notification });
         }
     };
 
@@ -302,35 +300,6 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
     return (
         <StreamTheme className="root-theme">
-            <Toaster
-                position="bottom-right"
-                toastOptions={{
-                    success: {
-                        icon: <CheckCircle2 className="w-5 h-5 text-green-500" />,
-                        style: {
-                            background: "#1E1E1E",
-                            color: "#FFFFFF",
-                            border: "1px solid #22C55E",
-                        },
-                    },
-                    error: {
-                        icon: <AlertCircle className="w-5 h-5 text-red-500" />,
-                        style: {
-                            background: "#1E1E1E",
-                            color: "#FFFFFF",
-                            border: "1px solid #EF4444",
-                        },
-                    },
-                    loading: {
-                        icon: <DollarSign className="w-5 h-5 text-yellow-500 animate-pulse" />,
-                        style: {
-                            background: "#1E1E1E",
-                            color: "#FFFFFF",
-                            border: "1px solid #EAB308",
-                        },
-                    },
-                }}
-            />
             <StreamCall call={call}>
                 <div className="h-screen bg-[#121212] text-white flex flex-col">
                     {/* Header Title */}
