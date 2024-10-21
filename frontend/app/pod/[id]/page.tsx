@@ -17,6 +17,7 @@ import {
     SpeakerLayout,
     CallControls,
     CallingState,
+    CustomVideoEvent,
 } from "@stream-io/video-react-sdk";
 import "@stream-io/video-react-sdk/dist/css/styles.css";
 import { useRouter } from "next/navigation";
@@ -25,8 +26,8 @@ import { useSendTransaction } from "@privy-io/react-auth";
 import { isAddress, parseEther } from "ethers";
 import { useAppSelector } from "@/store/hooks";
 import { StreamVideoParticipant } from "@stream-io/video-react-sdk";
-import { useSendTransaction as useSendTransactionWagmi } from 'wagmi'
-import toast, { Toaster } from 'react-hot-toast';
+import { useSendTransaction as useSendTransactionWagmi } from "wagmi";
+import toast, { Toaster } from "react-hot-toast";
 import EndScreen from "@/components/meeting/end-screen";
 
 interface MeetingProps {
@@ -58,6 +59,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const [showSidebar, setShowSidebar] = useState(false);
     const { user } = useAppSelector((state) => state.user);
     const userAddress = user?.walletAddress as `0x${string}`;
+    const [receivedTips, setReceivedTips] = useState<{ from: string; amount: string }[]>([]);
 
     // Sending the transaction
     const { sendTransaction: sendTransactionEmbedded } = useSendTransaction({
@@ -67,18 +69,23 @@ export default function MeetingInterface({ params }: MeetingProps) {
         },
         onSuccess: (response) => {
             console.log("Embedded wallet transaction successful:", response);
-            toast.success(`You successfully tipped ${selectedTipRecipient?.name || selectedTipRecipient?.userId} ${tipAmount} ETH`, { duration: 5000 });
+            toast.success(`You successfully tipped ${selectedTipRecipient?.name || selectedTipRecipient?.userId} ${tipAmount} ETH`, {
+                duration: 5000,
+            });
         },
     });
 
-    const walletClientType = useAppSelector((state) => state.user.user?.walletType)
+    const walletClientType = useAppSelector((state) => state.user.user?.walletType);
 
-    const isEmbeddedWallet = walletClientType === 'privy';
+    const isEmbeddedWallet = walletClientType === "privy";
 
-    const { sendTransaction: sendTransactionWagmi, isSuccess, isPending, isError: isWagmiError } = useSendTransactionWagmi()
+    const { sendTransaction: sendTransactionWagmi, isSuccess, isPending, isError: isWagmiError } = useSendTransactionWagmi();
+
     useEffect(() => {
         if (isSuccess) {
-            toast.success(`You successfully tipped ${selectedTipRecipient?.name || selectedTipRecipient?.userId} ${tipAmount} ETH`, { duration: 5000 });
+            toast.success(`You successfully tipped ${selectedTipRecipient?.name || selectedTipRecipient?.userId} ${tipAmount} ETH`, {
+                duration: 5000,
+            });
         } else if (isPending) {
             toast.loading("Transaction pending...", { duration: 5000 });
         } else if (isWagmiError) {
@@ -88,7 +95,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
     const sendETHExternal = async (recipient: string, amount: string) => {
         console.log("external wallet tipping flow");
-        const notification = toast.loading("Sending tip...", {duration: 9000})
+        const notification = toast.loading("Sending tip...", { duration: 9000 });
 
         try {
             if (!isAddress(recipient)) {
@@ -110,10 +117,9 @@ export default function MeetingInterface({ params }: MeetingProps) {
         }
     };
 
-
     const sendETHEmbedded = async (recipient: string, amount: string) => {
-        console.log("embedded tipping flow")
-        const notification = toast.loading("Sending tip...", {duration: 9000})
+        console.log("embedded tipping flow");
+        const notification = toast.loading("Sending tip...", { duration: 9000 });
         try {
             if (!isAddress(recipient)) {
                 throw new Error("Invalid recipient address");
@@ -127,10 +133,9 @@ export default function MeetingInterface({ params }: MeetingProps) {
             });
         } catch (error) {
             console.error("Error sending ETH:", error);
-            toast.error("Failed to send tip. Please try again.",  { id: notification });
+            toast.error("Failed to send tip. Please try again.", { id: notification });
         }
     };
-
 
     const sendETH = async (recipient: string, amount: string) => {
         if (isEmbeddedWallet) {
@@ -140,10 +145,30 @@ export default function MeetingInterface({ params }: MeetingProps) {
         }
     };
 
+    const sendTipEvent = useCallback(
+        async (recipient: string, amount: string) => {
+            if (!call) return;
+
+            await call.sendCustomEvent({
+                type: "tip",
+                from: connectedUser?.id || "Unknown",
+                to: recipient,
+                amount: amount,
+            });
+        },
+        [call, connectedUser]
+    );
+
     const handleTip = async () => {
         if (selectedTipRecipient && tipAmount) {
-            await sendETH((selectedTipRecipient?.custom?.fields?.walletAddress?.kind as any).stringValue || "0xaa", tipAmount);
-            setShowTipModal(false);
+            try {
+                await sendETH((selectedTipRecipient?.custom?.fields?.walletAddress?.kind as any).stringValue || "0xaa", tipAmount);
+                await sendTipEvent(selectedTipRecipient.userId, tipAmount);
+                setShowTipModal(false);
+            } catch (error) {
+                console.error("Error sending tip:", error);
+                toast.error("Failed to send tip. Please try again.");
+            }
         }
     };
 
@@ -173,6 +198,16 @@ export default function MeetingInterface({ params }: MeetingProps) {
                 case "call.ring":
                     setJoinRequests((prev) => [...prev, event.user.id]);
                     break;
+                case "custom":
+                    const customEvent = event as CustomVideoEvent;
+                    if (customEvent.custom.type === "tip") {
+                        const { from, to, amount } = customEvent.custom;
+                        if (to === connectedUser?.id) {
+                            setReceivedTips((prev) => [...prev, { from, amount }]);
+                            toast.success(`You received a tip of ${amount} ETH from ${from}`, { duration: 5000 });
+                        }
+                    }
+                    break;
             }
         };
 
@@ -181,35 +216,35 @@ export default function MeetingInterface({ params }: MeetingProps) {
         return () => {
             unsubscribe();
         };
-    }, [call]);
+    }, [call, connectedUser]);
 
-    const handleJoinSession = useCallback(async () => {
-        if (id && callingState !== CallingState.JOINED) {
-            try {
-                await call?.join({
-                    data: {
-                        members: [{ user_id: connectedUser?.id!, role: "guest" }],
-                    },
-                });
-                console.log("Successfully joined the call");
-            } catch (error) {
-                console.error("Error joining the call:", error);
-            }
+    const handleJoinSession = useCallback(() => {
+        if (!call || !connectedUser) {
+            console.log("Call or connected user not available");
+            return;
         }
-    }, [id, callingState, call, connectedUser]);
+
+        const needsToJoin = [CallingState.IDLE, CallingState.UNKNOWN].includes(callingState);
+
+        if (needsToJoin && !live) {
+            console.log("User needs to join the call, redirecting to join page");
+            router.push(`/pod/join/${id}`);
+        } else if (callingState === CallingState.JOINED) {
+            console.log("User is already in the call");
+        } else {
+            console.log(`Call is in ${callingState} state, waiting for it to complete`);
+        }
+    }, [id, callingState, call, connectedUser, router, live]);
 
     useEffect(() => {
-        if (connectedUser && live && callingState !== CallingState.JOINED) {
-            handleJoinSession();
-        }
-    }, [connectedUser, live, callingState, handleJoinSession]);
-
+        handleJoinSession();
+    }, [handleJoinSession]);
 
     const handleCancelTip = () => {
         setShowTipModal(false);
         setTipAmount("");
         setSelectedTipRecipient(null);
-    }
+    };
 
     const openTipModal = (participant: StreamVideoParticipant) => {
         setSelectedTipRecipient(participant);
@@ -266,32 +301,35 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
     return (
         <StreamTheme className="root-theme">
-            <Toaster position="bottom-right" toastOptions={{
-                success: {
-                    icon: <CheckCircle2 className="w-5 h-5 text-green-500" />,
-                    style: {
-                        background: '#1E1E1E',
-                        color: '#FFFFFF',
-                        border: '1px solid #22C55E'
+            <Toaster
+                position="bottom-right"
+                toastOptions={{
+                    success: {
+                        icon: <CheckCircle2 className="w-5 h-5 text-green-500" />,
+                        style: {
+                            background: "#1E1E1E",
+                            color: "#FFFFFF",
+                            border: "1px solid #22C55E",
+                        },
                     },
-                },
-                error: {
-                    icon: <AlertCircle className="w-5 h-5 text-red-500" />,
-                    style: {
-                        background: '#1E1E1E',
-                        color: '#FFFFFF',
-                        border: '1px solid #EF4444'
+                    error: {
+                        icon: <AlertCircle className="w-5 h-5 text-red-500" />,
+                        style: {
+                            background: "#1E1E1E",
+                            color: "#FFFFFF",
+                            border: "1px solid #EF4444",
+                        },
                     },
-                },
-                loading: {
-                    icon: <DollarSign className="w-5 h-5 text-yellow-500 animate-pulse" />,
-                    style: {
-                        background: '#1E1E1E',
-                        color: '#FFFFFF',
-                        border: '1px solid #EAB308'
+                    loading: {
+                        icon: <DollarSign className="w-5 h-5 text-yellow-500 animate-pulse" />,
+                        style: {
+                            background: "#1E1E1E",
+                            color: "#FFFFFF",
+                            border: "1px solid #EAB308",
+                        },
                     },
-                },
-            }} />
+                }}
+            />
             <StreamCall call={call}>
                 <div className="h-screen bg-[#121212] text-white flex flex-col">
                     {/* Header Title */}
@@ -346,7 +384,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                         />
                     )}
 
-                    {showThankYouModal && <EndScreen onClose={confirmLeave} user={user}/>}
+                    {showThankYouModal && <EndScreen onClose={confirmLeave} user={user} />}
 
                     <Notifications
                         joinRequests={joinRequests}
@@ -362,6 +400,17 @@ export default function MeetingInterface({ params }: MeetingProps) {
                         <div className="fixed bottom-4 right-4 bg-green-500 text-white px-3 sm:px-4 py-2 rounded-md flex items-center text-xs sm:text-sm">
                             <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                             You successfully tipped {selectedTipRecipient.name || selectedTipRecipient.userId} {tipAmount} ETH
+                        </div>
+                    )}
+
+                    {receivedTips.length > 0 && (
+                        <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md">
+                            Recent tips:{" "}
+                            {receivedTips.map((tip, index) => (
+                                <div key={index}>
+                                    {tip.amount} ETH from {tip.from}
+                                </div>
+                            ))}
                         </div>
                     )}
                 </div>
