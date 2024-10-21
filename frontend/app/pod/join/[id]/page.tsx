@@ -2,7 +2,7 @@
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { useAppSelector } from "@/store/hooks";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import {
     useCall,
     useCallStateHooks,
@@ -27,6 +27,7 @@ const CallParticipants = dynamic(() => import("@/components/meeting/callParticip
 // Import AppContext and use it with useContext hook
 import { useContext } from "react";
 import { AppContext } from "@/providers/appProvider";
+import { setSessionInfo } from "@/store/slices/podSlice";
 
 interface JoinSessionProps {
     params: {
@@ -47,6 +48,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
     const { isLoggedIn, user } = useAppSelector((state) => state.user);
     const { newMeeting, setNewMeeting } = useContext(AppContext);
     const { client: chatClient } = useChatContext();
+    const dispatch = useAppDispatch(); 
 
     const call = useCall();
 
@@ -93,7 +95,17 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                     });
                 } else {
                     const callData = await call?.get();
+                    const foundTitle = callData?.call?.custom.title;
+                    const foundType = callData?.call?.custom.type;
                     setParticipants(callData?.members || []);
+                    // Update store with session title and type
+                     dispatch(
+                         setSessionInfo({
+                             title: foundTitle,
+                             type: foundType,
+                             sessionId: code,
+                         })
+                     );
                 }
             } catch (e) {
                 const err = e as ErrorFromResponse<GetCallResponse>;
