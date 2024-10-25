@@ -7,6 +7,7 @@ import Logo from "@/components/ui/logo";
 import { useAppDispatch } from "@/store/hooks";
 import { logOut } from "@/store/slices/userSlice";
 import toast from "react-hot-toast";
+import { BackgroundBeams } from "@/components/ui/background-beams";
 
 export default function Home() {
     const dispatch = useAppDispatch();
@@ -32,7 +33,8 @@ export default function Home() {
             <div className="w-full max-w-md flex flex-col items-center">
                 <Logo />
 
-                <p className="text-xl text-center mb-12">Connect onchain to a world of decentralized applications.</p>
+                <p className="text-xl text-center mb-12">Host meetings, record sessions</p>
+                <p className="text-xl text-center mb-12">earn proof of attendance and <span>tip</span> seamlessly.</p>
 
                 <div className="w-full space-y-4">
                     <button
@@ -66,6 +68,7 @@ export default function Home() {
                     </button>
                 </div>
             </div>
+            <BackgroundBeams />
         </div>
     );
 }

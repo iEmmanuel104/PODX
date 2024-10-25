@@ -2,7 +2,7 @@
 import React, { useState, useCallback, useContext, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Settings, Edit2, Menu } from "lucide-react";
+import { Settings, Edit2, Menu, LogOut, RefreshCcw, Download, Clock, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import CreateSessionModal from "@/components/pod/createSessionModal";
@@ -16,6 +16,7 @@ import { ErrorFromResponse, GetCallResponse, StreamVideoClient, User } from "@st
 import { API_KEY, CALL_TYPE } from "@/providers/meetProvider";
 import { setSessionInfo } from "@/store/slices/podSlice";
 import { updateUser } from "@/store/slices/userSlice";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const GUEST_USER: User = { id: "guest", type: "guest" };
 
@@ -25,6 +26,11 @@ const getMeetingId = (): string => {
 
     return `${nanoid(3)}-${nanoid(4)}-${nanoid(3)}`;
 };
+
+const formatAddress = (addr: string) => {
+    if (addr.length < 10) return addr
+    return `${addr.slice(0, 6)}...${addr.slice(-4)}`
+}
 
 export default function PodPage() {
     const router = useRouter();
@@ -38,10 +44,11 @@ export default function PodPage() {
     const [inviteLink, setInviteLink] = useState("");
     const [sessionCode, setSessionCode] = useState("");
     const [isJoining, setIsJoining] = useState(false);
-    const [showEditIcon, setShowEditIcon] = useState(false);
     const [isJoiningCreated, setIsJoiningCreated] = useState(false);
 
     const { isLoggedIn, user } = useAppSelector((state) => state.user);
+
+    const [isOpen, setIsOpen] = useState(false)
 
     useEffect(() => {
         if (isLoggedIn && user && user.username.startsWith("guest-")) {
@@ -151,22 +158,6 @@ export default function PodPage() {
                     <Logo />
                 </div>
 
-                <div
-                    className="flex items-center mb-8 sm:mb-16 relative"
-                    onMouseEnter={() => setShowEditIcon(true)}
-                    onMouseLeave={() => setShowEditIcon(false)}
-                >
-                    <div className="w-8 h-8 bg-[#6032F6] rounded-full flex items-center justify-center text-xs font-bold mr-2">{initials}</div>
-                    <span className="bg-green-500 h-1.5 w-1.5 rounded-full mr-1"></span>
-                    <span className="text-[#A3A3A3] text-sm">{displayName}</span>
-                    {showEditIcon && (
-                        <Edit2
-                            className="w-2 h-4 ml-2 cursor-pointer text-[#A3A3A3] hover:text-white transition-colors"
-                            onClick={openUsernameModal}
-                        />
-                    )}
-                </div>
-
                 <div className="w-full flex flex-col md:flex-row gap-6 mb-8 sm:mb-16">
                     <div className="flex-1 rounded-2xl p-6 bg-[#1E1E1E] flex flex-col justify-between" style={{ minHeight: "200px" }}>
                         <div>
@@ -195,23 +186,80 @@ export default function PodPage() {
                     </div>
 
                     <div
-                        className="w-full md:w-[42%] rounded-lg p-6 cursor-pointer transition-all duration-300 ease-in-out bg-gradient-to-br from-[#6032F6] to-[#381D90] hover:from-[#4C28C4] hover:to-[#2D1873] flex flex-col justify-between"
-                        onClick={openCreateModal}
+                        className="w-full md:w-[42%] rounded-lg p-6 bg-gradient-to-br from-[#6032F6] to-[#381D90] flex flex-col justify-between"
                         style={{ minHeight: "200px" }}
                     >
                         <div>
                             <Image src="/images/play-add.svg" alt="Create Session" width={32} height={32} className="mb-4" />
                             <h2 className="text-2xl font-semibold mb-2 text-white">Create Session</h2>
                         </div>
-                        <p className="text-[#E9D5FF] text-sm">
+                        <p className="text-[#E9D5FF] text-sm mb-4">
                             Start a meeting or podcast session in seconds - collaborate, share, and record with ease!
                         </p>
+                        <Button
+                            onClick={openCreateModal}
+                            className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-semibold py-2 px-4 rounded-full transition-colors duration-300"
+                        >
+                            Create Session
+                        </Button>
                     </div>
                 </div>
             </div>
-            <button className="text-[#A3A3A3] hover:text-white transition-colors flex items-center gap-2 text-sm">
-                <Settings className="w-4 h-4" /> Settings
-            </button>
+            <div className="w-full max-w-2xl flex items-center justify-between p-4 text-white">
+                <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-[#6032F6] rounded-full flex items-center justify-center text-sm font-bold">
+                        {initials}
+                    </div>
+                    <span className="text-sm sm:text-base">{displayName}</span>
+                </div>
+                <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="text-[#A3A3A3] hover:text-white hover:bg-transparent focus:bg-transparent active:bg-transparent">
+                            <Settings className="h-5 w-5 mr-2" /> Settings
+                            <span className="sr-only">Settings</span>
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                        className="w-56 bg-[#1E1E1E] border-[#2E2E2E] text-white rounded-md shadow-lg"
+                        align="end"
+                        side="top"
+                        sideOffset={5}
+                    >
+                        <div className="px-3 py-2 border-b border-[#2E2E2E]">
+                            <div className="flex items-center space-x-2">
+                                <div className="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center">
+                                    <Wallet className="h-4 w-4 text-white" />
+                                </div>
+                                <div>
+                                    <p className="text-xs text-[#A3A3A3] truncate w-36">{formatAddress(user.walletAddress)}</p>
+                                    <div className="flex items-center">
+                                        <p className="text-sm font-medium mr-1">Balance</p>
+                                        <div className="bg-[#6032F6] rounded-full px-2 py-0.5 text-xs">
+                                            0.1ETH
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <DropdownMenuItem className="flex items-center px-3 py-2 hover:bg-[#2E2E2E] cursor-pointer">
+                            <RefreshCcw className="mr-2 h-4 w-4" />
+                            <span>Withdraw funds</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="flex items-center px-3 py-2 hover:bg-[#2E2E2E] cursor-pointer">
+                            <Download className="mr-2 h-4 w-4" />
+                            <span>Export wallet</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="flex items-center px-3 py-2 hover:bg-[#2E2E2E] cursor-pointer">
+                            <Clock className="mr-2 h-4 w-4" />
+                            <span>Session history</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="flex items-center px-3 py-2 hover:bg-[#2E2E2E] cursor-pointer text-red-500">
+                            <LogOut className="mr-2 h-4 w-4" />
+                            <span>Log out</span>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
             <CreateSessionModal isOpen={isCreateModalOpen} onClose={closeCreateModal} onCreateSession={handleCreateSession} />
             <CreatedSessionModal
                 isOpen={isCreatedModalOpen}
