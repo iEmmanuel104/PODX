@@ -32,7 +32,7 @@ const JoinSessionForm: React.FC = () => {
                 </div>
             )}
 
-            <Button className="w-full" onClick={handleJoinSession}>
+            <Button className="w-full bg-yellow-500 text-black" onClick={handleJoinSession}>
                 <LogIn className="w-5 h-5 mr-2" />
                 Join session
             </Button>

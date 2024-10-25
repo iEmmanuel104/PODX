@@ -52,7 +52,7 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({ isOpen, onClose
                                 <SelectValue>{sessionType}</SelectValue>
                             </SelectTrigger>
                             <SelectContent className="bg-[#2C2C2C] text-white">
-                                <SelectItem value="Audio Session">Audio Session</SelectItem>
+                                <SelectItem value="Audio Session">Audio Session <span className="mx-2 rounded-full p-1 bg-yellow-500 text-black">Coming soon</span></SelectItem>
                                 <SelectItem value="Video Session">Video Session</SelectItem>
                             </SelectContent>
                         </Select>
