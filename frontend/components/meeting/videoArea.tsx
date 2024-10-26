@@ -10,7 +10,7 @@ interface VideoAreaProps {
 
 const VideoArea: React.FC<VideoAreaProps> = ({ currentSpeaker, onTip }) => {
     return (
-        <div className="h-full relative bg-gray-800 rounded-lg overflow-hidden">
+        <div className="h-full relative bg-gray-800 rounded-[10px] overflow-hidden">
             <Image src="/images/video-placeholder.jpg" alt="Current speaker" className="w-full h-full object-cover" />
             <div className="absolute top-2 left-2 bg-purple-600 text-white text-xs py-1 px-2 rounded-full">Speaking</div>
             <Button variant="outline" size="sm" className="absolute bottom-4 right-4" onClick={() => onTip(currentSpeaker)}>

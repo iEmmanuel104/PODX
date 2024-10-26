@@ -75,7 +75,7 @@ export const CustomRingingCall: React.FC<RingingCallProps> = ({ showMemberCount 
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-[#1E1E1E] p-6 rounded-lg shadow-lg w-96">
+            <div className="bg-[#1E1E1E] p-6 rounded-[10px] shadow-lg w-96">
                 <h2 className="text-2xl font-bold mb-4 text-white text-center">Incoming Call</h2>
                 <CallMembers member={creator} />
                 <CallCallingStateLabel />

@@ -20,7 +20,7 @@ export default function WithdrawForm({ onClose }: WithdrawFormProps) {
 
     return (
         <Modal>
-            <div className="bg-[#121212] p-6 rounded-lg border border-[#6032f6] w-full max-w-md mx-auto">
+            <div className="bg-[#121212] p-6 rounded-[10px] border border-[#6032f6] w-full max-w-md mx-auto">
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <h2 className="text-2xl font-bold text-white mb-6">Withdraw</h2>
 
@@ -31,7 +31,7 @@ export default function WithdrawForm({ onClose }: WithdrawFormProps) {
                         <div className="relative">
                             <select
                                 id="network"
-                                className="block w-full bg-[#1e1e1e] border-0 text-white rounded-md py-2.5 pl-10 pr-10 appearance-none focus:ring-2 focus:ring-[#6032f6]"
+                                className="block w-full bg-[#1e1e1e] border-0 text-white rounded-[10px] py-2.5 pl-10 pr-10 appearance-none focus:ring-2 focus:ring-[#6032f6]"
                                 defaultValue="base"
                             >
                                 <option value="base">Base</option>
@@ -55,7 +55,7 @@ export default function WithdrawForm({ onClose }: WithdrawFormProps) {
                             value={amount}
                             onChange={(e) => setAmount(e.target.value)}
                             placeholder="Enter withdrawal amount"
-                            className="block w-full bg-[#1e1e1e] border-0 text-white rounded-md py-2 px-3 placeholder-gray-500 focus:ring-2 focus:ring-[#6032f6]"
+                            className="block w-full bg-[#1e1e1e] border-0 text-white rounded-[10px] py-2 px-3 placeholder-gray-500 focus:ring-2 focus:ring-[#6032f6]"
                         />
                         <p className="text-sm text-gray-400">Balance: 1 ETH</p>
                     </div>
@@ -70,13 +70,13 @@ export default function WithdrawForm({ onClose }: WithdrawFormProps) {
                             value={address}
                             onChange={(e) => setAddress(e.target.value)}
                             placeholder="Enter wallet address or basename"
-                            className="block w-full bg-[#1e1e1e] border-0 text-white rounded-md py-2 px-3 placeholder-gray-500 focus:ring-2 focus:ring-[#6032f6]"
+                            className="block w-full bg-[#1e1e1e] border-0 text-white rounded-[10px] py-2 px-3 placeholder-gray-500 focus:ring-2 focus:ring-[#6032f6]"
                         />
                     </div>
 
                     <button
                         type="submit"
-                        className="w-full bg-[#6032f6] text-white rounded-md py-2 px-4 hover:bg-[#4C28C4] transition-colors duration-200"
+                        className="w-full bg-[#6032f6] text-white rounded-[10px] py-2 px-4 hover:bg-[#4C28C4] transition-colors duration-200"
                     >
                         Withdraw
                     </button>

@@ -44,7 +44,7 @@ export default function UserInfoModal({ isOpen, onClose, initialUsername, onUpda
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="bg-[#1E1E1E] text-white rounded-lg p-6 w-full max-w-md">
+            <DialogContent className="bg-[#1E1E1E] text-white rounded-[10px] p-6 w-full max-w-md">
                 <DialogHeader>
                     <DialogTitle className="text-2xl font-semibold">Edit Profile</DialogTitle>
                 </DialogHeader>
@@ -58,7 +58,7 @@ export default function UserInfoModal({ isOpen, onClose, initialUsername, onUpda
                             type="text"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
-                            className="w-full bg-[#2C2C2C] rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6032F6] text-white placeholder-[#6C6C6C]"
+                            className="w-full bg-[#2C2C2C] rounded-[10px] px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6032F6] text-white placeholder-[#6C6C6C]"
                             placeholder="Enter your new username"
                             disabled={isLoading}
                         />
@@ -67,14 +67,14 @@ export default function UserInfoModal({ isOpen, onClose, initialUsername, onUpda
                         <Button
                             type="button"
                             onClick={onClose}
-                            className="bg-[#2C2C2C] text-white px-4 py-2 rounded-md hover:bg-[#3C3C3C] transition-all duration-300 ease-in-out text-sm font-medium"
+                            className="bg-[#2C2C2C] text-white px-4 py-2 rounded-[10px] hover:bg-[#3C3C3C] transition-all duration-300 ease-in-out text-sm font-medium"
                             disabled={isLoading}
                         >
                             Cancel
                         </Button>
                         <Button
                             type="submit"
-                            className="bg-[#6032F6] text-white px-4 py-2 rounded-md hover:bg-[#4C28C4] transition-all duration-300 ease-in-out text-sm font-medium"
+                            className="bg-[#6032F6] text-white px-4 py-2 rounded-[10px] hover:bg-[#4C28C4] transition-all duration-300 ease-in-out text-sm font-medium"
                             disabled={isLoading}
                         >
                             {isLoading ? (

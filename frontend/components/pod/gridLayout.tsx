@@ -58,7 +58,7 @@ const GridLayout: React.FC = () => {
 
         return (
             <div
-                className={clsx("relative aspect-video bg-[#2C2C2C] rounded-lg overflow-hidden", {
+                className={clsx("relative aspect-video bg-[#2C2C2C] rounded-[10px] overflow-hidden", {
                     "border-2 border-blue-500": isDominant,
                     "border-2 border-green-500": isLocal,
                 })}

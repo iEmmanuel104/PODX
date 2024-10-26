@@ -6,7 +6,7 @@ interface VideoPreviewProps {
 }
 
 const VideoPreview: React.FC<VideoPreviewProps> = ({ isMuted }) => (
-    <div className="bg-[#1E1E1E] rounded-lg overflow-hidden mb-6">
+    <div className="bg-[#1E1E1E] rounded-[10px] overflow-hidden mb-6">
         <div className="relative aspect-video">
             <Image
                 src="/images/woman.png"

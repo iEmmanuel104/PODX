@@ -50,7 +50,7 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClo
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="bg-[#1E1E1E] text-white rounded-lg p-6 w-full max-w-md">
+            <DialogContent className="bg-[#1E1E1E] text-white rounded-[10px] p-6 w-full max-w-md">
                 <DialogHeader className="flex flex-row justify-between items-center mb-6">
                     <DialogTitle className="text-2xl font-semibold">Your session is created</DialogTitle>
                 </DialogHeader>
@@ -65,7 +65,7 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClo
                                 type="text"
                                 value={inviteLink}
                                 readOnly
-                                className="flex-1 bg-[#2C2C2C] rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6032F6] text-white placeholder-[#6C6C6C]"
+                                className="flex-1 bg-[#2C2C2C] rounded-[10px] px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6032F6] text-white placeholder-[#6C6C6C]"
                             />
                             <Button
                                 onClick={() => copyToClipboard(inviteLink, true)}
@@ -91,7 +91,7 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClo
                                 type="text"
                                 value={sessionCode}
                                 readOnly
-                                className="flex-1 bg-[#2C2C2C] rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6032F6] text-white placeholder-[#6C6C6C]"
+                                className="flex-1 bg-[#2C2C2C] rounded-[10px] px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6032F6] text-white placeholder-[#6C6C6C]"
                             />
                             <Button
                                 onClick={() => copyToClipboard(sessionCode, false)}

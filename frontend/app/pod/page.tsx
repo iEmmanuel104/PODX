@@ -171,20 +171,22 @@ export default function PodPage() {
                             <span className="ml-1">→</span>
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px] bg-[#1E1E1E] text-white border border-[#2E2E2E] p-0 rounded-xl">
-                        <div className="p-6 flex flex-col items-center">
+                    <DialogContent className="sm:max-w-[425px] bg-[#1E1E1E] text-white border border-[#2E2E2E] p-0 rounded-[10px]">
+                        <div className="p-6 flex flex-col items-center gap-4">
                             <Flame className="w-12 h-12 text-[#FF6B00] mb-4" />
-                            <DialogHeader className="">
-                                <DialogTitle className="text-4xl text-center font-bold mb-1">0 day</DialogTitle>
-                                <DialogDescription className="text-[#A3A3A3] text-lg mb-4">
-                                    Session Streak
+                            <DialogTitle className="text-4xl text-center font-bold mb-1">0 day</DialogTitle>
+                            <div className="flex flex-col items-center gap-2 mt-4">
+                                <DialogHeader className="">
+                                    <DialogDescription className="text-[#A3A3A3] text-lg">
+                                        Session Streak
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <DialogDescription className="text-center text-[#A3A3A3] mb-6">
+                                    Session streaks are consecutive daily sessions that are either created or attended.
                                 </DialogDescription>
-                            </DialogHeader>
-                            <DialogDescription className="text-center text-[#A3A3A3] mb-6">
-                                Session streaks are consecutive daily sessions that are either created or attended.
-                            </DialogDescription>
+                            </div>
                             <Button
-                                className="w-full bg-[#6032F6] hover:bg-[#4C28C4] text-white rounded-xl py-2 px-4"
+                                className="w-full bg-[#6032F6] hover:bg-[#4C28C4] text-white rounded-[10px] py-2 px-4"
                                 onClick={() => setIsOpenDialogue(false)}
                             >
                                 I understand.
@@ -194,7 +196,7 @@ export default function PodPage() {
                 </Dialog>
 
                 <div className="w-full flex flex-col md:flex-row gap-6 mb-8 sm:mb-16">
-                    <div className="flex-1 rounded-2xl p-6 bg-[#1E1E1E] flex flex-col justify-between" style={{ minHeight: "200px" }}>
+                    <div className="flex-1 rounded-[10px] p-6 bg-[#1E1E1E] flex flex-col justify-between" style={{ minHeight: "200px" }}>
                         <div>
                             <h2 className="text-2xl font-semibold mb-2 text-white">Join Session</h2>
                             <p className="text-[#A3A3A3] text-sm">Join a meeting instantly and collaborate!</p>
@@ -206,12 +208,12 @@ export default function PodPage() {
                                     placeholder="Enter meeting code"
                                     value={meetingCode}
                                     onChange={(e) => setMeetingCode(e.target.value)}
-                                    className="flex-1 bg-[#2C2C2C] rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6032F6] text-white placeholder-[#6C6C6C]"
+                                    className="flex-1 bg-[#2C2C2C] rounded-[10px] px-4 py-2 text-sm border-[#3c3c3c] focus-within:border-[#3c3c3c] focus:border-[#3c3c3c] focus:ring-[#3c3c3c] text-white placeholder-[#6C6C6C]"
                                 />
                                 <Button
                                     onClick={handleJoinSession}
                                     disabled={!meetingCode || isJoining}
-                                    className="bg-[#6032F6] text-white px-8 py-2 rounded-md hover:bg-[#4C28C4] transition-all duration-300 ease-in-out text-sm font-medium disabled:bg-gray-500 disabled:cursor-not-allowed"
+                                    className="bg-[#6032F6] text-white px-8 py-2 rounded-[10px] hover:bg-[#4C28C4] transition-all duration-300 ease-in-out text-sm font-medium disabled:bg-gray-500 disabled:cursor-not-allowed"
                                 >
                                     {isJoining ? "Joining..." : "Join"}
                                 </Button>
@@ -221,7 +223,7 @@ export default function PodPage() {
                     </div>
 
                     <div
-                        className="w-full md:w-[42%] rounded-lg p-6 bg-gradient-to-br from-[#6032F6] to-[#381D90] flex flex-col justify-between"
+                        className="w-full md:w-[42%] rounded-[10px] p-6 bg-gradient-to-br from-[#6032F6] to-[#381D90] flex flex-col justify-between"
                         style={{ minHeight: "200px" }}
                     >
                         <div>
@@ -255,7 +257,7 @@ export default function PodPage() {
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
-                        className="w-56 bg-[#1E1E1E] border-[#2E2E2E] text-white rounded-md shadow-lg"
+                        className="w-56 bg-[#1E1E1E] border-[#2E2E2E] text-white rounded-[10px] shadow-lg"
                         align="end"
                         side="top"
                         sideOffset={5}

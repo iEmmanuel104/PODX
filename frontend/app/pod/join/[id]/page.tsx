@@ -205,7 +205,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                             </div>
                             <button
                                 onClick={handleJoinSession}
-                                className="mt-4 w-full max-w-md bg-[#6032F6] text-white px-8 py-3 rounded-md hover:bg-[#4C28C4] transition-all duration-300 ease-in-out text-base font-medium flex items-center justify-center"
+                                className="mt-4 w-full max-w-md bg-[#6032F6] text-white px-8 py-3 rounded-[10px] hover:bg-[#4C28C4] transition-all duration-300 ease-in-out text-base font-medium flex items-center justify-center"
                                 disabled={joining || (isGuest && !name)}
                             >
                                 <Image src="/images/join.svg" alt="Join" width={24} height={24} className="mr-2" />

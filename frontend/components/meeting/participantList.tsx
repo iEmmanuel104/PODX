@@ -50,7 +50,7 @@ const ParticipantsSidebar: React.FC<ParticipantsSidebarProps> = ({
 
         return (
             <div
-                className="bg-[#2C2C2C] rounded-lg hover:bg-[#3C3C3C] transition-colors duration-200 relative"
+                className="bg-[#2C2C2C] rounded-[10px] hover:bg-[#3C3C3C] transition-colors duration-200 relative"
             >
                 <div className="flex items-center justify-between py-2 px-3 sm:py-3 sm:px-4">
                     <div className="flex items-center">
@@ -121,7 +121,7 @@ const ParticipantsSidebar: React.FC<ParticipantsSidebarProps> = ({
     const pendingParticipants = sortedParticipants.filter((p) => p.roles.includes("pending"));
 
     return (
-        <div className="w-full bg-[#1E1E1E] p-2 sm:p-4 mt-2 sm:mt-4 flex flex-col rounded-lg">
+        <div className="w-full bg-[#1E1E1E] p-2 sm:p-4 mt-2 sm:mt-4 flex flex-col rounded-[10px]">
             <h2 className="text-white text-base sm:text-lg font-semibold mb-2 sm:mb-4 flex items-center">
                 Participants
                 <span className="bg-[#7C3AED] text-white text-xs px-2 py-0.5 rounded-full ml-2">{sortedParticipants.length}</span>
@@ -130,7 +130,7 @@ const ParticipantsSidebar: React.FC<ParticipantsSidebarProps> = ({
                 <div className="mb-2 sm:mb-4">
                     <h3 className="text-[#AFAFAF] text-xs sm:text-sm font-semibold mb-1 sm:mb-2">Pending Requests</h3>
                     {pendingParticipants.map((participant) => (
-                        <div key={participant.userId} className="flex items-center justify-between bg-[#2C2C2C] p-1 sm:p-2 rounded-lg mb-1 sm:mb-2">
+                        <div key={participant.userId} className="flex items-center justify-between bg-[#2C2C2C] p-1 sm:p-2 rounded-[10px] mb-1 sm:mb-2">
                             <span className="text-white text-xs sm:text-sm truncate max-w-[120px] sm:max-w-[150px]">
                                 {participant.name || participant.userId}
                             </span>

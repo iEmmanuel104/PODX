@@ -56,7 +56,7 @@ const Header: React.FC<HeaderProps> = ({
                             <User className="w-4 h-4 sm:w-5 sm:h-5" />
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-[300px] bg-[#2d2d2d] rounded-xl shadow-lg py-4 sm:py-4 px-4 sm:px-5 border-none">
+                    <DropdownMenuContent align="end" className="w-[300px] bg-[#2d2d2d] rounded-[10px] shadow-lg py-4 sm:py-4 px-4 sm:px-5 border-none">
                         <div className="flex items-center justify-between mb-4 gap-3">
                             <div className="w-full h-6 sm:w-8 sm:h-8 rounded-full bg-gray-300 flex items-center justify-center">
                                 <User className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />

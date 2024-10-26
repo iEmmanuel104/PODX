@@ -8,7 +8,7 @@ interface ModalProps {
 
 export const Modal: React.FC<ModalProps> = ({ children }) => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-        <div className="bg-[#1E1E1E] p-6 rounded-lg w-full max-w-sm">
+        <div className="bg-[#1E1E1E] p-6 rounded-[10px] w-full max-w-sm">
             {children}
         </div>
     </div>

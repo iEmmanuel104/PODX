@@ -19,7 +19,7 @@ const UserInputForm: React.FC<UserInputFormProps> = ({ name, setName, isBasename
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full bg-[#2C2C2C] rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#6032F6]"
+                className="w-full bg-[#2C2C2C] rounded-[10px] px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#6032F6]"
             />
         </div>
 

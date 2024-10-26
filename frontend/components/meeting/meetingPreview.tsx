@@ -86,7 +86,7 @@ const MeetingPreview: React.FC = () => {
                     <AlertDescription>{toast.message}</AlertDescription>
                 </Alert>
             )}
-            <div className="relative w-full rounded-lg aspect-video mx-auto shadow-md overflow-hidden">
+            <div className="relative w-full rounded-[10px] aspect-video mx-auto shadow-md overflow-hidden">
                 <div className="absolute inset-0 bg-[#121212]" />
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[rgba(0,0,0,0.4)]" />
                 <div className="absolute inset-0 flex items-center justify-center [&_video]:-scale-x-100">

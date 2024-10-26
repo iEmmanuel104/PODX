@@ -27,7 +27,7 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({ isOpen, onClose
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="bg-[#1E1E1E] text-white rounded-lg p-6 w-full max-w-md">
+            <DialogContent className="bg-[#1E1E1E] text-white rounded-[10px] p-6 w-full max-w-md">
                 <DialogHeader className="flex flex-row justify-between items-center mb-6">
                     <DialogTitle className="text-2xl font-semibold">Create session</DialogTitle>
                 </DialogHeader>
@@ -40,7 +40,7 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({ isOpen, onClose
                             id="sessionTitle"
                             value={sessionTitle}
                             onChange={(e) => setSessionTitle(e.target.value)}
-                            className="w-full bg-[#2C2C2C] rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
+                            className="w-full bg-[#2C2C2C] rounded-[10px] px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
                         />
                     </div>
                     <div>
@@ -48,7 +48,7 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({ isOpen, onClose
                             Session type
                         </label>
                         <Select value={sessionType} onValueChange={(value: string) => setSessionType(value as "Audio Session" | "Video Session")}>
-                            <SelectTrigger className="w-full bg-[#2C2C2C] rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]">
+                            <SelectTrigger className="w-full bg-[#2C2C2C] rounded-[10px] px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]">
                                 <SelectValue>{sessionType}</SelectValue>
                             </SelectTrigger>
                             <SelectContent className="bg-[#2C2C2C] text-white">
@@ -58,13 +58,13 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({ isOpen, onClose
                         </Select>
                     </div>
                     <div className="flex justify-between gap-6 pt-3">
-                        <Button onClick={onClose} className="w-1/2 px-4 py-6 bg-[#2C2C2C] rounded-md hover:bg-[#3C3C3C] transition-colors">
+                        <Button onClick={onClose} className="w-1/2 px-4 py-6 bg-[#2C2C2C] rounded-[10px] hover:bg-[#3C3C3C] transition-colors">
                             Cancel
                         </Button>
                         <Button
                             onClick={handleCreateSession}
                             disabled={!sessionTitle.trim() || isCreating}
-                            className="w-1/2 px-4 py-6 bg-[#6032F6] rounded-md hover:bg-[#6D28D9] transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed"
+                            className="w-1/2 px-4 py-6 bg-[#6032F6] rounded-[10px] hover:bg-[#6D28D9] transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed"
                         >
                             {isCreating ? "Creating..." : "Create session"}
                         </Button>

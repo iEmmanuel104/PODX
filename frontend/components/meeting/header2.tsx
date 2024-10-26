@@ -74,7 +74,7 @@ export default async function Header({
                             <span className="sr-only">Toggle profile dropdown</span>
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-64 bg-[#2d2d2d] rounded-xl shadow-lg py-4 sm:py-4 px-4 sm:px-5">
+                    <DropdownMenuContent align="end" className="w-64 bg-[#2d2d2d] rounded-[10px] shadow-lg py-4 sm:py-4 px-4 sm:px-5">
                         <div className="flex items-center mb-4">
                             <div className="flex items-center">
                                 {avatar ? (

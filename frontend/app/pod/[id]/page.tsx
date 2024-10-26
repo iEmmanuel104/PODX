@@ -370,7 +370,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                     />
 
                     {showTipSuccess && selectedTipRecipient && (
-                        <div className="fixed bottom-4 right-4 bg-green-500 text-white px-3 sm:px-4 py-2 rounded-md flex items-center text-xs sm:text-sm">
+                        <div className="fixed bottom-4 right-4 bg-green-500 text-white px-3 sm:px-4 py-2 rounded-[10px] flex items-center text-xs sm:text-sm">
                             <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                             You successfully tipped {selectedTipRecipient.name || selectedTipRecipient.userId} {tipAmount} ETH
                         </div>

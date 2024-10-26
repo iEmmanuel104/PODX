@@ -50,7 +50,7 @@ export default function LandingPage() {
                 </h1>
 
                 <button
-                    className="mt-8 py-2 px-8 rounded-xl bg-[#6032F6] hover:bg-[#4C28C4] transition-colors text-white font-medium text-lg"
+                    className="mt-8 py-2 px-8 rounded-[10px] bg-[#6032F6] hover:bg-[#4C28C4] transition-colors text-white font-medium text-lg"
                     onClick={handleConnect}
                     disabled={isConnecting}
                 >
