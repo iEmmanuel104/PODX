@@ -18,6 +18,8 @@ import { setSessionInfo } from "@/store/slices/podSlice";
 import { updateUser } from "@/store/slices/userSlice";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useWallets } from "@privy-io/react-auth";
+import { useBalance } from "wagmi";
 
 const GUEST_USER: User = { id: "guest", type: "guest" };
 
@@ -48,6 +50,19 @@ export default function PodPage() {
     const [isJoiningCreated, setIsJoiningCreated] = useState(false);
 
     const { isLoggedIn, user } = useAppSelector((state) => state.user);
+    const { wallets } = useWallets()
+    const activeWalletAddress = wallets[0]?.address
+    const {
+        data: balance,
+        isLoading,
+        isError
+    } = useBalance({
+        address: activeWalletAddress as `0x${string}`,
+    });
+
+    const formattedBalance = balance ? Number(balance.value) / 1e18 : 0;
+    const displayBalance = formattedBalance.toFixed(4);
+
 
     const [isOpen, setIsOpen] = useState(false)
     const [isOpenDialogue, setIsOpenDialogue] = useState(false)
@@ -198,7 +213,8 @@ export default function PodPage() {
                 <div className="w-full flex flex-col md:flex-row gap-6 mb-8 sm:mb-16">
                     <div className="flex-1 rounded-[10px] p-6 bg-[#1E1E1E] flex flex-col justify-between" style={{ minHeight: "200px" }}>
                         <div>
-                            <h2 className="text-2xl font-semibold mb-2 text-white">Join Session</h2>
+                            <h2 className="text-[32px] font-semibold text-white">Join</h2>
+                            <h2 className="text-[32px] font-semibold mb-2 text-white">Session</h2>
                             <p className="text-[#A3A3A3] text-sm">Join a meeting instantly and collaborate!</p>
                         </div>
                         <div className="flex flex-col gap-4 mt-4">
@@ -228,14 +244,15 @@ export default function PodPage() {
                     >
                         <div>
                             <Image src="/images/play-add.svg" alt="Create Session" width={32} height={32} className="mb-4" />
-                            <h2 className="text-2xl font-semibold mb-2 text-white">Create Session</h2>
+                            <h2 className="text-[32px] font-semibold text-white">Create</h2>
+                            <h2 className="text-[32px] font-semibold text-white mb-2">Session</h2>
                         </div>
                         <p className="text-[#E9D5FF] text-sm mb-4">
                             Start a meeting or podcast session in seconds - collaborate, share, and record with ease!
                         </p>
                         <Button
                             onClick={openCreateModal}
-                            className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-semibold py-2 px-4 rounded-full transition-colors duration-300"
+                            className="w-full bg-[#DDB958] hover:bg-[#DDB958] text-black font-semibold py-2 px-4 rounded-[10px] transition-colors duration-300"
                         >
                             Create Session
                         </Button>
@@ -243,8 +260,8 @@ export default function PodPage() {
                 </div>
             </div>
             <div className="w-full max-w-2xl flex items-center justify-between p-4 text-white">
-                <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-[#6032F6] rounded-full flex items-center justify-center text-sm font-bold">
+                <div className="flex items-center space-x-3 bg-[#333333] rounded-full px-2 py-1">
+                    <div className="w-[24px] h-[24px] bg-[#6032F6] rounded-full flex items-center justify-center text-sm font-bold">
                         {initials}
                     </div>
                     <span className="text-sm sm:text-base">{displayName}</span>
@@ -264,7 +281,7 @@ export default function PodPage() {
                     >
                         <div className="px-3 py-2 border-b border-[#2E2E2E]">
                             <div className="flex items-center space-x-2">
-                                <div className="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center">
+                                <div className="w-8 h-8 rounded-full bg-[#DDB958] flex items-center justify-center">
                                     <Wallet className="h-4 w-4 text-white" />
                                 </div>
                                 <div>
@@ -272,25 +289,26 @@ export default function PodPage() {
                                     <div className="flex items-center">
                                         <p className="text-sm font-medium mr-1">Balance</p>
                                         <div className="bg-[#6032F6] rounded-full px-2 py-0.5 text-xs">
-                                            0.1ETH
+                                            {displayBalance} ETH
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <DropdownMenuItem className="flex items-center px-3 py-2 hover:bg-[#2E2E2E] cursor-pointer">
+                        <DropdownMenuItem className="flex items-center px-3 py-2 cursor-pointer">
                             <RefreshCcw className="mr-2 h-4 w-4" />
                             <span>Withdraw funds</span>
+                            lol
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="flex items-center px-3 py-2 hover:bg-[#2E2E2E] cursor-pointer">
+                        <DropdownMenuItem className="flex items-center px-3 py-2 cursor-pointer">
                             <Download className="mr-2 h-4 w-4" />
                             <span>Export wallet</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="flex items-center px-3 py-2 hover:bg-[#2E2E2E] cursor-pointer">
+                        <DropdownMenuItem className="flex items-center px-3 py-2 cursor-pointer">
                             <Clock className="mr-2 h-4 w-4" />
                             <span>Session history</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="flex items-center px-3 py-2 hover:bg-[#2E2E2E] cursor-pointer text-red-500">
+                        <DropdownMenuItem className="flex items-center px-3 py-2 cursor-pointer text-red-500">
                             <LogOut className="mr-2 h-4 w-4" />
                             <span>Log out</span>
                         </DropdownMenuItem>

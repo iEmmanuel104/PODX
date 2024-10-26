@@ -101,7 +101,7 @@ const ParticipantsSidebar: React.FC<ParticipantsSidebarProps> = ({
                             </button>
                         )}
                         <div className="bg-[#383838] flex items-center rounded-full px-3 py-1.5 gap-2">
-                            <UsersRound className="text-yellow-500 h-6 w-6"/>
+                            <UsersRound className="text-[#DDB958] h-6 w-6"/>
                             Request co-host
                         </div>
                         {currentUser?.role.includes("host") || currentUser?.role.includes("cohost") && role !== "host" && role !== "cohost" && (

@@ -29,7 +29,7 @@ const UserInputForm: React.FC<UserInputFormProps> = ({ name, setName, isBasename
                 <p>Basename confirmed</p>
             </div>
         ) : (
-            <div className="flex items-start text-yellow-600 text-xs mb-6">
+            <div className="flex items-start text-[#DDB958] text-xs mb-6">
                 <AlertCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
                 <p>For better experience, connect your wallet and get a base name</p>
             </div>

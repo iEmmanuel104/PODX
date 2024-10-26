@@ -60,7 +60,7 @@ export default function RootLayout({
                                             },
                                         },
                                         loading: {
-                                            icon: <DollarSign className="w-5 h-5 text-yellow-500 animate-pulse" />,
+                                            icon: <DollarSign className="w-5 h-5 text-[#DDB958] animate-pulse" />,
                                             style: {
                                                 background: "#1E1E1E",
                                                 color: "#FFFFFF",

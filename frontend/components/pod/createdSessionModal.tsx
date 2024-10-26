@@ -117,7 +117,7 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClo
                         onClick={onJoinSession}
                         variant="default"
                         size="lg"
-                        className="w-full bg-yellow-600 text-black hover:bg-yellow-500 transition-all duration-300 ease-in-out mt-4"
+                        className="w-full bg-[#DDB958] text-black hover:bg-[#DDB958] transition-all duration-300 ease-in-out mt-4"
                         disabled={isJoining}
                     >
                         {isJoining ? (
