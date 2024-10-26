@@ -13,18 +13,11 @@ const LoadingOverlay = React.forwardRef<HTMLDivElement, LoadingOverlayProps>(({ 
     >
         <div className="flex flex-col items-center space-y-4">
             <div className="text-4xl font-bold text-white flex items-center">
-                <span className="inline-block animate-pulse-fade">P</span>
-                <span className="inline-block animate-pulse-fade" style={{ animationDelay: "0.2s" }}>
-                    o
-                </span>
-                <span className="inline-block animate-pulse-fade" style={{ animationDelay: "0.4s" }}>
-                    d
-                </span>
                 <div
-                    className="relative inline-flex items-center justify-center w-10 h-10 rounded-full ml-1 animate-pulse-fade overflow-hidden"
+                    className="relative inline-flex items-center justify-center w-20 h-20 rounded-full animate-pulse-fade overflow-hidden"
                     style={{ animationDelay: "0.6s" }}
                 >
-                    <Image src="/logo.png" alt="PodX Logo" width={40} height={40} priority loading="eager" />
+                    <Image src="/logo.png" layout="fill" objectFit="contain" alt="Podx" priority loading="eager"/>
                 </div>
             </div>
             <p className="text-lg font-medium text-white animate-pulse-fade" style={{ animationDelay: "0.8s" }}>
