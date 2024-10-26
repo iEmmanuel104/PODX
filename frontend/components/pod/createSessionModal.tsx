@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Mic, Video } from "lucide-react";
 
@@ -68,6 +69,16 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({ isOpen, onClose
                                 </SelectItem>
                             </SelectContent>
                         </Select>
+                    </div>
+                    <div className="flex items-center justify-between">
+                        <label htmlFor="proofOfAttendance" className="block text-[#A3A3A3] mb-2">
+                            Proof of attendance
+                        </label>
+                        <Switch
+                            // checked={true}
+                            onCheckedChange={() => { }}
+                            id="proof-of-attendance"
+                        />
                     </div>
                     <div className="flex justify-between gap-6 pt-3">
                         <Button onClick={onClose} className="w-1/2 px-4 py-6 bg-[#2C2C2C] rounded-[10px] hover:bg-[#3C3C3C] transition-colors">
