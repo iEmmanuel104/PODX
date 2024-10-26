@@ -59,7 +59,7 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({ isOpen, onClose
                                 </SelectValue>
                             </SelectTrigger>
                             <SelectContent className="bg-[#2C2C2C] text-white">
-                                <SelectItem value="Audio Session" className="flex items-center">
+                                <SelectItem value="Audio Session" className="flex items-center hover:bg-red-300">
                                     <Mic className="h4 w-6 text-[#6032F6] inline-flex mr-2" />
                                     Audio Session <span className="mx-2 rounded-full p-1 bg-[#DDB958] text-black">Coming soon</span>
                                 </SelectItem>
