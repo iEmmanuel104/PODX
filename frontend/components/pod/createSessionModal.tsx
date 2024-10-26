@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Mic, Video } from "lucide-react";
 
 interface CreateSessionModalProps {
     isOpen: boolean;
@@ -13,7 +14,7 @@ interface CreateSessionModalProps {
 }
 
 const CreateSessionModal: React.FC<CreateSessionModalProps> = ({ isOpen, onClose, onCreateSession }) => {
-    const [sessionTitle, setSessionTitle] = useState("Session-1");
+    const [sessionTitle, setSessionTitle] = useState("Demo Session");
     const [sessionType, setSessionType] = useState<"Audio Session" | "Video Session">("Video Session");
     const [isCreating, setIsCreating] = useState(false);
 
@@ -40,7 +41,7 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({ isOpen, onClose
                             id="sessionTitle"
                             value={sessionTitle}
                             onChange={(e) => setSessionTitle(e.target.value)}
-                            className="w-full bg-[#2C2C2C] rounded-[10px] px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
+                            className="w-full bg-[#2C2C2C] rounded-[10px] px-4 py-2 border-[#3c3c3c] active:border-[#3c3c3c] active:ring-[#3c3c3c]"
                         />
                     </div>
                     <div>
@@ -48,12 +49,23 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({ isOpen, onClose
                             Session type
                         </label>
                         <Select value={sessionType} onValueChange={(value: string) => setSessionType(value as "Audio Session" | "Video Session")}>
-                            <SelectTrigger className="w-full bg-[#2C2C2C] rounded-[10px] px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]">
-                                <SelectValue>{sessionType}</SelectValue>
+                            <SelectTrigger className="w-full bg-[#2C2C2C] rounded-[10px] px-4 py-2 border-[#3c3c3c] active:border-[#3c3c3c] active:ring-[#3c3c3c]">
+                                <SelectValue>
+                                    {sessionType === "Audio Session" && <Mic className="h4 w-6 text-[#6032F6] inline-flex mr-2" />}
+                                    {sessionType === "Video Session" && <Video className="h4 w-6 text-[#6032F6] inline-flex mr-2" />}
+                                    {sessionType}
+                                    {sessionType === "Audio Session" && (<span className="mx-2 rounded-full p-1 bg-[#DDB958] text-black">Coming soon</span>)}
+                                </SelectValue>
                             </SelectTrigger>
                             <SelectContent className="bg-[#2C2C2C] text-white">
-                                <SelectItem value="Audio Session">Audio Session <span className="mx-2 rounded-full p-1 bg-[#DDB958] text-black">Coming soon</span></SelectItem>
-                                <SelectItem value="Video Session">Video Session</SelectItem>
+                                <SelectItem value="Audio Session" className="flex items-center">
+                                    <Mic className="h4 w-6 text-[#6032F6] inline-flex mr-2" />
+                                    Audio Session <span className="mx-2 rounded-full p-1 bg-[#DDB958] text-black">Coming soon</span>
+                                </SelectItem>
+                                <SelectItem value="Video Session">
+                                    <Video className="h4 w-6 text-[#6032F6] inline-flex mr-2" />
+                                    Video Session
+                                </SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
