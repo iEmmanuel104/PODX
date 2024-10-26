@@ -65,7 +65,7 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClo
                                 type="text"
                                 value={inviteLink}
                                 readOnly
-                                className="flex-1 bg-[#2C2C2C] rounded-[10px] px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6032F6] text-white placeholder-[#6C6C6C]"
+                                className="flex-1 bg-[#2C2C2C] rounded-[10px] px-4 py-2 text-sm focus:outline-none text-white placeholder-[#6C6C6C]"
                             />
                             <Button
                                 onClick={() => copyToClipboard(inviteLink, true)}
@@ -91,7 +91,7 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClo
                                 type="text"
                                 value={sessionCode}
                                 readOnly
-                                className="flex-1 bg-[#2C2C2C] rounded-[10px] px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6032F6] text-white placeholder-[#6C6C6C]"
+                                className="flex-1 bg-[#2C2C2C] rounded-[10px] px-4 py-2 text-sm focus:outline-none text-white placeholder-[#6C6C6C]"
                             />
                             <Button
                                 onClick={() => copyToClipboard(sessionCode, false)}
