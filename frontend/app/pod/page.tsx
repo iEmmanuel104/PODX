@@ -9,7 +9,7 @@ import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { customAlphabet } from "nanoid";
 import { AppContext } from "@/providers/appProvider";
 import { StreamVideoClient, ErrorFromResponse, GetCallResponse } from "@stream-io/video-react-sdk";
-import { API_KEY, CALL_TYPE } from "@/providers/meetProvider";
+import { API_KEY, CALL_TYPE } from "@/providers/meetProvider/streamMeetProvider";
 import { setSessionInfo } from "@/store/slices/podSlice";
 import { updateUser } from "@/store/slices/userSlice";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";

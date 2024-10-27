@@ -1,26 +1,21 @@
 "use client";
-import { ReactNode, useEffect, useState } from "react";
+import React, { useEffect, useState, memo } from "react";
 import { useParams, useRouter, usePathname } from "next/navigation";
-import { DynamicOptions, Loader } from "next/dynamic";
-import { default as dynamicImport } from "next/dynamic";
+import type { ReactNode } from "react";
 import { LoadingOverlay } from "@/components/ui/loading";
+import { ErrorBoundary } from "@/components/pod/errorBoundary";
+import nextDynamic from "next/dynamic";
 
-// Define the props type for MeetProvider
-type MeetProviderProps = {
-    meetingId?: string;
+// Types
+type LayoutProps = {
     children: ReactNode;
-    language?: string;
+    params: {
+        id?: string;
+    };
 };
 
-// Helper function for dynamic import with proper typing
-const dynamicComponent = <P extends Record<string, any>>(
-    importFunc: () => Promise<{ default: React.ComponentType<P> }>,
-    options: DynamicOptions<P> = {}
-) => {
-    return dynamicImport(importFunc as Loader<P>, options);
-};
-
-const DynamicMeetProvider = dynamicComponent<MeetProviderProps>(() => import("@/providers/meetProvider"), {
+// Dynamic import helper
+const DynamicMeetProvider = nextDynamic(() => import("@/providers/meetProvider/index"), {
     ssr: false,
     loading: () => (
         <div className="min-h-screen bg-[#121212]">
@@ -29,14 +24,8 @@ const DynamicMeetProvider = dynamicComponent<MeetProviderProps>(() => import("@/
     ),
 });
 
-type LayoutProps = {
-    children: ReactNode;
-    params: {
-        id?: string;
-    };
-};
-
-function LayoutContent({ children, params }: LayoutProps) {
+// Memoized layout content component
+const LayoutContent = memo<LayoutProps>(({ children, params }) => {
     const { id } = useParams();
     const router = useRouter();
     const pathname = usePathname();
@@ -48,7 +37,6 @@ function LayoutContent({ children, params }: LayoutProps) {
 
     const meetingId = id as string | undefined;
 
-    // Only run client-side validation
     if (isMounted) {
         const isValidMeetingId = meetingId ? /^[a-z]{3}-[a-z]{4}-[a-z]{3}$/.test(meetingId) : true;
 
@@ -61,15 +49,17 @@ function LayoutContent({ children, params }: LayoutProps) {
 
     return (
         <div className="min-h-screen bg-[#121212]">
-            <DynamicMeetProvider meetingId={meetingId} language="en">
-                {children}
-            </DynamicMeetProvider>
+            <ErrorBoundary fallback={<div>Failed to load meeting. Please try again.</div>}>
+                <DynamicMeetProvider meetingId={meetingId} language="en">
+                    {children}
+                </DynamicMeetProvider>
+            </ErrorBoundary>
         </div>
     );
-}
+});
+
+LayoutContent.displayName = "LayoutContent";
 
 export default function Layout(props: LayoutProps) {
     return <LayoutContent {...props} />;
 }
-
-export const dynamic = "force-dynamic";
