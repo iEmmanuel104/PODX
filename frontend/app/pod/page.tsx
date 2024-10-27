@@ -18,6 +18,8 @@ import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { useBalance } from "wagmi";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useWalletOperations } from "@/hooks/useWalletOps";
+import toast from "react-hot-toast";
 
 // Dynamically import modals for better code splitting
 const CreateSessionModal = React.lazy(() => import("@/components/pod/createSessionModal"));
@@ -100,15 +102,51 @@ export default function PodPage() {
         setIsWithdrawOpen(true)
     }
 
-    const handleWithdrawSubmit = (e: React.FormEvent) => {
-        e.preventDefault()
-        console.log('Withdraw', { amount, address })
-        setIsWithdrawOpen(false)
-    }
-
     const { isLoggedIn, user } = useAppSelector((state) => state.user);
     const { wallets } = useWallets();
     const activeWalletAddress = wallets[0]?.address;
+
+    const { handleWithdraw, handleExportWallet } = useWalletOperations();
+    const canExportWallet = user?.walletType === "privy"
+
+    const handleWithdrawSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsWithdrawOpen(false);
+        const notification = toast.loading("Withdrawing...");
+        
+        try {
+            const hash = await handleWithdraw(
+                address,
+                amount,
+                (hash) => {
+                    toast.success(`Withdrawal successful! Transaction hash: ${hash}`, { id: notification });
+                },
+                (error) => {
+                    toast.error(`Withdrawal failed: ${error.message}`, { id: notification });
+                }
+            );
+        } catch (error) {
+            console.error('Withdrawal error:', error);
+            toast.error(error instanceof Error ? error.message : 'Withdrawal failed', { id: notification });
+        }
+    };
+
+    const handleExport = async () => {
+        try {
+            await handleExportWallet(
+                () => {
+                    toast.success('Wallet exported successfully');
+                },
+                (error) => {
+                    toast.error(`Export failed: ${error.message}`);
+                }
+            );
+        } catch (error) {
+            console.error('Export error:', error);
+            toast.error(error instanceof Error ? error.message : 'Export failed');
+        }
+    };
+
 
     // Memoize balance calculation
     const { data: balance } = useBalance({
@@ -346,7 +384,11 @@ export default function PodPage() {
                             <RefreshCcw className="mr-2 h-4 w-4" />
                             <span>Withdraw funds</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="flex items-center px-3 py-2 cursor-pointer">
+                        <DropdownMenuItem
+                            className="flex items-center px-3 py-2 cursor-pointer"
+                            onSelect={handleExport}
+                            disabled={!canExportWallet}
+                        >
                             <Download className="mr-2 h-4 w-4" />
                             <span>Export wallet</span>
                         </DropdownMenuItem>
