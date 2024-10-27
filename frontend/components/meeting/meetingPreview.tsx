@@ -136,46 +136,25 @@ const MeetingPreview: React.FC = () => {
                 {/* Bottom controls */}
                 <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center space-x-4">
                     <DeviceSelectorPopover
-                        icon={
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                className="w-full h-8 rounded-full bg-black/20 border-white/10 hover:bg-black/30 hover:border-white/20"
-                                onClick={toggleVideo}
-                            >
-                                {isVideoEnabled ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
-                            </Button>
-                        }
+                        icon={isVideoEnabled ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
+                        onClick={toggleVideo}
+                        className="w-full h-8 rounded-full bg-black/20 border-white/10 hover:bg-black/30 hover:border-white/20"
                     >
                         <VideoInputDeviceSelector disabled={!hasCameraPermission} />
                     </DeviceSelectorPopover>
 
                     <DeviceSelectorPopover
-                        icon={
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                className="w-full h-8 rounded-full bg-black/20 border-white/10 hover:bg-black/30 hover:border-white/20"
-                                onClick={toggleAudio}
-                            >
-                                {isAudioEnabled ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
-                            </Button>
-                        }
+                        icon={isAudioEnabled ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
+                        onClick={toggleAudio}
+                        className="w-full h-8 rounded-full bg-black/20 border-white/10 hover:bg-black/30 hover:border-white/20"
                     >
                         <AudioInputDeviceSelector disabled={!hasMicrophonePermission} />
                     </DeviceSelectorPopover>
 
                     <DeviceSelectorPopover
-                        icon={
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                className="w-full h-8 rounded-full bg-black/20 border-white/10 hover:bg-black/30 hover:border-white/20"
-                                onClick={toggleAudio}
-                            >
-                                {isAudioEnabled ? <Volume2 className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
-                            </Button>
-                        }
+                        icon={isAudioEnabled ? <Volume2 className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
+                        onClick={toggleAudio}
+                        className="w-full h-8 rounded-full bg-black/20 border-white/10 hover:bg-black/30 hover:border-white/20"
                     >
                         <AudioOutputDeviceSelector disabled={!hasMicrophonePermission} />
                     </DeviceSelectorPopover>
