@@ -3,6 +3,11 @@
 import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { Modal } from './tips'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Input } from '../ui/input';
+import { Button } from '../ui/button';
 
 interface WithdrawFormProps {
     onClose: () => void;
@@ -19,69 +24,52 @@ export default function WithdrawForm({ onClose }: WithdrawFormProps) {
     }
 
     return (
-        <Modal>
-            <div className="bg-[#121212] p-6 rounded-[10px] border border-[#6032f6] w-full max-w-md mx-auto">
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <h2 className="text-2xl font-bold text-white mb-6">Withdraw</h2>
-
+        <Dialog open={false} onOpenChange={()=>{}}>
+            <DialogContent className="bg-[#121212] border border-[#6032f6] text-white">
+                <DialogHeader>
+                    <DialogTitle>Withdraw</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={()=>{}} className="space-y-4">
                     <div className="space-y-2">
-                        <label htmlFor="network" className="block text-sm font-medium text-gray-400">
-                            Network
-                        </label>
-                        <div className="relative">
-                            <select
-                                id="network"
-                                className="block w-full bg-[#1e1e1e] border-0 text-white rounded-[10px] py-2.5 pl-10 pr-10 appearance-none focus:ring-2 focus:ring-[#6032f6]"
-                                defaultValue="base"
-                            >
-                                <option value="base">Base</option>
-                            </select>
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <div className="w-4 h-4 rounded-full bg-[#6032f6]"></div>
-                            </div>
-                            <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                                <ChevronDown className="h-5 w-5 text-gray-400" />
-                            </div>
-                        </div>
+                        <Label htmlFor="network">Network</Label>
+                        <Select defaultValue="base">
+                            <SelectTrigger className="w-full bg-[#1e1e1e] border-0 text-white rounded-[10px]">
+                                <SelectValue placeholder="Select network" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-[#1e1e1e] border-[#2E2E2E] text-white">
+                                <SelectItem value="base">Base</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     <div className="space-y-2">
-                        <label htmlFor="amount" className="block text-sm font-medium text-gray-400">
-                            Amount
-                        </label>
-                        <input
-                            type="text"
+                        <Label htmlFor="amount">Amount</Label>
+                        <Input
                             id="amount"
                             value={amount}
                             onChange={(e) => setAmount(e.target.value)}
                             placeholder="Enter withdrawal amount"
-                            className="block w-full bg-[#1e1e1e] border-0 text-white rounded-[10px] py-2 px-3 placeholder-gray-500 focus:ring-2 focus:ring-[#6032f6]"
+                            className="bg-[#1e1e1e] border-0 text-white rounded-[10px] placeholder-gray-500 focus:ring-2 focus:ring-[#6032f6]"
                         />
                         <p className="text-sm text-gray-400">Balance: 1 ETH</p>
                     </div>
 
                     <div className="space-y-2">
-                        <label htmlFor="address" className="block text-sm font-medium text-gray-400">
-                            Wallet address
-                        </label>
-                        <input
-                            type="text"
+                        <Label htmlFor="address">Wallet address</Label>
+                        <Input
                             id="address"
                             value={address}
                             onChange={(e) => setAddress(e.target.value)}
                             placeholder="Enter wallet address or basename"
-                            className="block w-full bg-[#1e1e1e] border-0 text-white rounded-[10px] py-2 px-3 placeholder-gray-500 focus:ring-2 focus:ring-[#6032f6]"
+                            className="bg-[#1e1e1e] border-0 text-white rounded-[10px] placeholder-gray-500 focus:ring-2 focus:ring-[#6032f6]"
                         />
                     </div>
 
-                    <button
-                        type="submit"
-                        className="w-full bg-[#6032f6] text-white rounded-[10px] py-2 px-4 hover:bg-[#4C28C4] transition-colors duration-200"
-                    >
+                    <Button type="submit" className="w-full bg-[#6032f6] text-white hover:bg-[#4C28C4]">
                         Withdraw
-                    </button>
+                    </Button>
                 </form>
-            </div>
-        </Modal>
+            </DialogContent>
+        </Dialog>
     )
 }

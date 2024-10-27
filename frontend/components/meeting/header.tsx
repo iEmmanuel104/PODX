@@ -43,7 +43,7 @@ const Header: React.FC<HeaderProps> = ({
     return (
         <header className="flex justify-between items-center px-2 sm:px-4 py-2 bg-[#1d1d1d] rounded-full w-[98%] sm:w-[95%] mx-auto my-1 sm:my-2">
             <div className="flex items-center justify-between gap-1 sm:gap-2">
-                <div className="relative w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 flex-shrink-0">
+                <div className="relative w-[120px] h-[100px] sm:w-[110px] sm:h-[90pz] md:w-[130px] md:h-[110px] flex-shrink-0">
                     <Image src="/logo.png" layout="fill" objectFit="contain" alt="Podx" className="p-0.5 sm:p-1" />
                 </div>
                 <p className="text-xs sm:text-sm md:text-base mr-1 sm:mr-2 w-24 sm:w-full sm:text-center truncate">{customData.title}</p>
