@@ -2,7 +2,7 @@
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Settings, LogOut, RefreshCcw, Download, Clock, Wallet, Flame } from "lucide-react";
+import { Settings, LogOut, RefreshCcw, Download, Clock, Wallet, Flame, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
@@ -13,9 +13,13 @@ import { API_KEY, CALL_TYPE } from "@/providers/meetProvider/streamMeetProvider"
 import { setSessionInfo } from "@/store/slices/podSlice";
 import { updateUser } from "@/store/slices/userSlice";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useWallets } from "@privy-io/react-auth";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { useBalance } from "wagmi";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useWalletOperations } from "@/hooks/useWalletOps";
+import toast from "react-hot-toast";
 
 // Dynamically import modals for better code splitting
 const CreateSessionModal = React.lazy(() => import("@/components/pod/createSessionModal"));
@@ -30,7 +34,7 @@ const getMeetingId = () => {
     return `${nanoid(3)}-${nanoid(4)}-${nanoid(3)}`;
 };
 
-const formatAddress = (addr: string) => 
+const formatAddress = (addr: string) =>
     addr.length < 10 ? addr : `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 
 // Create a separate error handler component
@@ -66,6 +70,7 @@ const WalletInfo = ({ user, balance }: { user: any; balance: string }) => (
 export default function PodPage() {
     const router = useRouter();
     const dispatch = useAppDispatch();
+    const { logout, user: privyUser } = usePrivy()
     const { setNewMeeting } = React.useContext(AppContext);
     const [state, setState] = useState({
         meetingCode: "",
@@ -81,9 +86,67 @@ export default function PodPage() {
         isOpenDialogue: false,
     });
 
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+    const [isWarningOpen, setIsWarningOpen] = useState(false)
+    const [isWithdrawOpen, setIsWithdrawOpen] = useState(false)
+    const [amount, setAmount] = useState('')
+    const [address, setAddress] = useState('')
+
+    const handleWithdrawClick = () => {
+        setIsSettingsOpen(false)
+        setIsWarningOpen(true)
+    }
+
+    const handleWarningConfirm = () => {
+        setIsWarningOpen(false)
+        setIsWithdrawOpen(true)
+    }
+
     const { isLoggedIn, user } = useAppSelector((state) => state.user);
     const { wallets } = useWallets();
     const activeWalletAddress = wallets[0]?.address;
+
+    const { handleWithdraw, handleExportWallet } = useWalletOperations();
+    const canExportWallet = user?.walletType === "privy"
+
+    const handleWithdrawSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsWithdrawOpen(false);
+        const notification = toast.loading("Withdrawing...");
+        
+        try {
+            const hash = await handleWithdraw(
+                address,
+                amount,
+                (hash) => {
+                    toast.success(`Withdrawal successful! Transaction hash: ${hash}`, { id: notification });
+                },
+                (error) => {
+                    toast.error(`Withdrawal failed: ${error.message}`, { id: notification });
+                }
+            );
+        } catch (error) {
+            console.error('Withdrawal error:', error);
+            toast.error(error instanceof Error ? error.message : 'Withdrawal failed', { id: notification });
+        }
+    };
+
+    const handleExport = async () => {
+        try {
+            await handleExportWallet(
+                () => {
+                    toast.success('Wallet exported successfully');
+                },
+                (error) => {
+                    toast.error(`Export failed: ${error.message}`);
+                }
+            );
+        } catch (error) {
+            console.error('Export error:', error);
+            toast.error(error instanceof Error ? error.message : 'Export failed');
+        }
+    };
+
 
     // Memoize balance calculation
     const { data: balance } = useBalance({
@@ -190,6 +253,12 @@ export default function PodPage() {
         return null;
     }
 
+    const handleLogout = () => {
+        logout()
+        router.push("/")
+    }
+    console.log({ privyUser })
+
     return (
         <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4 relative">
             {/* Main content container */}
@@ -200,36 +269,36 @@ export default function PodPage() {
 
                 {/* Session streak dialog */}
                 <Dialog open={state.isOpenDialogue} onOpenChange={(open) => setState((prev) => ({ ...prev, isOpenDialogue: open }))}>
-                        <DialogTrigger asChild>
-                            <Button
-                                variant="ghost"
-                                className="mb-8 bg-[#1E1E1E] hover:bg-[#2E2E2E] text-[#A3A3A3] hover:text-white rounded-full px-4 py-2 text-sm font-medium flex items-center space-x-2 border border-[#2E2E2E]"
-                            >
-                                <Flame className="w-4 h-4 text-[#FF6B00]" />
-                                <span>You have no session streak</span>
-                                <span className="ml-1">→</span>
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-[425px] bg-[#1E1E1E] text-white border border-[#2E2E2E] p-0 rounded-[10px]">
-                            <div className="p-6 flex flex-col items-center gap-4">
-                                <Flame className="w-12 h-12 text-[#FF6B00] mb-4" />
-                                <DialogTitle className="text-4xl text-center font-bold mb-1">0 day</DialogTitle>
-                                <div className="flex flex-col items-center gap-2 mt-4">
-                                    <DialogHeader className="">
-                                        <DialogDescription className="text-[#A3A3A3] text-lg">Session Streak</DialogDescription>
-                                    </DialogHeader>
-                                    <DialogDescription className="text-center text-[#A3A3A3] mb-6">
-                                        Session streaks are consecutive daily sessions that are either created or attended.
-                                    </DialogDescription>
-                                </div>
-                                <Button
-                                    className="w-full bg-[#6032F6] hover:bg-[#4C28C4] text-white rounded-[10px] py-2 px-4"
-                                    onClick={() => setState((prev) => ({ ...prev, isOpenDialogue: false }))}
-                                >
-                                    I understand.
-                                </Button>
+                    <DialogTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            className="mb-8 bg-[#1E1E1E] hover:bg-[#2E2E2E] text-[#A3A3A3] hover:text-white rounded-full px-4 py-2 text-sm font-medium flex items-center space-x-2 border border-[#2E2E2E]"
+                        >
+                            <Flame className="w-4 h-4 text-[#FF6B00]" />
+                            <span>You have no session streak</span>
+                            <span className="ml-1">→</span>
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px] bg-[#1E1E1E] text-white border border-[#2E2E2E] p-0 rounded-[10px]">
+                        <div className="p-6 flex flex-col items-center gap-4">
+                            <Flame className="w-12 h-12 text-[#FF6B00] mb-4" />
+                            <DialogTitle className="text-4xl text-center font-bold mb-1">0 day</DialogTitle>
+                            <div className="flex flex-col items-center gap-2 mt-4">
+                                <DialogHeader className="">
+                                    <DialogDescription className="text-[#A3A3A3] text-lg">Session Streak</DialogDescription>
+                                </DialogHeader>
+                                <DialogDescription className="text-center text-[#A3A3A3] mb-6">
+                                    Session streaks are consecutive daily sessions that are either created or attended.
+                                </DialogDescription>
                             </div>
-                        </DialogContent>
+                            <Button
+                                className="w-full bg-[#6032F6] hover:bg-[#4C28C4] text-white rounded-[10px] py-2 px-4"
+                                onClick={() => setState((prev) => ({ ...prev, isOpenDialogue: false }))}
+                            >
+                                I understand.
+                            </Button>
+                        </div>
+                    </DialogContent>
                 </Dialog>
 
                 {/* Main grid container */}
@@ -311,11 +380,15 @@ export default function PodPage() {
                     >
                         <WalletInfo user={user} balance={displayBalance} />
                         {/* Dropdown menu items */}
-                        <DropdownMenuItem className="flex items-center px-3 py-2 cursor-pointer">
+                        <DropdownMenuItem onSelect={handleWithdrawClick} className="flex items-center px-3 py-2 cursor-pointer">
                             <RefreshCcw className="mr-2 h-4 w-4" />
                             <span>Withdraw funds</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="flex items-center px-3 py-2 cursor-pointer">
+                        <DropdownMenuItem
+                            className="flex items-center px-3 py-2 cursor-pointer"
+                            onSelect={handleExport}
+                            disabled={!canExportWallet}
+                        >
                             <Download className="mr-2 h-4 w-4" />
                             <span>Export wallet</span>
                         </DropdownMenuItem>
@@ -323,12 +396,89 @@ export default function PodPage() {
                             <Clock className="mr-2 h-4 w-4" />
                             <span>Session history</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="flex items-center px-3 py-2 cursor-pointer text-red-500">
+                        <DropdownMenuItem className="flex items-center px-3 py-2 cursor-pointer text-red-500" onSelect={handleLogout}>
                             <LogOut className="mr-2 h-4 w-4" />
                             <span>Log out</span>
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
+
+                {/* warning dropdown */}
+                <Dialog open={isWarningOpen} onOpenChange={setIsWarningOpen}>
+                    <DialogContent className="bg-[#1d1d1d] border-0 text-white max-w-[320px] sm:rounded-3xl rounded-2xl">
+                        <div className="flex flex-col items-center text-center space-y-4 py-4">
+                            <div className="relative">
+                                <AlertTriangle className="h-12 w-12 text-yellow-500" />
+                                <div className="absolute top-0 right-0 h-3 w-3 bg-blue-500 rounded-full" />
+                            </div>
+                            <p className="text-lg font-semibold">
+                                This wallet only supports Base chain for now, your withdrawal would be in the Base Network
+                            </p>
+                        </div>
+                        <DialogFooter className="sm:justify-center">
+                            <Button
+                                className="w-full bg-[#6032f6] hover:bg-[#4C28C4] text-white rounded-xl py-6"
+                                onClick={handleWarningConfirm}
+                            >
+                                I understand.
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+
+                {/* withdrawal modal */}
+                <Dialog open={isWithdrawOpen} onOpenChange={setIsWithdrawOpen}>
+                    <DialogContent className="bg-[#1D1D1D] sm:rounded-3xl text-white p-6">
+                        <DialogHeader className="px-4 py-4">
+                            <DialogTitle>Withdraw</DialogTitle>
+                        </DialogHeader>
+                        <form onSubmit={handleWithdrawSubmit} className="space-y-8 px-4 pb-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="network">Network</Label>
+                                <Select disabled defaultValue="base">
+                                    <SelectTrigger className="w-full bg-[#3c3c3c] border-0 text-white rounded-[10px]">
+                                        <SelectValue placeholder="Select network" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-[#3c3c3c] border-[#2E2E2E] text-white">
+                                        <SelectItem value="base">
+                                            <Image src="/images/base.png" alt="Base" width={16} height={16} className="w-4 h-4 sm:w-5 sm:h-5 mr-2 inline-flex" />
+                                            Base
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="amount">Amount</Label>
+                                <Input
+                                    type="text"
+                                    id="amount"
+                                    value={amount}
+                                    onChange={(e) => setAmount(e.target.value)}
+                                    placeholder="Enter withdrawal amount"
+                                    className="bg-[#3c3c3c] text-white rounded-[10px] placeholder-gray-500"
+                                />
+                                <p className="text-sm text-gray-400">Balance: {displayBalance} ETH</p>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="address">Wallet address</Label>
+                                <Input
+                                    id="address"
+                                    value={address}
+                                    onChange={(e) => setAddress(e.target.value)}
+                                    placeholder="Enter wallet address or basename"
+                                    className="bg-[#3c3c3c] text-white rounded-[10px] placeholder-gray-500"
+                                />
+                            </div>
+
+                            <Button type="submit" className="w-full bg-[#6032f6] text-white hover:bg-[#4C28C4]">
+                                Withdraw
+                            </Button>
+                        </form>
+                    </DialogContent>
+                </Dialog>
             </div>
 
             {/* Modals */}
