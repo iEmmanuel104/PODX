@@ -15,9 +15,10 @@ const nextConfig = {
     // Optimize production builds
     swcMinify: true,
 
-    // Enable module/page level compilation caching
+    // Production-safe experimental features
     experimental: {
-        optimizeCss: true,
+        // Remove optimizeCss as it requires critters
+        // optimizeCss: true,
         optimizePackageImports: [
             '@stream-io/video-react-sdk',
             'stream-chat-react',
@@ -29,8 +30,31 @@ const nextConfig = {
     // Configure webpack for better optimization
     webpack: (config, { dev, isServer }) => {
         if (!dev && !isServer) {
-            config.optimization.splitChunks.chunks = 'all';
-            config.optimization.minimize = true;
+            // Optimize chunk splitting
+            config.optimization = {
+                ...config.optimization,
+                splitChunks: {
+                    chunks: 'all',
+                    minSize: 20000,
+                    maxSize: 244000,
+                    minChunks: 1,
+                    maxAsyncRequests: 30,
+                    maxInitialRequests: 30,
+                    cacheGroups: {
+                        defaultVendors: {
+                            test: /[\\/]node_modules[\\/]/,
+                            priority: -10,
+                            reuseExistingChunk: true,
+                        },
+                        default: {
+                            minChunks: 2,
+                            priority: -20,
+                            reuseExistingChunk: true,
+                        },
+                    },
+                },
+                minimize: true,
+            };
         }
         return config;
     },
@@ -44,29 +68,26 @@ const nextConfig = {
                     { key: 'X-DNS-Prefetch-Control', value: 'on' },
                     { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
                     { key: 'X-Content-Type-Options', value: 'nosniff' },
+                    // Add security headers for production
+                    { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' },
+                    { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+                    { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
                 ],
             },
         ];
     },
 
-    // Override Next.js page configuration globally
-    async rewrites() {
-        return {
-            beforeFiles: [
-                {
-                    source: '/:path*',
-                    has: [
-                        {
-                            type: 'header',
-                            key: 'x-revalidate',
-                        },
-                    ],
-                    destination: '/:path*',
-                },
-            ],
-        };
-    },
+    // Production optimization for static pages
+    output: 'standalone',
+    poweredByHeader: false,
+    generateEtags: true,
+    compress: true,
+
+    // Disable certain features in development
+    ...(process.env.NODE_ENV === 'development' && {
+        reactStrictMode: true,
+        optimizeFonts: false,
+    }),
 };
 
-// Export the configuration
 export default nextConfig;
