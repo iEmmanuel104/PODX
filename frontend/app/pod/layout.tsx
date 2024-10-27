@@ -72,6 +72,4 @@ export default function Layout(props: LayoutProps) {
     return <LayoutContent {...props} />;
 }
 
-export const config = {
-    dynamic: "force-dynamic",
-};
+export const dynamic = "force-dynamic";
