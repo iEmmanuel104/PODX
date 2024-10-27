@@ -1,6 +1,6 @@
-'use client'
+"use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,21 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClo
     const [codeCopied, setCodeCopied] = useState(false);
     const [isCopyingLink, setIsCopyingLink] = useState(false);
     const [isCopyingCode, setIsCopyingCode] = useState(false);
+    const [isJoiningInternal, setIsJoiningInternal] = useState(false);
+
+    useEffect(() => {
+        setIsJoiningInternal(isJoining);
+    }, [isJoining]);
+
+    const handleJoinSession = async () => {
+        setIsJoiningInternal(true);
+        try {
+            await onJoinSession();
+        } catch (error) {
+            console.error("Join session error:", error);
+            setIsJoiningInternal(false);
+        }
+    };
 
     const copyToClipboard = async (text: string, isCopyingLink: boolean) => {
         if (isCopyingLink) {
@@ -114,17 +129,17 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClo
                         <p>For the best experience, remind participants to connect their wallet when joining through the session link</p>
                     </div>
                     <Button
-                        onClick={onJoinSession}
+                        onClick={handleJoinSession}
                         variant="default"
                         size="lg"
                         className="w-full bg-[#DDB958] text-black hover:bg-[#DDB958] transition-all duration-300 ease-in-out mt-4"
-                        disabled={isJoining}
+                        disabled={isJoiningInternal}
                     >
-                        {isJoining ? (
-                            <>
+                        {isJoiningInternal ? (
+                            <div className="flex items-center justify-center">
                                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                Joining...
-                            </>
+                                <span>Joining...</span>
+                            </div>
                         ) : (
                             "Join Session Now"
                         )}
