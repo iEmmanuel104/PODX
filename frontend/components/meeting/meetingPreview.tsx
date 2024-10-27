@@ -16,67 +16,126 @@ const MeetingPreview: React.FC = () => {
     const { isAudioEnabled, isVideoEnabled, isSoundDetected } = useAppSelector((state) => state.media);
     const toast = useAppSelector((state) => state.toast);
     const [videoPreviewText, setVideoPreviewText] = useState("");
+    const [isInitializing, setIsInitializing] = useState(true);
 
     const { useCameraState, useMicrophoneState, useSpeakerState } = useCallStateHooks();
     const { camera, hasBrowserPermission: hasCameraPermission } = useCameraState();
     const { microphone, hasBrowserPermission: hasMicrophonePermission, status: microphoneStatus, mediaStream } = useMicrophoneState();
     const { speaker } = useSpeakerState();
 
+    // Initialize devices
     useEffect(() => {
-        const enableMicAndCam = async () => {
+        let isMounted = true;
+
+        const initializeDevices = async () => {
+            setIsInitializing(true);
+
             try {
-                await camera.enable();
-                dispatch(setVideoEnabled(true));
-            } catch (error) {
-                console.error(error);
-                dispatch(setVideoEnabled(false));
-                dispatch(setToast("Camera error: " + (error instanceof Error ? error.message : String(error))));
-            }
-            try {
-                await microphone.enable();
-                dispatch(setAudioEnabled(true));
-            } catch (error) {
-                console.error(error);
-                dispatch(setAudioEnabled(false));
-                dispatch(setToast("Microphone error: " + (error instanceof Error ? error.message : String(error))));
+                // Enable camera if we have permission
+                if (hasCameraPermission && camera) {
+                    try {
+                        await camera.enable();
+                        if (isMounted) dispatch(setVideoEnabled(true));
+                    } catch (error) {
+                        console.error("Camera error:", error);
+                        if (isMounted) {
+                            dispatch(setVideoEnabled(false));
+                            dispatch(setToast(`Camera error: ${error instanceof Error ? error.message : String(error)}`));
+                        }
+                    }
+                }
+
+                // Wait a bit before initializing microphone to prevent conflicts
+                await new Promise((resolve) => setTimeout(resolve, 500));
+
+                // Enable microphone if we have permission
+                if (hasMicrophonePermission && microphone) {
+                    try {
+                        await microphone.enable();
+                        if (isMounted) dispatch(setAudioEnabled(true));
+                    } catch (error) {
+                        console.error("Microphone error:", error);
+                        if (isMounted) {
+                            dispatch(setAudioEnabled(false));
+                            dispatch(setToast(`Microphone error: ${error instanceof Error ? error.message : String(error)}`));
+                        }
+                    }
+                }
+            } finally {
+                if (isMounted) setIsInitializing(false);
             }
         };
 
-        enableMicAndCam();
-    }, [camera, microphone, dispatch]);
+        initializeDevices();
 
+        // Cleanup function
+        return () => {
+            isMounted = false;
+            if (camera?.enabled) camera.disable().catch(console.error);
+            if (microphone?.enabled) microphone.disable().catch(console.error);
+        };
+    }, [camera, microphone, hasCameraPermission, hasMicrophonePermission, dispatch]);
+
+    // Sound detector setup
     useEffect(() => {
-        if (microphoneStatus !== "enabled" || !mediaStream) return;
+        if (!hasMicrophonePermission || microphoneStatus !== "enabled" || !mediaStream) return;
 
-        const disposeSoundDetector = createSoundDetector(mediaStream, ({ isSoundDetected: sd }) => dispatch(setSoundDetected(sd)), {
-            detectionFrequencyInMs: 80,
-            destroyStreamOnStop: false,
-        });
+        let isMounted = true;
+        const disposeSoundDetector = createSoundDetector(
+            mediaStream,
+            ({ isSoundDetected: sd }) => {
+                if (isMounted) dispatch(setSoundDetected(sd));
+            },
+            {
+                detectionFrequencyInMs: 80,
+                destroyStreamOnStop: false,
+            }
+        );
 
         return () => {
-            disposeSoundDetector().catch((error) => dispatch(setToast("Sound detector error: " + String(error))));
+            isMounted = false;
+            disposeSoundDetector().catch(console.error);
         };
-    }, [microphoneStatus, mediaStream, dispatch]);
+    }, [microphoneStatus, mediaStream, dispatch, hasMicrophonePermission]);
 
-    const toggleAudio = useCallback(() => {
-        microphone
-            .toggle()
-            .then(() => {
-                dispatch(setAudioEnabled(!isAudioEnabled));
-            })
-            .catch((error) => dispatch(setToast("Microphone toggle error: " + String(error))));
-    }, [microphone, dispatch, isAudioEnabled]);
+    const toggleAudio = useCallback(async () => {
+        if (!hasMicrophonePermission) {
+            dispatch(setToast("Microphone permission not granted"));
+            return;
+        }
 
-    const toggleVideo = useCallback(() => {
+        try {
+            await microphone.toggle();
+            dispatch(setAudioEnabled(!isAudioEnabled));
+        } catch (error) {
+            dispatch(setToast(`Microphone toggle error: ${String(error)}`));
+        }
+    }, [microphone, dispatch, isAudioEnabled, hasMicrophonePermission]);
+
+    const toggleVideo = useCallback(async () => {
+        if (!hasCameraPermission) {
+            dispatch(setToast("Camera permission not granted"));
+            return;
+        }
+
         setVideoPreviewText(isVideoEnabled ? "Camera is off" : "Camera is starting");
-        camera
-            .toggle()
-            .then(() => {
-                dispatch(setVideoEnabled(!isVideoEnabled));
-                setVideoPreviewText(isVideoEnabled ? "Camera is off" : "");
-            })
-            .catch((error) => dispatch(setToast("Camera toggle error: " + String(error))));
-    }, [camera, dispatch, isVideoEnabled]);
+        try {
+            await camera.toggle();
+            dispatch(setVideoEnabled(!isVideoEnabled));
+            setVideoPreviewText(isVideoEnabled ? "Camera is off" : "");
+        } catch (error) {
+            dispatch(setToast(`Camera toggle error: ${String(error)}`));
+            setVideoPreviewText("Camera error occurred");
+        }
+    }, [camera, dispatch, isVideoEnabled, hasCameraPermission]);
+
+    if (isInitializing) {
+        return (
+            <div className="w-full max-w-3xl lg:pr-2 lg:mt-8 flex items-center justify-center min-h-[200px]">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white" />
+            </div>
+        );
+    }
 
     return (
         <div className="w-full max-w-3xl lg:pr-2 lg:mt-8">
@@ -87,6 +146,7 @@ const MeetingPreview: React.FC = () => {
                 </Alert>
             )}
             <div className="relative w-full rounded-[10px] aspect-video mx-auto shadow-md overflow-hidden">
+                {/* ... rest of your JSX remains the same ... */}
                 <div className="absolute inset-0 bg-[#121212]" />
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[rgba(0,0,0,0.4)]" />
                 <div className="absolute inset-0 flex items-center justify-center [&_video]:-scale-x-100">
@@ -109,7 +169,7 @@ const MeetingPreview: React.FC = () => {
                         })()}
                         <span
                             className={`absolute -right-2 top-1/2 transform -translate-y-1/2 w-1.5 h-1.5 rounded-full ${
-                                hasCameraPermission ? "bg-[#6032F6]-500" : "bg-red-500"
+                                hasCameraPermission ? "bg-[#6032F6]" : "bg-red-500"
                             }`}
                         ></span>
                     </span>
@@ -152,7 +212,7 @@ const MeetingPreview: React.FC = () => {
                     </DeviceSelectorPopover>
 
                     <DeviceSelectorPopover
-                        icon={isAudioEnabled ? <Volume2 className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
+                        icon={<Volume2 className="w-4 h-4" />}
                         onClick={toggleAudio}
                         className="w-full h-8 rounded-full bg-black/20 border-white/10 hover:bg-black/30 hover:border-white/20"
                     >
