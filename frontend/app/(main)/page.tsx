@@ -6,6 +6,12 @@ import { useAppDispatch } from "@/store/hooks"
 import { logOut } from "@/store/slices/userSlice"
 import toast from "react-hot-toast"
 import Logo from "@/components/ui/logo"
+import localFont from 'next/font/local'
+
+const balige = localFont({
+    src: '../fonts/Balige - Personal Use.otf',
+    variable: '--font-balige'
+})
 
 export default function LandingPage() {
     const dispatch = useAppDispatch()
@@ -27,11 +33,11 @@ export default function LandingPage() {
     }
 
     return (
-        <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4">
+        <div className={`min-h-screen bg-black text-white flex flex-col items-center justify-center p-4 ${balige.variable}`}>
             <div className="w-full max-w-3xl flex flex-col items-center">
                 <Logo />
 
-                <div className="relative inline-block mt-20 mb-2">
+                <div className="relative inline-block mt-20 mb-8">
                     <p className="text-[#A3A3A3] text-xs uppercase tracking-wider px-4 py-1 relative z-10">
                         A creator's workspace
                     </p>
@@ -39,7 +45,7 @@ export default function LandingPage() {
                     <div className="absolute inset-[1px] rounded-full bg-black"></div>
                 </div>
 
-                <h1 className="text-4xl md:text-5xl lg:text-6xl text-center font-serif mb-8 leading-tight">
+                <h1 className="text-4xl md:text-5xl lg:text-6xl text-center font-balige mb-8 leading-tight">
                     Host meetings, record sessions,
                     <br />
                     earn proof of attendance, and

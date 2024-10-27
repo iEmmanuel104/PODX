@@ -14,7 +14,7 @@ import { setSessionInfo } from "@/store/slices/podSlice";
 import { updateUser } from "@/store/slices/userSlice";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useWallets } from "@privy-io/react-auth";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { useBalance } from "wagmi";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -68,6 +68,7 @@ const WalletInfo = ({ user, balance }: { user: any; balance: string }) => (
 export default function PodPage() {
     const router = useRouter();
     const dispatch = useAppDispatch();
+    const { logout, user: privyUser } = usePrivy()
     const { setNewMeeting } = React.useContext(AppContext);
     const [state, setState] = useState({
         meetingCode: "",
@@ -214,6 +215,12 @@ export default function PodPage() {
         return null;
     }
 
+    const handleLogout = () => {
+        logout()
+        router.push("/")
+    }
+    console.log({ privyUser })
+
     return (
         <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4 relative">
             {/* Main content container */}
@@ -347,7 +354,7 @@ export default function PodPage() {
                             <Clock className="mr-2 h-4 w-4" />
                             <span>Session history</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="flex items-center px-3 py-2 cursor-pointer text-red-500">
+                        <DropdownMenuItem className="flex items-center px-3 py-2 cursor-pointer text-red-500" onSelect={handleLogout}>
                             <LogOut className="mr-2 h-4 w-4" />
                             <span>Log out</span>
                         </DropdownMenuItem>

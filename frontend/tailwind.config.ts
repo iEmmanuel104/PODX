@@ -12,6 +12,7 @@ const config: Config = {
             fontFamily: {
                 sans: ['var(--font-clashgrotesk-sans)', 'sans-serif'],
                 mono: ['var(--font-clashgrotesk-mono)', 'monospace'],
+                balige: ['var(--font-balige)', 'balige'],
             },
             colors: {
                 background: 'hsl(var(--background))',
