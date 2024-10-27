@@ -200,7 +200,36 @@ export default function PodPage() {
 
                 {/* Session streak dialog */}
                 <Dialog open={state.isOpenDialogue} onOpenChange={(open) => setState((prev) => ({ ...prev, isOpenDialogue: open }))}>
-                    {/* ... (Dialog content remains the same) ... */}
+                        <DialogTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                className="mb-8 bg-[#1E1E1E] hover:bg-[#2E2E2E] text-[#A3A3A3] hover:text-white rounded-full px-4 py-2 text-sm font-medium flex items-center space-x-2 border border-[#2E2E2E]"
+                            >
+                                <Flame className="w-4 h-4 text-[#FF6B00]" />
+                                <span>You have no session streak</span>
+                                <span className="ml-1">→</span>
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[425px] bg-[#1E1E1E] text-white border border-[#2E2E2E] p-0 rounded-[10px]">
+                            <div className="p-6 flex flex-col items-center gap-4">
+                                <Flame className="w-12 h-12 text-[#FF6B00] mb-4" />
+                                <DialogTitle className="text-4xl text-center font-bold mb-1">0 day</DialogTitle>
+                                <div className="flex flex-col items-center gap-2 mt-4">
+                                    <DialogHeader className="">
+                                        <DialogDescription className="text-[#A3A3A3] text-lg">Session Streak</DialogDescription>
+                                    </DialogHeader>
+                                    <DialogDescription className="text-center text-[#A3A3A3] mb-6">
+                                        Session streaks are consecutive daily sessions that are either created or attended.
+                                    </DialogDescription>
+                                </div>
+                                <Button
+                                    className="w-full bg-[#6032F6] hover:bg-[#4C28C4] text-white rounded-[10px] py-2 px-4"
+                                    onClick={() => setState((prev) => ({ ...prev, isOpenDialogue: false }))}
+                                >
+                                    I understand.
+                                </Button>
+                            </div>
+                        </DialogContent>
                 </Dialog>
 
                 {/* Main grid container */}
