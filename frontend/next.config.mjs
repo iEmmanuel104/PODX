@@ -71,7 +71,8 @@ const nextConfig = {
                     // Add security headers for production
                     { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' },
                     { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-                    { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+                    // Updated Permissions-Policy to allow camera and microphone
+                    { key: 'Permissions-Policy', value: 'camera=self, microphone=self, geolocation=()' }, // This is the default value
                 ],
             },
         ];
