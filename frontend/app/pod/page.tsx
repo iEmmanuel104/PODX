@@ -158,8 +158,6 @@ export default function PodPage() {
         [dispatch]
     );
 
-    const openUsernameModal = () => setShowUsernameModal(true);
-
     if (!isLoggedIn || !user) {
         router.push("/");
         return null;
