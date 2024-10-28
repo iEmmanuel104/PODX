@@ -307,6 +307,8 @@ export default function MeetingInterface({ params }: MeetingProps) {
                 <div className="h-screen bg-[#121212] text-white flex flex-col">
                     {/* Header Title */}
                     <Header
+                        userInfo={user}
+                        withdrawFunds={isEmbeddedWallet}
                         customData={customData}
                         live={live}
                         userAddress={userAddress}

@@ -1,5 +1,5 @@
 import React from "react"
-import { Menu, Copy, User, ArrowUp } from "lucide-react"
+import { Menu, Copy, User, ArrowUp, LogOut, ChevronDown } from "lucide-react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import {
@@ -8,13 +8,16 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { UserInfo } from "@/store/api/userApi"
 
 interface HeaderProps {
+    userInfo: UserInfo | null
     customData: Record<string, any>
     live: boolean
     userAddress: `0x${string}`
     displayBalance: string
     balanceSymbol: string | undefined
+    withdrawFunds?: boolean
     toggleSidebar: () => void
     handleLogout: () => void
     copyAddress: () => void
@@ -25,11 +28,13 @@ const truncateAddress = (address: string) => {
 }
 
 const Header: React.FC<HeaderProps> = ({
+    userInfo,
     customData,
     live,
     userAddress,
     displayBalance,
     balanceSymbol,
+    withdrawFunds: isEmbeddedWallet,
     toggleSidebar,
     handleLogout,
     copyAddress,
@@ -52,9 +57,12 @@ const Header: React.FC<HeaderProps> = ({
             <div className="flex items-center">
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="text-[#A3A3A3] hover:text-white transition-colors">
-                            <User className="w-4 h-4 sm:w-5 sm:h-5" />
-                        </Button>
+                        <div className="flex items-center justify-center space-x-3 bg-[#333333] rounded-full px-2 py-1 w-fit hover:cursor-pointer">
+                            <div className="bg-[#6032F6] rounded-full px-1 py-0.5 flex items-center justify-center text-sm font-bold">
+                                {userInfo?.username[0]} {userInfo?.username[1]}
+                            </div>
+                            <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </div>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-[300px] bg-[#2d2d2d] rounded-[10px] shadow-lg py-4 sm:py-4 px-4 sm:px-5 border-none">
                         <div className="flex items-center justify-between mb-4 gap-3">
@@ -82,6 +90,7 @@ const Header: React.FC<HeaderProps> = ({
                         </div>
                         <DropdownMenuItem asChild>
                             <Button
+                                disabled={isEmbeddedWallet}
                                 onClick={withdrawFunds}
                                 className="flex items-center bg-[#6032F6] hover:bg-[#4006fc] hover:cursor-pointer rounded-full px-5 py-2 w-full"
                             >
@@ -91,6 +100,12 @@ const Header: React.FC<HeaderProps> = ({
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
+                <Button
+                    variant="ghost"
+                    className="text-red-500 hover:text-red-400 hover:bg-transparent"
+                >
+                    <LogOut className="mr-2 h-4 w-4" /> Logout
+                </Button>
                 <Button
                     variant="ghost"
                     size="icon"
