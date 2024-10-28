@@ -113,7 +113,7 @@ export default function PodPage() {
         e.preventDefault();
         setIsWithdrawOpen(false);
         const notification = toast.loading("Withdrawing...");
-        
+
         try {
             const hash = await handleWithdraw(
                 address,
@@ -380,7 +380,11 @@ export default function PodPage() {
                     >
                         <WalletInfo user={user} balance={displayBalance} />
                         {/* Dropdown menu items */}
-                        <DropdownMenuItem onSelect={handleWithdrawClick} className="flex items-center px-3 py-2 cursor-pointer">
+                        <DropdownMenuItem
+                            onSelect={handleWithdrawClick}
+                            className="flex items-center px-3 py-2 cursor-pointer"
+                            disabled={!canExportWallet}
+                        >
                             <RefreshCcw className="mr-2 h-4 w-4" />
                             <span>Withdraw funds</span>
                         </DropdownMenuItem>
