@@ -180,7 +180,7 @@ export default function PodPage() {
             const newSessionCode = getMeetingId();
             setState((prev) => ({
                 ...prev,
-                inviteLink: `https://www.podx.fun/pod/${newSessionCode}`,
+                inviteLink: `https://www.podx.fun/pod/join/${newSessionCode}`,
                 sessionCode: newSessionCode,
                 isCreateModalOpen: false,
                 isCreatedModalOpen: true,
