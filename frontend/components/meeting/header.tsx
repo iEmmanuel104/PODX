@@ -24,7 +24,7 @@ interface HeaderProps {
 }
 
 const truncateAddress = (address: string) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`
+    return `${address.slice(0, 6)}...${address.slice(-5)}`
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -39,38 +39,52 @@ const Header: React.FC<HeaderProps> = ({
     handleLogout,
     copyAddress,
 }) => {
-    console.log(userAddress, displayBalance, balanceSymbol)
-
     const withdrawFunds = () => {
         console.log("withdrawing funds")
     }
 
+    console.log({ isEmbeddedWallet })
     return (
-        <header className="flex justify-between items-center px-2 sm:px-4 py-2 bg-[#1d1d1d] rounded-full w-[98%] sm:w-[95%] mx-auto my-1 sm:my-5">
-            <div className="flex items-center justify-between gap-1 sm:gap-2">
-                <div className="relative w-[120px] h-[50px] sm:w-[110px] sm:h-[50px] md:w-[130px] md:h-[50px] flex-shrink-0">
-                    <Image src="/logo.png" layout="fill" objectFit="contain" alt="Podx" className="p-0.5 sm:p-1" />
+        <header className="flex flex-wrap justify-between items-center px-2 sm:px-4 py-2 bg-[#1d1d1d] rounded-full w-full mx-auto my-2 sm:my-5">
+            {/* Left section */}
+            <div className="flex items-center space-x-2 flex-grow sm:flex-grow-0">
+                <div className="relative w-[80px] h-[40px] sm:w-[120px] sm:h-[50px]">
+                    <Image
+                        src="/logo.png"
+                        layout="fill"
+                        objectFit="contain"
+                        alt="Podx"
+                        className="p-0.5 sm:p-1"
+                    />
                 </div>
-                <p className="text-xs sm:text-sm md:text-base mr-1 sm:mr-2 w-24 sm:w-full sm:text-center truncate">{customData.title}</p>
-                <p className="bg-red-500 text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 py-0.5 rounded-full">{live ? "Live" : "Offline"}</p>
+                <div className="hidden sm:block">
+                    <p className="text-sm md:text-base truncate max-w-[150px] md:max-w-full">
+                        {customData.title}
+                    </p>
+                </div>
+                <span className="bg-red-500 text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                    {live ? "Live" : "Offline"}
+                </span>
             </div>
-            <div className="flex items-center">
+
+            {/* Right section */}
+            <div className="flex items-center space-x-1 sm:space-x-2">
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <div className="flex items-center justify-center space-x-3 bg-[#333333] rounded-full px-2 py-1 w-fit hover:cursor-pointer">
-                            <div className="bg-[#6032F6] rounded-full px-1 py-0.5 flex items-center justify-center text-sm font-bold">
+                        <div className="flex items-center space-x-1 sm:space-x-2 bg-[#333333] rounded-full px-2 py-1 hover:cursor-pointer">
+                            <div className="bg-[#6032F6] rounded-full w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center text-xs sm:text-sm font-bold">
                                 {userInfo?.username[0]} {userInfo?.username[1]}
                             </div>
-                            <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5" />
+                            <ChevronDown className="w-4 h-4" />
                         </div>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-[300px] bg-[#2d2d2d] rounded-[10px] shadow-lg py-4 sm:py-4 px-4 sm:px-5 border-none">
+                    <DropdownMenuContent align="end" className="w-[280px] sm:w-[300px] bg-[#2d2d2d] rounded-[10px] shadow-lg py-4 sm:py-4 px-4 sm:px-5 border-none">
                         <div className="flex items-center justify-between mb-4 gap-3">
-                            <div className="w-full h-6 sm:w-8 sm:h-8 rounded-full bg-gray-300 flex items-center justify-center">
-                                <User className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+                            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-300 flex items-center justify-center">
+                                <User className="w-6 h-6 sm:w-6 sm:h-6 text-gray-600" />
                             </div>
                             <div className="space-y-1 sm:space-y-2 w-full">
-                                <div className="flex items-center justify-between gap-1 sm:gap-2">
+                                <div className="flex items-center justify-between gap-1 sm:gap-2 mb-4">
                                     <span className="text-white text-xs sm:text-sm font-semibold">{truncateAddress(userAddress)}</span>
                                     <p className="text-white text-[10px] sm:text-xs bg-violet-500 rounded-full px-1 sm:px-2 py-0.5">
                                         {displayBalance} {balanceSymbol}
@@ -82,7 +96,12 @@ const Header: React.FC<HeaderProps> = ({
                                         <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-green-500 rounded-full mr-1 sm:mr-2"></div>
                                         <span className="text-[#A3A3A3] text-[10px] sm:text-xs">{truncateAddress(userAddress)}</span>
                                     </div>
-                                    <Button variant="ghost" size="icon" onClick={copyAddress} className="text-[#A3A3A3] hover:text-white hover:bg-black">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={copyAddress}
+                                        className="text-[#A3A3A3] hover:text-white hover:bg-black"
+                                    >
                                         <Copy className="w-2 h-2 sm:w-2 sm:h-2" />
                                     </Button>
                                 </div>
@@ -90,7 +109,7 @@ const Header: React.FC<HeaderProps> = ({
                         </div>
                         <DropdownMenuItem asChild>
                             <Button
-                                disabled={isEmbeddedWallet}
+                                disabled={!isEmbeddedWallet}
                                 onClick={withdrawFunds}
                                 className="flex items-center bg-[#6032F6] hover:bg-[#4006fc] hover:cursor-pointer rounded-full px-5 py-2 w-full"
                             >
@@ -100,19 +119,23 @@ const Header: React.FC<HeaderProps> = ({
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
+
                 <Button
                     variant="ghost"
-                    className="text-red-500 hover:text-red-400 hover:bg-transparent"
+                    onClick={handleLogout}
+                    className="text-red-500 hover:text-red-400 hover:bg-transparent hidden sm:flex"
                 >
-                    <LogOut className="mr-2 h-4 w-4" /> Logout
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span className="text-sm">Logout</span>
                 </Button>
+
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="text-[#A3A3A3] hover:text-white transition-colors sm:hidden ml-2"
+                    className="block sm:hidden text-[#A3A3A3] hover:text-white p-1"
                     onClick={toggleSidebar}
                 >
-                    <Menu className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <Menu className="w-5 h-5" />
                 </Button>
             </div>
         </header>

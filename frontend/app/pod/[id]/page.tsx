@@ -304,7 +304,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
     return (
         <StreamTheme className="root-theme">
             <StreamCall call={call}>
-                <div className="h-screen bg-[#121212] text-white flex flex-col">
+                <div className="h-screen bg-[#121212] text-white flex flex-col w-[95%] mx-auto">
                     {/* Header Title */}
                     <Header
                         userInfo={user}
@@ -319,7 +319,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                         copyAddress={copyAddress}
                     />
 
-                    <div className="flex-grow flex overflow-hidden relative w-full px-2 sm:px-4">
+                    <div className="flex-grow flex overflow-hidden relative">
                         <div className="flex-1 relative">{isSpeakerView ? <SpeakerLayout /> : <PaginatedGridLayout />}</div>
                         <div
                             className={`
@@ -330,6 +330,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                                 bg-[#1E1E1E] sm:bg-transparent 
                                 z-20 sm:z-auto
                                 overflow-y-auto
+                                
                             `}
                         >
                             <ParticipantsSidebar
