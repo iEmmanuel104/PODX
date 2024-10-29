@@ -254,7 +254,8 @@ export default function MeetingInterface({ params }: MeetingProps) {
     };
 
     const handleLeave = () => {
-        setShowThankYouModal(true);
+        router.push("/pod/end")
+        // setShowThankYouModal(true);
     };
 
     const confirmLeave = async () => {
