@@ -1,21 +1,19 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import { PodType } from '../../socket/socket-helper/interface';
+
+export type PodType = 'default' | 'audio_room' | 'livestream'
 
 export interface IPod extends Document {
     id: string;
     owner: mongoose.Types.ObjectId;
     hosts: mongoose.Types.ObjectId[];
     members: mongoose.Types.ObjectId[];
-    ipfsContentHash: string;
+    meetingId: string;
     type: PodType;
     stats: {
         memberCount: number;
         hostCount: number;
-        joinRequestCount: number;
-        coHostRequestCount: number;
     };
-    isScreenSharing: boolean;
-    screenSharingUserId: string | null;
+    startTime: Date;
 }
 
 const PodSchema: Schema = new Schema({
@@ -23,16 +21,13 @@ const PodSchema: Schema = new Schema({
     owner: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     hosts: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     members: [{ type: Schema.Types.ObjectId, ref: 'User' }],
-    ipfsContentHash: { type: String, required: true },
-    type: { type: String, enum: ['open', 'trusted'], required: true },
+    meetingId: { type: String, required: true },
+    type: { type: String, enum: ['default' , 'audio_room' , 'livestream'], required: true },
     stats: {
         memberCount: { type: Number, default: 0 },
         hostCount: { type: Number, default: 0 },
-        joinRequestCount: { type: Number, default: 0 },
-        coHostRequestCount: { type: Number, default: 0 },
     },
-    isScreenSharing: { type: Boolean, default: false },
-    screenSharingUserId: { type: String, default: null },
+    startTime: { type: Date },
 }, { timestamps: true });
 
 export const Pod = mongoose.model<IPod>('Pod', PodSchema);
