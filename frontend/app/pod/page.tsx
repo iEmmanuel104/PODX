@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useWalletOperations } from "@/hooks/useWalletOps";
 import toast from "react-hot-toast";
+import ScheduledPods from "@/components/pod/scheduledPods";
 
 // Dynamically import modals for better code splitting
 const CreateSessionModal = React.lazy(() => import("@/components/pod/createSessionModal"));
@@ -351,6 +352,9 @@ export default function PodPage() {
                     </div>
                 </div>
             </div>
+
+            {/* scheduled sessions */}
+            <ScheduledPods />
 
             {/* User profile and settings section */}
             <div className="w-full max-w-2xl flex items-center justify-between p-4 text-white">
