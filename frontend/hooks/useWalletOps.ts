@@ -57,7 +57,7 @@ export const useWalletOperations = () => {
             // Check if user is authenticated and has embedded wallet
             const isAuthenticated = ready && authenticated;
             const hasEmbeddedWallet = user?.linkedAccounts?.find(
-                (account) => account.type === 'wallet' && account.walletClient === 'privy'
+                (account) => account.type === 'wallet' && account.walletClientType === 'privy'
             );
 
             if (!isAuthenticated || !hasEmbeddedWallet) {
@@ -75,7 +75,7 @@ export const useWalletOperations = () => {
 
     // Return authentication status and wallet availability check
     const canExportWallet = ready && authenticated && !!user?.linkedAccounts?.find(
-        (account) => account.type === 'wallet' && account.walletClient === 'privy'
+        (account) => account.type === 'wallet' && account.walletClientType === 'privy'
     );
 
     return {
