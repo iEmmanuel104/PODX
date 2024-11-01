@@ -144,7 +144,7 @@ export default function PodPage() {
                         type,
                         sessionId: newSessionCode,
                         starts_at: startDate.toISOString(),
-                    }).unwrap();
+                    });
 
                     if (!result.data) {
                         throw new Error("Failed to schedule call");
