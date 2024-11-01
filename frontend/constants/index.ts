@@ -11,3 +11,15 @@ export const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID as string;
 export const STREAM_API_KEY = process.env.NEXT_PUBLIC_STREAM_API_KEY as string;
 
 export const STREAM_API_SECRET = process.env.NEXT_PUBLIC_STREAM_API_SECRET as string;
+
+export enum sessionType {
+    POD = 'Pod Session',
+    AUDIO = 'Audio Session',
+    // LIVE = 'Live Session'
+}
+
+export const streamCallType = {
+    [sessionType.POD]: 'default',
+    [sessionType.AUDIO]: 'audio_room',
+    // [sessionType.LIVE]: 'livestream'
+} as const;
