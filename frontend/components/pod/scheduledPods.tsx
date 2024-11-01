@@ -5,7 +5,7 @@ import { Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-import { StreamCallData } from "./StreamCallData";
+import { StreamCallData } from "./streamCallData";
 
 interface ScheduledPodsProps {
     sessions: StreamCallData[];

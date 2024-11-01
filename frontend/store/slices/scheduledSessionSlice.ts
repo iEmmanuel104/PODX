@@ -1,5 +1,5 @@
 // store/slices/scheduledSessionsSlice.ts
-import { StreamCallData } from "@/components/pod/StreamCallData";
+import { StreamCallData } from "@/components/pod/streamCallData";
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 export interface scheduledSessionsState {

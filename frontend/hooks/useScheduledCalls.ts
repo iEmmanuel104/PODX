@@ -14,12 +14,20 @@ import {
 } from '@/store/slices/scheduledSessionSlice';
 import type { StreamCallData } from '@/components/pod/StreamCallData';
 import type { ApiResponse } from '@/store/api/api';
-import { MutationTrigger } from '@reduxjs/toolkit/dist/query/react/buildHooks';
-import { MutationDefinition } from '@reduxjs/toolkit/query';
+import type { BaseQueryFn, MutationDefinition } from '@reduxjs/toolkit/query';
+
+// Define the mutation trigger type without relying on internal paths
+type MutationTrigger<D extends MutationDefinition<any, any, any, any>> = (
+    arg: D['arg']
+) => Promise<D['baseQueryFn'] extends BaseQueryFn ? D['baseQueryFn']['ResultType'] : unknown>;
 
 interface UseScheduledCallsReturn {
     scheduledSessions: StreamCallData[];
-    scheduleCall: MutationTrigger<MutationDefinition<ScheduleCallArgs, any, any, ApiResponse<StreamCallData>>>;
+    scheduleCall: MutationTrigger<{
+        arg: ScheduleCallArgs;
+        baseQueryFn: BaseQueryFn;
+        ResultType: ApiResponse<StreamCallData>;
+    }>;
     isLoading: boolean;
     getScheduledCall: (sessionId: string) => Promise<ApiResponse<{ call: StreamCallData }>>;
 }

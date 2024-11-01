@@ -1,6 +1,6 @@
 // store/api/scheduledCallsApi.ts
 import { ApiResponse, apiSlice } from './api';
-import { StreamCallData } from '@/components/pod/scheduledPods';
+import { StreamCallData } from '@/components/pod/streamCallData';
 
 export interface ScheduleCallArgs {
     title: string;

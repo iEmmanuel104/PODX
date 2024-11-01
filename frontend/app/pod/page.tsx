@@ -19,7 +19,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Flame } from "lucide-react";
 import { useScheduledCalls } from "@/hooks/useScheduledCalls";
 import { addScheduledSession } from "@/store/slices/scheduledSessionSlice";
-import { StreamCallData } from "@/components/pod/StreamCallData";
+import { StreamCallData } from "@/components/pod/streamCallData";
 
 // Dynamic imports
 const CreateSessionModal = dynamic(() => import("@/components/pod/createSessionModal"), { ssr: false });
