@@ -1,4 +1,4 @@
-// pages/pod/index.tsx
+// app/pod/index.tsx
 "use client";
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -17,7 +17,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Flame } from "lucide-react";
-import { setScheduledSessions } from "@/store/slices/scheduledSessionSlice";
+import { useScheduledCalls } from "@/hooks/useScheduledCalls";
+import { addScheduledSession } from "@/store/slices/scheduledSessionSlice";
+import { StreamCallData } from "@/components/pod/StreamCallData";
 
 // Dynamic imports
 const CreateSessionModal = dynamic(() => import("@/components/pod/createSessionModal"), { ssr: false });
@@ -61,7 +63,7 @@ export default function PodPage() {
     const { setNewMeeting } = React.useContext(AppContext);
     const { isLoggedIn, user } = useAppSelector((state) => state.user);
     const sessionInfo = useAppSelector((state) => state.pod);
-    const scheduledSessions = useAppSelector((state) => state.scheduledSessions.sessions);
+    const { scheduledSessions, scheduleCall, getScheduledCall, isLoading } = useScheduledCalls();
     const { wallets } = useWallets();
     const activeWalletAddress = wallets[0]?.address;
 
@@ -90,7 +92,6 @@ export default function PodPage() {
             setNewMeeting(true);
             const newSessionCode = getMeetingId();
 
-            // Create session data object
             const sessionData: SessionData = {
                 title,
                 type,
@@ -98,14 +99,27 @@ export default function PodPage() {
                 isScheduled: !!scheduledDate,
             };
 
-            // Add starts_at if it's a scheduled session
             if (scheduledDate) {
-                // Ensure the date is in the future
-                const startDate = new Date(Math.max(scheduledDate.getTime(), Date.now() + 60000)); // At least 1 minute in future
+                const startDate = new Date(Math.max(scheduledDate.getTime(), Date.now() + 60000));
                 sessionData.starts_at = startDate.toISOString();
+
+                try {
+                    await scheduleCall({
+                        title,
+                        type,
+                        sessionId: newSessionCode,
+                        starts_at: startDate.toISOString(),
+                    }).unwrap();
+                } catch (error) {
+                    console.error("Failed to schedule call:", error);
+                    setState((prev) => ({
+                        ...prev,
+                        error: "Failed to schedule the call",
+                    }));
+                    return;
+                }
             }
 
-            // Update local state
             setState((prev) => ({
                 ...prev,
                 inviteLink: `https://www.podx.fun/pod/join/${newSessionCode}`,
@@ -114,110 +128,105 @@ export default function PodPage() {
                 isCreatedModalOpen: true,
             }));
 
-            // Dispatch to store
             dispatch(setSessionInfo(sessionData));
-
-            // Additional logic for scheduled sessions
-            if (scheduledDate) {
-                try {
-                    // Here you can add any additional logic for scheduled sessions
-                    // For example, saving to a database or scheduling notifications
-                    console.log("Scheduled session for:", sessionData.starts_at);
-                } catch (error) {
-                    console.error("Failed to schedule session:", error);
-                    // Handle error appropriately
-                }
-            }
         },
-        [dispatch, setNewMeeting]
+        [dispatch, setNewMeeting, scheduleCall]
     );
 
     const handleJoinSession = useCallback(async () => {
-        if (!state.meetingCode) return;
+        if (!state.meetingCode || !user) return;
 
         setState((prev) => ({ ...prev, isJoining: true, error: "" }));
         dispatch(clearSessionInfo());
 
         try {
+            // First try Stream.io
             const client = new StreamVideoClient({
                 apiKey: API_KEY,
                 user: {
-                    id: user?.id as string,
-                    name: user?.username as string,
+                    id: user.id,
+                    name: user.username,
                 },
-                token: user?.streamToken,
+                token: user.streamToken,
             });
 
-            const { calls } = await client.queryCalls({ filter_conditions: { id: state.meetingCode } });
+            try {
+                const { calls } = await client.queryCalls({
+                    filter_conditions: { id: state.meetingCode },
+                });
 
-            console.log({ calls });
-
-            // log the first call to see if it's the same as the meeting code
-            if (calls.length > 0 && calls[0].id === state.meetingCode) {
-                const response: GetCallResponse = await calls[0].get();
-
-                // Check if user is the creator
-                const isCreator = response.call.created_by.id === user?.id;
-
-                if (!isCreator) {
-                    setState((prev) => ({
-                        ...prev,
-                        error: "Only the host can join this session.",
-                    }));
+                if (calls.length > 0 && calls[0].id === state.meetingCode) {
+                    const response: GetCallResponse = await calls[0].get();
+                    handleStreamCall(response);
                     return;
                 }
+            } catch (streamError) {
+                console.log("Stream.io call not found, checking scheduled calls...");
+            }
 
-                // Store call data for scheduled pods display
-                if (response.call.starts_at) {
-                    // Add to scheduled sessions storage/state
-                    dispatch(setScheduledSessions([...scheduledSessions, response.call]));
-                }
-
-                if (response.call && state.meetingCode === response.call.custom.sessionId) {
-                    dispatch(
-                        setSessionInfo({
-                            title: response.call.custom.title,
-                            type: response.call.custom.type,
-                            sessionId: state.meetingCode,
-                            starts_at: response.call.starts_at,
-                        })
-                    );
-                    router.push(`/pod/join/${state.meetingCode}`);
+            // Then check Redis scheduled calls
+            try {
+                const { data } = await getScheduledCall(state.meetingCode);
+                if (data?.call) {
+                    handleScheduledCall(data.call);
                     return;
                 }
+            } catch (redisError) {
+                console.log("Scheduled call not found in Redis");
             }
 
             setState((prev) => ({
                 ...prev,
                 error: "Couldn't find the meeting you're trying to join.",
             }));
-        } catch (e: unknown) {
-            const err = e as ErrorFromResponse<GetCallResponse>;
+        } catch (error) {
             setState((prev) => ({
                 ...prev,
-                error: err.status === 404 ? "Couldn't find the meeting you're trying to join." : "Failed to join meeting",
+                error: "Failed to join meeting",
             }));
         } finally {
             setState((prev) => ({ ...prev, isJoining: false }));
         }
-    }, [state.meetingCode, router, user, dispatch]);
+    }, [state.meetingCode, user, dispatch, router, handleStreamCall, handleScheduledCall, getScheduledCall]);
+
+    const handleStreamCall = useCallback(
+        (response: GetCallResponse) => {
+            if (response.call && state.meetingCode === response.call.custom.sessionId) {
+                dispatch(
+                    setSessionInfo({
+                        title: response.call.custom.title,
+                        type: response.call.custom.type,
+                        sessionId: state.meetingCode,
+                        starts_at: response.call.starts_at,
+                    })
+                );
+                router.push(`/pod/join/${state.meetingCode}`);
+            }
+        },
+        [dispatch, router, state.meetingCode]
+    );
+
+    const handleScheduledCall = useCallback(
+        (call: StreamCallData) => {
+            if (!call?.custom) return;
+
+            dispatch(addScheduledSession(call));
+            dispatch(
+                setSessionInfo({
+                    title: call.custom.title,
+                    type: call.custom.type,
+                    sessionId: state.meetingCode,
+                    starts_at: call.starts_at,
+                })
+            );
+            router.push(`/pod/join/${state.meetingCode}`);
+        },
+        [dispatch, router, state.meetingCode]
+    );
 
     const handleJoinCreatedSession = useCallback(async () => {
         setState((prev) => ({ ...prev, isJoiningCreated: true }));
         try {
-            // Use sessionInfo from the outer scope
-            // if (sessionInfo.starts_at) {
-            //     const startTime = new Date(sessionInfo.starts_at);
-            //     if (startTime > new Date()) {
-            //         setState((prev) => ({
-            //             ...prev,
-            //             error: "This session hasn't started yet. Please join at the scheduled time.",
-            //             isJoiningCreated: false,
-            //         }));
-            //         return;
-            //     }
-            // }
-
             router.push(`/pod/join/${state.sessionCode}`);
         } catch (error) {
             console.error("Failed to join created session:", error);
@@ -228,7 +237,7 @@ export default function PodPage() {
         } finally {
             setState((prev) => ({ ...prev, isJoiningCreated: false }));
         }
-    }, [router, state.sessionCode, sessionInfo.starts_at]);
+    }, [router, state.sessionCode]);
 
     const handleUpdateUsername = useCallback(
         (newUsername: string) => {
@@ -340,8 +349,9 @@ export default function PodPage() {
                 sessions={scheduledSessions}
                 onJoinSession={(sessionId) => router.push(`/pod/join/${sessionId}`)}
                 currentUserId={user?.id}
+                isLoading={isLoading}
             />
-            
+
             {/* User details section */}
             <UserDetails user={user} activeWalletAddress={activeWalletAddress} />
 

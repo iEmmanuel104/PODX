@@ -76,6 +76,6 @@ const baseQuery: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> =
 
 export const apiSlice = createApi({
     baseQuery: baseQuery,
-    tagTypes: ['User', 'Pod'],
+    tagTypes: ['User', 'Pod', 'ScheduledCalls'],
     endpoints: () => ({}),
 });
