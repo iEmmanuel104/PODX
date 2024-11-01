@@ -2,31 +2,34 @@
 import { Button } from "@/components/ui/button";
 import { Calendar } from "lucide-react";
 import { format } from "date-fns";
+import { CallResponse } from "@stream-io/video-react-sdk";
 
-interface CallCreator {
-    id: string;
-    name: string;
-    custom?: {
-        username?: string;
-        walletAddress?: string;
-    };
-}
+import { UserResponse } from "@stream-io/video-react-sdk";
 
-export interface StreamCallData {
-    id: string;
-    custom: {
-        title: string;
-        sessionId: string;
-        type: string;
-    };
-    created_by: CallCreator;
-    starts_at?: string;
-    session?: {
-        participants: Array<{
-            user: CallCreator;
-            role: string;
-        }>;
-    };
+// interface CallCreator extends UserResponse {
+//     id: string;
+//     name: string;
+//     custom?: {
+//         username?: string;
+//         walletAddress?: string;
+//     };
+// }
+
+export interface StreamCallData extends CallResponse{
+    // id: string;
+    // custom: {
+    //     title: string;
+    //     sessionId: string;
+    //     type: string;
+    // };
+    // created_by: CallCreator;
+    // starts_at?: string;
+    // session?: {
+    //     participants: Array<{
+    //         user: CallCreator;
+    //         role: string;
+    //     }>;
+    // };
 }
 
 interface ScheduledPodsProps {
