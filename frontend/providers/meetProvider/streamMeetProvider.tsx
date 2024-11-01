@@ -19,7 +19,9 @@ export const GUEST_ID = `guest_${nanoid(15)}`;
 const connectionPool = new StreamConnectionPool();
 
 export const StreamMeetProvider = memo<StreamMeetProviderProps>(({ meetingId, children, language }) => {
-    const { user: appUser, isLoggedIn } = useAppSelector((state) => state.user);
+    const { user, pod } = useAppSelector((state) => state);
+    const { user: appUser, isLoggedIn } = user;
+    const { streamCallType } = pod;
     const [loading, setLoading] = useState(true);
     const [isMounted, setIsMounted] = useState(false);
     const chatClientRef = useRef<StreamChat>();
@@ -71,11 +73,13 @@ export const StreamMeetProvider = memo<StreamMeetProviderProps>(({ meetingId, ch
                 });
             }
 
-            if (!callRef.current && videoClientRef.current) {
-                callRef.current = videoClientRef.current.call(CALL_TYPE, meetingId);
+            if (!callRef.current && videoClientRef.current && meetingId) {
+                const callType = streamCallType || "default";
+                console.log({ callType, meetingId, streamCallType });
+                callRef.current = videoClientRef.current.call(callType, meetingId);
             }
         },
-        [appUser, meetingId]
+        [appUser, meetingId, streamCallType]
     );
 
     useEffect(() => {
