@@ -5,7 +5,8 @@ import { AuthenticatedController, basicAuth } from '../middlewares/authMiddlewar
 const router: Router = express.Router();
 
 router
-    .get('/schedule', basicAuth(), AuthenticatedController(CallsController.scheduleCall))
+    .post('/schedule', basicAuth(), AuthenticatedController(CallsController.scheduleCall))
+    .get('/scheduled', basicAuth(), AuthenticatedController(CallsController.getUserScheduledCalls))
     .get('/scheduled/:sessionId', basicAuth(), AuthenticatedController(CallsController.getScheduledCall));
 
 export default router;
