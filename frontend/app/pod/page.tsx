@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Flame } from "lucide-react";
+import { setScheduledSessions } from "@/store/slices/scheduledSessionSlice";
 
 // Dynamic imports
 const CreateSessionModal = dynamic(() => import("@/components/pod/createSessionModal"), { ssr: false });
@@ -60,6 +61,7 @@ export default function PodPage() {
     const { setNewMeeting } = React.useContext(AppContext);
     const { isLoggedIn, user } = useAppSelector((state) => state.user);
     const sessionInfo = useAppSelector((state) => state.pod);
+    const scheduledSessions = useAppSelector((state) => state.scheduledSessions.sessions);
     const { wallets } = useWallets();
     const activeWalletAddress = wallets[0]?.address;
 
@@ -148,21 +150,47 @@ export default function PodPage() {
 
             const { calls } = await client.queryCalls({ filter_conditions: { id: state.meetingCode } });
 
+            console.log({ calls });
+
             // log the first call to see if it's the same as the meeting code
             if (calls.length > 0 && calls[0].id === state.meetingCode) {
                 const response: GetCallResponse = await calls[0].get();
+
+                // Check if user is the creator
+                const isCreator = response.call.created_by.id === user?.id;
+
+                if (!isCreator) {
+                    setState((prev) => ({
+                        ...prev,
+                        error: "Only the host can join this session.",
+                    }));
+                    return;
+                }
+
+                // Store call data for scheduled pods display
+                if (response.call.starts_at) {
+                    // Add to scheduled sessions storage/state
+                    dispatch(setScheduledSessions([...scheduledSessions, response.call]));
+                }
+
                 if (response.call && state.meetingCode === response.call.custom.sessionId) {
                     dispatch(
                         setSessionInfo({
                             title: response.call.custom.title,
                             type: response.call.custom.type,
                             sessionId: state.meetingCode,
+                            starts_at: response.call.starts_at,
                         })
                     );
                     router.push(`/pod/join/${state.meetingCode}`);
                     return;
                 }
             }
+
+            setState((prev) => ({
+                ...prev,
+                error: "Couldn't find the meeting you're trying to join.",
+            }));
         } catch (e: unknown) {
             const err = e as ErrorFromResponse<GetCallResponse>;
             setState((prev) => ({
@@ -178,17 +206,17 @@ export default function PodPage() {
         setState((prev) => ({ ...prev, isJoiningCreated: true }));
         try {
             // Use sessionInfo from the outer scope
-            if (sessionInfo.starts_at) {
-                const startTime = new Date(sessionInfo.starts_at);
-                if (startTime > new Date()) {
-                    setState((prev) => ({
-                        ...prev,
-                        error: "This session hasn't started yet. Please join at the scheduled time.",
-                        isJoiningCreated: false,
-                    }));
-                    return;
-                }
-            }
+            // if (sessionInfo.starts_at) {
+            //     const startTime = new Date(sessionInfo.starts_at);
+            //     if (startTime > new Date()) {
+            //         setState((prev) => ({
+            //             ...prev,
+            //             error: "This session hasn't started yet. Please join at the scheduled time.",
+            //             isJoiningCreated: false,
+            //         }));
+            //         return;
+            //     }
+            // }
 
             router.push(`/pod/join/${state.sessionCode}`);
         } catch (error) {
@@ -308,8 +336,12 @@ export default function PodPage() {
             </div>
 
             {/* Scheduled sessions */}
-            <ScheduledPods />
-
+            <ScheduledPods
+                sessions={scheduledSessions}
+                onJoinSession={(sessionId) => router.push(`/pod/join/${sessionId}`)}
+                currentUserId={user?.id}
+            />
+            
             {/* User details section */}
             <UserDetails user={user} activeWalletAddress={activeWalletAddress} />
 
