@@ -53,6 +53,8 @@ export interface PodState {
     sessionType: sessionType | '';
     sessionId: string,
     streamCallType: typeof streamCallType[keyof typeof streamCallType] | '';
+    starts_at?: string;
+    isScheduled?: boolean;
 }
 
 const initialState: PodState = {
@@ -83,6 +85,8 @@ const initialState: PodState = {
     sessionType: '',
     sessionId: '',
     streamCallType: '',
+    starts_at: undefined,
+    isScheduled: false,
 };
 
 const podSlice = createSlice({
@@ -192,17 +196,21 @@ const podSlice = createSlice({
         clearPodState: (state) => {
             Object.assign(state, initialState);
         },
-        setSessionInfo: (state, action: PayloadAction<{ title: string; type: sessionType; sessionId: string }>) => {
+        setSessionInfo: (state, action: PayloadAction<{ title: string; type: sessionType; sessionId: string; starts_at?: string; isScheduled?: boolean }>) => {
             state.sessionTitle = action.payload.title;
             state.sessionType = action.payload.type;
             state.sessionId = action.payload.sessionId;
             state.streamCallType = streamCallType[action.payload.type];
+            state.starts_at = action.payload.starts_at;
+            state.isScheduled = action.payload.isScheduled;
         },
         clearSessionInfo: (state) => {
             state.sessionTitle = '';
             state.sessionType = '';
             state.sessionId = '';
             state.streamCallType = '';
+            state.starts_at = undefined;
+            state.isScheduled = false;
         },
     },
 });
