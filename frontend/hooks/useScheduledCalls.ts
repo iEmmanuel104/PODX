@@ -5,30 +5,29 @@ import {
     useScheduleCallMutation,
     useGetScheduledCallQuery,
     useGetUserScheduledCallsQuery,
-    ScheduleCallArgs
+    ScheduleCallArgs,
+    GetScheduledCallResponse
 } from '@/store/api/scheduledCallsApi';
 import {
     setScheduledSessions,
-    addScheduledSession,
     clearScheduledSessions
 } from '@/store/slices/scheduledSessionSlice';
 import type { StreamCallData } from '@/components/pod/streamCallData';
 import type { ApiResponse } from '@/store/api/api';
-import { MutationTrigger } from '@reduxjs/toolkit/dist/query/react';
-import { MutationDefinition } from '@reduxjs/toolkit/query';
+import { BaseQueryFn, MutationDefinition } from '@reduxjs/toolkit/query';
 
 interface UseScheduledCallsReturn {
     scheduledSessions: StreamCallData[];
-    scheduleCall: MutationTrigger<MutationDefinition<ScheduleCallArgs, any, any, ApiResponse<StreamCallData>>>;
+    scheduleCall: (args: ScheduleCallArgs) => Promise<{ data: ApiResponse<StreamCallData> }>;
     isLoading: boolean;
-    getScheduledCall: (sessionId: string) => Promise<ApiResponse<{ call: StreamCallData }>>;
+    getScheduledCall: (sessionId: string) => Promise<ApiResponse<GetScheduledCallResponse>>;
 }
 
 export const useScheduledCalls = (): UseScheduledCallsReturn => {
     const dispatch = useAppDispatch();
     const scheduledSessions = useAppSelector((state) => state.scheduledSessions.sessions);
-    const [scheduleCallMutation] = useScheduleCallMutation();
-    const { data: userScheduledCalls, isLoading } = useGetUserScheduledCallsQuery();
+    const [scheduleCallMutation, { isLoading: isScheduling }] = useScheduleCallMutation();
+    const { data: userScheduledCalls, isLoading: isLoadingCalls } = useGetUserScheduledCallsQuery();
 
     useEffect(() => {
         if (userScheduledCalls?.data?.calls) {
@@ -36,7 +35,7 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
         }
     }, [userScheduledCalls, dispatch]);
 
-    const getScheduledCall = async (sessionId: string): Promise<ApiResponse<{ call: StreamCallData }>> => {
+    const getScheduledCall = async (sessionId: string): Promise<ApiResponse<GetScheduledCallResponse>> => {
         try {
             const response = await fetch(`/api/calls/scheduled/${sessionId}`);
             if (!response.ok) {
@@ -57,8 +56,14 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
 
     return {
         scheduledSessions,
-        scheduleCall: scheduleCallMutation,
-        isLoading,
+        scheduleCall: async (args: ScheduleCallArgs) => {
+            const result = await scheduleCallMutation(args);
+            if ('error' in result) {
+                throw result.error;
+            }
+            return { data: result.data as ApiResponse<StreamCallData> };
+        },
+        isLoading: isLoadingCalls || isScheduling,
         getScheduledCall,
     };
 };
