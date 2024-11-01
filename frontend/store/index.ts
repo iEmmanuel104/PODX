@@ -4,17 +4,20 @@ import userReducer from './slices/userSlice';
 import podReducer from './slices/podSlice';
 import mediaReducer from './slices/mediaSlice';
 import toastReducer from './slices/toastSlice';
+import scheduledSessionsReducer from './slices/scheduledSessionSlice';
 
 import type { UserState } from './slices/userSlice';
 import type { PodState } from './slices/podSlice';
 import type { MediaState } from './slices/mediaSlice';
 import type { toastState } from './slices/toastSlice';
+import type { scheduledSessionsState } from './slices/scheduledSessionSlice';
 
 export interface RootState {
     user: UserState;
     pod: PodState;
     media: MediaState;
     toast: toastState;
+    scheduledSessions: scheduledSessionsState;
     [apiSlice.reducerPath]: ReturnType<typeof apiSlice.reducer>;
 }
 
@@ -25,6 +28,7 @@ export const store = configureStore({
         pod: podReducer,
         media: mediaReducer,
         toast: toastReducer,
+        scheduledSessions: scheduledSessionsReducer
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware().concat(apiSlice.middleware),
