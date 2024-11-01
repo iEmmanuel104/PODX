@@ -111,7 +111,7 @@ export default function PodPage() {
             dispatch(
                 setSessionInfo({
                     title: call.custom.title,
-                    type: call.custom.type,
+                    type: call.custom.type as sessionType,
                     sessionId: state.meetingCode,
                     starts_at: call.starts_at,
                 })
