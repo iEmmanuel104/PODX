@@ -13,6 +13,7 @@ interface CreatedSessionModalProps {
     sessionCode: string;
     isJoining: boolean;
     onJoinSession: () => void;
+    scheduledTime?: string;
 }
 
 const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClose, inviteLink, sessionCode, isJoining, onJoinSession }) => {
