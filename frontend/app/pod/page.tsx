@@ -86,6 +86,41 @@ export default function PodPage() {
         }
     }, [isLoggedIn, user]);
 
+    const handleStreamCall = useCallback(
+        (response: GetCallResponse) => {
+            if (response.call && state.meetingCode === response.call.custom.sessionId) {
+                dispatch(
+                    setSessionInfo({
+                        title: response.call.custom.title,
+                        type: response.call.custom.type,
+                        sessionId: state.meetingCode,
+                        starts_at: response.call.starts_at,
+                    })
+                );
+                router.push(`/pod/join/${state.meetingCode}`);
+            }
+        },
+        [dispatch, router, state.meetingCode]
+    );
+
+    const handleScheduledCall = useCallback(
+        (call: StreamCallData) => {
+            if (!call?.custom) return;
+
+            dispatch(addScheduledSession(call));
+            dispatch(
+                setSessionInfo({
+                    title: call.custom.title,
+                    type: call.custom.type,
+                    sessionId: state.meetingCode,
+                    starts_at: call.starts_at,
+                })
+            );
+            router.push(`/pod/join/${state.meetingCode}`);
+        },
+        [dispatch, router, state.meetingCode]
+    );
+
     const handleCreateSession = useCallback(
         async (title: string, type: sessionType, scheduledDate?: Date) => {
             dispatch(clearSessionInfo());
@@ -188,41 +223,6 @@ export default function PodPage() {
             setState((prev) => ({ ...prev, isJoining: false }));
         }
     }, [state.meetingCode, user, dispatch, router, handleStreamCall, handleScheduledCall, getScheduledCall]);
-
-    const handleStreamCall = useCallback(
-        (response: GetCallResponse) => {
-            if (response.call && state.meetingCode === response.call.custom.sessionId) {
-                dispatch(
-                    setSessionInfo({
-                        title: response.call.custom.title,
-                        type: response.call.custom.type,
-                        sessionId: state.meetingCode,
-                        starts_at: response.call.starts_at,
-                    })
-                );
-                router.push(`/pod/join/${state.meetingCode}`);
-            }
-        },
-        [dispatch, router, state.meetingCode]
-    );
-
-    const handleScheduledCall = useCallback(
-        (call: StreamCallData) => {
-            if (!call?.custom) return;
-
-            dispatch(addScheduledSession(call));
-            dispatch(
-                setSessionInfo({
-                    title: call.custom.title,
-                    type: call.custom.type,
-                    sessionId: state.meetingCode,
-                    starts_at: call.starts_at,
-                })
-            );
-            router.push(`/pod/join/${state.meetingCode}`);
-        },
-        [dispatch, router, state.meetingCode]
-    );
 
     const handleJoinCreatedSession = useCallback(async () => {
         setState((prev) => ({ ...prev, isJoiningCreated: true }));
