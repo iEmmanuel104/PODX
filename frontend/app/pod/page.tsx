@@ -46,11 +46,20 @@ const getMeetingId = () => {
     return `${nanoid(3)}-${nanoid(4)}-${nanoid(3)}`;
 };
 
+interface SessionData {
+    title: string;
+    type: sessionType;
+    sessionId: string;
+    starts_at?: string;
+    isScheduled?: boolean;
+}
+
 export default function PodPage() {
     const router = useRouter();
     const dispatch = useAppDispatch();
     const { setNewMeeting } = React.useContext(AppContext);
     const { isLoggedIn, user } = useAppSelector((state) => state.user);
+    const sessionInfo = useAppSelector((state) => state.pod);
     const { wallets } = useWallets();
     const activeWalletAddress = wallets[0]?.address;
 
@@ -74,10 +83,27 @@ export default function PodPage() {
     }, [isLoggedIn, user]);
 
     const handleCreateSession = useCallback(
-        async (title: string, type: sessionType) => {
+        async (title: string, type: sessionType, scheduledDate?: Date) => {
             dispatch(clearSessionInfo());
             setNewMeeting(true);
             const newSessionCode = getMeetingId();
+
+            // Create session data object
+            const sessionData: SessionData = {
+                title,
+                type,
+                sessionId: newSessionCode,
+                isScheduled: !!scheduledDate,
+            };
+
+            // Add starts_at if it's a scheduled session
+            if (scheduledDate) {
+                // Ensure the date is in the future
+                const startDate = new Date(Math.max(scheduledDate.getTime(), Date.now() + 60000)); // At least 1 minute in future
+                sessionData.starts_at = startDate.toISOString();
+            }
+
+            // Update local state
             setState((prev) => ({
                 ...prev,
                 inviteLink: `https://www.podx.fun/pod/join/${newSessionCode}`,
@@ -85,7 +111,21 @@ export default function PodPage() {
                 isCreateModalOpen: false,
                 isCreatedModalOpen: true,
             }));
-            dispatch(setSessionInfo({ title, type, sessionId: newSessionCode }));
+
+            // Dispatch to store
+            dispatch(setSessionInfo(sessionData));
+
+            // Additional logic for scheduled sessions
+            if (scheduledDate) {
+                try {
+                    // Here you can add any additional logic for scheduled sessions
+                    // For example, saving to a database or scheduling notifications
+                    console.log("Scheduled session for:", sessionData.starts_at);
+                } catch (error) {
+                    console.error("Failed to schedule session:", error);
+                    // Handle error appropriately
+                }
+            }
         },
         [dispatch, setNewMeeting]
     );
@@ -137,13 +177,30 @@ export default function PodPage() {
     const handleJoinCreatedSession = useCallback(async () => {
         setState((prev) => ({ ...prev, isJoiningCreated: true }));
         try {
+            // Use sessionInfo from the outer scope
+            if (sessionInfo.starts_at) {
+                const startTime = new Date(sessionInfo.starts_at);
+                if (startTime > new Date()) {
+                    setState((prev) => ({
+                        ...prev,
+                        error: "This session hasn't started yet. Please join at the scheduled time.",
+                        isJoiningCreated: false,
+                    }));
+                    return;
+                }
+            }
+
             router.push(`/pod/join/${state.sessionCode}`);
         } catch (error) {
             console.error("Failed to join created session:", error);
+            setState((prev) => ({
+                ...prev,
+                error: "Failed to join session. Please try again.",
+            }));
         } finally {
             setState((prev) => ({ ...prev, isJoiningCreated: false }));
         }
-    }, [router, state.sessionCode]);
+    }, [router, state.sessionCode, sessionInfo.starts_at]);
 
     const handleUpdateUsername = useCallback(
         (newUsername: string) => {
@@ -274,6 +331,7 @@ export default function PodPage() {
                         sessionCode={state.sessionCode}
                         isJoining={state.isJoiningCreated}
                         onJoinSession={handleJoinCreatedSession}
+                        scheduledTime={sessionInfo.starts_at}
                     />
                 )}
 
