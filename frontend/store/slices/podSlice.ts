@@ -1,3 +1,4 @@
+import { sessionType, streamCallType } from '@/constants';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 interface Participant {
@@ -49,8 +50,9 @@ export interface PodState {
     isScreenSharing: boolean;
     screenSharingUserId: string | null;
     sessionTitle: string;
-    sessionType: 'Audio Session' | 'Video Session' | '';
+    sessionType: sessionType | '';
     sessionId: string,
+    streamCallType: typeof streamCallType[keyof typeof streamCallType] | '';
 }
 
 const initialState: PodState = {
@@ -80,6 +82,7 @@ const initialState: PodState = {
     sessionTitle: '',
     sessionType: '',
     sessionId: '',
+    streamCallType: '',
 };
 
 const podSlice = createSlice({
@@ -189,15 +192,17 @@ const podSlice = createSlice({
         clearPodState: (state) => {
             Object.assign(state, initialState);
         },
-        setSessionInfo: (state, action: PayloadAction<{ title: string; type: 'Audio Session' | 'Video Session'; sessionId: string }>) => {
+        setSessionInfo: (state, action: PayloadAction<{ title: string; type: sessionType; sessionId: string }>) => {
             state.sessionTitle = action.payload.title;
             state.sessionType = action.payload.type;
             state.sessionId = action.payload.sessionId;
+            state.streamCallType = streamCallType[action.payload.type];
         },
         clearSessionInfo: (state) => {
             state.sessionTitle = '';
             state.sessionType = '';
             state.sessionId = '';
+            state.streamCallType = '';
         },
     },
 });
