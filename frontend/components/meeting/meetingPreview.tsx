@@ -14,6 +14,8 @@ const MeetingPreview: React.FC = () => {
     const user = useConnectedUser();
     const dispatch = useAppDispatch();
     const { isAudioEnabled, isVideoEnabled, isSoundDetected } = useAppSelector((state) => state.media);
+    const { streamCallType } = useAppSelector((state) => state.pod);
+    const isAudioSession = streamCallType === "audio_room";
     const toast = useAppSelector((state) => state.toast);
     const [videoPreviewText, setVideoPreviewText] = useState("");
     const [isInitializing, setIsInitializing] = useState(true);
@@ -31,8 +33,8 @@ const MeetingPreview: React.FC = () => {
             setIsInitializing(true);
 
             try {
-                // Enable camera if we have permission
-                if (hasCameraPermission && camera) {
+                // Only enable camera for non-audio sessions
+                if (!isAudioSession && hasCameraPermission && camera) {
                     try {
                         await camera.enable();
                         if (isMounted) dispatch(setVideoEnabled(true));
@@ -48,7 +50,7 @@ const MeetingPreview: React.FC = () => {
                 // Wait a bit before initializing microphone to prevent conflicts
                 await new Promise((resolve) => setTimeout(resolve, 500));
 
-                // Enable microphone if we have permission
+                // Always enable microphone as it's needed for both session types
                 if (hasMicrophonePermission && microphone) {
                     try {
                         await microphone.enable();
@@ -74,7 +76,17 @@ const MeetingPreview: React.FC = () => {
             if (camera?.enabled) camera.disable().catch(console.error);
             if (microphone?.enabled) microphone.disable().catch(console.error);
         };
-    }, [camera, microphone, hasCameraPermission, hasMicrophonePermission, dispatch]);
+    }, [camera, microphone, hasCameraPermission, hasMicrophonePermission, dispatch, isAudioSession]);
+
+    const AudioSessionPreview = () => (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-[#6032F6]/20 to-[#381D90]/20">
+            <div className="w-20 h-20 rounded-full bg-[#6032F6]/20 flex items-center justify-center mb-4">
+                <Mic className="w-10 h-10 text-white/80" />
+            </div>
+            <div className="text-xl text-white/90 font-medium">Audio Session</div>
+            <div className="text-sm text-white/60 mt-2">{isAudioEnabled ? "Your microphone is enabled" : "Your microphone is muted"}</div>
+        </div>
+    );
 
     // Sound detector setup
     useEffect(() => {
@@ -146,20 +158,25 @@ const MeetingPreview: React.FC = () => {
                 </Alert>
             )}
             <div className="relative w-full rounded-[10px] aspect-video mx-auto shadow-md overflow-hidden">
-                {/* ... rest of your JSX remains the same ... */}
                 <div className="absolute inset-0 bg-[#121212]" />
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[rgba(0,0,0,0.4)]" />
-                <div className="absolute inset-0 flex items-center justify-center [&_video]:-scale-x-100">
-                    <VideoPreview
-                        DisabledVideoPreview={() => (
-                            <div className="text-2xl text-white">
-                                {videoPreviewText || (isVideoEnabled ? "Camera is starting..." : "Camera is off")}
-                            </div>
-                        )}
-                    />
-                </div>
 
-                {/* User name with camera and speech indicator*/}
+                {/* Conditional rendering based on session type */}
+                {isAudioSession ? (
+                    <AudioSessionPreview />
+                ) : (
+                    <div className="absolute inset-0 flex items-center justify-center [&_video]:-scale-x-100">
+                        <VideoPreview
+                            DisabledVideoPreview={() => (
+                                <div className="text-2xl text-white">
+                                    {videoPreviewText || (isVideoEnabled ? "Camera is starting..." : "Camera is off")}
+                                </div>
+                            )}
+                        />
+                    </div>
+                )}
+
+                {/* User name with speech indicator */}
                 <div className="absolute left-2 top-2 max-w-[80%] flex items-center">
                     <SpeechIndicator isSpeaking={isSoundDetected} isMicrophoneEnabled={microphoneStatus === "enabled"} />
                     <span className="relative mr-2 text-white text-xs font-thin truncate max-w-[120px]">
@@ -169,7 +186,7 @@ const MeetingPreview: React.FC = () => {
                         })()}
                         <span
                             className={`absolute -right-2 top-1/2 transform -translate-y-1/2 w-1.5 h-1.5 rounded-full ${
-                                hasCameraPermission ? "bg-[#6032F6]" : "bg-red-500"
+                                hasMicrophonePermission ? "bg-[#6032F6]" : "bg-red-500"
                             }`}
                         ></span>
                     </span>
@@ -195,13 +212,15 @@ const MeetingPreview: React.FC = () => {
 
                 {/* Bottom controls */}
                 <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center space-x-4">
-                    <DeviceSelectorPopover
-                        icon={isVideoEnabled ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
-                        onClick={toggleVideo}
-                        className="w-full h-8 rounded-full bg-black/20 border-white/10 hover:bg-black/30 hover:border-white/20"
-                    >
-                        <VideoInputDeviceSelector disabled={!hasCameraPermission} />
-                    </DeviceSelectorPopover>
+                    {!isAudioSession && (
+                        <DeviceSelectorPopover
+                            icon={isVideoEnabled ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
+                            onClick={toggleVideo}
+                            className="w-full h-8 rounded-full bg-black/20 border-white/10 hover:bg-black/30 hover:border-white/20"
+                        >
+                            <VideoInputDeviceSelector disabled={!hasCameraPermission} />
+                        </DeviceSelectorPopover>
+                    )}
 
                     <DeviceSelectorPopover
                         icon={isAudioEnabled ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
