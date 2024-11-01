@@ -5,25 +5,21 @@ import {
     useScheduleCallMutation,
     useGetScheduledCallQuery,
     useGetUserScheduledCallsQuery,
+    ScheduleCallArgs
 } from '@/store/api/scheduledCallsApi';
 import {
     setScheduledSessions,
     addScheduledSession,
-    clearScheduledSessions,
+    clearScheduledSessions
 } from '@/store/slices/scheduledSessionSlice';
-import type { StreamCallData } from "@/components/pod/StreamCallData";
+import type { StreamCallData } from '@/components/pod/StreamCallData';
 import type { ApiResponse } from '@/store/api/api';
-
-interface ScheduleCallParams {
-    title: string;
-    type: string;
-    sessionId: string;
-    starts_at: string;
-}
+import { MutationTrigger } from '@reduxjs/toolkit/dist/query/react/buildHooks';
+import { MutationDefinition } from '@reduxjs/toolkit/query';
 
 interface UseScheduledCallsReturn {
     scheduledSessions: StreamCallData[];
-    scheduleCall: (params: ScheduleCallParams) => Promise<ApiResponse<StreamCallData>>;
+    scheduleCall: MutationTrigger<MutationDefinition<ScheduleCallArgs, any, any, ApiResponse<StreamCallData>>>;
     isLoading: boolean;
     getScheduledCall: (sessionId: string) => Promise<ApiResponse<{ call: StreamCallData }>>;
 }
@@ -40,22 +36,13 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
         }
     }, [userScheduledCalls, dispatch]);
 
-    const handleScheduleCall = async (callData: ScheduleCallParams): Promise<ApiResponse<StreamCallData>> => {
-        try {
-            const response = await scheduleCallMutation(callData).unwrap();
-            if (response.data) {
-                dispatch(addScheduledSession(response.data));
-            }
-            return response;
-        } catch (error) {
-            console.error('Failed to schedule call:', error);
-            throw error;
-        }
-    };
-
     const getScheduledCall = async (sessionId: string): Promise<ApiResponse<{ call: StreamCallData }>> => {
         try {
-            return await fetch(`/api/calls/scheduled/${sessionId}`).then(res => res.json());
+            const response = await fetch(`/api/calls/scheduled/${sessionId}`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch scheduled call');
+            }
+            return response.json();
         } catch (error) {
             console.error('Failed to get scheduled call:', error);
             throw error;
@@ -70,7 +57,7 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
 
     return {
         scheduledSessions,
-        scheduleCall: handleScheduleCall,
+        scheduleCall: scheduleCallMutation,
         isLoading,
         getScheduledCall,
     };

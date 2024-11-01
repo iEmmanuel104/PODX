@@ -139,12 +139,16 @@ export default function PodPage() {
                 sessionData.starts_at = startDate.toISOString();
 
                 try {
-                    await scheduleCall({
+                    const result = await scheduleCall({
                         title,
                         type,
                         sessionId: newSessionCode,
                         starts_at: startDate.toISOString(),
                     }).unwrap();
+
+                    if (!result.data) {
+                        throw new Error("Failed to schedule call");
+                    }
                 } catch (error) {
                     console.error("Failed to schedule call:", error);
                     setState((prev) => ({
