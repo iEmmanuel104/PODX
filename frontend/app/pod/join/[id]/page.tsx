@@ -102,7 +102,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
     const [participants, setParticipants] = useState<CallParticipantResponse[] | MemberResponse[]>([]);
 
     // Memoized selectors
-    const { sessionTitle, sessionType } = useAppSelector((state) => state.pod);
+    const { sessionTitle, sessionType, isScheduled, starts_at } = useAppSelector((state) => state.pod);
     const { isLoggedIn, user } = useAppSelector((state) => state.user);
     const { newMeeting, setNewMeeting } = useContext(AppContext);
     const { client: chatClient } = useChatContext();
@@ -138,6 +138,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
 
         try {
             if (newMeeting) {
+                console.log({ isScheduled, starts_at });
                 await call?.getOrCreate({
                     data: {
                         members: [{ user_id: user.id, role: "host" }],
@@ -152,6 +153,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                                 max_duration_seconds: 3600,
                             },
                         },
+                        ...(isScheduled && { starts_at }),
                     },
                     members_limit: 20,
                     ...(sessionType === "Audio Session" && { video: false }),
