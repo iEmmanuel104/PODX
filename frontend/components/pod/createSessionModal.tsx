@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Mic, Video, CalendarIcon, Clock } from "lucide-react";
-import { format, addDays } from "date-fns";
+import { format, addDays, isBefore, startOfDay } from "date-fns";
 import { sessionType } from "@/constants";
 
 interface CreateSessionModalProps {
@@ -47,6 +47,14 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({ isOpen, onClose
         return timeRegex.test(time);
     };
 
+    const isDateTimeInPast = (date: Date, timeStr?: string): boolean => {
+        if (!timeStr) return false;
+        const [hours, minutes] = timeStr.split(":").map(Number);
+        const dateWithTime = new Date(date);
+        dateWithTime.setHours(hours, minutes, 0, 0);
+        return isBefore(dateWithTime, new Date());
+    };
+
     const handleTimeChange = (value: string) => {
         setCustomTime(value);
         setTimeError("");
@@ -57,6 +65,10 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({ isOpen, onClose
         }
 
         if (validateTime(value)) {
+            if (formState.date && isDateTimeInPast(formState.date, value)) {
+                setTimeError("Cannot schedule for a past time");
+                return;
+            }
             updateFormState({ time: value });
         } else {
             setTimeError("Please enter time in HH:mm format");
@@ -64,6 +76,10 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({ isOpen, onClose
     };
 
     const handleTimeSelect = (value: string) => {
+        if (formState.date && isDateTimeInPast(formState.date, value)) {
+            setTimeError("Cannot schedule for a past time");
+            return;
+        }
         setCustomTime(value);
         updateFormState({ time: value });
         setTimeError("");
@@ -108,18 +124,16 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({ isOpen, onClose
                 <div className="flex items-center gap-4 mb-6">
                     <Button
                         size="sm"
-                        className={`rounded-full ${
-                            !formState.isScheduled ? "bg-[#6032F6] hover:bg-[#6D28D9]" : "bg-[#1e1e1e] border border-zinc-600"
-                        }`}
+                        className={`rounded-full ${!formState.isScheduled ? "bg-[#6032F6] hover:bg-[#6D28D9]" : "bg-[#1e1e1e] border border-zinc-600"
+                            }`}
                         onClick={() => updateFormState({ isScheduled: false })}
                     >
                         Instant session
                     </Button>
                     <Button
                         size="sm"
-                        className={`rounded-full ${
-                            formState.isScheduled ? "bg-[#6032F6] hover:bg-[#6D28D9]" : "bg-[#1e1e1e] border border-zinc-600"
-                        }`}
+                        className={`rounded-full ${formState.isScheduled ? "bg-[#6032F6] hover:bg-[#6D28D9]" : "bg-[#1e1e1e] border border-zinc-600"
+                            }`}
                         onClick={() => updateFormState({ isScheduled: true })}
                     >
                         Schedule session <span className="text-yellow-300 rounded-full px-1 text-xs bg-yellow-700">New</span>
@@ -180,8 +194,12 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({ isOpen, onClose
                                         <Calendar
                                             mode="single"
                                             selected={formState.date}
-                                            onSelect={(date) => updateFormState({ date })}
-                                            disabled={(date) => date < new Date() || date > addDays(new Date(), 30)}
+                                            onSelect={(date) => {
+                                                updateFormState({ date });
+                                                // Clear time error when date changes
+                                                setTimeError("");
+                                            }}
+                                            disabled={(date) => isBefore(date, startOfDay(new Date())) || date > addDays(new Date(), 30)}
                                             className="bg-[#2C2C2C] text-white"
                                         />
                                     </PopoverContent>
