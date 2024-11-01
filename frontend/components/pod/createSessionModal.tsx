@@ -1,55 +1,49 @@
-"use client"
+"use client";
 
-import React, { useState } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Switch } from "@/components/ui/switch"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
-import { Mic, Video, CalendarIcon, Clock } from "lucide-react"
-import { format, addDays } from "date-fns"
+import React, { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Mic, Video, CalendarIcon, Clock } from "lucide-react";
+import { format, addDays } from "date-fns";
+import { sessionType as sessionTypeEnum } from '@/constants';
 
 interface CreateSessionModalProps {
-    isOpen: boolean
-    onClose: () => void
-    onCreateSession: (
-        title: string,
-        type: "Audio Session" | "Video Session",
-        date: Date,
-        time: string
-    ) => void
+    isOpen: boolean;
+    onClose: () => void;
+    onCreateSession: (title: string, type: sessionTypeEnum, date: Date, time: string) => void;
 }
 
-export default function Component({
-    isOpen,
-    onClose,
-    onCreateSession,
-}: CreateSessionModalProps = {
+export default function Component(
+    { isOpen, onClose, onCreateSession }: CreateSessionModalProps = {
         isOpen: true,
-        onClose: () => { },
-        onCreateSession: () => { },
-    }) {
-    const [sessionTitle, setSessionTitle] = useState("Demo Session")
-    const [sessionType, setSessionType] = useState<"Audio Session" | "Video Session">("Video Session")
-    const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
-    const [selectedTime, setSelectedTime] = useState("")
-    const [isCreating, setIsCreating] = useState(false)
+        onClose: () => {},
+        onCreateSession: () => {},
+    }
+) {
+    const [sessionTitle, setSessionTitle] = useState("Demo Session");
+    const [sessionType, setSessionType] = useState<sessionTypeEnum>(sessionTypeEnum.POD);
+    const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+    const [selectedTime, setSelectedTime] = useState("");
+    const [isCreating, setIsCreating] = useState(false);
 
     const handleCreateSession = () => {
-        if (!sessionTitle.trim() || !selectedDate || !selectedTime) return
-        setIsCreating(true)
-        onCreateSession(sessionTitle, sessionType, selectedDate, selectedTime)
-        setIsCreating(false)
-        onClose()
-    }
+        if (!sessionTitle.trim() || !selectedDate || !selectedTime) return;
+        setIsCreating(true);
+        onCreateSession(sessionTitle, sessionType, selectedDate, selectedTime);
+        setIsCreating(false);
+        onClose();
+    };
 
     // Generate time slots
     const timeSlots = Array.from({ length: 24 }, (_, i) => {
-        const hour = i.toString().padStart(2, '0')
-        return `${hour}:00`
-    })
+        const hour = i.toString().padStart(2, "0");
+        return `${hour}:00`;
+    });
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -61,12 +55,8 @@ export default function Component({
                     <Button size="sm" className="rounded-full bg-[#1e1e1e] border border-zinc-600">
                         Instant session
                     </Button>
-                    <Button
-                        size="sm"
-                        className="rounded-full bg-[#6032F6] hover:bg-[#6D28D9] text-white flex items-center gap-2"
-                    >
-                        Schedule session{" "}
-                        <span className="text-yellow-300 rounded-full px-1 text-xs bg-yellow-700">New</span>
+                    <Button size="sm" className="rounded-full bg-[#6032F6] hover:bg-[#6D28D9] text-white flex items-center gap-2">
+                        Schedule session <span className="text-yellow-300 rounded-full px-1 text-xs bg-yellow-700">New</span>
                     </Button>
                 </div>
                 <div className="space-y-6">
@@ -85,20 +75,13 @@ export default function Component({
                         <label htmlFor="sessionType" className="block text-[#A3A3A3] mb-2">
                             Session type
                         </label>
-                        <Select
-                            value={sessionType}
-                            onValueChange={(value: string) => setSessionType(value as "Audio Session" | "Video Session")}
-                        >
+                        <Select value={sessionType} onValueChange={(value: sessionTypeEnum) => setSessionType(value)}>
                             <SelectTrigger className="w-full bg-[#2C2C2C] rounded-[10px] px-4 py-2 border-[#3c3c3c] active:border-[#3c3c3c] active:ring-[#3c3c3c]">
                                 <SelectValue>
-                                    {sessionType === "Audio Session" && (
-                                        <Mic className="h4 w-6 text-[#6032F6] inline-flex mr-2" />
-                                    )}
-                                    {sessionType === "Video Session" && (
-                                        <Video className="h4 w-6 text-[#6032F6] inline-flex mr-2" />
-                                    )}
+                                    {sessionType === sessionTypeEnum.AUDIO && <Mic className="h4 w-6 text-[#6032F6] inline-flex mr-2" />}
+                                    {sessionType === sessionTypeEnum.POD && <Video className="h4 w-6 text-[#6032F6] inline-flex mr-2" />}
                                     {sessionType}
-                                    {sessionType === "Audio Session" && (
+                                    {sessionType === sessionTypeEnum.AUDIO && (
                                         <span className="mx-2 rounded-full p-1 bg-[#DDB958] text-black">Coming soon</span>
                                     )}
                                 </SelectValue>
@@ -108,9 +91,9 @@ export default function Component({
                                     <Mic className="h4 w-6 text-[#6032F6] inline-flex mr-2" />
                                     Audio Session <span className="mx-2 rounded-full p-1 bg-[#DDB958] text-black">Coming soon</span>
                                 </SelectItem>
-                                <SelectItem value="Video Session">
+                                <SelectItem value="Pod Session">
                                     <Video className="h4 w-6 text-[#6032F6] inline-flex mr-2" />
-                                    Video Session
+                                    Pod Session
                                 </SelectItem>
                             </SelectContent>
                         </Select>
@@ -124,8 +107,9 @@ export default function Component({
                                 <PopoverTrigger asChild>
                                     <Button
                                         variant="outline"
-                                        className={`w-full justify-start text-left font-normal bg-[#2C2C2C] rounded-[10px] px-4 py-2 border-[#3c3c3c] active:border-[#3c3c3c] active:ring-[#3c3c3c] hover:bg-[#3c3c3c] hover:text-white text-white ${!selectedDate && "text-muted-foreground"
-                                            }`}
+                                        className={`w-full justify-start text-left font-normal bg-[#2C2C2C] rounded-[10px] px-4 py-2 border-[#3c3c3c] active:border-[#3c3c3c] active:ring-[#3c3c3c] hover:bg-[#3c3c3c] hover:text-white text-white ${
+                                            !selectedDate && "text-muted-foreground"
+                                        }`}
                                     >
                                         <CalendarIcon className="mr-2 h-4 w-4 text-[#6032F6]" />
                                         {selectedDate ? format(selectedDate, "PPP") : <span className="text-white">Pick a date</span>}
@@ -161,13 +145,10 @@ export default function Component({
                         <label htmlFor="proofOfAttendance" className="block text-[#A3A3A3] mb-2">
                             Proof of attendance
                         </label>
-                        <Switch id="proof-of-attendance" onCheckedChange={() => { }} />
+                        <Switch id="proof-of-attendance" onCheckedChange={() => {}} />
                     </div>
                     <div className="flex justify-between gap-6 pt-3">
-                        <Button
-                            onClick={onClose}
-                            className="w-1/2 px-4 py-6 bg-[#2C2C2C] rounded-[10px] hover:bg-[#3C3C3C] transition-colors"
-                        >
+                        <Button onClick={onClose} className="w-1/2 px-4 py-6 bg-[#2C2C2C] rounded-[10px] hover:bg-[#3C3C3C] transition-colors">
                             Cancel
                         </Button>
                         <Button
@@ -181,5 +162,5 @@ export default function Component({
                 </div>
             </DialogContent>
         </Dialog>
-    )
+    );
 }
