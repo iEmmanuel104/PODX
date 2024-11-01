@@ -9,7 +9,8 @@ import { API_KEY, CALL_TYPE } from "@/providers/meetProvider/streamMeetProvider"
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { customAlphabet } from "nanoid";
 import { AppContext } from "@/providers/appProvider";
-import { setSessionInfo } from "@/store/slices/podSlice";
+import { clearSessionInfo, setSessionInfo } from "@/store/slices/podSlice";
+import { sessionType } from "@/constants";
 import { updateUser } from "@/store/slices/userSlice";
 import { useWallets } from "@privy-io/react-auth";
 import { Button } from "@/components/ui/button";
@@ -73,7 +74,8 @@ export default function PodPage() {
     }, [isLoggedIn, user]);
 
     const handleCreateSession = useCallback(
-        async (title: string, type: "Audio Session" | "Video Session") => {
+        async (title: string, type: sessionType) => {
+            dispatch(clearSessionInfo());
             setNewMeeting(true);
             const newSessionCode = getMeetingId();
             setState((prev) => ({
@@ -92,26 +94,34 @@ export default function PodPage() {
         if (!state.meetingCode) return;
 
         setState((prev) => ({ ...prev, isJoining: true, error: "" }));
+        dispatch(clearSessionInfo());
 
         try {
             const client = new StreamVideoClient({
                 apiKey: API_KEY,
-                user: { id: "guest", type: "guest" },
+                user: {
+                    id: user?.id as string,
+                    name: user?.username as string,
+                },
+                token: user?.streamToken,
             });
 
-            const call = client.call(CALL_TYPE, state.meetingCode);
-            const response: GetCallResponse = await call.get();
+            const { calls } = await client.queryCalls({ filter_conditions: { id: state.meetingCode } });
 
-            if (response.call && state.meetingCode === response.call.custom.sessionId) {
-                dispatch(
-                    setSessionInfo({
-                        title: response.call.custom.title,
-                        type: response.call.custom.type,
-                        sessionId: state.meetingCode,
-                    })
-                );
-                router.push(`/pod/join/${state.meetingCode}`);
-                return;
+            // log the first call to see if it's the same as the meeting code
+            if (calls.length > 0 && calls[0].id === state.meetingCode) {
+                const response: GetCallResponse = await calls[0].get();
+                if (response.call && state.meetingCode === response.call.custom.sessionId) {
+                    dispatch(
+                        setSessionInfo({
+                            title: response.call.custom.title,
+                            type: response.call.custom.type,
+                            sessionId: state.meetingCode,
+                        })
+                    );
+                    router.push(`/pod/join/${state.meetingCode}`);
+                    return;
+                }
             }
         } catch (e: unknown) {
             const err = e as ErrorFromResponse<GetCallResponse>;
@@ -122,7 +132,7 @@ export default function PodPage() {
         } finally {
             setState((prev) => ({ ...prev, isJoining: false }));
         }
-    }, [state.meetingCode, router, dispatch]);
+    }, [state.meetingCode, router, user, dispatch]);
 
     const handleJoinCreatedSession = useCallback(async () => {
         setState((prev) => ({ ...prev, isJoiningCreated: true }));
