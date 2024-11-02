@@ -1,10 +1,8 @@
-'use client';
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "lucide-react";
-import { format } from "date-fns";
+import { format, differenceInMinutes } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-
 import { StreamCallData } from "./streamCallData";
 
 interface ScheduledPodsProps {
@@ -13,6 +11,36 @@ interface ScheduledPodsProps {
     currentUserId: string;
     isLoading?: boolean;
 }
+
+const canJoinSession = (startsAt: string) => {
+    const startTime = new Date(startsAt);
+    const now = new Date();
+    const minutesUntilStart = differenceInMinutes(startTime, now);
+    return minutesUntilStart <= 5 && minutesUntilStart >= -60; // Allow joining 5 mins before and up to 60 mins after start
+};
+
+const getSessionStatus = (startsAt: string) => {
+    const startTime = new Date(startsAt);
+    const now = new Date();
+    const minutesUntilStart = differenceInMinutes(startTime, now);
+
+    if (minutesUntilStart > 5) {
+        return {
+            text: `Starts in ${Math.floor(minutesUntilStart / 60)}h ${minutesUntilStart % 60}m`,
+            color: "text-[#A3A3A3]",
+        };
+    } else if (minutesUntilStart > -60) {
+        return {
+            text: minutesUntilStart > 0 ? "Starting soon" : "In progress",
+            color: "text-green-500",
+        };
+    } else {
+        return {
+            text: "Ended",
+            color: "text-red-500",
+        };
+    }
+};
 
 export default function ScheduledPods({ sessions, onJoinSession, currentUserId, isLoading }: ScheduledPodsProps) {
     const [showAllSessions, setShowAllSessions] = useState(false);
@@ -38,11 +66,15 @@ export default function ScheduledPods({ sessions, onJoinSession, currentUserId, 
         return dateA - dateB;
     });
 
-    const upcomingSessions = sortedSessions.filter((session) => session.starts_at && new Date(session.starts_at) > new Date());
+    const upcomingSessions = sortedSessions.filter(
+        (session) => session.starts_at && differenceInMinutes(new Date(session.starts_at), new Date()) > -60
+    );
 
     const SessionCard = ({ session }: { session: StreamCallData }) => {
         const isCreator = session.created_by.id === currentUserId;
         const startsAt = session.starts_at ? new Date(session.starts_at) : null;
+        const status = startsAt ? getSessionStatus(session.starts_at) : null;
+        const canJoin = startsAt ? canJoinSession(session.starts_at) : false;
 
         return (
             <div className="flex items-center justify-between w-full bg-[#1E1E1E] rounded-[10px] p-4 hover:bg-[#2C2C2C] transition-colors">
@@ -53,22 +85,30 @@ export default function ScheduledPods({ sessions, onJoinSession, currentUserId, 
                     <div>
                         <h3 className="text-white font-medium">{session.custom.title}</h3>
                         <p className="text-sm text-[#A3A3A3]">{startsAt ? format(startsAt, "PPP 'at' p") : "Time not set"}</p>
-                        <p className="text-xs text-[#A3A3A3]">Host: {session.created_by.custom?.username || session.created_by.name}</p>
+                        <div className="flex items-center gap-2">
+                            <p className="text-xs text-[#A3A3A3]">Host: {session.created_by.custom?.username || session.created_by.name}</p>
+                            {status && <span className={`text-xs ${status.color}`}>• {status.text}</span>}
+                        </div>
                     </div>
                 </div>
                 <Button
-                    className={`${isCreator ? "bg-[#6032F6] hover:bg-[#4C28C4]" : "bg-[#2C2C2C] hover:bg-[#3C3C3C]"} text-white rounded-[10px] px-6`}
+                    className={`
+                        ${
+                            canJoin && (isCreator || status?.text === "In progress")
+                                ? "bg-[#6032F6] hover:bg-[#4C28C4]"
+                                : "bg-[#2C2C2C] hover:bg-[#3C3C3C]"
+                        } text-white rounded-[10px] px-6
+                    `}
                     onClick={() => onJoinSession(session.id)}
-                    disabled={!isCreator}
-                    title={!isCreator ? "Only the host can join this session" : undefined}
+                    disabled={!canJoin || (!isCreator && status?.text !== "In progress")}
+                    title={getButtonTitle(isCreator, canJoin, status?.text)}
                 >
-                    {isCreator ? "Join session" : "Host only"}
+                    {getButtonText(isCreator, canJoin, status?.text)}
                 </Button>
             </div>
         );
     };
 
-    // Show either the first session or all sessions in a modal
     return (
         <>
             <div className="w-full max-w-2xl mx-auto mb-8">
@@ -101,4 +141,24 @@ export default function ScheduledPods({ sessions, onJoinSession, currentUserId, 
             </Dialog>
         </>
     );
+}
+
+function getButtonTitle(isCreator: boolean, canJoin: boolean, status?: string): string {
+    if (!canJoin) {
+        return "Session can only be joined 5 minutes before start time";
+    }
+    if (!isCreator && status !== "In progress") {
+        return "Only the host can join before the session starts";
+    }
+    return "Join session";
+}
+
+function getButtonText(isCreator: boolean, canJoin: boolean, status?: string): string {
+    if (!canJoin) {
+        return "Not started";
+    }
+    if (!isCreator && status !== "In progress") {
+        return "Waiting for host";
+    }
+    return "Join session";
 }
