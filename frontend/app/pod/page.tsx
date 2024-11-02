@@ -149,6 +149,15 @@ export default function PodPage() {
                     if (!result.data) {
                         throw new Error("Failed to schedule call");
                     }
+
+                    dispatch(setSessionInfo(sessionData));
+                    setState((prev) => ({
+                        ...prev,
+                        isCreateModalOpen: false,
+                    }));
+
+                    // Don't redirect for scheduled sessions
+                    return;
                 } catch (error) {
                     console.error("Failed to schedule call:", error);
                     setState((prev) => ({
@@ -159,6 +168,7 @@ export default function PodPage() {
                 }
             }
 
+            // Only set invite link and show created modal for instant sessions
             setState((prev) => ({
                 ...prev,
                 inviteLink: `https://www.podx.fun/pod/join/${newSessionCode}`,
