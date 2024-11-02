@@ -132,7 +132,7 @@ dist
 
 src/config
 src/migrations
-src/socket
+# src/socket
 # src/seeders
 
 dist
