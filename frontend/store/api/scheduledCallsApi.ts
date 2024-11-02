@@ -33,6 +33,7 @@ export const scheduledCallsApiSlice = apiSlice.injectEndpoints({
                 method: 'GET',
             }),
             providesTags: ['ScheduledCalls'],
+            keepUnusedDataFor: 30, // Keep unused data for 30 seconds
         }),
         getUserScheduledCalls: builder.query<ApiResponse<GetUserScheduledCallsResponse>, void>({
             query: () => ({
@@ -40,6 +41,7 @@ export const scheduledCallsApiSlice = apiSlice.injectEndpoints({
                 method: 'GET',
             }),
             providesTags: ['ScheduledCalls'],
+            keepUnusedDataFor: 60, // Keep unused data for 60 seconds
         }),
     }),
 });
