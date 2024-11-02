@@ -251,7 +251,7 @@ export default function PodPage() {
         } finally {
             setState((prev) => ({ ...prev, isJoiningCreated: false }));
         }
-    }, [router, state.sessionCode]);
+    }, [state.sessionCode]);
 
     const handleUpdateUsername = useCallback(
         (newUsername: string) => {

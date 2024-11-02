@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar, Link, Copy, Check, Share2 } from "lucide-react";
 import { format, differenceInMinutes } from "date-fns";
@@ -13,84 +13,20 @@ interface ScheduledPodsProps {
     isLoading?: boolean;
 }
 
-interface ShareDialogProps {
+// Types for internal state
+interface ShareSessionState {
     isOpen: boolean;
-    onClose: () => void;
     sessionId: string;
     sessionTitle: string;
     startTime: Date;
 }
 
-const ShareDialog = ({ isOpen, onClose, sessionId, sessionTitle, startTime }: ShareDialogProps) => {
-    const [linkCopied, setLinkCopied] = useState(false);
-    const [codeCopied, setCodeCopied] = useState(false);
-
-    const inviteLink = `https://www.podx.fun/pod/join/${sessionId}`;
-
-    const copyToClipboard = async (text: string, isLink: boolean) => {
-        try {
-            await navigator.clipboard.writeText(text);
-            if (isLink) {
-                setLinkCopied(true);
-                setTimeout(() => setLinkCopied(false), 2000);
-            } else {
-                setCodeCopied(true);
-                setTimeout(() => setCodeCopied(false), 2000);
-            }
-        } catch (error) {
-            console.error("Failed to copy:", error);
-        }
-    };
-
-    return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="bg-[#1E1E1E] text-white rounded-[10px] p-6 w-full max-w-md">
-                <DialogHeader>
-                    <DialogTitle className="text-xl font-semibold mb-4">Share Session</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                    <div>
-                        <label className="text-[#A3A3A3] mb-2 flex items-center text-sm">
-                            <Link className="w-4 h-4 mr-2" />
-                            Invite link
-                        </label>
-                        <div className="flex gap-2">
-                            <Input value={inviteLink} readOnly className="flex-1 bg-[#2C2C2C] text-sm border-[#3c3c3c]" />
-                            <Button onClick={() => copyToClipboard(inviteLink, true)} className="bg-[#6032F6] hover:bg-[#4C28C4]" size="icon">
-                                {linkCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                            </Button>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className="text-[#A3A3A3] mb-2 flex items-center text-sm">
-                            <Calendar className="w-4 h-4 mr-2" />
-                            Meeting code
-                        </label>
-                        <div className="flex gap-2">
-                            <Input value={sessionId} readOnly className="flex-1 bg-[#2C2C2C] text-sm border-[#3c3c3c]" />
-                            <Button onClick={() => copyToClipboard(sessionId, false)} className="bg-[#6032F6] hover:bg-[#4C28C4]" size="icon">
-                                {codeCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                            </Button>
-                        </div>
-                    </div>
-
-                    <div className="pt-2 text-sm text-[#A3A3A3]">
-                        <p>Session Details:</p>
-                        <p>Title: {sessionTitle}</p>
-                        <p>Start time: {format(startTime, "PPP 'at' p")}</p>
-                    </div>
-                </div>
-            </DialogContent>
-        </Dialog>
-    );
-};
-
+// Utility functions
 const canJoinSession = (startsAt: string) => {
     const startTime = new Date(startsAt);
     const now = new Date();
     const minutesUntilStart = differenceInMinutes(startTime, now);
-    return minutesUntilStart <= 5 && minutesUntilStart >= -60; // Allow joining 5 mins before and up to 60 mins after start
+    return minutesUntilStart <= 5 && minutesUntilStart >= -60;
 };
 
 const getSessionStatus = (startsAt: string) => {
@@ -116,21 +52,176 @@ const getSessionStatus = (startsAt: string) => {
     }
 };
 
+// Memoized components
+const ShareDialog = memo(function ShareDialog({
+    isOpen,
+    onClose,
+    sessionId,
+    sessionTitle,
+    startTime,
+}: {
+    isOpen: boolean;
+    onClose: () => void;
+    sessionId: string;
+    sessionTitle: string;
+    startTime: Date;
+}) {
+    const [linkCopied, setLinkCopied] = useState(false);
+    const [codeCopied, setCodeCopied] = useState(false);
+    const inviteLink = `https://www.podx.fun/pod/join/${sessionId}`;
+
+    const copyToClipboard = async (text: string, isLink: boolean) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            const setter = isLink ? setLinkCopied : setCodeCopied;
+            setter(true);
+            setTimeout(() => setter(false), 2000);
+        } catch (error) {
+            console.error("Failed to copy:", error);
+        }
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="bg-[#1E1E1E] text-white rounded-[10px] p-6 w-full max-w-md">
+                <DialogHeader>
+                    <DialogTitle className="text-xl font-semibold mb-4">Share Session</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                    {/* Share link section */}
+                    <div>
+                        <label className="text-[#A3A3A3] mb-2 flex items-center text-sm">
+                            <Link className="w-4 h-4 mr-2" />
+                            Invite link
+                        </label>
+                        <div className="flex gap-2">
+                            <Input value={inviteLink} readOnly className="flex-1 bg-[#2C2C2C] text-sm border-[#3c3c3c]" />
+                            <Button onClick={() => copyToClipboard(inviteLink, true)} className="bg-[#6032F6] hover:bg-[#4C28C4]" size="icon">
+                                {linkCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* Meeting code section */}
+                    <div>
+                        <label className="text-[#A3A3A3] mb-2 flex items-center text-sm">
+                            <Calendar className="w-4 h-4 mr-2" />
+                            Meeting code
+                        </label>
+                        <div className="flex gap-2">
+                            <Input value={sessionId} readOnly className="flex-1 bg-[#2C2C2C] text-sm border-[#3c3c3c]" />
+                            <Button onClick={() => copyToClipboard(sessionId, false)} className="bg-[#6032F6] hover:bg-[#4C28C4]" size="icon">
+                                {codeCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* Session details */}
+                    <div className="pt-2 text-sm text-[#A3A3A3]">
+                        <p>Session Details:</p>
+                        <p>Title: {sessionTitle}</p>
+                        <p>Start time: {format(startTime, "PPP 'at' p")}</p>
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+});
+
+// SessionCard component
+const SessionCard = memo(function SessionCard({
+    session,
+    currentUserId,
+    onJoinSession,
+    onShareSession,
+}: {
+    session: StreamCallData;
+    currentUserId: string;
+    onJoinSession: (id: string) => void;
+    onShareSession: (data: ShareSessionState) => void;
+}) {
+    const isCreator = session.created_by.id === currentUserId;
+    const startsAt = session.starts_at ? new Date(session.starts_at) : null;
+    const status = startsAt ? getSessionStatus(session.starts_at) : null;
+    const canJoin = startsAt ? canJoinSession(session.starts_at) : false;
+
+    return (
+        <div className="flex items-center justify-between w-full bg-[#1E1E1E] rounded-[10px] p-4 hover:bg-[#2C2C2C] transition-colors">
+            <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[#2C2C2C] flex items-center justify-center">
+                    <Calendar className="w-5 h-5 text-[#6032F6]" />
+                </div>
+                <div>
+                    <h3 className="text-white font-medium">{session.custom.title}</h3>
+                    <p className="text-sm text-[#A3A3A3]">{startsAt ? format(startsAt, "PPP 'at' p") : "Time not set"}</p>
+                    <div className="flex items-center gap-2">
+                        <p className="text-xs text-[#A3A3A3]">Host: {session.created_by.custom?.username || session.created_by.name}</p>
+                        {status && <span className={`text-xs ${status.color}`}>• {status.text}</span>}
+                    </div>
+                </div>
+            </div>
+            <div className="flex items-center gap-2">
+                {isCreator && (
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-[#6032F6] hover:text-[#4C28C4] hover:bg-[#2C2C2C]"
+                        onClick={() =>
+                            onShareSession({
+                                isOpen: true,
+                                sessionId: session.id,
+                                sessionTitle: session.custom.title,
+                                startTime: new Date(session.starts_at),
+                            })
+                        }
+                        title="Share session"
+                    >
+                        <Share2 className="h-5 w-5" />
+                    </Button>
+                )}
+                <Button
+                    className={`
+                        ${
+                            canJoin && (isCreator || status?.text === "In progress")
+                                ? "bg-[#6032F6] hover:bg-[#4C28C4]"
+                                : "bg-[#2C2C2C] hover:bg-[#3C3C3C]"
+                        } text-white rounded-[10px] px-6
+                    `}
+                    onClick={() => onJoinSession(session.id)}
+                    disabled={!canJoin || (!isCreator && status?.text !== "In progress")}
+                    title={getButtonTitle(isCreator, canJoin, status?.text)}
+                >
+                    {getButtonText(isCreator, canJoin, status?.text)}
+                </Button>
+            </div>
+        </div>
+    );
+});
+
+// Main component
 export default function ScheduledPods({ sessions, onJoinSession, currentUserId, isLoading }: ScheduledPodsProps) {
     const [showAllSessions, setShowAllSessions] = useState(false);
-    const [shareSession, setShareSession] = useState<{
-        isOpen: boolean;
-        sessionId: string;
-        sessionTitle: string;
-        startTime: Date;
-    } | null>(null);
+    const [shareSession, setShareSession] = useState<ShareSessionState | null>(null);
+
+    // Memoize session calculations
+    const { sortedSessions, upcomingSessions } = useMemo(() => {
+        const sorted = [...sessions].sort((a, b) => {
+            const dateA = a.starts_at ? new Date(a.starts_at).getTime() : 0;
+            const dateB = b.starts_at ? new Date(b.starts_at).getTime() : 0;
+            return dateA - dateB;
+        });
+
+        const upcoming = sorted.filter((session) => session.starts_at && differenceInMinutes(new Date(session.starts_at), new Date()) > -60);
+
+        return { sortedSessions: sorted, upcomingSessions: upcoming };
+    }, [sessions]);
 
     if (isLoading) {
         return (
             <div className="w-full max-w-2xl mx-auto mb-8">
                 <div className="animate-pulse space-y-4">
-                    <div className="h-6 bg-[#1E1E1E] rounded w-1/3"></div>
-                    <div className="h-24 bg-[#1E1E1E] rounded"></div>
+                    <div className="h-6 bg-[#1E1E1E] rounded w-1/3" />
+                    <div className="h-24 bg-[#1E1E1E] rounded" />
                 </div>
             </div>
         );
@@ -139,75 +230,6 @@ export default function ScheduledPods({ sessions, onJoinSession, currentUserId, 
     if (!sessions.length) {
         return <div className="w-full max-w-2xl mx-auto mb-8 text-center text-[#A3A3A3]">No scheduled sessions available</div>;
     }
-
-    const sortedSessions = [...sessions].sort((a, b) => {
-        const dateA = a.starts_at ? new Date(a.starts_at).getTime() : 0;
-        const dateB = b.starts_at ? new Date(b.starts_at).getTime() : 0;
-        return dateA - dateB;
-    });
-
-    const upcomingSessions = sortedSessions.filter(
-        (session) => session.starts_at && differenceInMinutes(new Date(session.starts_at), new Date()) > -60
-    );
-
-    const SessionCard = ({ session }: { session: StreamCallData }) => {
-        const isCreator = session.created_by.id === currentUserId;
-        const startsAt = session.starts_at ? new Date(session.starts_at) : null;
-        const status = startsAt ? getSessionStatus(session.starts_at) : null;
-        const canJoin = startsAt ? canJoinSession(session.starts_at) : false;
-
-        return (
-            <div className="flex items-center justify-between w-full bg-[#1E1E1E] rounded-[10px] p-4 hover:bg-[#2C2C2C] transition-colors">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#2C2C2C] flex items-center justify-center">
-                        <Calendar className="w-5 h-5 text-[#6032F6]" />
-                    </div>
-                    <div>
-                        <h3 className="text-white font-medium">{session.custom.title}</h3>
-                        <p className="text-sm text-[#A3A3A3]">{startsAt ? format(startsAt, "PPP 'at' p") : "Time not set"}</p>
-                        <div className="flex items-center gap-2">
-                            <p className="text-xs text-[#A3A3A3]">Host: {session.created_by.custom?.username || session.created_by.name}</p>
-                            {status && <span className={`text-xs ${status.color}`}>• {status.text}</span>}
-                        </div>
-                    </div>
-                </div>
-                <div className="flex items-center gap-2">
-                    {isCreator && (
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-[#6032F6] hover:text-[#4C28C4] hover:bg-[#2C2C2C]"
-                            onClick={() =>
-                                setShareSession({
-                                    isOpen: true,
-                                    sessionId: session.id,
-                                    sessionTitle: session.custom.title,
-                                    startTime: new Date(session.starts_at),
-                                })
-                            }
-                            title="Share session"
-                        >
-                            <Share2 className="h-5 w-5" />
-                        </Button>
-                    )}
-                    <Button
-                        className={`
-                            ${
-                                canJoin && (isCreator || status?.text === "In progress")
-                                    ? "bg-[#6032F6] hover:bg-[#4C28C4]"
-                                    : "bg-[#2C2C2C] hover:bg-[#3C3C3C]"
-                            } text-white rounded-[10px] px-6
-                        `}
-                        onClick={() => onJoinSession(session.id)}
-                        disabled={!canJoin || (!isCreator && status?.text !== "In progress")}
-                        title={getButtonTitle(isCreator, canJoin, status?.text)}
-                    >
-                        {getButtonText(isCreator, canJoin, status?.text)}
-                    </Button>
-                </div>
-            </div>
-        );
-    };
 
     return (
         <>
@@ -222,7 +244,13 @@ export default function ScheduledPods({ sessions, onJoinSession, currentUserId, 
                 </div>
                 <div className="space-y-2">
                     {upcomingSessions.slice(0, 1).map((session) => (
-                        <SessionCard key={session.id} session={session} />
+                        <SessionCard
+                            key={session.id}
+                            session={session}
+                            currentUserId={currentUserId}
+                            onJoinSession={onJoinSession}
+                            onShareSession={setShareSession}
+                        />
                     ))}
                 </div>
             </div>
@@ -234,7 +262,13 @@ export default function ScheduledPods({ sessions, onJoinSession, currentUserId, 
                     </DialogHeader>
                     <div className="space-y-2 max-h-[60vh] overflow-y-auto">
                         {upcomingSessions.map((session) => (
-                            <SessionCard key={session.id} session={session} />
+                            <SessionCard
+                                key={session.id}
+                                session={session}
+                                currentUserId={currentUserId}
+                                onJoinSession={onJoinSession}
+                                onShareSession={setShareSession}
+                            />
                         ))}
                     </div>
                 </DialogContent>
