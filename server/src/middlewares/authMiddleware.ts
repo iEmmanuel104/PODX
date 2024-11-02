@@ -72,17 +72,9 @@ export const basicAuth = function () {
             return next(new UnauthorizedError('Missing token'));
         }
 
-        try {
-            const user = await authenticateUser(token);
-            (req as AuthenticatedRequest).user = user;
-            next();
-        } catch (error) {
-            if (error instanceof UnauthorizedError || error instanceof ForbiddenError) {
-                next(error);
-            } else {
-                next(new UnauthorizedError('Authentication failed'));
-            }
-        }
+        const user = await authenticateUser(token);
+        (req as AuthenticatedRequest).user = user;
+        next();
     };
 };
 
