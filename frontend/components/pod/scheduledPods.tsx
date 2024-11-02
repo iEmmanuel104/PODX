@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "lucide-react";
+import { Calendar, Link, Copy, Check, Share2 } from "lucide-react";
 import { format, differenceInMinutes } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { StreamCallData } from "./streamCallData";
 
 interface ScheduledPodsProps {
@@ -11,6 +12,79 @@ interface ScheduledPodsProps {
     currentUserId: string;
     isLoading?: boolean;
 }
+
+interface ShareDialogProps {
+    isOpen: boolean;
+    onClose: () => void;
+    sessionId: string;
+    sessionTitle: string;
+    startTime: Date;
+}
+
+const ShareDialog = ({ isOpen, onClose, sessionId, sessionTitle, startTime }: ShareDialogProps) => {
+    const [linkCopied, setLinkCopied] = useState(false);
+    const [codeCopied, setCodeCopied] = useState(false);
+
+    const inviteLink = `https://www.podx.fun/pod/join/${sessionId}`;
+
+    const copyToClipboard = async (text: string, isLink: boolean) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            if (isLink) {
+                setLinkCopied(true);
+                setTimeout(() => setLinkCopied(false), 2000);
+            } else {
+                setCodeCopied(true);
+                setTimeout(() => setCodeCopied(false), 2000);
+            }
+        } catch (error) {
+            console.error("Failed to copy:", error);
+        }
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="bg-[#1E1E1E] text-white rounded-[10px] p-6 w-full max-w-md">
+                <DialogHeader>
+                    <DialogTitle className="text-xl font-semibold mb-4">Share Session</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                    <div>
+                        <label className="text-[#A3A3A3] mb-2 flex items-center text-sm">
+                            <Link className="w-4 h-4 mr-2" />
+                            Invite link
+                        </label>
+                        <div className="flex gap-2">
+                            <Input value={inviteLink} readOnly className="flex-1 bg-[#2C2C2C] text-sm border-[#3c3c3c]" />
+                            <Button onClick={() => copyToClipboard(inviteLink, true)} className="bg-[#6032F6] hover:bg-[#4C28C4]" size="icon">
+                                {linkCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="text-[#A3A3A3] mb-2 flex items-center text-sm">
+                            <Calendar className="w-4 h-4 mr-2" />
+                            Meeting code
+                        </label>
+                        <div className="flex gap-2">
+                            <Input value={sessionId} readOnly className="flex-1 bg-[#2C2C2C] text-sm border-[#3c3c3c]" />
+                            <Button onClick={() => copyToClipboard(sessionId, false)} className="bg-[#6032F6] hover:bg-[#4C28C4]" size="icon">
+                                {codeCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div className="pt-2 text-sm text-[#A3A3A3]">
+                        <p>Session Details:</p>
+                        <p>Title: {sessionTitle}</p>
+                        <p>Start time: {format(startTime, "PPP 'at' p")}</p>
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+};
 
 const canJoinSession = (startsAt: string) => {
     const startTime = new Date(startsAt);
@@ -44,6 +118,12 @@ const getSessionStatus = (startsAt: string) => {
 
 export default function ScheduledPods({ sessions, onJoinSession, currentUserId, isLoading }: ScheduledPodsProps) {
     const [showAllSessions, setShowAllSessions] = useState(false);
+    const [shareSession, setShareSession] = useState<{
+        isOpen: boolean;
+        sessionId: string;
+        sessionTitle: string;
+        startTime: Date;
+    } | null>(null);
 
     if (isLoading) {
         return (
@@ -91,20 +171,40 @@ export default function ScheduledPods({ sessions, onJoinSession, currentUserId, 
                         </div>
                     </div>
                 </div>
-                <Button
-                    className={`
-                        ${
-                            canJoin && (isCreator || status?.text === "In progress")
-                                ? "bg-[#6032F6] hover:bg-[#4C28C4]"
-                                : "bg-[#2C2C2C] hover:bg-[#3C3C3C]"
-                        } text-white rounded-[10px] px-6
-                    `}
-                    onClick={() => onJoinSession(session.id)}
-                    disabled={!canJoin || (!isCreator && status?.text !== "In progress")}
-                    title={getButtonTitle(isCreator, canJoin, status?.text)}
-                >
-                    {getButtonText(isCreator, canJoin, status?.text)}
-                </Button>
+                <div className="flex items-center gap-2">
+                    {isCreator && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-[#6032F6] hover:text-[#4C28C4] hover:bg-[#2C2C2C]"
+                            onClick={() =>
+                                setShareSession({
+                                    isOpen: true,
+                                    sessionId: session.id,
+                                    sessionTitle: session.custom.title,
+                                    startTime: new Date(session.starts_at),
+                                })
+                            }
+                            title="Share session"
+                        >
+                            <Share2 className="h-5 w-5" />
+                        </Button>
+                    )}
+                    <Button
+                        className={`
+                            ${
+                                canJoin && (isCreator || status?.text === "In progress")
+                                    ? "bg-[#6032F6] hover:bg-[#4C28C4]"
+                                    : "bg-[#2C2C2C] hover:bg-[#3C3C3C]"
+                            } text-white rounded-[10px] px-6
+                        `}
+                        onClick={() => onJoinSession(session.id)}
+                        disabled={!canJoin || (!isCreator && status?.text !== "In progress")}
+                        title={getButtonTitle(isCreator, canJoin, status?.text)}
+                    >
+                        {getButtonText(isCreator, canJoin, status?.text)}
+                    </Button>
+                </div>
             </div>
         );
     };
@@ -139,6 +239,16 @@ export default function ScheduledPods({ sessions, onJoinSession, currentUserId, 
                     </div>
                 </DialogContent>
             </Dialog>
+
+            {shareSession && (
+                <ShareDialog
+                    isOpen={shareSession.isOpen}
+                    onClose={() => setShareSession(null)}
+                    sessionId={shareSession.sessionId}
+                    sessionTitle={shareSession.sessionTitle}
+                    startTime={shareSession.startTime}
+                />
+            )}
         </>
     );
 }
