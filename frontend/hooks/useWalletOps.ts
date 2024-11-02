@@ -3,7 +3,8 @@ import { usePrivy, useWallets } from '@privy-io/react-auth';
 
 export const useWalletOperations = () => {
     const { wallets } = useWallets();
-    const { ready, authenticated, user, exportWallet } = usePrivy();
+    const { ready, authenticated, user, exportWallet, logout } = usePrivy();
+    const activeWalletAddress = wallets[0]?.address;
 
     const handleWithdraw = async (
         address: string,
@@ -73,6 +74,12 @@ export const useWalletOperations = () => {
         }
     };
 
+    const getActiveWalletAddress = () => activeWalletAddress;
+
+    const handleLogout = () => {
+        logout();
+    }
+
     // Return authentication status and wallet availability check
     const canExportWallet = ready && authenticated && !!user?.linkedAccounts?.find(
         (account) => account.type === 'wallet' && account.walletClientType === 'privy'
@@ -81,6 +88,8 @@ export const useWalletOperations = () => {
     return {
         handleWithdraw,
         handleExportWallet,
-        canExportWallet
+        canExportWallet,
+        handleLogout,
+        getActiveWalletAddress,
     };
 };
