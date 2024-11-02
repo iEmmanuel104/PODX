@@ -3,7 +3,7 @@ import { Pod, IPod } from '../models/Mongodb/pod.model';
 import { User } from '../models/Mongodb/user.model';
 import { redisClient } from '../utils/redis';
 import { NotFoundError, BadRequestError } from '../utils/customErrors';
-import { PodType } from '../socket/socket-helper/interface';
+import { PodType } from '../models/Mongodb/pod.model';
 import { v4 as uuidv4 } from 'uuid';
 
 interface ICreatePodData {

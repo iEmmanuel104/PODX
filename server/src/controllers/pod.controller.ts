@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { AuthenticatedRequest } from '../middlewares/authMiddleware';
 import PodService from '../services/pod.service';
 import { BadRequestError } from '../utils/customErrors';
-import { PodType } from '../socket/socket-helper/interface';
+import { PodType } from '../models/Mongodb/pod.model';
 
 export default class PodController {
     static async createOrFindPod(req: AuthenticatedRequest, res: Response) {
