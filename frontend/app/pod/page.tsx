@@ -4,15 +4,14 @@ import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import { StreamVideoClient, ErrorFromResponse, GetCallResponse } from "@stream-io/video-react-sdk";
-import { API_KEY, CALL_TYPE } from "@/providers/meetProvider/streamMeetProvider";
+import { StreamVideoClient, GetCallResponse } from "@stream-io/video-react-sdk";
+import { API_KEY } from "@/providers/meetProvider/streamMeetProvider";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { customAlphabet } from "nanoid";
 import { AppContext } from "@/providers/appProvider";
 import { clearSessionInfo, setSessionInfo } from "@/store/slices/podSlice";
 import { sessionType } from "@/constants";
 import { updateUser } from "@/store/slices/userSlice";
-import { useWallets } from "@privy-io/react-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -64,8 +63,6 @@ export default function PodPage() {
     const { isLoggedIn, user } = useAppSelector((state) => state.user);
     const sessionInfo = useAppSelector((state) => state.pod);
     const { scheduledSessions, scheduleCall, getScheduledCall, isLoading } = useScheduledCalls();
-    const { wallets } = useWallets();
-    const activeWalletAddress = wallets[0]?.address;
 
     const [state, setState] = useState({
         meetingCode: "",
@@ -367,7 +364,7 @@ export default function PodPage() {
             />
 
             {/* User details section */}
-            <UserDetails user={user} activeWalletAddress={activeWalletAddress} />
+            <UserDetails user={user} walletType={user.walletType as string} />
 
             {/* Modals */}
             <React.Suspense fallback={null}>
