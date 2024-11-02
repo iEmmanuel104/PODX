@@ -7,7 +7,6 @@ export interface User {
 }
 export interface UserDetailsProps {
     user: User;
-    walletType: string;
 }
 export interface UserState {
     isOpen: boolean;

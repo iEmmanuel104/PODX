@@ -364,7 +364,7 @@ export default function PodPage() {
             />
 
             {/* User details section */}
-            <UserDetails user={user} walletType={user.walletType as string} />
+            <UserDetails user={user} />
 
             {/* Modals */}
             <React.Suspense fallback={null}>

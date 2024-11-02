@@ -17,7 +17,7 @@ const WalletOperations = dynamic(() => import("./walletOperations"), {
 // Utility function
 const formatAddress = (addr: string): string => (addr.length < 10 ? addr : `${addr.slice(0, 6)}...${addr.slice(-4)}`);
 
-const UserDetails = memo<UserDetailsProps>(({ user, walletType }) => {
+const UserDetails = memo<UserDetailsProps>(({ user }) => {
     const router = useRouter();
     const { logout } = usePrivy();
     const [state, setState] = useState<UserState>({
