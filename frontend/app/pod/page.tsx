@@ -19,6 +19,7 @@ import { Flame } from "lucide-react";
 import { useScheduledCalls } from "@/hooks/useScheduledCalls";
 import { addScheduledSession } from "@/store/slices/scheduledSessionSlice";
 import { StreamCallData } from "@/components/pod/streamCallData";
+import { useStreamTokenProvider } from "@/hooks/useStreamTokenProvider";
 
 // Dynamic imports
 const CreateSessionModal = dynamic(() => import("@/components/pod/createSessionModal"), { ssr: false });
@@ -63,6 +64,7 @@ export default function PodPage() {
     const { isLoggedIn, user } = useAppSelector((state) => state.user);
     const sessionInfo = useAppSelector((state) => state.pod);
     const { scheduledSessions, scheduleCall, getScheduledCall, isLoading } = useScheduledCalls();
+    const tokenProvider = useStreamTokenProvider();
 
     const [state, setState] = useState({
         meetingCode: "",
@@ -186,6 +188,7 @@ export default function PodPage() {
         dispatch(clearSessionInfo());
 
         try {
+            const token = await tokenProvider(user.walletAddress);
             // First try Stream.io
             const client = new StreamVideoClient({
                 apiKey: API_KEY,
@@ -193,13 +196,16 @@ export default function PodPage() {
                     id: user.id,
                     name: user.username,
                 },
-                token: user.streamToken,
+                tokenProvider: async () => token,
             });
 
             try {
+                console.log('checking streamio for call');
                 const { calls } = await client.queryCalls({
                     filter_conditions: { id: state.meetingCode },
                 });
+
+                console.log('calls found in stream io');
 
                 if (calls.length > 0 && calls[0].id === state.meetingCode) {
                     const response: GetCallResponse = await calls[0].get();
@@ -212,13 +218,14 @@ export default function PodPage() {
 
             // Then check Redis scheduled calls
             try {
+                console.log('checking server for scheduled call');
                 const { data } = await getScheduledCall(state.meetingCode);
                 if (data?.call) {
                     handleScheduledCall(data.call);
                     return;
                 }
             } catch (redisError) {
-                console.log("Scheduled call not found in Redis");
+                console.log("Scheduled call not found in Server");
             }
 
             setState((prev) => ({
