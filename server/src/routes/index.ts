@@ -9,5 +9,3 @@ router
     .use('/user', userRoute);
 
 export default router;
-
-
