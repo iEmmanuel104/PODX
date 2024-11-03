@@ -11,6 +11,8 @@ export interface ScheduleCallArgs {
 
 export interface GetScheduledCallResponse {
     call: StreamCallData;
+    hasJoined: boolean;
+    participants: number;
 }
 
 export interface GetUserScheduledCallsResponse {
@@ -32,8 +34,9 @@ export const scheduledCallsApiSlice = apiSlice.injectEndpoints({
                 url: `/calls/scheduled/${sessionId}`,
                 method: 'GET',
             }),
-            providesTags: ['ScheduledCalls'],
-            keepUnusedDataFor: 30, // Keep unused data for 30 seconds
+            providesTags: (result, error, sessionId) => [
+                { type: 'ScheduledCalls', id: sessionId }
+            ],
         }),
         getUserScheduledCalls: builder.query<ApiResponse<GetUserScheduledCallsResponse>, void>({
             query: () => ({
@@ -41,7 +44,6 @@ export const scheduledCallsApiSlice = apiSlice.injectEndpoints({
                 method: 'GET',
             }),
             providesTags: ['ScheduledCalls'],
-            keepUnusedDataFor: 60, // Keep unused data for 60 seconds
         }),
     }),
 });
