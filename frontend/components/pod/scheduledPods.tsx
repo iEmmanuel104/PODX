@@ -1,6 +1,6 @@
 import React, { useState, useMemo, memo } from "react";
 import { Button } from "@/components/ui/button";
-import { Calendar, Link, Copy, Check, Share2 } from "lucide-react";
+import { Calendar, Link, Copy, Check, Share2, Search } from "lucide-react";
 import { format, differenceInMinutes } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ interface ScheduledPodsProps {
     onJoinSession: (sessionId: string) => void;
     currentUserId: string;
     isLoading?: boolean;
+    foundSession?: StreamCallData;
 }
 
 // Types for internal state
@@ -134,87 +135,114 @@ const SessionCard = memo(function SessionCard({
     currentUserId,
     onJoinSession,
     onShareSession,
+    showFoundBadge = false, // Add this prop
 }: {
     session: StreamCallData;
     currentUserId: string;
     onJoinSession: (id: string) => void;
     onShareSession: (data: ShareSessionState) => void;
+    showFoundBadge?: boolean;
 }) {
     const isCreator = session.created_by.id === currentUserId;
     const startsAt = session.starts_at ? new Date(session.starts_at) : null;
     const status = startsAt ? getSessionStatus(session.starts_at) : null;
     const canJoin = startsAt ? canJoinSession(session.starts_at) : false;
 
+    const handleJoinClick = () => {
+        // Validate join conditions here
+        if (!canJoin) {
+            return; // Button will be disabled
+        }
+
+        if (!isCreator && status?.text !== "In progress") {
+            return; // Button will be disabled
+        }
+
+        onJoinSession(session.id);
+    };
+
     return (
-        <div className="flex items-center justify-between w-full bg-[#1E1E1E] rounded-[10px] p-4 hover:bg-[#2C2C2C] transition-colors">
-            <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#2C2C2C] flex items-center justify-center">
-                    <Calendar className="w-5 h-5 text-[#6032F6]" />
+        <div className="relative">
+            {showFoundBadge && (
+                <div className="absolute -top-6 left-0 text-sm text-[#A3A3A3] flex items-center">
+                    <Search className="w-4 h-4 mr-2" />
+                    Found Session
                 </div>
-                <div>
-                    <h3 className="text-white font-medium">{session.custom.title}</h3>
-                    <p className="text-sm text-[#A3A3A3]">{startsAt ? format(startsAt, "PPP 'at' p") : "Time not set"}</p>
-                    <div className="flex items-center gap-2">
-                        <p className="text-xs text-[#A3A3A3]">Host: {session.created_by.custom?.username || session.created_by.name}</p>
-                        {status && <span className={`text-xs ${status.color}`}>• {status.text}</span>}
+            )}
+            <div className="flex items-center justify-between w-full bg-[#1E1E1E] rounded-[10px] p-4 hover:bg-[#2C2C2C] transition-colors">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-[#2C2C2C] flex items-center justify-center">
+                        <Calendar className="w-5 h-5 text-[#6032F6]" />
+                    </div>
+                    <div>
+                        <h3 className="text-white font-medium">{session.custom.title}</h3>
+                        <p className="text-sm text-[#A3A3A3]">{startsAt ? format(startsAt, "PPP 'at' p") : "Time not set"}</p>
+                        <div className="flex items-center gap-2">
+                            <p className="text-xs text-[#A3A3A3]">Host: {session.created_by.custom?.username || session.created_by.name}</p>
+                            {status && <span className={`text-xs ${status.color}`}>• {status.text}</span>}
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div className="flex items-center gap-2">
-                {isCreator && (
+                <div className="flex items-center gap-2">
+                    {isCreator && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-[#6032F6] hover:text-[#4C28C4] hover:bg-[#2C2C2C]"
+                            onClick={() =>
+                                onShareSession({
+                                    isOpen: true,
+                                    sessionId: session.id,
+                                    sessionTitle: session.custom.title,
+                                    startTime: new Date(session.starts_at),
+                                })
+                            }
+                            title="Share session"
+                        >
+                            <Share2 className="h-5 w-5" />
+                        </Button>
+                    )}
                     <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-[#6032F6] hover:text-[#4C28C4] hover:bg-[#2C2C2C]"
-                        onClick={() =>
-                            onShareSession({
-                                isOpen: true,
-                                sessionId: session.id,
-                                sessionTitle: session.custom.title,
-                                startTime: new Date(session.starts_at),
-                            })
-                        }
-                        title="Share session"
+                        className={`
+                            ${
+                                canJoin && (isCreator || status?.text === "In progress")
+                                    ? "bg-[#6032F6] hover:bg-[#4C28C4]"
+                                    : "bg-[#2C2C2C] hover:bg-[#3C3C3C]"
+                            } text-white rounded-[10px] px-6
+                        `}
+                        onClick={handleJoinClick}
+                        disabled={!canJoin || (!isCreator && status?.text !== "In progress")}
+                        title={getButtonTitle(isCreator, canJoin, status?.text)}
                     >
-                        <Share2 className="h-5 w-5" />
+                        {getButtonText(isCreator, canJoin, status?.text)}
                     </Button>
-                )}
-                <Button
-                    className={`
-                        ${
-                            canJoin && (isCreator || status?.text === "In progress")
-                                ? "bg-[#6032F6] hover:bg-[#4C28C4]"
-                                : "bg-[#2C2C2C] hover:bg-[#3C3C3C]"
-                        } text-white rounded-[10px] px-6
-                    `}
-                    onClick={() => onJoinSession(session.id)}
-                    disabled={!canJoin || (!isCreator && status?.text !== "In progress")}
-                    title={getButtonTitle(isCreator, canJoin, status?.text)}
-                >
-                    {getButtonText(isCreator, canJoin, status?.text)}
-                </Button>
+                </div>
             </div>
         </div>
     );
 });
 
 // Main component
-export default function ScheduledPods({ sessions, onJoinSession, currentUserId, isLoading }: ScheduledPodsProps) {
+export default function ScheduledPods({ sessions, foundSession, onJoinSession, currentUserId, isLoading }: ScheduledPodsProps) {
     const [showAllSessions, setShowAllSessions] = useState(false);
     const [shareSession, setShareSession] = useState<ShareSessionState | null>(null);
 
     // Memoize session calculations
-    const { sortedSessions, upcomingSessions } = useMemo(() => {
-        const sorted = [...sessions].sort((a, b) => {
+    const { upcomingSessions } = useMemo(() => {
+        const userSessions = sessions.filter(
+            (session) => session.created_by.id === currentUserId || differenceInMinutes(new Date(session.starts_at), new Date()) <= 5
+        );
+
+        const sorted = [...userSessions].sort((a, b) => {
             const dateA = a.starts_at ? new Date(a.starts_at).getTime() : 0;
             const dateB = b.starts_at ? new Date(b.starts_at).getTime() : 0;
             return dateA - dateB;
         });
 
-        const upcoming = sorted.filter((session) => session.starts_at && differenceInMinutes(new Date(session.starts_at), new Date()) > -60);
+        const upcoming = sorted.filter((session) => differenceInMinutes(new Date(session.starts_at), new Date()) > -60);
 
-        return { sortedSessions: sorted, upcomingSessions: upcoming };
-    }, [sessions]);
+        return { upcomingSessions: upcoming };
+    }, [sessions, currentUserId]);
 
     if (isLoading) {
         return (
@@ -227,53 +255,90 @@ export default function ScheduledPods({ sessions, onJoinSession, currentUserId, 
         );
     }
 
-    if (!sessions.length) {
-        return <div className="w-full max-w-2xl mx-auto mb-8 text-center text-[#A3A3A3]">No scheduled sessions available</div>;
-    }
-
     return (
         <>
             <div className="w-full max-w-2xl mx-auto mb-8">
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold text-white">Scheduled Sessions</h2>
-                    {upcomingSessions.length > 1 && (
-                        <Button variant="ghost" onClick={() => setShowAllSessions(true)} className="text-[#6032F6] hover:text-[#4C28C4]">
-                            View All ({upcomingSessions.length})
-                        </Button>
-                    )}
-                </div>
-                <div className="space-y-2">
-                    {upcomingSessions.slice(0, 1).map((session) => (
+                {/* Found Session Section */}
+                {foundSession && (
+                    <div className="mb-8">
+                        <h2 className="text-xl font-semibold text-white mb-4">Found Session</h2>
                         <SessionCard
-                            key={session.id}
-                            session={session}
+                            session={foundSession}
                             currentUserId={currentUserId}
                             onJoinSession={onJoinSession}
                             onShareSession={setShareSession}
+                            showFoundBadge={true}
                         />
-                    ))}
+                    </div>
+                )}
+
+                {/* User's Scheduled Sessions Section */}
+                <div>
+                    {upcomingSessions.length === 0 ? (
+                        <div className="text-center text-[#A3A3A3] py-4">No scheduled sessions available</div>
+                    ) : (
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-xl font-semibold text-white">Your Scheduled Sessions</h2>
+                                {upcomingSessions.length > 1 && (
+                                    <Button variant="ghost" onClick={() => setShowAllSessions(true)} className="text-[#6032F6] hover:text-[#4C28C4]">
+                                        View All ({upcomingSessions.length})
+                                    </Button>
+                                )}
+                            </div>
+                            {upcomingSessions.slice(0, 1).map((session) => (
+                                <SessionCard
+                                    key={session.id}
+                                    session={session}
+                                    currentUserId={currentUserId}
+                                    onJoinSession={onJoinSession}
+                                    onShareSession={setShareSession}
+                                />
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
 
+            {/* View All Dialog */}
             <Dialog open={showAllSessions} onOpenChange={setShowAllSessions}>
                 <DialogContent className="bg-black border-[#2C2C2C] max-w-2xl">
                     <DialogHeader>
                         <DialogTitle className="text-white">All Scheduled Sessions</DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-2 max-h-[60vh] overflow-y-auto">
-                        {upcomingSessions.map((session) => (
-                            <SessionCard
-                                key={session.id}
-                                session={session}
-                                currentUserId={currentUserId}
-                                onJoinSession={onJoinSession}
-                                onShareSession={setShareSession}
-                            />
-                        ))}
+                    <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+                        {foundSession && (
+                            <div className="border-b border-[#2C2C2C] pb-4 mb-4">
+                                <h3 className="text-sm font-medium text-[#A3A3A3] mb-3">Found Session</h3>
+                                <SessionCard
+                                    session={foundSession}
+                                    currentUserId={currentUserId}
+                                    onJoinSession={onJoinSession}
+                                    onShareSession={setShareSession}
+                                    showFoundBadge={true}
+                                />
+                            </div>
+                        )}
+
+                        <div>
+                            <h3 className="text-sm font-medium text-[#A3A3A3] mb-3">Your Sessions</h3>
+                            <div className="space-y-2">
+                                {upcomingSessions.map((session) => (
+                                    <SessionCard
+                                        key={session.id}
+                                        session={session}
+                                        currentUserId={currentUserId}
+                                        onJoinSession={onJoinSession}
+                                        onShareSession={setShareSession}
+                                    />
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 </DialogContent>
             </Dialog>
 
+            {/* Share Dialog */}
             {shareSession && (
                 <ShareDialog
                     isOpen={shareSession.isOpen}
