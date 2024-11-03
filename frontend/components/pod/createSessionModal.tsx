@@ -10,6 +10,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Mic, Video, CalendarIcon, Clock } from "lucide-react";
 import { format, addDays, isBefore, startOfDay } from "date-fns";
 import { sessionType } from "@/constants";
+import SimpleTimePicker from "./simpleTimePicker";
 
 interface CreateSessionModalProps {
     isOpen: boolean;
@@ -124,16 +125,18 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({ isOpen, onClose
                 <div className="flex items-center gap-4 mb-6">
                     <Button
                         size="sm"
-                        className={`rounded-full ${!formState.isScheduled ? "bg-[#6032F6] hover:bg-[#6D28D9]" : "bg-[#1e1e1e] border border-zinc-600"
-                            }`}
+                        className={`rounded-full ${
+                            !formState.isScheduled ? "bg-[#6032F6] hover:bg-[#6D28D9]" : "bg-[#1e1e1e] border border-zinc-600"
+                        }`}
                         onClick={() => updateFormState({ isScheduled: false })}
                     >
                         Instant session
                     </Button>
                     <Button
                         size="sm"
-                        className={`rounded-full ${formState.isScheduled ? "bg-[#6032F6] hover:bg-[#6D28D9]" : "bg-[#1e1e1e] border border-zinc-600"
-                            }`}
+                        className={`rounded-full ${
+                            formState.isScheduled ? "bg-[#6032F6] hover:bg-[#6D28D9]" : "bg-[#1e1e1e] border border-zinc-600"
+                        }`}
                         onClick={() => updateFormState({ isScheduled: true })}
                     >
                         Schedule session <span className="text-yellow-300 rounded-full px-1 text-xs bg-yellow-700">New</span>
@@ -196,7 +199,6 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({ isOpen, onClose
                                             selected={formState.date}
                                             onSelect={(date) => {
                                                 updateFormState({ date });
-                                                // Clear time error when date changes
                                                 setTimeError("");
                                             }}
                                             disabled={(date) => isBefore(date, startOfDay(new Date())) || date > addDays(new Date(), 30)}
@@ -205,30 +207,19 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({ isOpen, onClose
                                     </PopoverContent>
                                 </Popover>
 
-                                {/* Time Selection with Input and Dropdown */}
-                                <div className="relative">
-                                    <div className="flex">
-                                        <Input
-                                            value={customTime}
-                                            onChange={(e) => handleTimeChange(e.target.value)}
-                                            placeholder="HH:mm"
-                                            className="w-full bg-[#2C2C2C] rounded-l-[10px] px-4 py-2 border-[#3c3c3c]"
-                                        />
-                                        <Select onValueChange={handleTimeSelect}>
-                                            <SelectTrigger className="w-12 bg-[#2C2C2C] rounded-r-[10px] border-l-0 border-[#3c3c3c]">
-                                                <Clock className="h-4 w-4 text-[#6032F6]" />
-                                            </SelectTrigger>
-                                            <SelectContent className="bg-[#2C2C2C] text-white max-h-[200px]">
-                                                {timeSlots.map((time) => (
-                                                    <SelectItem key={time} value={time}>
-                                                        {time}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    {timeError && <p className="text-red-500 text-xs mt-1">{timeError}</p>}
-                                </div>
+                                {/* New Time Picker */}
+                                <SimpleTimePicker
+                                    value={formState.time || ""}
+                                    onChange={(newTime) => {
+                                        if (formState.date && isDateTimeInPast(formState.date, newTime)) {
+                                            setTimeError("Cannot schedule for a past time");
+                                            return;
+                                        }
+                                        updateFormState({ time: newTime });
+                                        setTimeError("");
+                                    }}
+                                    error={timeError}
+                                />
                             </div>
                         </div>
                     )}
