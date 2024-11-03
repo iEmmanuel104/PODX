@@ -168,7 +168,7 @@ const SessionCard = memo(function SessionCard({
         <div className="relative">
             {showFoundBadge && (
                 <div className="absolute -top-6 left-0 right-0 flex justify-between items-center">
-                    <div className="text-sm text-[#A3A3A3] flex items-center">
+                    <div className="text-[#A3A3A3] flex items-center text-xl font-semibold">
                         <Search className="w-4 h-4 mr-2" />
                         Found Session
                     </div>
@@ -271,7 +271,6 @@ export default function ScheduledPods({ sessions, foundSession, onJoinSession, c
                 {/* Found Session Section */}
                 {foundSession && (
                     <div className="mb-8">
-                        <h2 className="text-xl font-semibold text-white mb-4">Found Session</h2>
                         <SessionCard
                             session={foundSession}
                             currentUserId={currentUserId}
@@ -320,7 +319,6 @@ export default function ScheduledPods({ sessions, foundSession, onJoinSession, c
                     <div className="space-y-4 max-h-[60vh] overflow-y-auto">
                         {foundSession && (
                             <div className="border-b border-[#2C2C2C] pb-4 mb-4">
-                                <h3 className="text-sm font-medium text-[#A3A3A3] mb-3">Found Session</h3>
                                 <SessionCard
                                     session={foundSession}
                                     currentUserId={currentUserId}
