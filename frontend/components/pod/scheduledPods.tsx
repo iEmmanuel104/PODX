@@ -1,6 +1,6 @@
 import React, { useState, useMemo, memo } from "react";
 import { Button } from "@/components/ui/button";
-import { Calendar, Link, Copy, Check, Share2, Search } from "lucide-react";
+import { Calendar, Link, Copy, Check, Share2, Search, X } from "lucide-react";
 import { format, differenceInMinutes } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ interface ScheduledPodsProps {
     currentUserId: string;
     isLoading?: boolean;
     foundSession?: StreamCallData;
+    onClearFoundSession?: () => void;
 }
 
 // Types for internal state
@@ -135,13 +136,15 @@ const SessionCard = memo(function SessionCard({
     currentUserId,
     onJoinSession,
     onShareSession,
-    showFoundBadge = false, // Add this prop
+    showFoundBadge = false,
+    onClose, // Add this prop
 }: {
     session: StreamCallData;
     currentUserId: string;
     onJoinSession: (id: string) => void;
     onShareSession: (data: ShareSessionState) => void;
     showFoundBadge?: boolean;
+    onClose?: () => void;
 }) {
     const isCreator = session.created_by.id === currentUserId;
     const startsAt = session.starts_at ? new Date(session.starts_at) : null;
@@ -164,9 +167,16 @@ const SessionCard = memo(function SessionCard({
     return (
         <div className="relative">
             {showFoundBadge && (
-                <div className="absolute -top-6 left-0 text-sm text-[#A3A3A3] flex items-center">
-                    <Search className="w-4 h-4 mr-2" />
-                    Found Session
+                <div className="absolute -top-6 left-0 right-0 flex justify-between items-center">
+                    <div className="text-sm text-[#A3A3A3] flex items-center">
+                        <Search className="w-4 h-4 mr-2" />
+                        Found Session
+                    </div>
+                    {onClose && (
+                        <Button variant="ghost" size="sm" className="text-[#A3A3A3] hover:text-white p-1 h-auto" onClick={onClose}>
+                            <X className="h-4 w-4" />
+                        </Button>
+                    )}
                 </div>
             )}
             <div className="flex items-center justify-between w-full bg-[#1E1E1E] rounded-[10px] p-4 hover:bg-[#2C2C2C] transition-colors">
@@ -223,7 +233,7 @@ const SessionCard = memo(function SessionCard({
 });
 
 // Main component
-export default function ScheduledPods({ sessions, foundSession, onJoinSession, currentUserId, isLoading }: ScheduledPodsProps) {
+export default function ScheduledPods({ sessions, foundSession, onJoinSession, currentUserId, isLoading, onClearFoundSession }: ScheduledPodsProps) {
     const [showAllSessions, setShowAllSessions] = useState(false);
     const [shareSession, setShareSession] = useState<ShareSessionState | null>(null);
 
@@ -268,6 +278,7 @@ export default function ScheduledPods({ sessions, foundSession, onJoinSession, c
                             onJoinSession={onJoinSession}
                             onShareSession={setShareSession}
                             showFoundBadge={true}
+                            onClose={onClearFoundSession}
                         />
                     </div>
                 )}
@@ -316,6 +327,7 @@ export default function ScheduledPods({ sessions, foundSession, onJoinSession, c
                                     onJoinSession={onJoinSession}
                                     onShareSession={setShareSession}
                                     showFoundBadge={true}
+                                    onClose={onClearFoundSession}
                                 />
                             </div>
                         )}
