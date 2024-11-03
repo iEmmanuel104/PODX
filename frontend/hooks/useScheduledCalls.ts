@@ -57,32 +57,23 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
             if (!result.data) {
                 throw new Error('No data returned for scheduled call');
             }
-            return result.data;
+            
+            return result.data as ApiResponse<GetScheduledCallResponse>;
         } catch (error) {
             console.error('Failed to get scheduled call:', error);
             throw error;
         }
     };
 
-    // Schedule a new call
-    const scheduleCall = async (args: ScheduleCallArgs) => {
-        try {
+    return {
+        scheduledSessions,
+        scheduleCall: async (args: ScheduleCallArgs) => {
             const result = await scheduleCallMutation(args);
-
             if ('error' in result) {
                 throw result.error;
             }
-
             return { data: result.data as ApiResponse<StreamCallData> };
-        } catch (error) {
-            console.error('Failed to schedule call:', error);
-            throw error;
-        }
-    };
-
-    return {
-        scheduledSessions,
-        scheduleCall,
+        },
         isLoading: isLoadingCalls || isScheduling,
         getScheduledCall,
     };
