@@ -269,6 +269,10 @@ export default function PodPage() {
         [dispatch]
     );
 
+    const handleClearFoundSession = useCallback(() => {
+        setState((prev) => ({ ...prev, foundSession: undefined }));
+    }, []);
+
     if (!isLoggedIn || !user) {
         router.push("/");
         return null;
@@ -373,6 +377,7 @@ export default function PodPage() {
                 onJoinSession={(sessionId) => router.push(`/pod/join/${sessionId}`)}
                 currentUserId={user?.id}
                 isLoading={isLoading}
+                onClearFoundSession={handleClearFoundSession}
             />
 
             {/* User details section */}
