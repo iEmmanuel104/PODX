@@ -8,7 +8,6 @@ export default class CallsController {
     static async scheduleCall(req: AuthenticatedRequest, res: Response) {
         const { title, type, sessionId, starts_at } = req.body;
 
-        // Calculate expiry time (5 minutes after start time)
         const startTime = new Date(starts_at);
         const expiryTime = new Date(startTime.getTime() + 5 * 60 * 1000);
         const now = new Date();
@@ -35,12 +34,15 @@ export default class CallsController {
             created_at: now.toISOString(),
         };
 
-        // Store in Redis with expiry
-        const redisKey = `scheduled_call:${req.user.id}:${sessionId}`;
-        await redisClient.set(redisKey, JSON.stringify(callData));
-        await redisClient.expireat(redisKey, Math.floor(expiryTime.getTime() / 1000));
+        // Store in global sessions set for searching
+        await redisClient.sadd('all_scheduled_sessions', sessionId);
 
-        // Add to user's scheduled calls set
+        // Store call data with creator ID
+        const callKey = `scheduled_call:${sessionId}`;
+        await redisClient.set(callKey, JSON.stringify(callData));
+        await redisClient.expireat(callKey, Math.floor(expiryTime.getTime() / 1000));
+
+        // Store in user's scheduled calls set
         const userScheduledCallsKey = `user_scheduled_calls:${req.user.id}`;
         await redisClient.sadd(userScheduledCallsKey, sessionId);
 
@@ -53,31 +55,40 @@ export default class CallsController {
 
     static async getScheduledCall(req: AuthenticatedRequest, res: Response) {
         const { sessionId } = req.params;
-        const redisKey = `scheduled_call:${req.user.id}:${sessionId}`;
+        const callKey = `scheduled_call:${sessionId}`;
 
-        const callData = await redisClient.get(redisKey);
+        const callData = await redisClient.get(callKey);
 
         if (!callData) {
             throw new BadRequestError('Scheduled call not found');
         }
 
+        const parsedCallData = JSON.parse(callData);
+
+        // Check if the current user has joined this session
+        const userJoinedKey = `session_participants:${sessionId}`;
+        const participants = await redisClient.smembers(userJoinedKey);
+        const hasJoined = participants.includes(req.user.id);
+
         res.status(200).json({
             status: 'success',
             message: 'Scheduled call retrieved successfully',
-            data: { call: JSON.parse(callData) },
+            data: {
+                call: parsedCallData,
+                hasJoined,
+                participants: participants.length,
+            },
         });
     }
 
     static async getUserScheduledCalls(req: AuthenticatedRequest, res: Response) {
         const userScheduledCallsKey = `user_scheduled_calls:${req.user.id}`;
-
-        // Get all session IDs for the user
         const sessionIds = await redisClient.smembers(userScheduledCallsKey);
 
         const calls = [];
         for (const sessionId of sessionIds) {
-            const redisKey = `scheduled_call:${req.user.id}:${sessionId}`;
-            const callData = await redisClient.get(redisKey);
+            const callKey = `scheduled_call:${sessionId}`;
+            const callData = await redisClient.get(callKey);
 
             if (callData) {
                 calls.push(JSON.parse(callData));
