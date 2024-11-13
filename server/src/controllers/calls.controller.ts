@@ -59,8 +59,14 @@ export default class CallsController {
 
         const callData = await redisClient.get(callKey);
 
+        // If no call data found, return success with null data
         if (!callData) {
-            throw new BadRequestError('Scheduled call not found');
+            res.status(200).json({
+                status: 'success',
+                message: 'No scheduled call found',
+                data: null,
+            });
+            return;
         }
 
         const parsedCallData = JSON.parse(callData);
