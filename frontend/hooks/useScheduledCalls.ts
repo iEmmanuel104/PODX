@@ -18,7 +18,7 @@ interface UseScheduledCallsReturn {
     scheduledSessions: StreamCallData[];
     scheduleCall: (args: ScheduleCallArgs) => Promise<{ data: ApiResponse<StreamCallData> }>;
     isLoading: boolean;
-    getScheduledCall: (sessionId: string) => Promise<ApiResponse<GetScheduledCallResponse>>;
+    getScheduledCall: (sessionId: string) => Promise<ApiResponse<GetScheduledCallResponse | null>>;
 }
 
 export const useScheduledCalls = (): UseScheduledCallsReturn => {
@@ -44,7 +44,7 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
     }, [dispatch]);
 
     // Get a single scheduled call using RTK Query
-    const getScheduledCall = async (sessionId: string): Promise<ApiResponse<GetScheduledCallResponse>> => {
+    const getScheduledCall = async (sessionId: string): Promise<ApiResponse<GetScheduledCallResponse | null>> => {
         try {
             const result = await dispatch(
                 scheduledCallsApiSlice.endpoints.getScheduledCall.initiate(sessionId)
@@ -53,12 +53,8 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
             if ('error' in result) {
                 throw new Error('Failed to fetch scheduled call');
             }
-
-            if (!result.data) {
-                throw new Error('No data returned for scheduled call');
-            }
             
-            return result.data as ApiResponse<GetScheduledCallResponse>;
+            return result.data as ApiResponse<GetScheduledCallResponse | null>;
         } catch (error) {
             console.error('Failed to get scheduled call:', error);
             throw error;
