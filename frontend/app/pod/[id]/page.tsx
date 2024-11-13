@@ -77,7 +77,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
     });
 
     const walletClientType = useAppSelector((state) => state.user.user?.walletType);
-    console.log({ walletClientType })
+    console.log({ walletClientType });
     const isEmbeddedWallet = walletClientType === "privy";
 
     const { sendTransaction: sendTransactionWagmi, isSuccess, isPending, isError: isWagmiError } = useSendTransactionWagmi();
@@ -180,7 +180,6 @@ export default function MeetingInterface({ params }: MeetingProps) {
         address: userAddress,
     });
 
-
     const formattedBalance = balance ? Number(balance.value) / 1e18 : 0;
     const displayBalance = formattedBalance.toFixed(4);
 
@@ -248,13 +247,13 @@ export default function MeetingInterface({ params }: MeetingProps) {
     };
 
     const openTipModal = (participant: StreamVideoParticipant) => {
-        console.log("person to tip is:", { participant })
+        console.log("person to tip is:", { participant });
         setSelectedTipRecipient(participant);
         setShowTipModal(true);
     };
 
     const handleLeave = () => {
-        router.push("/pod/end")
+        router.push("/pod/end");
         // setShowThankYouModal(true);
     };
 
@@ -321,7 +320,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                     />
 
                     <div className="flex-grow flex overflow-hidden relative">
-                        <div className="flex-1 relative">{isSpeakerView ? <SpeakerLayout /> : <PaginatedGridLayout />}</div>
+                        <div className="flex-1 relative">{isSpeakerView ? <SpeakerLayout /> : <PaginatedGridLayout groupSize={6} pageArrowsVisible={true} />}</div>
                         <div
                             className={`
                                 ${showSidebar ? "translate-y-0" : "translate-y-full sm:translate-y-0"} 
