@@ -20,7 +20,6 @@ import { useScheduledCalls } from "@/hooks/useScheduledCalls";
 import { addScheduledSession } from "@/store/slices/scheduledSessionSlice";
 import { StreamCallData } from "@/components/pod/streamCallData";
 import { useStreamTokenProvider } from "@/hooks/useStreamTokenProvider";
-import { differenceInMinutes } from "date-fns";
 
 // Dynamic imports
 const CreateSessionModal = dynamic(() => import("@/components/pod/createSessionModal"), { ssr: false });
