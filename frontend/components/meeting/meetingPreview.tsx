@@ -166,7 +166,7 @@ const MeetingPreview: React.FC = () => {
                     <AudioSessionPreview />
                 ) : (
                     <div className="absolute inset-0 flex items-center justify-center [&_video]:-scale-x-100">
-                        <VideoPreview
+                        <VideoPreview 
                             DisabledVideoPreview={() => (
                                 <div className="text-2xl text-white">
                                     {videoPreviewText || (isVideoEnabled ? "Camera is starting..." : "Camera is off")}
