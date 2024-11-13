@@ -2,10 +2,9 @@
 
 import "@stream-io/video-react-sdk/dist/css/styles.css";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { AlertCircle, CheckCircle2, DollarSign } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import TipModal from "@/components/meeting/tips";
 import ParticipantsSidebar from "@/components/meeting/participantList";
-import ThankYouModal from "@/components/meeting/thankYou";
 import Notifications from "@/components/meeting/notifications";
 import Header from "@/components/meeting/header";
 import {
@@ -28,7 +27,7 @@ import { isAddress, parseEther } from "ethers";
 import { useAppSelector } from "@/store/hooks";
 import { StreamVideoParticipant } from "@stream-io/video-react-sdk";
 import { useSendTransaction as useSendTransactionWagmi } from "wagmi";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import EndScreen from "@/components/meeting/end-screen";
 import Image from "next/image";
 
@@ -80,23 +79,11 @@ export default function MeetingInterface({ params }: MeetingProps) {
     console.log({ walletClientType });
     const isEmbeddedWallet = walletClientType === "privy";
 
-    const { sendTransaction: sendTransactionWagmi, isSuccess, isPending, isError: isWagmiError } = useSendTransactionWagmi();
-
-    useEffect(() => {
-        if (isSuccess) {
-            toast.success(`You successfully tipped ${selectedTipRecipient?.name || selectedTipRecipient?.userId} ${tipAmount} ETH`, {
-                duration: 5000,
-            });
-        } else if (isPending) {
-            toast.loading("Transaction pending...", { duration: 5000 });
-        } else if (isWagmiError) {
-            toast.error("Transaction failed. Please try again.", { duration: 5000 });
-        }
-    }, [isSuccess, isPending, isWagmiError]);
+    const { sendTransactionAsync: sendTransactionWagmi, isSuccess, isPending, isError: isWagmiError } = useSendTransactionWagmi();
 
     const sendETHExternal = async (recipient: string, amount: string) => {
         console.log("external wallet tipping flow");
-        const notification = toast.loading("Sending tip...", { duration: 9000 });
+        const notification = toast.loading("Sending tip...");
 
         try {
             if (!isAddress(recipient)) {
@@ -109,17 +96,19 @@ export default function MeetingInterface({ params }: MeetingProps) {
                     to: recipient as `0x${string}`,
                     value: parsedAmount,
                 });
+                toast.success("tip successful", { id: notification })
             } else {
                 throw new Error("Transaction cannot be sent. Make sure you're connected to a wallet.");
             }
         } catch (error) {
             console.error("Error sending ETH:", error);
+            toast.error("Failed to send tip. Please try again.", { id: notification });
         }
     };
 
     const sendETHEmbedded = async (recipient: string, amount: string) => {
         console.log("embedded tipping flow");
-        const notification = toast.loading("Sending tip...", { duration: 9000 });
+        const notification = toast.loading("Sending tip...");
         try {
             if (!isAddress(recipient)) {
                 throw new Error("Invalid recipient address");
@@ -131,6 +120,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                 value: parsedAmount,
                 gasLimit: 21000,
             });
+            toast.success("tip successful", { id: notification })
         } catch (error) {
             console.error("Error sending ETH:", error);
             toast.error("Failed to send tip. Please try again.", { id: notification });
@@ -304,7 +294,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
     return (
         <StreamTheme className="root-theme">
             <StreamCall call={call}>
-                <div className="h-screen b-[#121212] text-white flex flex-col w-[95%] mx-auto bg-yellow-400">
+                <div className="h-screen b-[#121212] text-white flex flex-col w-[95%] mx-auto">
                     {/* Header Title */}
                     <Header
                         userInfo={user}
