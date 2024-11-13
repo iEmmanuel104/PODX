@@ -29,7 +29,7 @@ export const scheduledCallsApiSlice = apiSlice.injectEndpoints({
             }),
             invalidatesTags: ['ScheduledCalls'],
         }),
-        getScheduledCall: builder.query<ApiResponse<GetScheduledCallResponse>, string>({
+        getScheduledCall: builder.query<ApiResponse<GetScheduledCallResponse | null>, string>({
             query: (sessionId) => ({
                 url: `/calls/scheduled/${sessionId}`,
                 method: 'GET',
