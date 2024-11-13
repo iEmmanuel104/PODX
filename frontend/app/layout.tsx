@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import "@stream-io/video-react-sdk/dist/css/styles.css";
 import "./globals.css";
 import StoreProvider from "@/providers/storeProvider";
 import PrivyProvider from "@/providers/privyProvider";
 import AppProvider from "@/providers/appProvider";
 // import AuthProvider from "@/providers/authProvider";
 
-import "@stream-io/video-react-sdk/dist/css/styles.css";
 import "stream-chat-react/dist/css/v2/index.css";
 import { Toaster } from "react-hot-toast";
 import { AlertCircle, CheckCircle2, DollarSign } from "lucide-react";

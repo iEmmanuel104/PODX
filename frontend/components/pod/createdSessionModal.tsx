@@ -125,10 +125,6 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClo
                             </Button>
                         </div>
                     </div>
-                    <div className="flex items-start text-[#CBAC58] text-sm justify-center">
-                        <AlertCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
-                        <p>For the best experience, remind participants to connect their wallet when joining through the session link</p>
-                    </div>
                     <Button
                         onClick={handleJoinSession}
                         variant="default"

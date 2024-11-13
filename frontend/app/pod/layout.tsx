@@ -48,7 +48,7 @@ const LayoutContent = memo<LayoutProps>(({ children, params }) => {
     }
 
     return (
-        <div className="min-h-screen bg-[#121212]">
+        <div className="max-h-screen bg-[#121212]">
             <ErrorBoundary fallback={<div>Failed to load meeting. Please try again.</div>}>
                 <DynamicMeetProvider meetingId={meetingId} language="en">
                     {children}

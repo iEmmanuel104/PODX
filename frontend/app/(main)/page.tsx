@@ -38,7 +38,7 @@ export default function LandingPage() {
                 <Logo />
 
                 <div className="relative inline-block mt-20 mb-8">
-                    <p className="text-[#A3A3A3] text-xs uppercase tracking-wider px-4 py-1 relative z-10">
+                    <p className="text-white text-xs uppercase tracking-wider px-4 py-1 relative z-10">
                         A creator's workspace
                     </p>
                     <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#6032F6] via-[#FF6B00] to-[#6032F6]" style={{ padding: '1px' }}></div>

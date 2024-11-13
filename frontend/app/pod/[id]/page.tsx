@@ -1,5 +1,6 @@
 "use client";
 
+import "@stream-io/video-react-sdk/dist/css/styles.css";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { AlertCircle, CheckCircle2, DollarSign } from "lucide-react";
 import TipModal from "@/components/meeting/tips";
@@ -20,7 +21,6 @@ import {
     CallingState,
     CustomVideoEvent,
 } from "@stream-io/video-react-sdk";
-import "@stream-io/video-react-sdk/dist/css/styles.css";
 import { useRouter } from "next/navigation";
 import { useBalance } from "wagmi";
 import { useSendTransaction } from "@privy-io/react-auth";
@@ -305,7 +305,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
     return (
         <StreamTheme className="root-theme">
             <StreamCall call={call}>
-                <div className="h-screen bg-[#121212] text-white flex flex-col w-[95%] mx-auto">
+                <div className="h-screen b-[#121212] text-white flex flex-col w-[95%] mx-auto bg-yellow-400">
                     {/* Header Title */}
                     <Header
                         userInfo={user}
@@ -321,7 +321,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                     />
 
                     <div className="flex-grow flex overflow-hidden relative">
-                        <div className="flex-1 relative">{isSpeakerView ? <SpeakerLayout /> : <PaginatedGridLayout />}</div>
+                        <div className="flex-1 h-[100px] relative">{isSpeakerView ? <SpeakerLayout /> : <PaginatedGridLayout />}</div>
                         <div
                             className={`
                                 ${showSidebar ? "translate-y-0" : "translate-y-full sm:translate-y-0"} 
