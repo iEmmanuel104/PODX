@@ -22,14 +22,10 @@ import {
 } from "@stream-io/video-react-sdk";
 import { useRouter } from "next/navigation";
 import { useBalance } from "wagmi";
-import { useSendTransaction } from "@privy-io/react-auth";
-import { isAddress, parseEther } from "ethers";
 import { useAppSelector } from "@/store/hooks";
-import { StreamVideoParticipant } from "@stream-io/video-react-sdk";
-import { useSendTransaction as useSendTransactionWagmi } from "wagmi";
-import toast from "react-hot-toast";
 import EndScreen from "@/components/meeting/end-screen";
 import Image from "next/image";
+import { useTipping } from "@/hooks/useTipping";
 
 interface MeetingProps {
     params: {
@@ -41,7 +37,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const call = useCall();
     const { id } = params;
     const router = useRouter();
-    const { useParticipants, useCallMembers, useIsCallLive, useCallCustomData, useHasOngoingScreenShare, useCallCallingState } = useCallStateHooks();
+    const { useParticipants, useIsCallLive, useCallCustomData, useHasOngoingScreenShare, useCallCallingState } = useCallStateHooks();
 
     const participants = useParticipants();
     const customData = useCallCustomData();
@@ -50,117 +46,18 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const hasOngoingScreenShare = useHasOngoingScreenShare();
     const callingState = useCallCallingState();
 
-    const [showTipModal, setShowTipModal] = useState(false);
-    const [tipAmount, setTipAmount] = useState("");
     const [showTipSuccess, setShowTipSuccess] = useState(false);
-    const [selectedTipRecipient, setSelectedTipRecipient] = useState<StreamVideoParticipant | null>(null);
     const [showThankYouModal, setShowThankYouModal] = useState(false);
     const [joinRequests, setJoinRequests] = useState<string[]>([]);
     const [speakRequests, setSpeakRequests] = useState<string[]>([]);
     const [showSidebar, setShowSidebar] = useState(false);
     const { user } = useAppSelector((state) => state.user);
     const userAddress = user?.walletAddress as `0x${string}`;
-    const [receivedTips, setReceivedTips] = useState<{ from: string; amount: string }[]>([]);
-
-    // Sending the transaction
-    const { sendTransaction: sendTransactionEmbedded } = useSendTransaction({
-        onError: (error) => {
-            console.error("Embedded wallet transaction failed:", error);
-        },
-        onSuccess: (response) => {
-            console.log("Embedded wallet transaction successful:", response);
-            toast.success(`You successfully tipped ${selectedTipRecipient?.name || selectedTipRecipient?.userId} ${tipAmount} ETH`, {
-                duration: 5000,
-            });
-        },
-    });
-
     const walletClientType = useAppSelector((state) => state.user.user?.walletType);
-    console.log({ walletClientType });
     const isEmbeddedWallet = walletClientType === "privy";
 
-    const { sendTransactionAsync: sendTransactionWagmi, isSuccess, isPending, isError: isWagmiError } = useSendTransactionWagmi();
-
-    const sendETHExternal = async (recipient: string, amount: string) => {
-        console.log("external wallet tipping flow");
-        const notification = toast.loading("Sending tip...");
-
-        try {
-            if (!isAddress(recipient)) {
-                throw new Error("Invalid recipient address");
-            }
-            const parsedAmount = parseEther(amount);
-
-            if (sendTransactionWagmi) {
-                await sendTransactionWagmi({
-                    to: recipient as `0x${string}`,
-                    value: parsedAmount,
-                });
-                toast.success("tip successful", { id: notification })
-            } else {
-                throw new Error("Transaction cannot be sent. Make sure you're connected to a wallet.");
-            }
-        } catch (error) {
-            console.error("Error sending ETH:", error);
-            toast.error("Failed to send tip. Please try again.", { id: notification });
-        }
-    };
-
-    const sendETHEmbedded = async (recipient: string, amount: string) => {
-        console.log("embedded tipping flow");
-        const notification = toast.loading("Sending tip...");
-        try {
-            if (!isAddress(recipient)) {
-                throw new Error("Invalid recipient address");
-            }
-            const parsedAmount = parseEther(amount.toString());
-            await sendTransactionEmbedded({
-                chainId: 8453,
-                to: recipient,
-                value: parsedAmount,
-                gasLimit: 21000,
-            });
-            toast.success("tip successful", { id: notification })
-        } catch (error) {
-            console.error("Error sending ETH:", error);
-            toast.error("Failed to send tip. Please try again.", { id: notification });
-        }
-    };
-
-    const sendETH = async (recipient: string, amount: string) => {
-        if (isEmbeddedWallet) {
-            await sendETHEmbedded(recipient, amount);
-        } else {
-            await sendETHExternal(recipient, amount);
-        }
-    };
-
-    const sendTipEvent = useCallback(
-        async (recipient: string, amount: string) => {
-            if (!call) return;
-
-            await call.sendCustomEvent({
-                type: "tip",
-                from: connectedUser?.id || "Unknown",
-                to: recipient,
-                amount: amount,
-            });
-        },
-        [call, connectedUser]
-    );
-
-    const handleTip = async () => {
-        if (selectedTipRecipient && tipAmount) {
-            try {
-                await sendETH((selectedTipRecipient?.custom?.fields?.walletAddress?.kind as any).stringValue || "0xaa", tipAmount);
-                await sendTipEvent(selectedTipRecipient.userId, tipAmount);
-                setShowTipModal(false);
-            } catch (error) {
-                console.error("Error sending tip:", error);
-                toast.error("Failed to send tip. Please try again.");
-            }
-        }
-    };
+    const { showTipModal, tipAmount, selectedTipRecipient, receivedTips, openTipModal, handleTip, handleCancelTip, setTipAmount, handleTipEvent } =
+        useTipping(isEmbeddedWallet);
 
     const {
         data: balance,
@@ -189,24 +86,14 @@ export default function MeetingInterface({ params }: MeetingProps) {
                     setJoinRequests((prev) => [...prev, event.user.id]);
                     break;
                 case "custom":
-                    const customEvent = event as CustomVideoEvent;
-                    if (customEvent.custom.type === "tip") {
-                        const { from, to, amount } = customEvent.custom;
-                        if (to === connectedUser?.id) {
-                            setReceivedTips((prev) => [...prev, { from, amount }]);
-                            toast.success(`You received a tip of ${amount} ETH from ${from}`, { duration: 5000 });
-                        }
-                    }
+                    handleTipEvent(event as CustomVideoEvent);
                     break;
             }
         };
 
         const unsubscribe = call.on("all", handleCallEvent);
-
-        return () => {
-            unsubscribe();
-        };
-    }, [call, connectedUser]);
+        return () => unsubscribe();
+    }, [call, handleTipEvent]);
 
     const handleJoinSession = useCallback(() => {
         if (!call || !connectedUser) {
@@ -229,18 +116,6 @@ export default function MeetingInterface({ params }: MeetingProps) {
     useEffect(() => {
         handleJoinSession();
     }, [handleJoinSession]);
-
-    const handleCancelTip = () => {
-        setShowTipModal(false);
-        setTipAmount("");
-        setSelectedTipRecipient(null);
-    };
-
-    const openTipModal = (participant: StreamVideoParticipant) => {
-        console.log("person to tip is:", { participant });
-        setSelectedTipRecipient(participant);
-        setShowTipModal(true);
-    };
 
     const handleLeave = () => {
         router.push("/pod/end");
@@ -310,7 +185,9 @@ export default function MeetingInterface({ params }: MeetingProps) {
                     />
 
                     <div className="flex-grow flex overflow-hidden relative">
-                        <div className="flex-1 relative">{isSpeakerView ? <SpeakerLayout /> : <PaginatedGridLayout groupSize={6} pageArrowsVisible={true} />}</div>
+                        <div className="flex-1 relative">
+                            {isSpeakerView ? <SpeakerLayout /> : <PaginatedGridLayout groupSize={6} pageArrowsVisible={true} />}
+                        </div>
                         <div
                             className={`
                                 ${showSidebar ? "translate-y-0" : "translate-y-full sm:translate-y-0"} 
