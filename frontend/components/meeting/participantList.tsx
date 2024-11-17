@@ -9,8 +9,6 @@ import {
     VideoOff,
     DollarSign,
     UsersRound,
-    Crown, // Crown for host status
-    ShieldPlus,
 } from "lucide-react";
 import { StreamVideoParticipant, OwnUserResponse } from "@stream-io/video-react-sdk";
 import { Button } from "@/components/ui/button";
@@ -314,67 +312,42 @@ const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
         }, [participants, currentUser]);
 
         return (
-            <div className="w-full bg-[#1E1E1E] p-2 sm:p-4 mt-2 sm:mt-4 flex flex-col rounded-xl">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-2 sm:mb-4">
-                    <div className="flex items-center">
-                        <h2 className="text-white text-base sm:text-lg font-semibold">Participants</h2>
-                        <span className="bg-[#7C3AED] text-white text-xs px-2 py-0.5 rounded-full ml-2">{sortedParticipants.length}</span>
-                    </div>
-                    {!isCurrentUserHost && <RequestHostButton />}
+            <div className="flex flex-col h-full bg-[#1F1F1F]">
+                {/* Participants List */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                    {pendingParticipants.length > 0 && (
+                        <PendingParticipantsList
+                            participants={pendingParticipants}
+                            onJoinRequest={handleJoinRequest}
+                        />
+                    )}
+                    {sortedParticipants.map((participant) => (
+                        <ParticipantItem
+                            key={participant.userId}
+                            participant={participant}
+                            currentUser={currentUser}
+                            isExpanded={expandedParticipant === participant.userId}
+                            onExpand={() =>
+                                setExpandedParticipant((prev) =>
+                                    prev === participant.userId ? null : participant.userId
+                                )
+                            }
+                            onTip={openTipModal}
+                            onUpdateRole={updateParticipantRole}
+                        />
+                    ))}
                 </div>
 
-                {/* Content Container */}
-                <div className="flex flex-col min-h-0 flex-1">
-                    {/* Pending Participants Section */}
-                    {pendingParticipants.length > 0 && (
-                        <div className="mb-4">
-                            <h3 className="text-[#AFAFAF] text-xs sm:text-sm font-semibold mb-2">Pending Requests</h3>
-                            <div className="space-y-2">
-                                {pendingParticipants.map((participant) => (
-                                    <div key={participant.userId} className="flex items-center justify-between bg-[#2C2C2C] p-2.5 rounded-lg">
-                                        <span className="text-white text-xs sm:text-sm font-medium truncate max-w-[150px]">
-                                            {formatName(participant.name || participant.userId)}
-                                        </span>
-                                        <div className="flex items-center gap-2">
-                                            <Button
-                                                className="bg-[#6032F6] hover:bg-[#4C28C4] text-white text-xs px-3 py-1.5 rounded-full"
-                                                onClick={() => handleJoinRequest(participant.userId, true)}
-                                            >
-                                                Accept
-                                            </Button>
-                                            <Button
-                                                className="bg-[#383838] hover:bg-[#424242] text-white text-xs px-3 py-1.5 rounded-full"
-                                                onClick={() => handleJoinRequest(participant.userId, false)}
-                                            >
-                                                Decline
-                                            </Button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Active Participants Section */}
-                    <h2 className="text-[#AFAFAF] text-sm font-semibold mb-2">On the call</h2>
-
-                    {/* Scrollable Container */}
-                    <div className="overflow-y-auto overflow-x-hidden flex-1">
-                        <div className="space-y-2 pr-0.5">
-                            {activeParticipants.map((participant) => (
-                                <ParticipantItem
-                                    key={participant.sessionId}
-                                    participant={participant}
-                                    currentUser={currentUser}
-                                    isExpanded={expandedParticipant === participant.userId}
-                                    onExpand={() => setExpandedParticipant(expandedParticipant === participant.userId ? null : participant.userId)}
-                                    onTip={openTipModal}
-                                    onUpdateRole={updateParticipantRole}
-                                />
-                            ))}
-                        </div>
-                    </div>
+                {/* Fixed Bottom Section */}
+                <div className="sticky bottom-0 bg-[#2C2C2C] p-4">
+                    <h1>Your session is live!</h1>
+                    <p className="mb-4 text-gray-400">Click the button below to copy the call link</p>
+                    <Button
+                        className="w-full bg-[#6032F6] hover:bg-[#4C28C4] text-white px-4 py-2 rounded-lg"
+                        onClick={() => navigator.clipboard.writeText("Session Link")}
+                    >
+                        Copy Link
+                    </Button>
                 </div>
             </div>
         );
