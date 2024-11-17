@@ -122,13 +122,13 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
 
     const handleTipEvent = useCallback((event: CustomVideoEvent) => {
         if (event.custom.type === "tip") {
+            console.log("event.custom", event.custom)
             const { from, to, amount } = event.custom;
             if (to === connectedUser?.id) {
                 setState(prev => ({
                     ...prev,
                     receivedTips: [...prev.receivedTips, { from, amount }]
                 }));
-                toast.success(`You received a tip of ${amount} ETH from ${from}`, { duration: 5000 });
             }
         }
     }, [connectedUser?.id]);

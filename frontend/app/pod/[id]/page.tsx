@@ -247,10 +247,10 @@ export default function MeetingInterface({ params }: MeetingProps) {
                 )}
                 {receivedTips.length > 0 && (
                     <div className="fixed bottom-4 left-4 text-white px-4 py-2">
-                        Recent tips:{" "}
+                        {/* Recent tips:{" "} */}
                         {receivedTips.map((tip, index) => (
-                            <div key={index} className="bg-[#6032F6] rounded-full flex items-center">
-                                <Image src={"/images/confetti.svg"} alt="confetti" className="h-10" width={8} height={8} />
+                            <div key={index} className="bg-[#6032F6] rounded-full flex items-center justify-between gap-2 px-2">
+                                <Image src={"/images/confetti.svg"} alt="confetti" className="h-10" width={30} height={10} />
                                 <div className="flex items-center gap-2">
                                     <p className="text-semibold">{tip.from}</p> tipped you <p className="text-semibold">{tip.amount}</p>
                                 </div>
