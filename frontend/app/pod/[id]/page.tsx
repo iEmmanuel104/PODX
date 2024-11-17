@@ -193,11 +193,10 @@ export default function MeetingInterface({ params }: MeetingProps) {
                                 ${showSidebar ? "translate-y-0" : "translate-y-full sm:translate-y-0"} 
                                 transition-transform duration-300 ease-in-out
                                 fixed sm:relative inset-0 sm:inset-auto top-16 sm:top-0 
-                                h-screen sm:h-full w-full sm:w-56 lg:w-64 xl:w-80 
+                                h-[calc(100vh-4rem)] sm:h-full w-full sm:w-56 lg:w-64 xl:w-80 
                                 bg-[#1E1E1E] sm:bg-transparent 
                                 z-20 sm:z-auto
-                                overflow-y-auto
-                                
+                                overflow-hidden
                             `}
                         >
                             <ParticipantsSidebar

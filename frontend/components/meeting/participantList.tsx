@@ -1,8 +1,19 @@
 "use client";
 
 import React, { useState, useMemo, memo } from "react";
-import { ChevronDown, Mic, MicOff, Video, VideoOff, DollarSign, UsersRound } from "lucide-react";
+import {
+    ChevronDown,
+    Mic,
+    MicOff,
+    Video,
+    VideoOff,
+    DollarSign,
+    UsersRound,
+    Crown, // Crown for host status
+    ShieldPlus,
+} from "lucide-react";
 import { StreamVideoParticipant, OwnUserResponse } from "@stream-io/video-react-sdk";
+import { Button } from "@/components/ui/button";
 
 // Types
 interface ParticipantsSidebarProps {
@@ -18,6 +29,38 @@ const formatName = (name: string, maxLength: number = 15): string => {
     if (name.length <= maxLength) return name;
     return `${name.slice(0, maxLength)}...`;
 };
+
+const MicHandIcon = () => (
+    <svg
+        viewBox="0 0 24 24"
+        width="1em"
+        height="1em"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="text-[#DDB958] w-3 h-3 sm:w-4 sm:h-4"
+    >
+        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+        <line x1="12" x2="12" y1="19" y2="22" />
+        <path d="M19 15.5c.5 1 .5 2-.5 2.5s-2 .5-2.5-.5" />
+    </svg>
+);
+
+const RequestHostButton = memo(() => (
+    <Tooltip content="Request host permissions">
+        <Button
+            className="flex items-center space-x-1.5 px-2.5 py-1.5
+            bg-[#383838] hover:bg-[#424242] 
+            transition-colors duration-200 rounded-full
+            text-white text-xs"
+        >
+            <MicHandIcon />
+        </Button>
+    </Tooltip>
+));
 
 const Tooltip = memo<{ content: string; children: React.ReactNode }>(({ content, children }) => (
     <div className="group relative inline-block">
@@ -36,7 +79,6 @@ const Tooltip = memo<{ content: string; children: React.ReactNode }>(({ content,
     </div>
 ));
 
-
 const ActionButton = memo<{
     icon: React.ReactNode;
     text: string;
@@ -45,7 +87,7 @@ const ActionButton = memo<{
     className?: string;
 }>(({ icon, text, onClick, variant = "primary", className = "" }) => (
     <Tooltip content={text}>
-        <button
+        <Button
             onClick={onClick}
             className={`flex items-center space-x-1 px-2.5 py-1.5
                 ${variant === "primary" ? "bg-[#6032F6] hover:bg-[#4C28C4]" : "bg-[#383838] hover:bg-[#424242]"}
@@ -54,7 +96,7 @@ const ActionButton = memo<{
         >
             {icon}
             <span className="hidden sm:inline">{text}</span>
-        </button>
+        </Button>
     </Tooltip>
 ));
 
@@ -63,22 +105,26 @@ const ParticipantControls = memo<{
     isAudioActive: boolean;
     isVideoActive: boolean;
     onExpandClick: () => void;
-    showControls: boolean; // New prop to control visibility
+    showControls: boolean;
 }>(({ isAudioActive, isVideoActive, onExpandClick, showControls }) => (
     <div className="flex items-center">
         <div
-            className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center 
+            className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center 
             ${isAudioActive ? "bg-[#7C3AED]" : "bg-red-500"}`}
         >
-            {isAudioActive ? <Mic className="w-3 h-3 sm:w-4 sm:h-4 text-white" /> : <MicOff className="w-3 h-3 sm:w-4 sm:h-4 text-white" />}
+            {isAudioActive ? <Mic className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" /> : <MicOff className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />}
         </div>
         <div
-            className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center ml-1 sm:ml-2 
+            className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center ml-1 
             ${isVideoActive ? "bg-[#7C3AED]" : "bg-red-500"}`}
         >
-            {isVideoActive ? <Video className="w-3 h-3 sm:w-4 sm:h-4 text-white" /> : <VideoOff className="w-3 h-3 sm:w-4 sm:h-4 text-white" />}
+            {isVideoActive ? (
+                <Video className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
+            ) : (
+                <VideoOff className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
+            )}
         </div>
-        {showControls && <ChevronDown className="w-4 h-4 text-gray-400 ml-1 sm:ml-2 cursor-pointer" onClick={onExpandClick} />}
+        {showControls && <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 ml-1 cursor-pointer" onClick={onExpandClick} />}
     </div>
 ));
 
@@ -117,7 +163,6 @@ const ParticipantActions = memo<{
     );
 });
 
-
 const PendingParticipantsList = memo<{
     participants: StreamVideoParticipant[];
     onJoinRequest: (userId: string, accept: boolean) => void;
@@ -131,22 +176,22 @@ const PendingParticipantsList = memo<{
                         {formatName(participant.name || participant.userId)}
                     </span>
                     <div className="flex items-center space-x-2">
-                        <button
+                        <Button
                             className="bg-[#6032F6] hover:bg-[#4C28C4] text-white 
                                 text-xs sm:text-sm px-3 py-1.5 rounded-full 
                                 transition-colors duration-200"
                             onClick={() => onJoinRequest(participant.userId, true)}
                         >
                             Accept
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             className="bg-[#383838] hover:bg-[#424242] text-white 
                                 text-xs sm:text-sm px-3 py-1.5 rounded-full 
                                 transition-colors duration-200"
                             onClick={() => onJoinRequest(participant.userId, false)}
                         >
                             Decline
-                        </button>
+                        </Button>
                     </div>
                 </div>
             ))}
@@ -164,48 +209,40 @@ const ParticipantItem = memo<{
 }>(({ participant, currentUser, isExpanded, onExpand, onTip, onUpdateRole }) => {
     const isCurrentUser = participant.userId === currentUser?.id;
 
-    const { role, currentUserRoles, displayName } = useMemo(() => {
-        const role = participant.roles.includes("host")
-            ? "host"
-            : participant.roles.includes("cohost")
-            ? "cohost"
-            : participant.roles.includes("user")
-            ? "user"
-            : "listener";
-
-        const currentUserRoles = !currentUser?.role ? undefined : Array.isArray(currentUser.role) ? currentUser.role : [currentUser.role];
-
-        const displayName = formatName(participant.name || participant.userId);
-
-        return {
-            role,
-            currentUserRoles,
-            displayName,
-        };
-    }, [participant, currentUser?.role]);
+    const { role, currentUserRoles, displayName } = useMemo(
+        () => ({
+            role: participant.roles.includes("host")
+                ? "host"
+                : participant.roles.includes("cohost")
+                ? "cohost"
+                : participant.roles.includes("user")
+                ? "user"
+                : "listener",
+            currentUserRoles: !currentUser?.role ? undefined : Array.isArray(currentUser.role) ? currentUser.role : [currentUser.role],
+            displayName: formatName(participant.name || participant.userId),
+        }),
+        [participant, currentUser?.role]
+    );
 
     const isAudioActive = participant.publishedTracks.includes(1);
     const isVideoActive = participant.publishedTracks.includes(2);
 
+    const roleStyles = {
+        host: "bg-[#6032F6] text-white",
+        cohost: "bg-[#4C28C4] text-white",
+        default: "bg-[#383838] text-gray-400",
+    };
+
     return (
-        <div className="bg-[#2C2C2C] rounded-[10px] hover:bg-[#3C3C3C] transition-colors duration-200">
-            <div className="flex items-center justify-between py-2.5 px-3 sm:px-4">
+        <div className="bg-[#2C2C2C] rounded-lg hover:bg-[#3C3C3C] transition-colors duration-200">
+            <div className="flex items-center justify-between p-2.5">
                 <div className="flex flex-col min-w-0 flex-1 mr-2">
-                    <div className="flex items-center space-x-2">
-                        <span className="text-white text-xs sm:text-sm font-medium truncate">{displayName}</span>
-                        {isCurrentUser && <span className="text-gray-400 text-[10px] sm:text-xs px-1.5 py-0.5 bg-[#383838] rounded-full">You</span>}
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-white text-xs sm:text-sm font-medium truncate max-w-[120px] sm:max-w-[200px]">{displayName}</span>
+                        {isCurrentUser && <span className="text-gray-400 text-xs px-1.5 py-0.5 bg-[#383838] rounded-full">You</span>}
                     </div>
-                    <div className="flex items-center space-x-2">
-                        <span
-                            className={`text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full 
-                            ${
-                                role === "host"
-                                    ? "bg-[#6032F6] text-white"
-                                    : role === "cohost"
-                                    ? "bg-[#4C28C4] text-white"
-                                    : "bg-[#383838] text-gray-400"
-                            }`}
-                        >
+                    <div className="flex items-center gap-2 mt-1">
+                        <span className={`text-xs px-1.5 py-0.5 rounded-full ${roleStyles[role as keyof typeof roleStyles] || roleStyles.default}`}>
                             {role.charAt(0).toUpperCase() + role.slice(1)}
                         </span>
                     </div>
@@ -218,7 +255,24 @@ const ParticipantItem = memo<{
                 />
             </div>
             {isExpanded && !isCurrentUser && (
-                <ParticipantActions participant={participant} currentUserRole={currentUserRoles} onTip={onTip} onUpdateRole={onUpdateRole} />
+                <div className="flex flex-wrap items-center gap-2 p-2 border-t border-[#383838]">
+                    <Button
+                        onClick={() => onTip(participant)}
+                        className="flex items-center gap-1.5 bg-[#6032F6] hover:bg-[#4C28C4] text-white text-xs px-3 py-1.5 rounded-full"
+                    >
+                        <DollarSign className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span className="hidden sm:inline">Send Tip</span>
+                    </Button>
+                    {currentUserRoles?.includes("host") && !participant.roles.includes("host") && (
+                        <Button
+                            onClick={() => onUpdateRole(participant.userId, "cohost")}
+                            className="flex items-center gap-1.5 bg-[#383838] hover:bg-[#424242] text-white text-xs px-3 py-1.5 rounded-full"
+                        >
+                            <UsersRound className="w-3 h-3 sm:w-4 sm:h-4 text-[#DDB958]" />
+                            <span className="hidden sm:inline">Make Co-host</span>
+                        </Button>
+                    )}
+                </div>
             )}
         </div>
     );
@@ -251,46 +305,67 @@ const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
         }, [participants, currentUser]);
 
         return (
-            <div className="w-full bg-[#1E1E1E] p-2 sm:p-4 mt-2 sm:mt-4 flex flex-col rounded-[10px]">
+            <div className="w-full bg-[#1E1E1E] p-2 sm:p-4 mt-2 sm:mt-4 flex flex-col rounded-xl">
+                {/* Header */}
                 <div className="flex items-center justify-between mb-2 sm:mb-4">
                     <div className="flex items-center">
                         <h2 className="text-white text-base sm:text-lg font-semibold">Participants</h2>
                         <span className="bg-[#7C3AED] text-white text-xs px-2 py-0.5 rounded-full ml-2">{sortedParticipants.length}</span>
                     </div>
-                    {!isCurrentUserHost && (
-                        <Tooltip content="Request host permissions">
-                            <button
-                                className="flex items-center space-x-1.5 px-2.5 py-1.5
-                                bg-[#383838] hover:bg-[#424242] 
-                                transition-colors duration-200 rounded-full
-                                text-white text-xs"
-                            >
-                                <UsersRound className="text-[#DDB958] w-3 h-3 sm:w-4 sm:h-4" />
-                                <span className="hidden sm:inline">Request Host</span>
-                            </button>
-                        </Tooltip>
-                    )}
+                    {!isCurrentUserHost && <RequestHostButton />}
                 </div>
 
-                {pendingParticipants.length > 0 && <PendingParticipantsList participants={pendingParticipants} onJoinRequest={handleJoinRequest} />}
+                {/* Content Container */}
+                <div className="flex flex-col min-h-0 flex-1">
+                    {/* Pending Participants Section */}
+                    {pendingParticipants.length > 0 && (
+                        <div className="mb-4">
+                            <h3 className="text-[#AFAFAF] text-xs sm:text-sm font-semibold mb-2">Pending Requests</h3>
+                            <div className="space-y-2">
+                                {pendingParticipants.map((participant) => (
+                                    <div key={participant.userId} className="flex items-center justify-between bg-[#2C2C2C] p-2.5 rounded-lg">
+                                        <span className="text-white text-xs sm:text-sm font-medium truncate max-w-[150px]">
+                                            {formatName(participant.name || participant.userId)}
+                                        </span>
+                                        <div className="flex items-center gap-2">
+                                            <Button
+                                                className="bg-[#6032F6] hover:bg-[#4C28C4] text-white text-xs px-3 py-1.5 rounded-full"
+                                                onClick={() => handleJoinRequest(participant.userId, true)}
+                                            >
+                                                Accept
+                                            </Button>
+                                            <Button
+                                                className="bg-[#383838] hover:bg-[#424242] text-white text-xs px-3 py-1.5 rounded-full"
+                                                onClick={() => handleJoinRequest(participant.userId, false)}
+                                            >
+                                                Decline
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
-                <h2 className="text-[#AFAFAF] text-sm sm:text-medium font-semibold mb-2 sm:mb-4 mt-2 sm:mt-4">On the call</h2>
+                    {/* Active Participants Section */}
+                    <h2 className="text-[#AFAFAF] text-sm font-semibold mb-2">On the call</h2>
 
-                <div
-                    className="flex-grow overflow-y-auto space-y-1 sm:space-y-2 
-                               max-h-[calc(100vh-300px)] sm:max-h-[calc(100vh-350px)]"
-                >
-                    {activeParticipants.map((participant) => (
-                        <ParticipantItem
-                            key={participant.sessionId}
-                            participant={participant}
-                            currentUser={currentUser}
-                            isExpanded={expandedParticipant === participant.userId}
-                            onExpand={() => setExpandedParticipant(expandedParticipant === participant.userId ? null : participant.userId)}
-                            onTip={openTipModal}
-                            onUpdateRole={updateParticipantRole}
-                        />
-                    ))}
+                    {/* Scrollable Container */}
+                    <div className="overflow-y-auto overflow-x-hidden flex-1">
+                        <div className="space-y-2 pr-0.5">
+                            {activeParticipants.map((participant) => (
+                                <ParticipantItem
+                                    key={participant.sessionId}
+                                    participant={participant}
+                                    currentUser={currentUser}
+                                    isExpanded={expandedParticipant === participant.userId}
+                                    onExpand={() => setExpandedParticipant(expandedParticipant === participant.userId ? null : participant.userId)}
+                                    onTip={openTipModal}
+                                    onUpdateRole={updateParticipantRole}
+                                />
+                            ))}
+                        </div>
+                    </div>
                 </div>
             </div>
         );
@@ -305,5 +380,6 @@ ParticipantItem.displayName = "ParticipantItem";
 ParticipantsSidebar.displayName = "ParticipantsSidebar";
 Tooltip.displayName = "Tooltip";
 ActionButton.displayName = "ActionButton";
+RequestHostButton.displayName = "RequestHostButton";
 
 export default ParticipantsSidebar;
