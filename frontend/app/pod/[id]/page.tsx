@@ -25,6 +25,7 @@ import { useAppSelector } from "@/store/hooks";
 import EndScreen from "@/components/meeting/end-screen";
 import Image from "next/image";
 import { useTipping } from "@/hooks/useTipping";
+import ResponsiveMeetingLayout from "@/components/meeting/responsiveMeetingLayout";
 
 interface MeetingProps {
     params: {
@@ -167,7 +168,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
     return (
         <StreamTheme className="root-theme">
-            <div className="h-screen b-[#121212] text-white flex flex-col w-[95%] mx-auto">
+            <div className="h-screen bg-[#121212] text-white flex flex-col w-[95%] mx-auto">
                 {/* Header Title */}
                 <Header
                     userInfo={user}
@@ -181,21 +182,28 @@ export default function MeetingInterface({ params }: MeetingProps) {
                     handleLogout={handleLogout}
                     copyAddress={copyAddress}
                 />
-
                 <div className="flex-grow flex overflow-hidden relative">
-                    <div className="flex-1 relative">
-                        {isSpeakerView ? <SpeakerLayout /> : <PaginatedGridLayout groupSize={6} pageArrowsVisible={true} />}
-                    </div>
                     <div
                         className={`
-                            ${showSidebar ? "translate-y-0" : "translate-y-full sm:translate-y-0"} 
-                            transition-transform duration-300 ease-in-out
-                            fixed sm:relative inset-0 sm:inset-auto top-16 sm:top-0 
-                            h-[calc(100vh-4rem)] sm:h-full w-full sm:w-56 lg:w-64 xl:w-80 
-                            bg-[#1E1E1E] sm:bg-transparent 
-                            z-20 sm:z-auto
-                            overflow-hidden
-                        `}
+                    flex-1 relative
+                    ${showSidebar ? "sm:mr-56 lg:mr-64 xl:mr-80" : ""}
+                `}
+                    >
+                        <ResponsiveMeetingLayout hasOngoingScreenShare={hasOngoingScreenShare} participants={participants} isSpeaker={isSpeakerView} />
+                    </div>
+
+                    {/* Responsive sidebar */}
+                    <div
+                        className={`
+                    ${showSidebar ? "translate-y-0" : "translate-y-full sm:translate-y-0"} 
+                    transition-transform duration-300 ease-in-out
+                    fixed sm:relative inset-0 sm:inset-auto top-16 sm:top-0 
+                    h-[calc(100vh-4rem)] sm:h-full 
+                    w-full sm:w-56 lg:w-64 xl:w-80 
+                    bg-[#1E1E1E] sm:bg-transparent 
+                    z-20 sm:z-auto
+                    overflow-hidden
+                `}
                     >
                         <ParticipantsSidebar
                             participants={participants}
@@ -207,11 +215,9 @@ export default function MeetingInterface({ params }: MeetingProps) {
                     </div>
                 </div>
 
-                {/* Footer controls */}
                 <footer className="bg-[#1E1E1E] p-2 sm:p-4 flex justify-center items-center gap-2 sm:gap-4 h-16 sm:h-20">
                     <CallControls onLeave={handleLeave} />
                 </footer>
-
                 {showTipModal && selectedTipRecipient && (
                     <TipModal
                         selectedTipRecipient={selectedTipRecipient}
@@ -223,9 +229,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                         balance={displayBalance}
                     />
                 )}
-
                 {showThankYouModal && <EndScreen onClose={confirmLeave} user={user} />}
-
                 <Notifications
                     joinRequests={joinRequests}
                     speakRequests={speakRequests}
@@ -235,14 +239,12 @@ export default function MeetingInterface({ params }: MeetingProps) {
                     onRejectSpeak={onRejectSpeak}
                     callingState={callingState}
                 />
-
                 {showTipSuccess && selectedTipRecipient && (
                     <div className="fixed bottom-4 right-4 bg-green-500 text-white px-3 sm:px-4 py-2 rounded-[10px] flex items-center text-xs sm:text-sm">
                         <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                         You successfully tipped {selectedTipRecipient.name || selectedTipRecipient.userId} {tipAmount} ETH
                     </div>
                 )}
-
                 {receivedTips.length > 0 && (
                     <div className="fixed bottom-4 left-4 text-white px-4 py-2">
                         Recent tips:{" "}
