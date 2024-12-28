@@ -1,100 +1,85 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { setUser, setSignature, logOut } from "@/store/slices/userSlice";
 import { useRouter, usePathname } from "next/navigation";
 import { useFindOrCreateUserMutation, UserInfo } from "@/store/api/userApi";
 import { LoadingOverlay } from "@/components/ui/loading";
-import toast from "react-hot-toast";
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
     const { user: privyUser, authenticated, ready, logout } = usePrivy();
-    const storeUser = useAppSelector((state) => state.user);
+    const { user: storeUser, isLoggedIn } = useAppSelector((state) => state.user);
     const dispatch = useAppDispatch();
     const router = useRouter();
     const pathname = usePathname();
     const [findOrCreateUser] = useFindOrCreateUserMutation();
-    const [isAuthenticating, setIsAuthenticating] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
-    useEffect(() => {
-        if (!ready || isAuthenticating) return;
-
-        const handleAuth = async () => {
-            setIsAuthenticating(true);
-            try {
-                if (authenticated && privyUser && privyUser.wallet) {
-                    console.log("Authenticated user detected");
-                    if (!storeUser.user || !storeUser.isLoggedIn) {
-                        console.log("Authenticating user to get store data");
-
-                        const walletAddress = privyUser?.wallet?.address;
-                        const walletClientType = privyUser?.wallet?.walletClientType;
-
-                        if (!walletAddress) throw new Error("No wallet address found");
-
-                        console.log({ walletToUseAuthprovider: walletAddress });
-
-                        const result = await findOrCreateUser({ walletAddress, hash: true }).unwrap();
-                        const userData = { ...result.data, walletType: walletClientType } as UserInfo;
-
-                        dispatch(setUser(userData));
-                        if (userData?.signature) {
-                            dispatch(setSignature(userData.signature));
-                        }
-
-                        // Always redirect to pod page after withdrawFundsauthentication
-                        router.push("/pod");
-                    } else {
-                        console.log("Store user found, redirecting");
-                        redirectUser();
-                    }
-                }
-            } catch (error) {
-                toast.error("Authentication error");
-                console.error("Authentication error:", error);
-                logout();
-                dispatch(logOut());
-                router.push("/");
-            } finally {
-                setIsAuthenticating(false);
-            }
-        };
-
-        handleAuth();
-    }, [authenticated, dispatch, logout, ready, privyUser, router, storeUser]);
-
-    const redirectUser = () => {
-        console.log("Redirecting user");
+    // Memoized redirect function
+    const redirectToPod = useCallback(() => {
         const pendingSessionCode = localStorage.getItem("pendingSessionCode");
         if (pendingSessionCode) {
-            console.log("Redirecting to pending session");
             localStorage.removeItem("pendingSessionCode");
-            router.push(`/pod/join/${pendingSessionCode}`);
-        } else if (pathname && !pathname.startsWith("/pod")) {
-            console.log("Redirecting to pod page for path:", pathname);
-            router.push("/pod");
+            router.replace(`/pod/join/${pendingSessionCode}`);
+        } else if (!pathname?.startsWith("/pod")) {
+            router.replace("/pod");
         }
-        //  else {
-        //     logout();
-        //     dispatch(logOut());
-        //     router.push("/");
-        // }
-    };
+    }, [pathname, router]);
 
-    if (!ready || isAuthenticating) {
-        console.log("Displaying loading overlay");
-        let loadingText = "";
+    // Handle authentication
+    const handleAuthentication = useCallback(async () => {
+        if (!privyUser?.wallet?.address) return;
 
-        if (!ready) {
-            loadingText = "Initializing...";
-        } else if (isAuthenticating) {
-            loadingText = "Authenticating...";
+        try {
+            const result = await findOrCreateUser({
+                walletAddress: privyUser.wallet.address,
+                hash: true,
+            }).unwrap();
+
+            dispatch(
+                setUser({
+                    ...result.data,
+                    walletType: privyUser.wallet.walletClientType,
+                } as UserInfo)
+            );
+
+            if (result.data?.signature) {
+                dispatch(setSignature(result.data.signature));
+            }
+
+            redirectToPod();
+        } catch (error) {
+            console.error("Authentication error:", error);
+            logout();
+            dispatch(logOut());
+            router.replace("/");
         }
+    }, [privyUser, findOrCreateUser, dispatch, logout, router, redirectToPod]);
 
+    useEffect(() => {
+        if (!ready || isLoading) return;
+
+        // If user is authenticated but not in store, authenticate them
+        if (authenticated && privyUser && !isLoggedIn) {
+            setIsLoading(true);
+            handleAuthentication().finally(() => setIsLoading(false));
+        }
+        // If user is authenticated and in store, just redirect
+        else if (authenticated && isLoggedIn) {
+            redirectToPod();
+        }
+    }, [ready, authenticated, privyUser, isLoggedIn, handleAuthentication, redirectToPod, isLoading]);
+
+    // Only show loading overlay when necessary
+    if (!ready) {
+        return null; // Let the landing page render instead of showing a loading screen
+    }
+
+    if (isLoading) {
         return (
-            <div className="h-screen w-screen bg-[#121212]">
-                <LoadingOverlay text={loadingText} />
+            <div className="fixed inset-0 bg-[#121212] bg-opacity-50 backdrop-blur-sm">
+                <LoadingOverlay text="Connecting..." />
             </div>
         );
     }

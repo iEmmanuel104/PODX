@@ -1,36 +1,32 @@
-'use client'
+"use client";
 
-import { useState } from "react"
-import { usePrivy } from "@privy-io/react-auth"
-import { useAppDispatch } from "@/store/hooks"
-import { logOut } from "@/store/slices/userSlice"
-import toast from "react-hot-toast"
-import Logo from "@/components/ui/logo"
-import localFont from 'next/font/local'
+import { useCallback } from "react";
+import { usePrivy } from "@privy-io/react-auth";
+import { useAppDispatch } from "@/store/hooks";
+import { logOut } from "@/store/slices/userSlice";
+import Logo from "@/components/ui/logo";
+import localFont from "next/font/local";
 
 const balige = localFont({
-    src: '../fonts/Balige - Personal Use.otf',
-    variable: '--font-balige'
-})
+    src: "../fonts/Balige - Personal Use.otf",
+    variable: "--font-balige",
+});
 
 export default function LandingPage() {
-    const dispatch = useAppDispatch()
-    const [isConnecting, setIsConnecting] = useState(false)
-    const { login, logout } = usePrivy()
+    const dispatch = useAppDispatch();
+    const { login, logout, ready } = usePrivy();
 
-    const handleConnect = async () => {
-        setIsConnecting(true)
+    const handleConnect = useCallback(async () => {
         try {
-            await logout() // Log out of existing privy session
-            dispatch(logOut()) // clear user data from store
-            await login()
+            await logout(); // Log out of existing privy session
+            dispatch(logOut()); // clear user data from store
+            await login();
         } catch (error) {
-            console.error("Error connecting wallet:", error)
-            toast.error("Error connecting wallet")
-        } finally {
-            setIsConnecting(false)
+            console.error("Error connecting wallet:", error);
         }
-    }
+    }, [logout, dispatch, login]);
+
+    if (!ready) return null;
 
     return (
         <div className={`min-h-screen bg-black text-white flex flex-col items-center justify-center p-4 ${balige.variable}`}>
@@ -38,10 +34,11 @@ export default function LandingPage() {
                 <Logo />
 
                 <div className="relative inline-block mt-20 mb-8">
-                    <p className="text-white text-xs uppercase tracking-wider px-4 py-1 relative z-10">
-                        A creator's workspace
-                    </p>
-                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#6032F6] via-[#FF6B00] to-[#6032F6]" style={{ padding: '1px' }}></div>
+                    <p className="text-white text-xs uppercase tracking-wider px-4 py-1 relative z-10">A creator's workspace</p>
+                    <div
+                        className="absolute inset-0 rounded-full bg-gradient-to-r from-[#6032F6] via-[#FF6B00] to-[#6032F6]"
+                        style={{ padding: "1px" }}
+                    ></div>
                     <div className="absolute inset-[1px] rounded-full bg-black"></div>
                 </div>
 
@@ -52,17 +49,17 @@ export default function LandingPage() {
                     <br />
                     <span className="inline-block">
                         <span className="bg-gradient-to-r from-[#6032F6] to-[#FF6B00] text-transparent bg-clip-text">tip</span>
-                    </span> seamlessly
+                    </span>{" "}
+                    seamlessly
                 </h1>
 
                 <button
                     className="mt-8 py-2 px-8 rounded-[10px] bg-[#6032F6] hover:bg-[#4C28C4] transition-colors text-white font-medium text-lg"
                     onClick={handleConnect}
-                    disabled={isConnecting}
                 >
-                    {isConnecting ? "Connecting..." : "Get started"}
+                    Get started
                 </button>
             </div>
         </div>
-    )
+    );
 }

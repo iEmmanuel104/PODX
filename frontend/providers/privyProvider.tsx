@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { PrivyProvider as Provider } from "@privy-io/react-auth";
 import { SmartWalletsProvider } from "@privy-io/react-auth/smart-wallets";
 import { base, baseGoerli, mainnet, sepolia, polygon, polygonMumbai } from "viem/chains";
-import { PRIVY_APP_ID } from "@/constants";
+import { PRIVY_APP_ID, PRIVY_CLIENT_ID } from "@/constants";
 import { useAppDispatch } from "@/store/hooks";
 import { setUser, setSignature } from "@/store/slices/userSlice";
 // import { initializeSocketConnection } from "@/lib/connections/socket";
@@ -27,6 +27,7 @@ export default function PrivyProvider({ children }: { children: React.ReactNode 
     return (
         <Provider
             appId={PRIVY_APP_ID}
+            clientId={PRIVY_CLIENT_ID}
             config={{
                 // Customize Privy's appearance in your app
                 appearance: {
