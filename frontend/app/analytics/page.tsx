@@ -14,6 +14,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart"
 import { Download, Link } from 'lucide-react'
+import Logo from "@/components/ui/logo"
 
 const callMetricsData = [
     { date: "11/13", calls: 5 },
@@ -63,11 +64,12 @@ const activityData = [
 export default function AnalyticsDashboard() {
     return (
         <div className="dark flex min-h-screen flex-col text-gray-100">
-            <header className="flex items-center justify-between border-b border-gray-800 px-6 py-4">
+            <header className="flex items-center justify-between border-b border-gray-800 px-6 py-4 w-full max-w-7xl mx-auto">
+                
                 <div className="flex items-center space-x-2">
-                    <div className="h-8 w-8 rounded-full bg-purple-600"></div>
-                    <span className="text-xl font-bold">PODX</span>
+                    <Logo />
                 </div>
+
                 <div className="text-sm text-gray-400">
                     Sunday, Dec 28, 2024
                 </div>
