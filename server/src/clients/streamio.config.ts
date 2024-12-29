@@ -19,6 +19,24 @@ interface CallStats {
     callsByDate: { [key: string]: number };
 }
 
+interface PaginatedCallsResponse {
+    stats: CallStats;
+    calls: {
+        all: any[];
+        ongoing: any[];
+        upcoming: any[];
+        completed: any[];
+    };
+    pagination: {
+        next?: string;
+        hasMore: boolean;
+        page: number;
+        size: number;
+        total: number;
+    };
+    error?: Error;
+}
+
 interface CallData {
     created_by_id: string;
     members?: CallMember[];
@@ -46,7 +64,7 @@ export default class StreamIOConfig {
 
     static initialize(): void {
         if (!this.client) {
-            this.client = new StreamClient(STREAM_API_KEY, STREAM_API_SECRET);
+            this.client = new StreamClient(STREAM_API_KEY, STREAM_API_SECRET, { timeout: 30000 });
         }
     }
 
@@ -332,84 +350,161 @@ export default class StreamIOConfig {
         }
     }
 
-    static async getCallStats(startDate?: Date, endDate?: Date): Promise<{ stats: CallStats; error?: Error }> {
+    static async getCallStats(
+        startDate?: Date,
+        endDate?: Date,
+        page: number = 1,
+        size: number = 100,
+        nextToken?: string
+    ): Promise<PaginatedCallsResponse> {
         try {
             this.initialize();
-            const dateFilter: FilterConditions = {};
 
+            // Get all calls with basic date filtering
+            const baseFilter: FilterConditions = {};
             if (startDate) {
-                dateFilter.created_at = { $gte: startDate.toISOString() };
-            }
-            if (endDate) {
-                dateFilter.created_at = {
-                    ...(dateFilter.created_at as object || {}),
-                    $lte: endDate.toISOString(),
-                };
+                baseFilter.created_at = { $gte: startDate.toISOString() };
+            } else if (endDate) {
+                baseFilter.created_at = { $lte: endDate.toISOString() };
             }
 
-            const { calls: allCalls } = await this.client.video.queryCalls({
-                filter_conditions: dateFilter,
-                limit: 1000,
+            // Get all calls with pagination
+            const allCallsResponse = await this.client.video.queryCalls({
+                filter_conditions: baseFilter,
+                limit: size,
+                next: nextToken,
+                sort: [{ field: 'created_at', direction: -1 }], // Sort by creation date, newest first
             });
+
+            const { calls: allCalls, next: allCallsNext } = allCallsResponse;
 
             // Get ongoing calls
-            const { calls: ongoingCalls } = await this.client.video.queryCalls({
-                filter_conditions: {
-                    ...dateFilter,
-                    ongoing: { $eq: true },
-                } as FilterConditions,
+            const ongoingCallsResponse = await this.client.video.queryCalls({
+                filter_conditions: { ongoing: true },
+                limit: size,
+                next: nextToken,
+                sort: [{ field: 'created_at', direction: -1 }],
             });
 
-            // Get upcoming calls (next 24 hours)
-            const inNext24Hours = new Date(Date.now() + 1000 * 60 * 60 * 24);
-            const { calls: upcomingCalls } = await this.client.video.queryCalls({
+            // Get upcoming calls
+            const now = new Date().toISOString();
+            const upcomingCallsResponse = await this.client.video.queryCalls({
                 filter_conditions: {
-                    ...dateFilter,
-                    starts_at: { $gt: new Date().toISOString(), $lt: inNext24Hours.toISOString() },
-                } as FilterConditions,
+                    starts_at: { $gt: now },
+                    ended_at: null,
+                },
+                limit: size,
+                next: nextToken,
+                sort: [{ field: 'starts_at', direction: 1 }],
             });
 
             // Get completed calls
-            const { calls: completedCalls } = await this.client.video.queryCalls({
+            const completedCallsResponse = await this.client.video.queryCalls({
                 filter_conditions: {
-                    ...dateFilter,
                     ended_at: { $exists: true },
-                } as FilterConditions,
+                },
+                limit: size,
+                next: nextToken,
+                sort: [{ field: 'ended_at', direction: -1 }],
             });
 
             // Aggregate calls by type and date
             const callsByType: { [key: string]: number } = {};
             const callsByDate: { [key: string]: number } = {};
 
-            allCalls.forEach((call) => {
-                // Safe type casting for call object
-                const callData = call as any;
+            allCalls.forEach((callData) => {
+                // Safely access nested call data
+                const call = callData.call;
+                if (!call) return;
 
                 // Aggregate by type
-                const type = callData.type || 'unknown';
+                const type = call.custom?.type || call.type || 'unknown';
                 callsByType[type] = (callsByType[type] || 0) + 1;
 
                 // Aggregate by date
-                const date = new Date(callData.created_at).toISOString().split('T')[0];
-                callsByDate[date] = (callsByDate[date] || 0) + 1;
+                if (call.created_at) {
+                    try {
+                        const date = new Date(call.created_at).toISOString().split('T')[0];
+                        callsByDate[date] = (callsByDate[date] || 0) + 1;
+                    } catch (e) {
+                        console.warn('Invalid date found:', call.created_at);
+                        console.log(e);
+                    }
+                }
             });
+
+            // Filter the results based on date range if provided
+            const filterByDateRange = (calls: any[]) => {
+                return calls.filter(callData => {
+                    if (!callData.call?.created_at) return false;
+                    try {
+                        const callDate = new Date(callData.call.created_at);
+                        const isAfterStart = !startDate || callDate >= startDate;
+                        const isBeforeEnd = !endDate || callDate <= endDate;
+                        return isAfterStart && isBeforeEnd;
+                    } catch (e) {
+                        console.warn('Invalid date during filtering:', callData.call.created_at);
+                        console.log(e);
+                        return false;
+                    }
+                });
+            };
+
+            // Apply date filtering to the results
+            const filteredOngoingCalls = filterByDateRange(ongoingCallsResponse.calls);
+            const filteredUpcomingCalls = filterByDateRange(upcomingCallsResponse.calls);
+            const filteredCompletedCalls = filterByDateRange(completedCallsResponse.calls);
 
             return {
                 stats: {
                     totalCalls: allCalls.length,
-                    ongoingCalls: ongoingCalls.length,
-                    completedCalls: completedCalls.length,
-                    upcomingCalls: upcomingCalls.length,
+                    ongoingCalls: filteredOngoingCalls.length,
+                    completedCalls: filteredCompletedCalls.length,
+                    upcomingCalls: filteredUpcomingCalls.length,
                     callsByType,
                     callsByDate,
+                },
+                calls: {
+                    all: allCalls,
+                    ongoing: filteredOngoingCalls,
+                    upcoming: filteredUpcomingCalls,
+                    completed: filteredCompletedCalls,
+                },
+                pagination: {
+                    next: allCallsNext,
+                    hasMore: Boolean(allCallsNext),
+                    page,
+                    size,
+                    total: allCalls.length,
                 },
             };
         } catch (error) {
             console.error('Error fetching call stats:', error);
-            throw error; // Let the caller handle the error
+            return {
+                stats: {
+                    totalCalls: 0,
+                    ongoingCalls: 0,
+                    completedCalls: 0,
+                    upcomingCalls: 0,
+                    callsByType: {},
+                    callsByDate: {},
+                },
+                calls: {
+                    all: [],
+                    ongoing: [],
+                    upcoming: [],
+                    completed: [],
+                },
+                pagination: {
+                    hasMore: false,
+                    page,
+                    size,
+                    total: 0,
+                },
+                error: error as Error,
+            };
         }
     }
-
     static async getCallsByUser(userId: string): Promise<{ calls: any[]; error?: Error }> {
         try {
             this.initialize();
