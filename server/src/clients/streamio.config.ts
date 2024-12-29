@@ -59,6 +59,53 @@ interface FilterConditions {
     [key: string]: FilterValue | { [key: string]: FilterValue } | boolean | string | number;
 }
 
+export interface CallStatsReport {
+    call_cid: string;
+    call_session_id: string;
+    first_stats_time: Date;
+    call_status: string;
+    quality_score?: number;
+    created_at?: Date;
+    call_duration_seconds: number;
+}
+
+export interface CallStatsAnalytics {
+    totalCalls: number;
+    totalDuration: number;
+    averageDuration: number;
+    averageQualityScore: number;
+    callsByStatus: {
+        [key: string]: number;
+    };
+    callsByDuration: {
+        short: number;   // < 5 minutes
+        medium: number;  // 5-15 minutes
+        long: number;    // > 15 minutes
+    };
+    qualityScoreRanges: {
+        excellent: number;  // 90-100
+        good: number;      // 70-89
+        fair: number;      // 50-69
+        poor: number;      // < 50
+    };
+    timeDistribution: {
+        [key: string]: number; // Date string -> count
+    };
+}
+
+export interface PaginatedCallStatsResponse {
+    analytics: CallStatsAnalytics;
+    reports: CallStatsReport[];
+    pagination: {
+        next?: string;
+        prev?: string;
+        hasMore: boolean;
+        total: number;
+    };
+    duration: string;
+    error?: Error;
+}
+
 export default class StreamIOConfig {
     private static client: StreamClient;
 
@@ -505,6 +552,7 @@ export default class StreamIOConfig {
             };
         }
     }
+
     static async getCallsByUser(userId: string): Promise<{ calls: any[]; error?: Error }> {
         try {
             this.initialize();
@@ -535,5 +583,150 @@ export default class StreamIOConfig {
             console.error('Error fetching call details:', error);
             return { call: null, error: error as Error };
         }
+    }
+
+    static async getDetailedCallStats(
+        startDate?: Date,
+        endDate?: Date,
+        size: number = 1000,
+        nextToken?: string
+    ): Promise<PaginatedCallStatsResponse> {
+        try {
+            this.initialize();
+
+            // Prepare filter conditions
+            const filterConditions: Record<string, any> = {};
+            if (startDate) {
+                filterConditions.created_at = { $gte: startDate.toISOString() };
+            }
+            if (endDate) {
+                filterConditions.created_at = filterConditions.created_at || {};
+                filterConditions.created_at.$lte = endDate.toISOString();
+            }
+
+            // Query call stats
+            const response = await this.client.video.queryCallStats({
+                filter_conditions: filterConditions,
+                limit: size,
+                next: nextToken,
+                sort: [{ field: 'created_at', direction: -1 }],
+            });
+
+            // Transform reports data
+            const reports = response.reports.map(report => ({
+                ...report,
+                first_stats_time: new Date(report.first_stats_time),
+                created_at: report.created_at ? new Date(report.created_at) : undefined,
+            }));
+
+            // Calculate analytics
+            const analytics = this.calculateCallStatsAnalytics(reports);
+
+            return {
+                analytics,
+                reports,
+                pagination: {
+                    next: response.next,
+                    prev: response.prev,
+                    hasMore: Boolean(response.next),
+                    total: reports.length,
+                },
+                duration: response.duration,
+            };
+        } catch (error) {
+            console.error('Error fetching detailed call stats:', error);
+            return {
+                analytics: {
+                    totalCalls: 0,
+                    totalDuration: 0,
+                    averageDuration: 0,
+                    averageQualityScore: 0,
+                    callsByStatus: {},
+                    callsByDuration: { short: 0, medium: 0, long: 0 },
+                    qualityScoreRanges: { excellent: 0, good: 0, fair: 0, poor: 0 },
+                    timeDistribution: {},
+                },
+                reports: [],
+                pagination: {
+                    hasMore: false,
+                    total: 0,
+                },
+                duration: '0ms',
+                error: error as Error,
+            };
+        }
+    }
+
+    private static calculateCallStatsAnalytics(reports: CallStatsReport[]): CallStatsAnalytics {
+        const analytics: CallStatsAnalytics = {
+            totalCalls: reports.length,
+            totalDuration: 0,
+            averageDuration: 0,
+            averageQualityScore: 0,
+            callsByStatus: {},
+            callsByDuration: {
+                short: 0,   // < 5 minutes
+                medium: 0,  // 5-15 minutes
+                long: 0,     // > 15 minutes
+            },
+            qualityScoreRanges: {
+                excellent: 0,
+                good: 0,
+                fair: 0,
+                poor: 0,
+            },
+            timeDistribution: {},
+        };
+
+        let totalQualityScore = 0;
+        let qualityScoreCount = 0;
+
+        reports.forEach(report => {
+            // Calculate durations
+            analytics.totalDuration += report.call_duration_seconds;
+
+            // Categorize by duration
+            const durationMinutes = report.call_duration_seconds / 60;
+            if (durationMinutes < 5) {
+                analytics.callsByDuration.short++;
+            } else if (durationMinutes <= 15) {
+                analytics.callsByDuration.medium++;
+            } else {
+                analytics.callsByDuration.long++;
+            }
+
+            // Count by status
+            analytics.callsByStatus[report.call_status] =
+                (analytics.callsByStatus[report.call_status] || 0) + 1;
+
+            // Quality score ranges
+            if (report.quality_score !== undefined) {
+                totalQualityScore += report.quality_score;
+                qualityScoreCount++;
+
+                if (report.quality_score >= 90) {
+                    analytics.qualityScoreRanges.excellent++;
+                } else if (report.quality_score >= 70) {
+                    analytics.qualityScoreRanges.good++;
+                } else if (report.quality_score >= 50) {
+                    analytics.qualityScoreRanges.fair++;
+                } else {
+                    analytics.qualityScoreRanges.poor++;
+                }
+            }
+
+            // Time distribution
+            if (report.created_at) {
+                const dateKey = report.created_at.toISOString().split('T')[0];
+                analytics.timeDistribution[dateKey] =
+                    (analytics.timeDistribution[dateKey] || 0) + 1;
+            }
+        });
+
+        // Calculate averages
+        analytics.averageDuration = analytics.totalDuration / Math.max(reports.length, 1);
+        analytics.averageQualityScore = totalQualityScore / Math.max(qualityScoreCount, 1);
+
+        return analytics;
     }
 }

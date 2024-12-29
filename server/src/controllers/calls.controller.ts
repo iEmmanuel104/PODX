@@ -308,4 +308,62 @@ export default class CallsController {
             data: { call },
         });
     }
+
+    static async getDetailedCallStats(req: AuthenticatedRequest, res: Response) {
+        const { startDate, endDate, size = '100', next } = req.query;
+
+        try {
+            // Validate and parse parameters
+            const pageSize = parseInt(size as string, 10);
+            if (isNaN(pageSize) || pageSize < 1 || pageSize > 100) {
+                throw new BadRequestError('Invalid page size. Must be between 1 and 100');
+            }
+
+            // Parse dates if provided
+            let start: Date | undefined;
+            let end: Date | undefined;
+
+            if (startDate) {
+                start = new Date(startDate as string);
+                if (isNaN(start.getTime())) {
+                    throw new BadRequestError('Invalid start date format');
+                }
+            }
+
+            if (endDate) {
+                end = new Date(endDate as string);
+                if (isNaN(end.getTime())) {
+                    throw new BadRequestError('Invalid end date format');
+                }
+            }
+
+            const response = await StreamIOConfig.getDetailedCallStats(
+                start,
+                end,
+                pageSize,
+                next as string | undefined
+            );
+
+            if (response.error) {
+                throw new BadRequestError('Failed to retrieve call statistics');
+            }
+
+            res.status(200).json({
+                status: 'success',
+                message: 'Call statistics retrieved successfully',
+                data: {
+                    analytics: response.analytics,
+                    reports: response.reports,
+                    pagination: response.pagination,
+                    duration: response.duration,
+                },
+            });
+        } catch (error) {
+            if (error instanceof BadRequestError) {
+                throw error;
+            }
+            console.error('Error getting detailed call stats:', error);
+            throw new BadRequestError('Failed to retrieve call statistics');
+        }
+    }
 }

@@ -21,6 +21,7 @@ router
 // Call information routes
 router
     .get('/stats', AuthenticatedController(CallsController.getCallStats))
+    .get('/detailed-stats', AuthenticatedController(CallsController.getDetailedCallStats))
     .get('/user-calls', AuthenticatedController(CallsController.getUserCalls))
     .get('/:callId', AuthenticatedController(CallsController.getCallDetails));
 
