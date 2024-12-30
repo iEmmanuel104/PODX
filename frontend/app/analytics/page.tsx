@@ -1,37 +1,87 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Bar, BarChart, Line, LineChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
-import { Download, Link, Loader2 } from "lucide-react";
+import { Download, Link, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import Logo from "@/components/ui/logo";
 import { useGetDetailedCallStatsQuery } from "@/store/api/callAnalyticsApi";
+import { format } from "date-fns";
+
+// Pagination controls component
+const PaginationControls = ({ 
+    hasMore, 
+    onNext, 
+    onPrevious, 
+    currentPage,
+    isLoading 
+}: { 
+    hasMore: boolean;
+    onNext: () => void;
+    onPrevious: () => void;
+    currentPage: number;
+    isLoading: boolean;
+}) => (
+    <div className="flex items-center justify-center gap-4 mt-4">
+        <Button 
+            variant="outline" 
+            onClick={onPrevious}
+            disabled={currentPage === 1 || isLoading}
+        >
+            <ChevronLeft className="h-4 w-4 mr-2" />
+            Previous
+        </Button>
+        <span className="text-sm text-gray-400">Page {currentPage}</span>
+        <Button 
+            variant="outline" 
+            onClick={onNext}
+            disabled={!hasMore || isLoading}
+        >
+            Next
+            <ChevronRight className="h-4 w-4 ml-2" />
+        </Button>
+    </div>
+);
 
 export default function AnalyticsDashboard() {
-    // Get current date range (last 30 days)
-    const endDate = new Date().toISOString();
-    const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const [currentPage, setCurrentPage] = useState(1);
+    const [nextToken, setNextToken] = useState<string | undefined>();
+    const pageSize = 100;
 
     const {
         data: statsData,
         isLoading,
         error,
     } = useGetDetailedCallStatsQuery({
-        // startDate,
-        // endDate,
-        // size: 100
+        size: pageSize,
+        next: nextToken,
     });
+
+    // Handle pagination
+    const handleNextPage = () => {
+        if (statsData?.data?.pagination?.next) {
+            setNextToken(statsData.data.pagination.next);
+            setCurrentPage((prev) => prev + 1);
+        }
+    };
+
+    const handlePreviousPage = () => {
+        if (currentPage > 1) {
+            setNextToken(undefined); // Reset to first page
+            setCurrentPage((prev) => prev - 1);
+        }
+    };
 
     // Transform the API data for charts
     const callMetricsData = useMemo(() => {
         if (!statsData?.data?.analytics?.timeDistribution) return [];
         return Object.entries(statsData.data.analytics.timeDistribution)
             .map(([date, count]) => ({
-                date: new Date(date).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit" }),
+                date: format(new Date(date), "MM/dd"),
                 calls: count,
             }))
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -40,33 +90,30 @@ export default function AnalyticsDashboard() {
     const callTypeData = useMemo(() => {
         if (!statsData?.data?.reports) return [];
 
-        // Create a map to count call types
         const typeCount = statsData.data.reports.reduce((acc: { [key: string]: number }, report) => {
-            // Extract call type from call_cid (everything before the colon)
             const callType = report.call_cid.split(":")[0] || "unknown";
             acc[callType] = (acc[callType] || 0) + 1;
             return acc;
         }, {});
 
-        // Transform into chart data format
         return Object.entries(typeCount).map(([type, value]) => ({
-            type: type.charAt(0).toUpperCase() + type.slice(1), // Capitalize first letter
+            type: type.charAt(0).toUpperCase() + type.slice(1),
             value,
             color: type === "default" ? "#FF8FAB" : "#60A5FA",
         }));
     }, [statsData]);
 
-    // Transform session data for table display
+    // Transform reports for the table
     const formattedReports = useMemo(() => {
         if (!statsData?.data?.reports) return [];
 
         return statsData.data.reports.map((report) => ({
             ...report,
-            // Extract session ID from call_cid (everything after the colon)
             displaySessionId: report.call_cid.split(":")[1] || report.call_session_id,
             callType: report.call_cid.split(":")[0] || "unknown",
         }));
     }, [statsData]);
+
     if (isLoading) {
         return (
             <div className="flex h-screen items-center justify-center">
@@ -84,7 +131,7 @@ export default function AnalyticsDashboard() {
     }
 
     const analytics = statsData?.data?.analytics;
-    const reports = statsData?.data?.reports || [];
+    const pagination = statsData?.data?.pagination;
 
     return (
         <div className="dark flex min-h-screen flex-col text-gray-100">
@@ -116,7 +163,7 @@ export default function AnalyticsDashboard() {
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                         <Card className="text-gray-100">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Total Calls (Last 100)</CardTitle>
+                                <CardTitle className="text-sm font-medium">Total Calls (100 batch metrics)</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold text-purple-400">{analytics?.totalCalls || 0}</div>
@@ -229,7 +276,12 @@ export default function AnalyticsDashboard() {
 
                     <Card className="text-gray-100">
                         <CardHeader>
-                            <CardTitle>Recent Calls</CardTitle>
+                            <div className="flex items-center justify-between">
+                                <CardTitle>Recent Calls</CardTitle>
+                                <div className="text-sm text-gray-400">
+                                    Showing {formattedReports.length} of {pagination?.total || 0} calls
+                                </div>
+                            </div>
                         </CardHeader>
                         <CardContent>
                             <div className="rounded-md border border-gray-800">
@@ -238,7 +290,7 @@ export default function AnalyticsDashboard() {
                                         <TableRow className="border-gray-800 bg-gray-900">
                                             <TableHead className="text-gray-300">Session ID</TableHead>
                                             <TableHead className="text-gray-300">Duration</TableHead>
-                                            <TableHead className="text-gray-300">Status</TableHead>
+                                            <TableHead className="text-gray-300">Type</TableHead>
                                             <TableHead className="text-gray-300">Quality Score</TableHead>
                                             <TableHead className="text-gray-300">Created At</TableHead>
                                         </TableRow>
@@ -250,11 +302,21 @@ export default function AnalyticsDashboard() {
                                                 <TableCell>{Math.round(report.call_duration_seconds / 60)} min</TableCell>
                                                 <TableCell>{report.callType}</TableCell>
                                                 <TableCell>{report.quality_score}%</TableCell>
-                                                <TableCell>{report.created_at ? new Date(report.created_at).toLocaleDateString() : 'N/A'}</TableCell>
+                                                <TableCell>
+                                                    {report.created_at ? format(new Date(report.created_at), "MMM dd, yyyy") : "N/A"}
+                                                </TableCell>
                                             </TableRow>
                                         ))}
                                     </TableBody>
                                 </Table>
+
+                                <PaginationControls
+                                    hasMore={!!pagination?.hasMore}
+                                    onNext={handleNextPage}
+                                    onPrevious={handlePreviousPage}
+                                    currentPage={currentPage}
+                                    isLoading={isLoading}
+                                />
                             </div>
                         </CardContent>
                     </Card>
