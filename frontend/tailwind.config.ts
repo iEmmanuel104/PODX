@@ -8,6 +8,12 @@ const config: Config = {
         "./app/**/*.{js,ts,jsx,tsx,mdx}",
     ],
     theme: {
+        container: {
+            padding: '1rem',
+            screens: {
+              '2xl': '736px',
+            }
+          },
         extend: {
             fontFamily: {
                 sans: ['var(--font-clashgrotesk-sans)', 'sans-serif'],
@@ -45,6 +51,7 @@ const config: Config = {
                     DEFAULT: 'hsl(var(--destructive))',
                     foreground: 'hsl(var(--destructive-foreground))'
                 },
+                'light-gray': '#D4D4D4',
                 border: 'hsl(var(--border))',
                 input: 'hsl(var(--input))',
                 ring: 'hsl(var(--ring))',
@@ -55,6 +62,9 @@ const config: Config = {
                     '4': 'hsl(var(--chart-4))',
                     '5': 'hsl(var(--chart-5))'
                 }
+            },
+            fontSize: {
+                'h1': '2.625rem'
             },
             borderRadius: {
                 lg: 'var(--radius)',

@@ -1,0 +1,16 @@
+.main {
+    @apply min-h-screen bg-black text-white flex flex-col items-center justify-center p-4;
+}
+
+.contentWrapper {
+    @apply flex flex-col gap-[300px];
+}
+
+.contents {
+    @apply max-w-[665px] flex flex-col justify-center items-center gap-[130px];
+}
+
+.logo {
+    @apply w-[174px] h-[43px];
+}
+
