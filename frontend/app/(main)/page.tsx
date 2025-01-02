@@ -45,7 +45,7 @@ export default function LandingPage() {
               <div className="flex flex-col gap-[68px]">
                 <div className="flex flex-col justify-center items-center gap-[24px]">
                   <div className="flex justify-center items-center rounded-full bg-gradient-to-r from-[#552FC9]  to-[#D7B35D] p-[1px]">
-                    <span className="rounded-full bg-black text-white text-xs uppercase tracking-wider py-[4px] px-[16px] ">
+                    <span className="rounded-full bg-[#212121] text-white text-xs uppercase tracking-wider py-[4px] px-[16px] ">
                       A creator's workspace
                     </span>
                   </div>
@@ -69,31 +69,6 @@ export default function LandingPage() {
                     Get started
                   </button>
                 </div>
-              </div>
-            </div>
-            <div className="w-full flex justify-between items-center">
-              <span className="bg-gradient-to-r from-[#D7B35D] to-[#552FC9] text-transparent bg-clip-text font-medium text-sm">
-                Podx @ {new Date().getFullYear()}
-              </span>
-
-              <div className="socials flex gap-[8px]">
-                <a
-                  href="https://t.me/podx_fun"
-                  target="_blank"
-                  className="social-icon h-[24px] w-[24px]"
-                >
-                  <Telegram />
-                </a>
-                {/* <a href="#!" target="_blank" className="social-icon h-[24px] w-[24px]">
-              <Facebook />
-            </a> */}
-                <a
-                  href="https://x.com/podx_fun"
-                  target="_blank"
-                  className="social-icon h-[24px] w-[24px]"
-                >
-                  <X />
-                </a>
               </div>
             </div>
           </div>
