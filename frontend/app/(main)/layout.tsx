@@ -7,12 +7,12 @@ import RetroGrid from "@/components/ui/retro-grid";
 const clashGroteskRegular = localFont({
   src: "../fonts/ClashGrotesk-Regular.woff",
   variable: "--font-clashgrotesk-sans",
-  weight: "100 900",
+  weight: "400",
 });
 const clashgroteskMedium = localFont({
   src: "../fonts/ClashGrotesk-Medium.woff",
   variable: "--font-clashgrotesk-mono",
-  weight: "100 900",
+  weight: "500",
 });
 
 export const metadata: Metadata = {

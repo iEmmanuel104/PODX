@@ -59,12 +59,13 @@ export default function UserInfoModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className={styles.dialogContent}>
         <DotPattern
-         
+         width={20}
+         height={20}
           cx={2}
           cy={2}
           cr={1}
           className={cn(
-            "[mask-image:radial-gradient(to_bottom_right,white,transparent,transparent)]"
+            "[mask-image:radial-gradient(to_bottom_right,white,transparent,transparent)] rounded-[20px] top-[6px] left-[8px] px-[10px]"
           )}
         />
         <DialogHeader className="z-10">
@@ -82,7 +83,7 @@ export default function UserInfoModal({
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full bg-[#2C2C2C] rounded-[10px] px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6032F6] text-white placeholder-[#6C6C6C]"
+              className="w-full border border-[#3C3C3C] bg-[#2B2B2B] rounded-[10px] px-[16px] py-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#6032F6] text-white placeholder-[#6C6C6C]"
               placeholder="Enter username"
               disabled={isLoading}
             />
@@ -112,6 +113,8 @@ export default function UserInfoModal({
             </Button>
           </div>
         </form>
+        <div className="absolute w-[217px] h-[217px] left-[330px] top-[-89.58px] bg-[rgba(53,53,53)] blur-[50px]">
+        </div>
       </DialogContent>
     </Dialog>
   );

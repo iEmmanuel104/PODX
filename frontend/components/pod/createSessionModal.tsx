@@ -11,6 +11,8 @@ import { Mic, Video, CalendarIcon, Clock } from "lucide-react";
 import { format, addDays, isBefore, startOfDay } from "date-fns";
 import { sessionType } from "@/constants";
 import SimpleTimePicker from "./simpleTimePicker";
+import DotPattern from "../ui/dot-pattern";
+import { cn } from "@/lib/utils";
 
 interface CreateSessionModalProps {
     isOpen: boolean;
@@ -117,9 +119,19 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({ isOpen, onClose
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="bg-[#1E1E1E] text-white rounded-[10px] p-6 w-full max-w-md">
+            <DialogContent className="text-white rounded-[20px] p-[32px] w-full max-w-[500px] flex flex-col gap-[8px] bg-[#1d1d1d] overflow-hidden">
+                <DotPattern
+                          width={20}
+                          height={20}
+                          cx={2}
+                          cy={2}
+                          cr={1}
+                          className={cn(
+                            "[mask-image:radial-gradient(to_bottom_right,white,transparent,transparent)] rounded-[20px] top-[6px] left-[8px] px-[10px]"
+                          )}
+                        />
                 <DialogHeader className="flex flex-row justify-between items-center mb-6">
-                    <DialogTitle className="text-2xl font-semibold">Create session</DialogTitle>
+                    <DialogTitle className="text-2xl font-semibold text-[#d4d4d4]">Create session</DialogTitle>
                 </DialogHeader>
 
                 <div className="flex items-center gap-4 mb-6">

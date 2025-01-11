@@ -11,6 +11,7 @@ import dynamic from "next/dynamic";
 import { UserDetailsProps, UserState } from "./userDetailsProps";
 import { useAppDispatch } from "@/store/hooks";
 import { updateUser } from "@/store/slices/userSlice";
+import Logo from "@/assets/icons/Logo";
 
 // Dynamic import for wallet operations
 const WalletOperations = dynamic(() => import("./walletOperations"), {
@@ -86,18 +87,19 @@ const UserDetails = memo<UserDetailsProps>(({ user }) => {
     }, []);
 
     return (
-        <div className="w-full max-w-2xl flex items-center justify-between p-4 text-white">
+        <div className="w-full flex items-center justify-between p-4 text-white">
             {/* User profile */}
-            <div className="group flex items-center space-x-3 bg-[#333333] rounded-full px-2 py-1">
+            <div className="group flex justify-between items-center gap-[4px] bg-[#1d1d1d] rounded-full px-[10px] py-[4px] border border-[#232323]">
                 <div className="w-6 h-6 bg-[#6032F6] rounded-full flex items-center justify-center text-sm font-bold">
                     {userInfo.initials}
                 </div>
+                <span className="h-[4px] w-[4px] rounded-full bg-[#69CB58]"></span>
                 {isEditing ? (
                     <div className="flex items-center space-x-2">
                         <Input
                             value={editedUsername}
                             onChange={(e) => setEditedUsername(e.target.value)}
-                            className="h-8 w-40 bg-[#444444] border-none text-white"
+                            className="h-8 w-40 bg-[#444444] border-none text-white font-medium"
                             autoFocus
                         />
                         <button
@@ -115,7 +117,8 @@ const UserDetails = memo<UserDetailsProps>(({ user }) => {
                     </div>
                 ) : (
                     <div className="flex items-center space-x-2">
-                        <span className="text-sm sm:text-base">{userInfo.displayName}</span>
+                        <span className="font-medium">{userInfo.displayName}</span>
+                        
                         <button
                             onClick={handleEditClick}
                             className="p-1 hover:bg-[#444444] rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
@@ -125,7 +128,9 @@ const UserDetails = memo<UserDetailsProps>(({ user }) => {
                     </div>
                 )}
             </div>
-
+           <div className="w-[180px] h-[44px]">
+           <Logo />
+           </div>
             {/* Settings dropdown */}
             <DropdownMenu open={state.isOpen} onOpenChange={(open) => setState((prev) => ({ ...prev, isOpen: open }))}>
                 <DropdownMenuTrigger asChild>
