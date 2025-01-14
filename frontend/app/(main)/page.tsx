@@ -4,62 +4,76 @@ import { useCallback } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useAppDispatch } from "@/store/hooks";
 import { logOut } from "@/store/slices/userSlice";
-import Logo from "@/components/ui/logo";
 import localFont from "next/font/local";
+import Logo from "@/assets/icons/Logo";
+import Telegram from "@/assets/icons/socials/Telegram";
+// import Facebook from "@/assets/icons/socials/Facebook";
+import X from "@/assets/icons/socials/X";
+
+import styles from "./styles.module.scss";
 
 const balige = localFont({
-    src: "../fonts/Balige - Personal Use.otf",
-    variable: "--font-balige",
+  src: "../fonts/Balige - Personal Use.otf",
+  variable: "--font-balige",
 });
 
 export default function LandingPage() {
-    const dispatch = useAppDispatch();
-    const { login, logout, ready } = usePrivy();
+  const dispatch = useAppDispatch();
+  const { login, logout, ready } = usePrivy();
 
-    const handleConnect = useCallback(async () => {
-        try {
-            await logout(); // Log out of existing privy session
-            dispatch(logOut()); // clear user data from store
-            await login();
-        } catch (error) {
-            console.error("Error connecting wallet:", error);
-        }
-    }, [logout, dispatch, login]);
+  const handleConnect = useCallback(async () => {
+    try {
+      await logout(); // Log out of existing privy session
+      dispatch(logOut()); // clear user data from store
+      await login();
+    } catch (error) {
+      console.error("Error connecting wallet:", error);
+    }
+  }, [logout, dispatch, login]);
 
-    if (!ready) return null;
+  if (!ready) return null;
 
-    return (
-        <div className={`min-h-screen bg-black text-white flex flex-col items-center justify-center p-4 ${balige.variable}`}>
-            <div className="w-full max-w-3xl flex flex-col items-center">
+  return (
+    <>
+      <main className={`${styles.main} ${balige.variable}`}>
+        <div className="container mx-auto">
+          <div className={styles.contentWrapper}>
+            <div className={styles.contents}>
+              <div className={styles.logo}>
                 <Logo />
-
-                <div className="relative inline-block mt-20 mb-8">
-                    <p className="text-white text-xs uppercase tracking-wider px-4 py-1 relative z-10">A creator's workspace</p>
-                    <div
-                        className="absolute inset-0 rounded-full bg-gradient-to-r from-[#6032F6] via-[#FF6B00] to-[#6032F6]"
-                        style={{ padding: "1px" }}
-                    ></div>
-                    <div className="absolute inset-[1px] rounded-full bg-black"></div>
-                </div>
-
-                <h1 className="text-4xl md:text-5xl lg:text-6xl text-center font-balige mb-8 leading-tight">
-                    Host meetings, record sessions,
-                    <br />
-                    earn proof of attendance, and
-                    <br />
+              </div>
+              <div className="flex flex-col gap-[68px]">
+                <div className="flex flex-col justify-center items-center gap-[24px]">
+                  <div className="flex justify-center items-center rounded-full bg-gradient-to-r from-[#552FC9]  to-[#D7B35D] p-[1px]">
+                    <span className="rounded-full bg-[#212121] text-white text-xs uppercase tracking-wider py-[4px] px-[16px] ">
+                      A creator's workspace
+                    </span>
+                  </div>
+                  <h1 className="text-4xl lg:text-h1 text-center font-balige lg:leading-[45px] text-light-gray">
+                    Host meetings, record sessions, earn proof of attendance,
+                    and{" "}
                     <span className="inline-block">
-                        <span className="bg-gradient-to-r from-[#6032F6] to-[#FF6B00] text-transparent bg-clip-text">tip</span>
+                      <span className="bg-gradient-to-r from-[#D7B35D] to-[#552FC9] text-transparent bg-clip-text">
+                        tip
+                      </span>
                     </span>{" "}
                     seamlessly
-                </h1>
+                  </h1>
+                </div>
 
-                <button
-                    className="mt-8 py-2 px-8 rounded-[10px] bg-[#6032F6] hover:bg-[#4C28C4] transition-colors text-white font-medium text-lg"
+                <div className="flex justify-center">
+                  <button
+                    className="py-2 px-8 rounded-[10px] bg-[#6032F6] hover:bg-[#4C28C4] transition-colors text-white font-medium text-lg"
                     onClick={handleConnect}
-                >
+                  >
                     Get started
-                </button>
+                  </button>
+                </div>
+              </div>
             </div>
+          </div>
         </div>
-    );
+      </main>
+    </>
+  );
 }
