@@ -3,6 +3,7 @@ import { User, IUser } from '../models/Mongodb/user.model';
 import { UserSettings, IUserSettings } from '../models/Mongodb/userSettings.model';
 import { NotFoundError, BadRequestError } from '../utils/customErrors';
 import Pagination, { IPaging } from '../utils/pagination';
+import { UserStreak } from 'models/Mongodb/userStreak.model';
 
 export interface IViewUsersQuery {
     page?: number;
@@ -181,5 +182,46 @@ export default class UserService {
         }
 
         await UserSettings.deleteOne({ userId: new Types.ObjectId(userId) });
+    }
+
+
+    static async getUserStreakStats(userId: string): Promise<{
+        currentStreak: number;
+        longestStreak: number;
+        totalPoints: number;
+        recentActivities: Array<{
+            date: Date;
+            duration: number;
+            points: number;
+        }>;
+        streakHistory: Array<{
+            date: Date;
+            streak: number;
+        }>;
+    }> {
+        const userStreak = await UserStreak.findOne({ userId });
+        if (!userStreak) {
+            return {
+                currentStreak: 0,
+                longestStreak: 0,
+                totalPoints: 0,
+                recentActivities: [],
+                streakHistory: [],
+            };
+        }
+
+        return {
+            currentStreak: userStreak.currentStreak,
+            longestStreak: userStreak.longestStreak,
+            totalPoints: userStreak.totalPoints,
+            recentActivities: userStreak.callActivities
+                .slice(-5)
+                .map(activity => ({
+                    date: activity.date,
+                    duration: activity.duration,
+                    points: activity.points,
+                })),
+            streakHistory: userStreak.streakHistory.slice(-30), // Last 30 days
+        };
     }
 }

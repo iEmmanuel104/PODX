@@ -159,4 +159,20 @@ export default class UserController {
             },
         });
     }
+
+    static async getUserStreakStats(req: AuthenticatedRequest, res: Response): Promise<void> {
+        try {
+            const stats = await UserService.getUserStreakStats(req.user.id);
+            res.status(200).json({
+                status: 'success',
+                data: stats,
+            });
+        } catch (error) {
+            console.error('Error fetching user stats:', error);
+            res.status(500).json({
+                status: 'error',
+                message: 'Error fetching user statistics',
+            });
+        }
+    }
 }

@@ -11,6 +11,7 @@ import { Download, Link, Loader2, ChevronLeft, ChevronRight } from "lucide-react
 import Logo from "@/components/ui/logo";
 import { useGetDetailedCallStatsQuery } from "@/store/api/callAnalyticsApi";
 import { format } from "date-fns";
+import { exportMetricsToCSV } from "@/utils/exportMetrics";
 
 // Pagination controls component
 const PaginationControls = ({ 
@@ -149,7 +150,7 @@ export default function AnalyticsDashboard() {
                     <div className="flex items-center justify-between">
                         <h1 className="text-2xl font-bold">Analytics Dashboard</h1>
                         <div className="flex items-center gap-2">
-                            <Button variant="outline">
+                            <Button variant="outline" onClick={() => exportMetricsToCSV(statsData?.data)} disabled={isLoading || !statsData?.data}>
                                 <Download className="mr-2 h-4 w-4" />
                                 Export to CSV
                             </Button>

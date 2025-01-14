@@ -79,7 +79,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     if (isLoading) {
         return (
             <div className="fixed inset-0 bg-[#121212] bg-opacity-50 backdrop-blur-sm">
-                <LoadingOverlay text="Connecting..." />
+                <LoadingOverlay text="Authenticating..." />
             </div>
         );
     }
