@@ -1,4 +1,5 @@
 // utils/exportMetrics.ts
+import { CallStatsReport } from "@/store/api/callAnalyticsApi";
 import { format } from "date-fns";
 
 export const exportMetricsToCSV = (data: any) => {
@@ -31,7 +32,7 @@ export const exportMetricsToCSV = (data: any) => {
     ];
 
     // Add detailed call records
-    reports.forEach(report => {
+    reports.forEach((report: CallStatsReport ) => {
         const sessionId = report.call_cid.split(':')[1] || report.call_session_id;
         const callType = report.call_cid.split(':')[0] || 'unknown';
         summaryData.push([
