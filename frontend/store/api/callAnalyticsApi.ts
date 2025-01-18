@@ -79,6 +79,18 @@ export interface DetailedCallStatsResponse {
     duration: string;
 }
 
+export interface LeaderboardResponse {
+    userId: string;
+    username: string;
+    displayImage?: string;
+    totalPoints: number;
+    currentStreak: number;
+    longestStreak: number;
+}
+
+export interface GetLeaderboardParams {
+    limit?: number;
+}
 // Query parameter types
 export interface GetCallStatsParams {
     startDate?: string;
@@ -150,6 +162,20 @@ export const callAnalyticsApiSlice = apiSlice.injectEndpoints({
             }),
             providesTags: (result, error, callId) => [{ type: 'CallDetails', id: callId }],
         }),
+
+        // Get leaderboard
+        getLeaderboard: builder.query<ApiResponse<{ data: LeaderboardResponse[] }>, GetLeaderboardParams>({
+            query: (params) => {
+                const queryParams = new URLSearchParams();
+                if (params.limit) queryParams.append('limit', params.limit.toString());
+
+                return {
+                    url: `/leaderboard?${queryParams.toString()}`,
+                    method: 'GET',
+                };
+            },
+            providesTags: ['Leaderboard'],
+        }),
     }),
 });
 
@@ -159,6 +185,7 @@ export const {
     useGetDetailedCallStatsQuery,
     useGetUserCallsQuery,
     useGetCallDetailsQuery,
+    useGetLeaderboardQuery,
     // Prefetch actions
     usePrefetch,
 } = callAnalyticsApiSlice;
