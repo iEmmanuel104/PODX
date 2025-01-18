@@ -118,11 +118,12 @@ export default class UserController {
         }
 
         let user = await UserService.viewSingleUserByWalletAddress(walletAddress);
-
+        let firstTimeUser = false;
         if (!user) {
             // Create a new user
             const username = `guest-${walletAddress.slice(0, 8)}`;
             user = await UserService.addUser({ walletAddress, username });
+            firstTimeUser = true;
         }
 
         const streamToken = await StreamIOConfig.generateToken(user.id);
@@ -156,6 +157,7 @@ export default class UserController {
                 ...userObject,
                 streamToken,
                 signature,
+                firstTimeUser,
             },
         });
     }

@@ -32,6 +32,12 @@ const userSlice = createSlice({
                 localStorage.setItem('user', JSON.stringify(state.user));
             }
         },
+        setFirstTimeUser: (state, action: PayloadAction<boolean>) => {
+            if (state.user) {
+                state.user.firstTimeUser = action.payload;
+                localStorage.setItem('user', JSON.stringify(state.user));
+            }
+        },
         logOut: (state) => {
             state.user = null;
             state.signature = null;
@@ -46,6 +52,7 @@ export const {
     setUser,
     setSignature,
     updateUser,
+    setFirstTimeUser,
     logOut,
 } = userSlice.actions;
 

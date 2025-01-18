@@ -15,9 +15,10 @@ interface UsernameUpdateModalProps {
     onClose: () => void;
     initialUsername: string;
     onUpdate: (newUsername: string) => void;
+    firstTimeUser: boolean;
 }
 
-export default function UserInfoModal({ isOpen, onClose, initialUsername, onUpdate }: UsernameUpdateModalProps) {
+export default function UserInfoModal({ isOpen, onClose, initialUsername, onUpdate, firstTimeUser }: UsernameUpdateModalProps) {
     const [username, setUsername] = useState(initialUsername);
     const [updateUsername] = useUpdateUsernameMutation();
     const userId = useAppSelector((state) => state.user.user?.id);
