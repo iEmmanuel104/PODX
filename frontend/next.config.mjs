@@ -100,16 +100,7 @@ const nextConfig = {
                     { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' },
                     { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
                     // Updated Permissions-Policy to allow camera and microphone
-                    { key: 'Permissions-Policy', value: 'camera=self, microphone=self, geolocation=()' },                    // Add Content Security Policy
-                    {
-                        key: 'Content-Security-Policy',
-                        value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.privy.io https://*.walletconnect.org;"
-                    },
-                    // Add Feature Policy
-                    {
-                        key: 'Feature-Policy',
-                        value: "camera 'self'; microphone 'self'; geolocation 'none'"
-                    }
+                    { key: 'Permissions-Policy', value: 'camera=self, microphone=self, geolocation=()' }, // This is the default value
                 ],
             },
         ];

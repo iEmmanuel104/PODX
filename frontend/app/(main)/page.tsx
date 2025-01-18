@@ -25,25 +25,15 @@ const balige = localFont({
 export default function LandingPage() {
     const dispatch = useAppDispatch();
     const { login, logout, ready } = usePrivy();
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        if (ready) {
-            setIsLoading(false);
-        }
-    }, [ready]);
 
     const handleConnect = useCallback(async () => {
         try {
-            setIsLoading(true);
             await logout();
             dispatch(logOut());
             await login();
         } catch (error) {
             console.error("Error connecting wallet:", error);
-        } finally {
-            setIsLoading(false);
-        }
+        } 
     }, [logout, dispatch, login]);
 
     if (!ready) return null;
