@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useReducer, useCallback, useTransition } from "react";
 import { useAppDispatch } from "@/store/hooks";
 import { setFirstTimeUser, updateUser } from "@/store/slices/userSlice";
 import UserInfoModal from "./userInfoModal";
@@ -12,28 +12,79 @@ interface UserOnboardingFlowProps {
     firstTimeUser: boolean;
 }
 
+interface FlowState {
+    showOnboarding: boolean;
+    showUsernameModal: boolean;
+    activeStep: number;
+    isTransitioning: boolean;
+}
+
+type FlowAction = { type: "NEXT_STEP" } | { type: "COMPLETE_ONBOARDING" } | { type: "SHOW_USERNAME_MODAL" } | { type: "RESET" };
+
+const initialState = (firstTimeUser: boolean): FlowState => ({
+    showOnboarding: firstTimeUser,
+    showUsernameModal: !firstTimeUser,
+    activeStep: 1,
+    isTransitioning: false,
+});
+
+function flowReducer(state: FlowState, action: FlowAction): FlowState {
+    switch (action.type) {
+        case "NEXT_STEP":
+            return {
+                ...state,
+                activeStep: state.activeStep + 1,
+                isTransitioning: true,
+            };
+        case "COMPLETE_ONBOARDING":
+            return {
+                ...state,
+                showOnboarding: false,
+                showUsernameModal: true,
+                isTransitioning: false,
+            };
+        case "SHOW_USERNAME_MODAL":
+            return {
+                ...state,
+                showUsernameModal: true,
+                isTransitioning: false,
+            };
+        case "RESET":
+            return {
+                ...state,
+                isTransitioning: false,
+            };
+        default:
+            return state;
+    }
+}
+
 const UserOnboardingFlow: React.FC<UserOnboardingFlowProps> = ({ isOpen, onClose, initialUsername, onUpdate, firstTimeUser }) => {
     const dispatch = useAppDispatch();
-    const [showOnboarding, setShowOnboarding] = useState(firstTimeUser);
-    const [showUsernameModal, setShowUsernameModal] = useState(false);
-    const [activeStep, setActiveStep] = useState(1);
+    const [isPending, startTransition] = useTransition();
+    const [state, dispatchFlow] = useReducer(flowReducer, firstTimeUser, initialState);
 
     const handleOnboardingComplete = useCallback(() => {
-        setShowOnboarding(false);
-        setShowUsernameModal(true);
-        // Update firstTimeUser in Redux state
-        dispatch(setFirstTimeUser(false));
-        // Also update in updateUser to ensure consistency
-        dispatch(updateUser({ firstTimeUser: false }));
+        startTransition(() => {
+            dispatchFlow({ type: "COMPLETE_ONBOARDING" });
+            dispatch(setFirstTimeUser(false));
+            dispatch(updateUser({ firstTimeUser: false }));
+        });
     }, [dispatch]);
 
     const handleNextStep = useCallback(() => {
-        if (activeStep === OnboardingStep.steps.length) {
+        if (state.activeStep === OnboardingStep.steps.length) {
             handleOnboardingComplete();
         } else {
-            setActiveStep((prev) => prev + 1);
+            startTransition(() => {
+                dispatchFlow({ type: "NEXT_STEP" });
+                // Reset transition state after animation
+                setTimeout(() => {
+                    dispatchFlow({ type: "RESET" });
+                }, 300);
+            });
         }
-    }, [activeStep, handleOnboardingComplete]);
+    }, [state.activeStep, handleOnboardingComplete]);
 
     const handleSkipOnboarding = useCallback(() => {
         handleOnboardingComplete();
@@ -41,45 +92,47 @@ const UserOnboardingFlow: React.FC<UserOnboardingFlowProps> = ({ isOpen, onClose
 
     const handleUsernameUpdate = useCallback(
         (newUsername: string) => {
-            onUpdate(newUsername);
-            // Ensure firstTimeUser is false when username is updated
-            dispatch(setFirstTimeUser(false));
-            dispatch(
-                updateUser({
-                    username: newUsername,
-                    firstTimeUser: false,
-                })
-            );
-            onClose();
+            startTransition(() => {
+                onUpdate(newUsername);
+                dispatch(setFirstTimeUser(false));
+                dispatch(
+                    updateUser({
+                        username: newUsername,
+                        firstTimeUser: false,
+                    })
+                );
+                onClose();
+            });
         },
         [onUpdate, onClose, dispatch]
     );
 
-    // Show username modal immediately for non-first-time users
     React.useEffect(() => {
         if (isOpen && !firstTimeUser) {
-            setShowUsernameModal(true);
+            startTransition(() => {
+                dispatchFlow({ type: "SHOW_USERNAME_MODAL" });
+            });
         }
     }, [isOpen, firstTimeUser]);
 
-    const currentStep = OnboardingStep.steps[activeStep - 1];
+    const currentStep = OnboardingStep.steps[state.activeStep - 1];
 
     return (
         <>
-            {showOnboarding && currentStep && (
+            {state.showOnboarding && currentStep && (
                 <OnboardingStep
                     title={currentStep.title}
                     description={currentStep.description}
                     img={currentStep.img}
-                    activeStep={activeStep}
+                    activeStep={state.activeStep}
                     stepsLength={OnboardingStep.steps.length}
                     nextFunc={handleNextStep}
                     skipFunc={handleSkipOnboarding}
-                    showOnboarding={showOnboarding}
+                    showOnboarding={state.showOnboarding}
                 />
             )}
 
-            {showUsernameModal && (
+            {state.showUsernameModal && (
                 <UserInfoModal
                     isOpen={true}
                     onClose={onClose}

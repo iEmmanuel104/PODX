@@ -74,33 +74,41 @@ const OnboardingStep: FC<OnboardingStepProps> & { steps: typeof steps } = ({
                     )}
                 />
                 <DialogTitle className="text-[8px] text-[#ddb958] font-medium">GET STARTED ON PODX</DialogTitle>
-                <DialogHeader className="text-xl font-medium">{title}</DialogHeader>
+                <DialogHeader className="text-xl font-medium transition-all duration-300">{title}</DialogHeader>
                 <div className="flex flex-col gap-[32px]">
                     <div className="flex flex-col gap-[32px]">
-                        <p className="text-sm font-medium text-[#8c8c8c]">{description}</p>
-                        <div className="relative img-container max-w-[436px] h-[115px] rounded-lg">
-                            <Image
-                                src={img}
-                                alt={`${title} step image`}
-                                fill
-                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                priority
-                                placeholder="blur"
-                                className="absolute rounded-lg w-full h-full object-contain"
-                            />
+                        <p className="text-sm font-medium text-[#8c8c8c] transition-all duration-300 ease-in-out">{description}</p>
+                        <div className="relative img-container max-w-[436px] h-[115px] rounded-lg overflow-hidden">
+                            <div className="transition-all duration-300 ease-in-out transform">
+                                <Image
+                                    src={img}
+                                    alt={`${title} step image`}
+                                    fill
+                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                    priority
+                                    placeholder="blur"
+                                    className="absolute rounded-lg w-full h-full object-contain transition-opacity duration-300"
+                                />
+                            </div>
                         </div>
                     </div>
                     <div className="flex justify-between items-center">
                         <div className="step-count text-sm font-medium text-[#8c8c8c] flex gap-[2px]">
-                            <span>{activeStep}</span>
+                            <span className="transition-all duration-300">{activeStep}</span>
                             <span>of</span>
                             <span>{stepsLength}</span>
                         </div>
                         <div className="flex gap-[16px]">
-                            <Button onClick={skipFunc} className="rounded-[10px] px-[16px] py-[12px] text-[#d4d4d4] font-medium bg-[#292929]">
+                            <Button
+                                onClick={skipFunc}
+                                className="rounded-[10px] px-[16px] py-[12px] text-[#d4d4d4] font-medium bg-[#292929] transition-colors"
+                            >
                                 Skip
                             </Button>
-                            <Button onClick={nextFunc} className="rounded-[10px] px-[16px] py-[12px] text-[#d4d4d4] font-medium bg-[#6032F6]">
+                            <Button
+                                onClick={nextFunc}
+                                className="rounded-[10px] px-[16px] py-[12px] text-[#d4d4d4] font-medium bg-[#6032F6] transition-colors"
+                            >
                                 {activeStep === stepsLength ? "Finish" : "Continue"}
                             </Button>
                         </div>
