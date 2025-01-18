@@ -7,7 +7,6 @@ import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { updateUser } from "@/store/slices/userSlice";
 import toast from "react-hot-toast";
 import { Loader2 } from "lucide-react";
-import styles from "./styles.module.scss";
 import DotPattern from "../ui/dot-pattern";
 import { cn } from "@/lib/utils";
 
@@ -47,7 +46,7 @@ export default function UserInfoModal({ isOpen, onClose, initialUsername, onUpda
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className={styles.dialogContent}>
+            <DialogContent className="text-white rounded-[20px] p-[32px] w-full max-w-[500px] flex flex-col gap-[8px] bg-[#1d1d1d] overflow-hidden">
                 <DotPattern
                     width={20}
                     height={20}

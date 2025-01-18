@@ -3,7 +3,7 @@ import { User, IUser } from '../models/Mongodb/user.model';
 import { UserSettings, IUserSettings } from '../models/Mongodb/userSettings.model';
 import { NotFoundError, BadRequestError } from '../utils/customErrors';
 import Pagination, { IPaging } from '../utils/pagination';
-import { UserStreak } from 'models/Mongodb/userStreak.model';
+import { UserStreak } from '../models/Mongodb/userStreak.model';
 
 export interface IViewUsersQuery {
     page?: number;

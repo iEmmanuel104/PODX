@@ -5,7 +5,7 @@ import { BadRequestError } from '../utils/customErrors';
 import { AuthenticatedRequest } from 'middlewares/authMiddleware';
 import StreamIOConfig from '../clients/streamio.config';
 import { CallSettings } from '@stream-io/node-sdk';
-import { WebhookService } from 'services/webhook.service';
+import { WebhookService } from '../services/webhook.service';
 
 export default class CallsController {
     static async scheduleCall(req: AuthenticatedRequest, res: Response) { 

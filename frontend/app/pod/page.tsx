@@ -22,11 +22,11 @@ import { StreamCallData } from "@/components/pod/streamCallData";
 import { useStreamTokenProvider } from "@/hooks/useStreamTokenProvider";
 import OnboardingStep from "@/components/user/OnboardingStep";
 import { onboardingSteps } from "@/constants/globals";
-import PlayAdd from "@/assets/icons/PlayAdd";
+import PlayAdd from "@/public/images/icons/PlayAdd";
 import DotPattern from "@/components/ui/dot-pattern";
 import { cn } from "@/lib/utils";
-import Fire from "@/assets/icons/Fire";
-import Info from "@/assets/icons/Info";
+import Fire from "@/public/images/icons/Fire";
+import Info from "@/public/images/icons/Info";
 
 // Dynamic imports
 const CreateSessionModal = dynamic(() => import("@/components/pod/createSessionModal"), { ssr: false });
