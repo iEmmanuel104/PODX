@@ -27,13 +27,7 @@ const ResponsiveMeetingLayout: React.FC<ResponsiveMeetingLayoutProps> = ({ hasOn
     return (
         <div className="w-full h-full">
             <PaginatedGridLayout
-                groupSize={
-                    isSmallScreen
-                        ? 4 // Mobile: 2x2 grid
-                        : isMediumScreen
-                        ? 6 // Tablet: 2x3 grid
-                        : 9 // Desktop: 3x3 grid
-                }
+                
                 mirrorLocalParticipantVideo={true}
                 pageArrowsVisible={true}
             />

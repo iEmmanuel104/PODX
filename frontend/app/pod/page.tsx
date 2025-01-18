@@ -2,7 +2,6 @@
 "use client";
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import dynamic from "next/dynamic";
 import { StreamVideoClient, GetCallResponse } from "@stream-io/video-react-sdk";
 import { API_KEY } from "@/providers/meetProvider/streamMeetProvider";
@@ -22,7 +21,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Flame } from "lucide-react";
 import { useScheduledCalls } from "@/hooks/useScheduledCalls";
 import { addScheduledSession } from "@/store/slices/scheduledSessionSlice";
 import { StreamCallData } from "@/components/pod/streamCallData";
