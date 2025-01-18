@@ -5,14 +5,11 @@ const nextConfig = {
         domains: ['api.placeholder'],
         formats: ['image/avif', 'image/webp'],
         minimumCacheTTL: 60,
-        deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048], // Optimize image sizes
-        imageSizes: [16, 32, 48, 64, 96, 128, 256], // Optimize thumbnail sizes
     },
 
     // Enable compiler optimizations
     compiler: {
         removeConsole: process.env.NODE_ENV === 'production',
-        styledComponents: true, // Enable CSS-in-JS optimization
     },
 
     // Optimize production builds
@@ -26,9 +23,7 @@ const nextConfig = {
             '@stream-io/video-react-sdk',
             'stream-chat-react',
             'lucide-react',
-            'recharts',
-            '@privy-io/react-auth', // Added Privy
-            'react-redux',  // Added for Redux
+            'recharts'
         ],
     },
 
@@ -50,44 +45,21 @@ const nextConfig = {
                             test: /[\\/]node_modules[\\/]/,
                             priority: -10,
                             reuseExistingChunk: true,
-                            name: 'vendors',
                         },
-                        common: {
+                        default: {
                             minChunks: 2,
                             priority: -20,
                             reuseExistingChunk: true,
-                            name: 'common',
-                        },
-                        // New cache groups for specific packages
-                        privy: {
-                            test: /[\\/]node_modules[\\/]@privy-io[\\/]/,
-                            name: 'privy',
-                            priority: 10,
-                        },
-                        redux: {
-                            test: /[\\/]node_modules[\\/]redux[\\/]/,
-                            name: 'redux',
-                            priority: 10,
                         },
                     },
                 },
                 minimize: true,
-                runtimeChunk: {
-                    name: 'runtime',
-                },
             };
-
-            // Add module concatenation
-            config.optimization.concatenateModules = true;
-
-            // Add module scope hoisting
-            config.optimization.moduleIds = 'deterministic';
         }
-
         return config;
     },
 
-    // Enhanced security headers
+    // Basic security headers
     async headers() {
         return [
             {
@@ -112,18 +84,11 @@ const nextConfig = {
     generateEtags: true,
     compress: true,
 
-    // Environment-specific settings
-    ...(process.env.NODE_ENV === 'development'
-        ? {
-            reactStrictMode: true,
-            optimizeFonts: false,
-        }
-        : {
-            reactStrictMode: true,
-            optimizeFonts: true,
-            productionBrowserSourceMaps: false,
-        }
-    ),
+    // Disable certain features in development
+    ...(process.env.NODE_ENV === 'development' && {
+        reactStrictMode: true,
+        optimizeFonts: false,
+    }),
 };
 
 export default nextConfig;
