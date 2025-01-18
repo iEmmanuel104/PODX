@@ -5,11 +5,14 @@ const nextConfig = {
         domains: ['api.placeholder'],
         formats: ['image/avif', 'image/webp'],
         minimumCacheTTL: 60,
+        deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048], // Optimize image sizes
+        imageSizes: [16, 32, 48, 64, 96, 128, 256], // Optimize thumbnail sizes
     },
 
     // Enable compiler optimizations
     compiler: {
         removeConsole: process.env.NODE_ENV === 'production',
+        styledComponents: true, // Enable CSS-in-JS optimization
     },
 
     // Optimize production builds
@@ -23,7 +26,9 @@ const nextConfig = {
             '@stream-io/video-react-sdk',
             'stream-chat-react',
             'lucide-react',
-            'recharts'
+            'recharts',
+            '@privy-io/react-auth', // Added Privy
+            'react-redux',  // Added for Redux
         ],
     },
 
@@ -45,21 +50,44 @@ const nextConfig = {
                             test: /[\\/]node_modules[\\/]/,
                             priority: -10,
                             reuseExistingChunk: true,
+                            name: 'vendors',
                         },
-                        default: {
+                        common: {
                             minChunks: 2,
                             priority: -20,
                             reuseExistingChunk: true,
+                            name: 'common',
+                        },
+                        // New cache groups for specific packages
+                        privy: {
+                            test: /[\\/]node_modules[\\/]@privy-io[\\/]/,
+                            name: 'privy',
+                            priority: 10,
+                        },
+                        redux: {
+                            test: /[\\/]node_modules[\\/]redux[\\/]/,
+                            name: 'redux',
+                            priority: 10,
                         },
                     },
                 },
                 minimize: true,
+                runtimeChunk: {
+                    name: 'runtime',
+                },
             };
+
+            // Add module concatenation
+            config.optimization.concatenateModules = true;
+
+            // Add module scope hoisting
+            config.optimization.moduleIds = 'deterministic';
         }
+
         return config;
     },
 
-    // Basic security headers
+    // Enhanced security headers
     async headers() {
         return [
             {
@@ -72,7 +100,16 @@ const nextConfig = {
                     { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' },
                     { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
                     // Updated Permissions-Policy to allow camera and microphone
-                    { key: 'Permissions-Policy', value: 'camera=self, microphone=self, geolocation=()' }, // This is the default value
+                    { key: 'Permissions-Policy', value: 'camera=self, microphone=self, geolocation=()' },                    // Add Content Security Policy
+                    {
+                        key: 'Content-Security-Policy',
+                        value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.privy.io https://*.walletconnect.org;"
+                    },
+                    // Add Feature Policy
+                    {
+                        key: 'Feature-Policy',
+                        value: "camera 'self'; microphone 'self'; geolocation 'none'"
+                    }
                 ],
             },
         ];
@@ -84,11 +121,18 @@ const nextConfig = {
     generateEtags: true,
     compress: true,
 
-    // Disable certain features in development
-    ...(process.env.NODE_ENV === 'development' && {
-        reactStrictMode: true,
-        optimizeFonts: false,
-    }),
+    // Environment-specific settings
+    ...(process.env.NODE_ENV === 'development'
+        ? {
+            reactStrictMode: true,
+            optimizeFonts: false,
+        }
+        : {
+            reactStrictMode: true,
+            optimizeFonts: true,
+            productionBrowserSourceMaps: false,
+        }
+    ),
 };
 
 export default nextConfig;

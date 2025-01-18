@@ -1,28 +1,48 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useAppDispatch } from "@/store/hooks";
 import { logOut } from "@/store/slices/userSlice";
 import localFont from "next/font/local";
-import Logo from "@/public/images/icons/Logo";
+import dynamic from "next/dynamic";
+
+// Dynamically import components that aren't needed for initial render
+const Logo = dynamic(() => import("@/public/images/icons/Logo"), {
+    loading: () => <div className="w-[174px] h-[43px] animate-pulse bg-gray-700" />,
+});
+
+const Footer = dynamic(() => import("@/components/common/Footer"));
+const RetroGrid = dynamic(() => import("@/components/ui/retro-grid"));
 
 const balige = localFont({
     src: "../fonts/Balige - Personal Use.otf",
     variable: "--font-balige",
+    preload: true,
+    display: "swap",
 });
 
 export default function LandingPage() {
     const dispatch = useAppDispatch();
     const { login, logout, ready } = usePrivy();
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        if (ready) {
+            setIsLoading(false);
+        }
+    }, [ready]);
 
     const handleConnect = useCallback(async () => {
         try {
-            await logout(); // Log out of existing privy session
-            dispatch(logOut()); // clear user data from store
+            setIsLoading(true);
+            await logout();
+            dispatch(logOut());
             await login();
         } catch (error) {
             console.error("Error connecting wallet:", error);
+        } finally {
+            setIsLoading(false);
         }
     }, [logout, dispatch, login]);
 
@@ -64,6 +84,8 @@ export default function LandingPage() {
                     </div>
                 </div>
             </div>
+            <Footer />
+            <RetroGrid />
         </main>
     );
 }
