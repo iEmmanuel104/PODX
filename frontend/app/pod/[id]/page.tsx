@@ -49,7 +49,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const participants = useParticipants();
     const customData = useCallCustomData();
     const live = useIsCallLive();
-    const { screenShare } = useScreenShareState();
+    const { screenShare } = useScreenShareState() || {};
     const connectedUser = useConnectedUser();
     const hasOngoingScreenShare = useHasOngoingScreenShare();
     const callingState = useCallCallingState();
@@ -99,18 +99,17 @@ export default function MeetingInterface({ params }: MeetingProps) {
     }, [hasOngoingScreenShare, participants.length]);
 
     useEffect(() => {
+        if (!call) return;
+
         const startup = async () => {
             if (isUnkownOrIdle) {
                 router.push(`/pod/join/${id}`);
+                return;
             }
-            //   else if (chatClient) {
-            //       const channel = chatClient.channel('messaging', meetingId);
-            //       setChatChannel(channel);
-            //   }
         };
+
         startup();
-        //   }, [router, meetingId, isUnkownOrIdle, chatClient]);
-    }, [router, id, isUnkownOrIdle]);
+    }, [call, router, id, isUnkownOrIdle]);
 
     useEffect(() => {
         if (!call) return;
@@ -160,13 +159,18 @@ export default function MeetingInterface({ params }: MeetingProps) {
         router.push(`/pod/end`);
     };
 
-    const toggleScreenShare = async () => {
+    const toggleScreenShare = useCallback(async () => {
+        if (!call || !screenShare) {
+            console.log('Call or screen share not available');
+            return;
+        }
+
         try {
             await screenShare.toggle();
         } catch (error) {
-            console.error(error);
+            console.error('Error toggling screen share:', error);
         }
-    };
+    }, [call, screenShare]);
 
     const confirmLeave = async () => {
         router.push('/pod');

@@ -1,13 +1,12 @@
-// components/meeting/meetingFooter.tsx
 'use client';
 
-import React, { memo, useState } from 'react';
-import ToggleAudioButton from '@/components/pod/ToggleAudioButton copy';
-import ToggleVideoButton from '@/components/pod/ToggleVideoButton copy';
+import React, { memo } from 'react';
+import ToggleAudioButton from '@/components/pod/toggleAudioButton';
+import ToggleVideoButton from '@/components/pod/toggleVideoButton';
 import CallControlButton from '@/components/pod/callControlButton';
 import PresentToAll from '@/components/icons/PresentToAll';
 import CallEndFilled from '@/components/icons/CallEndFilled';
-import ReactionButton from '@/components/pod/EmojiButton';
+import ReactionButton from '@/components/pod/reactionButton';
 
 interface MeetingFooterProps {
     leaveCall: () => void;

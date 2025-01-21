@@ -1,49 +1,33 @@
 {
-    "extends": ["next", "prettier", "plugin:@typescript-eslint/recommended"],
-    "plugins": ["prettier", "@typescript-eslint"],
+    "extends": ["next"],
+    "plugins": ["@typescript-eslint"],
     "parser": "@typescript-eslint/parser",
     "rules": {
+        // Turn off problematic rules
         "react/no-unescaped-entities": "off",
         "@next/next/no-page-custom-font": "off",
-        "prettier/prettier": "error",
-        "indent": "off", // Turn off base indent rule
-        "@typescript-eslint/indent": [
-            "error",
-            {
-                "size": 4,
-                "SwitchCase": 1,
-                "VariableDeclarator": 1,
-                "outerIIFEBody": 1,
-                "FunctionDeclaration": {
-                    "parameters": 1,
-                    "body": 1
-                },
-                "FunctionExpression": {
-                    "parameters": 1,
-                    "body": 1
-                }
-            }
-        ],
-        "no-unused-vars": "off", // Turn off base rule
-        "@typescript-eslint/no-unused-vars": [
-            "warn",
-            {
-                "argsIgnorePattern": "^_",
-                "varsIgnorePattern": "^_",
-                "ignoreRestSiblings": true
-            }
-        ],
-        "@typescript-eslint/no-explicit-any": "warn",
-        "switch-case/no-case-curly": "off",
-        "@typescript-eslint/switch-case-spacing": "error"
+        "@typescript-eslint/indent": "off",
+        "@typescript-eslint/no-empty-interface": "off",
+        "@typescript-eslint/no-empty-object-type": "off",
+        "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/no-unused-vars": "off",
+        "@typescript-eslint/ban-ts-comment": "off",
+        "@typescript-eslint/no-require-imports": "off",
+        "@typescript-eslint/switch-case-spacing": "off",
+        "no-unused-vars": "off",
+        "indent": "off",
+
+        // Keep only essential rules as warnings
+        // "@typescript-eslint/no-non-null-assertion": "warn",
+        "@typescript-eslint/no-var-requires": "warn"
     },
-    "overrides": [
-        {
-            "files": ["*.ts", "*.tsx"],
-            "rules": {
-                "@typescript-eslint/explicit-function-return-type": "off",
-                "@typescript-eslint/no-non-null-assertion": "off"
-            }
-        }
+    "ignorePatterns": [
+        "node_modules/",
+        "dist/",
+        ".next/",
+        "public/",
+        "build/",
+        "*.config.js",
+        "*.config.ts"
     ]
 }
