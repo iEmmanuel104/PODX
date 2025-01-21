@@ -1,12 +1,13 @@
+// components/meeting/meetingFooter.tsx
 'use client';
 
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import ToggleAudioButton from '@/components/pod/ToggleAudioButton copy';
 import ToggleVideoButton from '@/components/pod/ToggleVideoButton copy';
-import CallControlButton from '@/components/pod/CallControlButton';
-import Mood from '@/components/icons/Mood';
+import CallControlButton from '@/components/pod/callControlButton';
 import PresentToAll from '@/components/icons/PresentToAll';
 import CallEndFilled from '@/components/icons/CallEndFilled';
+import ReactionButton from '@/components/pod/EmojiButton';
 
 interface MeetingFooterProps {
     leaveCall: () => void;
@@ -24,13 +25,9 @@ const MeetingFooter = memo<MeetingFooterProps>(({ leaveCall, toggleScreenShare }
                     {/* Video Control */}
                     <ToggleVideoButton />
 
-                    {/* Reactions - Hidden on mobile */}
+                    {/* Replace Mood button with ReactionButton */}
                     <div className="hidden sm:block">
-                        <CallControlButton
-                            icon={<Mood className="w-5 h-5 sm:w-6 sm:h-6" />}
-                            title="Send a reaction"
-                            className="bg-[#2D2D2D] hover:bg-[#3D3D3D]"
-                        />
+                        <ReactionButton />
                     </div>
 
                     {/* Screen Share */}

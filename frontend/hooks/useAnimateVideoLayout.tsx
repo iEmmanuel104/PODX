@@ -4,8 +4,8 @@ import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 
 import { avatarClassName } from '../components/user/Avatar';
-import { menuOverlayClassName, speechRingClassName } from '../components/pod/ParticipantViewUI';
-import { placeholderClassName } from '../components/pod/VideoPlaceholder';
+import { menuOverlayClassName, speechRingClassName } from '../components/pod/participantViewUI';
+import { placeholderClassName } from '../components/pod/videoPlaceholder';
 
 type PreviousValues = Map<
     string,

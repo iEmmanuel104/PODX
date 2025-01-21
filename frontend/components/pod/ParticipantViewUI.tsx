@@ -20,7 +20,7 @@ import KeepFilled from '../icons/KeepFilled';
 import KeepOffFilled from '../icons/KeepOffFilled';
 import KeepPublicFilled from '../icons/KeepPublicFilled';
 import MicOffFilled from '../icons/MicOffFilled';
-import SpeechIndicator from './SpeechIndicator';
+import SpeechIndicator from './speechIndicator';
 import VisualEffects from '../icons/VisualEffects';
 import MoreVert from '../icons/MoreVert';
 
@@ -61,6 +61,11 @@ const ParticipantViewUI = () => {
 
     return (
         <>
+            {participant.reaction && (
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10">
+                    <div className="text-4xl animate-bounce">{participant.reaction.emoji_code}</div>
+                </div>
+            )}
             <ParticipantDetails />
             {hasAudioTrack && (
                 <div className="absolute top-3.5 right-3.5 w-6.5 h-6.5 flex items-center justify-center bg-primary rounded-full">

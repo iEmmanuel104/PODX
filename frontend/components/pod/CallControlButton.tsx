@@ -1,4 +1,4 @@
-import IconButton, { IconButtonProps } from './IconButton';
+import IconButton, { IconButtonProps } from './iconButton';
 import clsx from 'clsx';
 
 interface CallControlButtonProps extends Omit<IconButtonProps, 'variant'> {}

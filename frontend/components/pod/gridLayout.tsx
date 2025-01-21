@@ -1,33 +1,40 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
+    combineComparators,
+    Comparator,
+    IconButton,
     ParticipantView,
+    pinned,
+    screenSharing,
     StreamVideoParticipant,
     useCall,
     useCallStateHooks,
-    combineComparators,
-    Comparator,
-    pinned,
 } from '@stream-io/video-react-sdk';
-import { Mic, MicOff, Video, VideoOff } from 'lucide-react';
 import clsx from 'clsx';
+
+import ParticipantViewUI from './participantViewUI';
+import useAnimateVideoLayout from '../../hooks/useAnimateVideoLayout';
+import VideoPlaceholder from './videoPlaceholder';
 
 const GROUP_SIZE = 6;
 
-const GridLayout: React.FC = () => {
+const GridLayout = () => {
     const call = useCall();
-    const { useParticipants, useLocalParticipant, useDominantSpeaker } = useCallStateHooks();
+    const { useParticipants } = useCallStateHooks();
     const participants = useParticipants();
-    const localParticipant = useLocalParticipant();
-    const dominantSpeaker = useDominantSpeaker();
     const [page, setPage] = useState(0);
+
+    const { ref } = useAnimateVideoLayout(false);
 
     const pageCount = useMemo(() => Math.ceil(participants.length / GROUP_SIZE), [participants]);
 
     const participantGroups = useMemo(() => {
+        // divide participants into groups of 6
         const groups = [];
         for (let i = 0; i < participants.length; i += GROUP_SIZE) {
             groups.push(participants.slice(i, i + GROUP_SIZE));
         }
+
         return groups;
     }, [participants]);
 
@@ -46,76 +53,20 @@ const GridLayout: React.FC = () => {
     }, [page, pageCount]);
 
     const getCustomSortingPreset = (): Comparator<StreamVideoParticipant> => {
-        return combineComparators(pinned);
-    };
-
-    const ParticipantTile: React.FC<{ participant: StreamVideoParticipant }> = ({
-        participant,
-    }) => {
-        const isLocal = participant.userId === localParticipant?.userId;
-        const isDominant = participant.userId === dominantSpeaker?.userId;
-        const { useMicrophoneState, useCameraState } = useCallStateHooks();
-        const micState = useMicrophoneState();
-        const cameraState = useCameraState();
-
-        return (
-            <div
-                className={clsx(
-                    'relative aspect-video bg-[#2C2C2C] rounded-[10px] overflow-hidden',
-                    {
-                        'border-2 border-blue-500': isDominant,
-                        'border-2 border-green-500': isLocal,
-                    }
-                )}
-            >
-                <ParticipantView participant={participant} />
-                <div className="absolute top-2 left-2 flex items-center space-x-2">
-                    <div
-                        className={`w-6 h-6 rounded-full flex items-center justify-center ${!micState.isMute ? 'bg-[#7C3AED]' : 'bg-red-500'}`}
-                    >
-                        {!micState.isMute ? (
-                            <Mic className="w-3 h-3 text-white" />
-                        ) : (
-                            <MicOff className="w-3 h-3 text-white" />
-                        )}
-                    </div>
-                    <div
-                        className={`w-6 h-6 rounded-full flex items-center justify-center ${!cameraState.isMute ? 'bg-[#7C3AED]' : 'bg-red-500'}`}
-                    >
-                        {!cameraState.isMute ? (
-                            <Video className="w-3 h-3 text-white" />
-                        ) : (
-                            <VideoOff className="w-3 h-3 text-white" />
-                        )}
-                    </div>
-                </div>
-                <div className="absolute bottom-2 left-2 right-2 flex justify-between items-center">
-                    <span className="text-white text-xs bg-black bg-opacity-50 px-2 py-1 rounded-full">
-                        {participant.name || participant.userId}
-                        {isLocal && ' (You)'}
-                    </span>
-                    {isDominant && (
-                        <span className="text-white text-xs bg-blue-500 bg-opacity-50 px-2 py-1 rounded-full">
-                            Speaking
-                        </span>
-                    )}
-                </div>
-            </div>
-        );
+        return combineComparators(screenSharing, pinned);
     };
 
     return (
         <div
+            ref={ref}
             className={clsx('w-full relative overflow-hidden', 'str-video__paginated-grid-layout')}
         >
             {pageCount > 1 && (
-                <button
-                    className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-[#2C2C2C] text-white rounded-full p-2"
+                <IconButton
+                    icon="caret-left"
                     disabled={page === 0}
                     onClick={() => setPage(currentPage => Math.max(0, currentPage - 1))}
-                >
-                    &lt;
-                </button>
+                />
             )}
             <div
                 className={clsx('str-video__paginated-grid-layout__group', {
@@ -129,22 +80,22 @@ const GridLayout: React.FC = () => {
                 {call && selectedGroup.length > 0 && (
                     <>
                         {selectedGroup.map(participant => (
-                            <ParticipantTile
-                                key={participant.sessionId}
+                            <ParticipantView
                                 participant={participant}
+                                ParticipantViewUI={ParticipantViewUI}
+                                VideoPlaceholder={VideoPlaceholder}
+                                key={participant.sessionId}
                             />
                         ))}
                     </>
                 )}
             </div>
             {pageCount > 1 && (
-                <button
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-[#2C2C2C] text-white rounded-full p-2"
+                <IconButton
                     disabled={page === pageCount - 1}
+                    icon="caret-right"
                     onClick={() => setPage(currentPage => Math.min(pageCount - 1, currentPage + 1))}
-                >
-                    &gt;
-                </button>
+                />
             )}
         </div>
     );

@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { useCallStateHooks } from '@stream-io/video-react-sdk';
 
-import Dropdown from './Dropdown';
+import Dropdown from './dropdown';
 import Mic from '../icons/Mic';
 import Videocam from '../icons/Videocam';
 import VolumeUp from '../icons/VolumeUp';
