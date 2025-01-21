@@ -1,33 +1,7 @@
 {
-    "extends": ["next"],
-    "plugins": ["@typescript-eslint"],
-    "parser": "@typescript-eslint/parser",
+    "extends": "next",
     "rules": {
-        // Turn off problematic rules
         "react/no-unescaped-entities": "off",
-        "@next/next/no-page-custom-font": "off",
-        "@typescript-eslint/indent": "off",
-        "@typescript-eslint/no-empty-interface": "off",
-        "@typescript-eslint/no-empty-object-type": "off",
-        "@typescript-eslint/no-explicit-any": "off",
-        "@typescript-eslint/no-unused-vars": "off",
-        "@typescript-eslint/ban-ts-comment": "off",
-        "@typescript-eslint/no-require-imports": "off",
-        "@typescript-eslint/switch-case-spacing": "off",
-        "no-unused-vars": "off",
-        "indent": "off",
-
-        // Keep only essential rules as warnings
-        // "@typescript-eslint/no-non-null-assertion": "warn",
-        "@typescript-eslint/no-var-requires": "warn"
-    },
-    "ignorePatterns": [
-        "node_modules/",
-        "dist/",
-        ".next/",
-        "public/",
-        "build/",
-        "*.config.js",
-        "*.config.ts"
-    ]
+        "@next/next/no-page-custom-font": "off"
+    }
 }
