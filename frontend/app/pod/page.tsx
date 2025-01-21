@@ -399,7 +399,7 @@ export default function PodPage() {
                 isLoading={isLoading}
                 onClearFoundSession={handleClearFoundSession}
             />
-            <div className="w-full max-w-2xl flex flex-col items-center">
+            <div className="w-full max-w-2xl flex justify-between items-center">
 
                 <span className="bg-gradient-to-r from-[#D7B35D] to-[#552FC9] text-transparent bg-clip-text font-medium text-sm">
                     Podx @ {new Date().getFullYear()}
