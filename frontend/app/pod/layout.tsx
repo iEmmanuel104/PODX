@@ -5,7 +5,6 @@ import type { ReactNode } from "react";
 import { LoadingOverlay } from "@/components/ui/loading";
 import { ErrorBoundary } from "@/components/pod/errorBoundary";
 import nextDynamic from "next/dynamic";
-
 // Types
 type LayoutProps = {
     children: ReactNode;

@@ -21,6 +21,10 @@ import { useScheduledCalls } from "@/hooks/useScheduledCalls";
 import { addScheduledSession } from "@/store/slices/scheduledSessionSlice";
 import { StreamCallData } from "@/components/pod/streamCallData";
 import { useStreamTokenProvider } from "@/hooks/useStreamTokenProvider";
+import Telegram from "@/public/icons/socials/Telegram";
+import X from "@/public/icons/socials/X";
+import Farcaster from "@/public/icons/socials/Farcaster";
+import Link from "next/link";
 
 // Dynamic imports
 const CreateSessionModal = dynamic(() => import("@/components/pod/createSessionModal"), { ssr: false });
@@ -380,7 +384,11 @@ export default function PodPage() {
                         </div>
                     </DialogContent>
                 </Dialog>
+
+
+
             </div>
+
 
             {/* Scheduled sessions */}
             <ScheduledPods
@@ -391,6 +399,27 @@ export default function PodPage() {
                 isLoading={isLoading}
                 onClearFoundSession={handleClearFoundSession}
             />
+            <div className="w-full max-w-2xl flex flex-col items-center">
+
+                <span className="bg-gradient-to-r from-[#D7B35D] to-[#552FC9] text-transparent bg-clip-text font-medium text-sm">
+                    Podx @ {new Date().getFullYear()}
+                </span>
+
+                <div className="socials flex gap-[8px]">
+                    <a href="https://t.me/podx_fun" target="_blank" rel="noopener noreferrer" title="Join us on Telegram"
+                        className="social-icon h-[24px] w-[24px]">
+                        <Telegram />
+                    </a>
+                    <Link href="#" className="text-zinc-400 hover:text-zinc-100 transition-colors">
+                        <Farcaster />
+                    </Link>
+                    <a href="https://x.com/podx_fun" target="_blank" rel="noopener noreferrer" title="Follow us on X"
+                        className="social-icon h-[24px] w-[24px]">
+                        <X />
+                    </a>
+                </div>
+
+            </div>
 
             {/* Modals */}
             <React.Suspense fallback={null}>
