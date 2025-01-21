@@ -1,6 +1,6 @@
-import React from "react";
-import Image from "next/image";
-import clsx from "clsx";
+import React from 'react';
+import Image from 'next/image';
+import clsx from 'clsx';
 
 interface SpeechIndicatorProps {
     isSpeaking: boolean;
@@ -8,13 +8,17 @@ interface SpeechIndicatorProps {
     isMicrophoneEnabled: boolean;
 }
 
-const SpeechIndicator: React.FC<SpeechIndicatorProps> = ({ isSpeaking, isDominantSpeaker = true, isMicrophoneEnabled }) => {
+const SpeechIndicator: React.FC<SpeechIndicatorProps> = ({
+    isSpeaking,
+    isDominantSpeaker = true,
+    isMicrophoneEnabled,
+}) => {
     return (
         <div
             className={clsx(
-                "w-6 h-6 flex items-center justify-center rounded-full",
-                isSpeaking && isMicrophoneEnabled ? "bg-[#6032F6]" : "bg-transparent",
-                isDominantSpeaker && "ring-2 ring-transparent"
+                'w-6 h-6 flex items-center justify-center rounded-full',
+                isSpeaking && isMicrophoneEnabled ? 'bg-[#6032F6]' : 'bg-transparent',
+                isDominantSpeaker && 'ring-2 ring-transparent'
             )}
         >
             {isMicrophoneEnabled ? (
@@ -24,8 +28,8 @@ const SpeechIndicator: React.FC<SpeechIndicatorProps> = ({ isSpeaking, isDominan
                     width={16}
                     height={16}
                     className={clsx(
-                        "transition-opacity duration-200",
-                        isSpeaking ? "opacity-100" : "opacity-0"
+                        'transition-opacity duration-200',
+                        isSpeaking ? 'opacity-100' : 'opacity-0'
                     )}
                 />
             ) : (

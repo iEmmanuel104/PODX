@@ -18,7 +18,7 @@ const toastSlice = createSlice({
             state.message = action.payload;
             state.isVisible = true;
         },
-        clearToast: (state) => {
+        clearToast: state => {
             state.message = null;
             state.isVisible = false;
         },

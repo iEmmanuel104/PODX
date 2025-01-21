@@ -1,4 +1,4 @@
-import { ComponentProps, ForwardedRef, forwardRef, ReactNode, useState } from "react";
+import { ComponentProps, ForwardedRef, forwardRef, ReactNode, useState } from 'react';
 import {
     DefaultParticipantViewUIProps,
     DefaultScreenShareOverlay,
@@ -12,20 +12,20 @@ import {
     useCall,
     useCallStateHooks,
     useParticipantViewContext,
-} from "@stream-io/video-react-sdk";
-import clsx from "clsx";
+} from '@stream-io/video-react-sdk';
+import clsx from 'clsx';
 
-import Keep from "../icons/Keep";
-import KeepFilled from "../icons/KeepFilled";
-import KeepOffFilled from "../icons/KeepOffFilled";
-import KeepPublicFilled from "../icons/KeepPublicFilled";
-import MicOffFilled from "../icons/MicOffFilled";
-import SpeechIndicator from "./SpeechIndicator";
-import VisualEffects from "../icons/VisualEffects";
-import MoreVert from "../icons/MoreVert";
+import Keep from '../icons/Keep';
+import KeepFilled from '../icons/KeepFilled';
+import KeepOffFilled from '../icons/KeepOffFilled';
+import KeepPublicFilled from '../icons/KeepPublicFilled';
+import MicOffFilled from '../icons/MicOffFilled';
+import SpeechIndicator from './SpeechIndicator';
+import VisualEffects from '../icons/VisualEffects';
+import MoreVert from '../icons/MoreVert';
 
-export const speechRingClassName = "speech-ring";
-export const menuOverlayClassName = "menu-overlay";
+export const speechRingClassName = 'speech-ring';
+export const menuOverlayClassName = 'menu-overlay';
 
 const ParticipantViewUI = () => {
     const call = useCall();
@@ -33,7 +33,8 @@ const ParticipantViewUI = () => {
     const { participant, trackType } = useParticipantViewContext();
     const [showMenu, setShowMenu] = useState(false);
 
-    const { pin, sessionId, isLocalParticipant, isSpeaking, isDominantSpeaker, userId } = participant;
+    const { pin, sessionId, isLocalParticipant, isSpeaking, isDominantSpeaker, userId } =
+        participant;
     const isScreenSharing = hasScreenShare(participant);
     const hasAudioTrack = hasAudio(participant);
     const canUnpinForEveryone = useHasPermissions(OwnCapability.PIN_FOR_EVERYONE);
@@ -50,7 +51,7 @@ const ParticipantViewUI = () => {
         }
     };
 
-    if (isLocalParticipant && isScreenSharing && trackType === "screenShareTrack")
+    if (isLocalParticipant && isScreenSharing && trackType === 'screenShareTrack')
         return (
             <>
                 <DefaultScreenShareOverlay />
@@ -63,7 +64,10 @@ const ParticipantViewUI = () => {
             <ParticipantDetails />
             {hasAudioTrack && (
                 <div className="absolute top-3.5 right-3.5 w-6.5 h-6.5 flex items-center justify-center bg-primary rounded-full">
-                    <SpeechIndicator isSpeaking={isSpeaking} isDominantSpeaker={isDominantSpeaker} />
+                    <SpeechIndicator
+                        isSpeaking={isSpeaking}
+                        isDominantSpeaker={isDominantSpeaker}
+                    />
                 </div>
             )}
             {!hasAudioTrack && (
@@ -74,7 +78,7 @@ const ParticipantViewUI = () => {
             {/* Speech Ring */}
             <div
                 className={clsx(
-                    isSpeaking && hasAudioTrack && "ring-[5px] ring-inset ring-light-blue",
+                    isSpeaking && hasAudioTrack && 'ring-[5px] ring-inset ring-light-blue',
                     `absolute left-0 top-0 w-full h-full rounded-xl ${speechRingClassName}`
                 )}
             />
@@ -89,14 +93,18 @@ const ParticipantViewUI = () => {
             {/* Menu */}
             <div
                 className={clsx(
-                    showMenu ? "opacity-60" : "opacity-0",
-                    "z-2 absolute left-[calc(50%-66px)] top-[calc(50%-22px)] flex items-center justify-center h-11 transition-opacity duration-300 ease-linear overflow-hidden",
-                    "shadow-[0_1px_2px_0px_rgba(0,0,0,0.3),_0_1px_3px_1px_rgba(0,0,0,.15)] bg-meet-black rounded-full h-11 hover:opacity-90"
+                    showMenu ? 'opacity-60' : 'opacity-0',
+                    'z-2 absolute left-[calc(50%-66px)] top-[calc(50%-22px)] flex items-center justify-center h-11 transition-opacity duration-300 ease-linear overflow-hidden',
+                    'shadow-[0_1px_2px_0px_rgba(0,0,0,0.3),_0_1px_3px_1px_rgba(0,0,0,.15)] bg-meet-black rounded-full h-11 hover:opacity-90'
                 )}
             >
                 <div className="[&_ul>*:nth-child(n+4)]:hidden">
                     {!pinned && (
-                        <MenuToggle strategy="fixed" placement="bottom-start" ToggleButton={PinMenuToggleButton}>
+                        <MenuToggle
+                            strategy="fixed"
+                            placement="bottom-start"
+                            ToggleButton={PinMenuToggleButton}
+                        >
                             <ParticipantActionsContextMenu />
                         </MenuToggle>
                     )}
@@ -104,7 +112,11 @@ const ParticipantViewUI = () => {
                 </div>
                 <Button title="Apply visual effects" icon={<VisualEffects />} />
                 <div className="[&_ul>*:nth-child(-n+3)]:hidden">
-                    <MenuToggle strategy="fixed" placement="bottom-start" ToggleButton={OtherMenuToggleButton}>
+                    <MenuToggle
+                        strategy="fixed"
+                        placement="bottom-start"
+                        ToggleButton={OtherMenuToggleButton}
+                    >
                         <ParticipantActionsContextMenu />
                     </MenuToggle>
                 </div>
@@ -113,7 +125,7 @@ const ParticipantViewUI = () => {
     );
 };
 
-const ParticipantDetails = ({}: Pick<DefaultParticipantViewUIProps, "indicatorsVisible">) => {
+const ParticipantDetails = ({}: Pick<DefaultParticipantViewUIProps, 'indicatorsVisible'>) => {
     const { participant } = useParticipantViewContext();
     const { pin, name, userId } = participant;
     const pinned = !!pin;
@@ -124,7 +136,7 @@ const ParticipantDetails = ({}: Pick<DefaultParticipantViewUIProps, "indicatorsV
                 {pinned && (pin.isLocalPin ? <KeepFilled /> : <KeepPublicFilled />)}
                 <span
                     style={{
-                        textShadow: "0 1px 2px rgba(0,0,0,.6), 0 0 2px rgba(0,0,0,.3)",
+                        textShadow: '0 1px 2px rgba(0,0,0,.6), 0 0 2px rgba(0,0,0,.3)',
                     }}
                 >
                     {name || userId}
@@ -143,12 +155,12 @@ const Button = forwardRef(function Button(
     }: {
         icon: ReactNode;
         onClick?: () => void;
-    } & ComponentProps<"button"> & { menuShown?: boolean },
+    } & ComponentProps<'button'> & { menuShown?: boolean },
     ref: ForwardedRef<HTMLButtonElement>
 ) {
     return (
         <button
-            onClick={(e) => {
+            onClick={e => {
                 e.preventDefault();
                 onClick?.(e);
             }}
@@ -161,12 +173,16 @@ const Button = forwardRef(function Button(
     );
 });
 
-const PinMenuToggleButton = forwardRef<HTMLButtonElement, ToggleMenuButtonProps>(function ToggleButton(props, ref) {
-    return <Button {...props} title="Pin" ref={ref} icon={<Keep />} />;
-});
+const PinMenuToggleButton = forwardRef<HTMLButtonElement, ToggleMenuButtonProps>(
+    function ToggleButton(props, ref) {
+        return <Button {...props} title="Pin" ref={ref} icon={<Keep />} />;
+    }
+);
 
-const OtherMenuToggleButton = forwardRef<HTMLButtonElement, ToggleMenuButtonProps>(function ToggleButton(props, ref) {
-    return <Button {...props} title="More options" ref={ref} icon={<MoreVert />} />;
-});
+const OtherMenuToggleButton = forwardRef<HTMLButtonElement, ToggleMenuButtonProps>(
+    function ToggleButton(props, ref) {
+        return <Button {...props} title="More options" ref={ref} icon={<MoreVert />} />;
+    }
+);
 
 export default ParticipantViewUI;

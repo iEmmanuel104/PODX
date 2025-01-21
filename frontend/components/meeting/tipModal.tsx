@@ -1,7 +1,7 @@
-import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 interface TipModalProps {
     isOpen: boolean;
@@ -11,7 +11,7 @@ interface TipModalProps {
 }
 
 const TipModal: React.FC<TipModalProps> = ({ isOpen, onClose, recipient, onTip }) => {
-    const [tipAmount, setTipAmount] = useState("");
+    const [tipAmount, setTipAmount] = useState('');
 
     const handleTip = () => {
         onTip(tipAmount);
@@ -30,7 +30,7 @@ const TipModal: React.FC<TipModalProps> = ({ isOpen, onClose, recipient, onTip }
                             type="text"
                             placeholder="Enter Tip in USDC"
                             value={tipAmount}
-                            onChange={(e) => setTipAmount(e.target.value)}
+                            onChange={e => setTipAmount(e.target.value)}
                             className="flex-1 mr-2"
                         />
                         <Button onClick={handleTip}>Tip</Button>

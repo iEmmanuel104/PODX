@@ -1,7 +1,14 @@
 {
-  "extends": "next",
-  "rules": {
-    "react/no-unescaped-entities": "off",
-    "@next/next/no-page-custom-font": "off"
-  }
+    "extends": ["next", "prettier", "plugin:@typescript-eslint/recommended"],
+    "plugins": ["prettier", "@typescript-eslint"],
+    "parser": "@typescript-eslint/parser",
+    "rules": {
+        "react/no-unescaped-entities": "off",
+        "@next/next/no-page-custom-font": "off",
+        "prettier/prettier": "error",
+        "indent": ["error", 4],
+        "@typescript-eslint/indent": ["error", 4],
+        "no-unused-vars": "warn",
+        "@typescript-eslint/no-unused-vars": "warn"
+    }
 }

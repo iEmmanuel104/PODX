@@ -1,13 +1,13 @@
 //app/pod/[id]/page.tsx
-"use client";
+'use client';
 
-import "@stream-io/video-react-sdk/dist/css/styles.css";
-import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { CheckCircle2 } from "lucide-react";
-import TipModal from "@/components/meeting/tips";
-import ParticipantsSidebar from "@/components/meeting/participantList";
-import Notifications from "@/components/meeting/notifications";
-import Header from "@/components/meeting/header";
+import '@stream-io/video-react-sdk/dist/css/styles.css';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { CheckCircle2 } from 'lucide-react';
+import TipModal from '@/components/meeting/tips';
+import ParticipantsSidebar from '@/components/meeting/participantList';
+import Notifications from '@/components/meeting/notifications';
+import Header from '@/components/meeting/header';
 import {
     StreamTheme,
     useCall,
@@ -16,21 +16,21 @@ import {
     StreamVideoEvent,
     CallingState,
     CustomVideoEvent,
-} from "@stream-io/video-react-sdk";
-import { useRouter } from "next/navigation";
-import { useBalance } from "wagmi";
-import { useAppSelector } from "@/store/hooks";
-import EndScreen from "@/components/meeting/end-screen";
-import Image from "next/image";
-import { useTipping } from "@/hooks/useTipping";
-import SpeakerLayout from "@/components/pod/SpeakerLayout copy";
-import GridLayout from "@/components/pod/GridLayout copy";
-import ToggleAudioButton from "@/components/pod/ToggleAudioButton copy";
-import ToggleVideoButton from "@/components/pod/ToggleVideoButton copy";
-import CallControlButton from "@/components/pod/CallControlButton";
-import Mood from "@/components/icons/Mood";
-import PresentToAll from "@/components/icons/PresentToAll";
-import CallEndFilled from "@/components/icons/CallEndFilled";
+} from '@stream-io/video-react-sdk';
+import { useRouter } from 'next/navigation';
+import { useBalance } from 'wagmi';
+import { useAppSelector } from '@/store/hooks';
+import EndScreen from '@/components/meeting/end-screen';
+import Image from 'next/image';
+import { useTipping } from '@/hooks/useTipping';
+import SpeakerLayout from '@/components/pod/SpeakerLayout copy';
+import GridLayout from '@/components/pod/GridLayout copy';
+import ToggleAudioButton from '@/components/pod/ToggleAudioButton copy';
+import ToggleVideoButton from '@/components/pod/ToggleVideoButton copy';
+import CallControlButton from '@/components/pod/CallControlButton';
+import Mood from '@/components/icons/Mood';
+import PresentToAll from '@/components/icons/PresentToAll';
+import CallEndFilled from '@/components/icons/CallEndFilled';
 
 interface MeetingProps {
     params: {
@@ -42,8 +42,14 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const call = useCall();
     const { id } = params;
     const router = useRouter();
-    const { useParticipants, useIsCallLive, useCallCustomData, useHasOngoingScreenShare, useCallCallingState, useScreenShareState } =
-        useCallStateHooks();
+    const {
+        useParticipants,
+        useIsCallLive,
+        useCallCustomData,
+        useHasOngoingScreenShare,
+        useCallCallingState,
+        useScreenShareState,
+    } = useCallStateHooks();
 
     const participants = useParticipants();
     const customData = useCallCustomData();
@@ -58,13 +64,22 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const [joinRequests, setJoinRequests] = useState<string[]>([]);
     const [speakRequests, setSpeakRequests] = useState<string[]>([]);
     const [showSidebar, setShowSidebar] = useState(false);
-    const { user } = useAppSelector((state) => state.user);
+    const { user } = useAppSelector(state => state.user);
     const userAddress = user?.walletAddress as `0x${string}`;
-    const walletClientType = useAppSelector((state) => state.user.user?.walletType);
-    const isEmbeddedWallet = walletClientType === "privy";
+    const walletClientType = useAppSelector(state => state.user.user?.walletType);
+    const isEmbeddedWallet = walletClientType === 'privy';
 
-    const { showTipModal, tipAmount, selectedTipRecipient, receivedTips, openTipModal, handleTip, handleCancelTip, setTipAmount, handleTipEvent } =
-        useTipping(isEmbeddedWallet);
+    const {
+        showTipModal,
+        tipAmount,
+        selectedTipRecipient,
+        receivedTips,
+        openTipModal,
+        handleTip,
+        handleCancelTip,
+        setTipAmount,
+        handleTipEvent,
+    } = useTipping(isEmbeddedWallet);
 
     const {
         data: balance,
@@ -86,35 +101,35 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
         const handleCallEvent = (event: StreamVideoEvent) => {
             switch (event.type) {
-                case "call.permission_request":
-                    setSpeakRequests((prev) => [...prev, event.user.id]);
+                case 'call.permission_request':
+                    setSpeakRequests(prev => [...prev, event.user.id]);
                     break;
-                case "call.ring":
-                    setJoinRequests((prev) => [...prev, event.user.id]);
+                case 'call.ring':
+                    setJoinRequests(prev => [...prev, event.user.id]);
                     break;
-                case "custom":
+                case 'custom':
                     handleTipEvent(event as CustomVideoEvent);
                     break;
             }
         };
 
-        const unsubscribe = call.on("all", handleCallEvent);
+        const unsubscribe = call.on('all', handleCallEvent);
         return () => unsubscribe();
     }, [call, handleTipEvent]);
 
     const handleJoinSession = useCallback(() => {
         if (!call || !connectedUser) {
-            console.log("Call or connected user not available");
+            console.log('Call or connected user not available');
             return;
         }
 
         const needsToJoin = [CallingState.IDLE, CallingState.UNKNOWN].includes(callingState);
 
         if (needsToJoin && !live) {
-            console.log("User needs to join the call, redirecting to join page");
+            console.log('User needs to join the call, redirecting to join page');
             router.push(`/pod/join/${id}`);
         } else if (callingState === CallingState.JOINED) {
-            console.log("User is already in the call");
+            console.log('User is already in the call');
         } else {
             console.log(`Call is in ${callingState} state, waiting for it to complete`);
         }
@@ -125,7 +140,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
     }, [handleJoinSession]);
 
     const handleLeave = () => {
-        router.push("/pod/end");
+        router.push('/pod/end');
         // setShowThankYouModal(true);
     };
 
@@ -143,7 +158,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
     };
 
     const confirmLeave = async () => {
-        router.push("/pod");
+        router.push('/pod');
     };
 
     const updateParticipantRole = (userId: string, newRole: string) => {
@@ -159,19 +174,19 @@ export default function MeetingInterface({ params }: MeetingProps) {
     };
 
     const onAcceptJoin = (user: string) => {
-        setJoinRequests((prev) => prev.filter((u) => u !== user));
+        setJoinRequests(prev => prev.filter(u => u !== user));
     };
 
     const onRejectJoin = (user: string) => {
-        setJoinRequests((prev) => prev.filter((u) => u !== user));
+        setJoinRequests(prev => prev.filter(u => u !== user));
     };
 
     const onAcceptSpeak = (user: string) => {
-        setSpeakRequests((prev) => prev.filter((u) => u !== user));
+        setSpeakRequests(prev => prev.filter(u => u !== user));
     };
 
     const onRejectSpeak = (user: string) => {
-        setSpeakRequests((prev) => prev.filter((u) => u !== user));
+        setSpeakRequests(prev => prev.filter(u => u !== user));
     };
 
     const toggleSidebar = () => {
@@ -206,7 +221,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                     <div
                         className={`
                     flex-1 relative
-                    ${showSidebar ? "sm:mr-56 lg:mr-64 xl:mr-80" : ""}
+                    ${showSidebar ? 'sm:mr-56 lg:mr-64 xl:mr-80' : ''}
                 `}
                     >
                         {isSpeakerView && <SpeakerLayout />}
@@ -216,7 +231,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                     {/* Responsive sidebar */}
                     <div
                         className={`
-                    ${showSidebar ? "translate-y-0" : "translate-y-full sm:translate-y-0"} 
+                    ${showSidebar ? 'translate-y-0' : 'translate-y-full sm:translate-y-0'} 
                     transition-transform duration-300 ease-in-out
                     fixed sm:relative inset-0 sm:inset-auto top-16 sm:top-0 
                     h-[calc(100vh-4rem)] sm:h-full 
@@ -240,19 +255,35 @@ export default function MeetingInterface({ params }: MeetingProps) {
                 <div className="relative flex grow shrink basis-1/4 items-center justify-center px-1.5 gap-3 ml-0">
                     <ToggleAudioButton />
                     <ToggleVideoButton />
-                    <CallControlButton icon={<Mood />} title={"Send a reaction"} className="hidden sm:inline-flex" />
-                    <CallControlButton onClick={toggleScreenShare} icon={<PresentToAll />} title={"Present now"} />
+                    <CallControlButton
+                        icon={<Mood />}
+                        title={'Send a reaction'}
+                        className="hidden sm:inline-flex"
+                    />
+                    <CallControlButton
+                        onClick={toggleScreenShare}
+                        icon={<PresentToAll />}
+                        title={'Present now'}
+                    />
                     {/* <RecordCallButton /> */}
                     {/* <div className="hidden sm:block relative">
                         <CallControlButton onClick={toggleRecordingsList} icon={<MoreVert />} title={"View recording list"} />
                         <RecordingsPopup isOpen={isRecordingListOpen} onClose={() => setIsRecordingListOpen(false)} />
                     </div> */}
-                    <CallControlButton onClick={leaveCall} icon={<CallEndFilled />} title={"Leave call"} className="leave-call-button" />
+                    <CallControlButton
+                        onClick={leaveCall}
+                        icon={<CallEndFilled />}
+                        title={'Leave call'}
+                        className="leave-call-button"
+                    />
                 </div>
                 {showTipModal && selectedTipRecipient && (
                     <TipModal
                         selectedTipRecipient={selectedTipRecipient}
-                        walletAddress={(selectedTipRecipient?.custom?.fields?.walletAddress?.kind as any).stringValue || "0xaaaaa"}
+                        walletAddress={
+                            (selectedTipRecipient?.custom?.fields?.walletAddress?.kind as any)
+                                .stringValue || '0xaaaaa'
+                        }
                         tipAmount={tipAmount}
                         setTipAmount={setTipAmount}
                         handleTip={handleTip}
@@ -273,17 +304,28 @@ export default function MeetingInterface({ params }: MeetingProps) {
                 {showTipSuccess && selectedTipRecipient && (
                     <div className="fixed bottom-4 right-4 bg-green-500 text-white px-3 sm:px-4 py-2 rounded-[10px] flex items-center text-xs sm:text-sm">
                         <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                        You successfully tipped {selectedTipRecipient.name || selectedTipRecipient.userId} {tipAmount} ETH
+                        You successfully tipped{' '}
+                        {selectedTipRecipient.name || selectedTipRecipient.userId} {tipAmount} ETH
                     </div>
                 )}
                 {receivedTips.length > 0 && (
                     <div className="fixed bottom-4 left-4 text-white px-4 py-2">
                         {/* Recent tips:{" "} */}
                         {receivedTips.map((tip, index) => (
-                            <div key={index} className="bg-[#6032F6] rounded-full flex items-center justify-between gap-2 px-2">
-                                <Image src={"/images/confetti.svg"} alt="confetti" className="h-10" width={30} height={10} />
+                            <div
+                                key={index}
+                                className="bg-[#6032F6] rounded-full flex items-center justify-between gap-2 px-2"
+                            >
+                                <Image
+                                    src={'/images/confetti.svg'}
+                                    alt="confetti"
+                                    className="h-10"
+                                    width={30}
+                                    height={10}
+                                />
                                 <div className="flex items-center gap-2">
-                                    <p className="text-semibold">{tip.from}</p> tipped you <p className="text-semibold">{tip.amount}</p>
+                                    <p className="text-semibold">{tip.from}</p> tipped you{' '}
+                                    <p className="text-semibold">{tip.amount}</p>
                                 </div>
                             </div>
                         ))}

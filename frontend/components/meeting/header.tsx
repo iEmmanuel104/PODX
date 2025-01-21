@@ -1,11 +1,16 @@
-"use client";
+'use client';
 
-import React, { memo, useMemo } from "react";
-import { Menu, Copy, User, ArrowUp, LogOut, ChevronDown } from "lucide-react";
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { UserInfo } from "@/store/api/userApi";
+import React, { memo, useMemo } from 'react';
+import { Menu, Copy, User, ArrowUp, LogOut, ChevronDown } from 'lucide-react';
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { UserInfo } from '@/store/api/userApi';
 
 interface HeaderProps {
     userInfo: UserInfo | null;
@@ -32,7 +37,14 @@ const HeaderLeft = memo<{
 }>(({ title, live }) => (
     <div className="flex items-center space-x-2 flex-grow sm:flex-grow-0">
         <div className="relative w-[80px] h-[40px] sm:w-[120px] sm:h-[50px]">
-            <Image src="/logo.png" layout="fill" objectFit="contain" alt="Podx" className="p-0.5 sm:p-1" priority />
+            <Image
+                src="/logo.png"
+                layout="fill"
+                objectFit="contain"
+                alt="Podx"
+                className="p-0.5 sm:p-1"
+                priority
+            />
         </div>
         <div className="hidden sm:block">
             <p className="text-sm md:text-base truncate max-w-[150px] md:max-w-full">{title}</p>
@@ -43,7 +55,9 @@ const HeaderLeft = memo<{
 
 // Live indicator component
 const LiveIndicator = memo<{ isLive: boolean }>(({ isLive }) => (
-    <span className="bg-red-500 text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full whitespace-nowrap">{isLive ? "Live" : "Offline"}</span>
+    <span className="bg-red-500 text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full whitespace-nowrap">
+        {isLive ? 'Live' : 'Offline'}
+    </span>
 ));
 
 // User Avatar component
@@ -59,12 +73,25 @@ const NetworkStatus = memo<{
     onCopy: () => void;
 }>(({ address, onCopy }) => (
     <div className="flex items-center justify-between bg-[#1d1d1d] pl-3 mb-0.5 sm:mb-1 rounded-full">
-        <Image src="/images/base.png" alt="Base" width={16} height={16} className="w-4 h-4 sm:w-5 sm:h-5" />
+        <Image
+            src="/images/base.png"
+            alt="Base"
+            width={16}
+            height={16}
+            className="w-4 h-4 sm:w-5 sm:h-5"
+        />
         <div className="flex items-center">
             <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-green-500 rounded-full mr-1 sm:mr-2" />
-            <span className="text-[#A3A3A3] text-[10px] sm:text-xs">{truncateAddress(address)}</span>
+            <span className="text-[#A3A3A3] text-[10px] sm:text-xs">
+                {truncateAddress(address)}
+            </span>
         </div>
-        <Button variant="ghost" size="icon" onClick={onCopy} className="text-[#A3A3A3] hover:text-white hover:bg-black">
+        <Button
+            variant="ghost"
+            size="icon"
+            onClick={onCopy}
+            className="text-[#A3A3A3] hover:text-white hover:bg-black"
+        >
             <Copy className="w-2 h-2" />
         </Button>
     </div>
@@ -79,7 +106,9 @@ const WalletInfo = memo<{
 }>(({ address, balance, symbol, onCopy }) => (
     <div className="space-y-1 sm:space-y-2 w-full">
         <div className="flex items-center justify-between gap-1 sm:gap-2 mb-4">
-            <span className="text-white text-xs sm:text-sm font-semibold">{truncateAddress(address)}</span>
+            <span className="text-white text-xs sm:text-sm font-semibold">
+                {truncateAddress(address)}
+            </span>
             <p className="text-white text-[10px] sm:text-xs bg-violet-500 rounded-full px-1 sm:px-2 py-0.5">
                 {balance} {symbol}
             </p>
@@ -97,12 +126,20 @@ const UserDropdownContent = memo<{
     onCopy: () => void;
     onWithdraw: () => void;
 }>(({ userAddress, displayBalance, balanceSymbol, isEmbeddedWallet, onCopy, onWithdraw }) => (
-    <DropdownMenuContent align="end" className="w-[280px] sm:w-[300px] bg-[#2d2d2d] rounded-[10px] shadow-lg py-4 sm:py-4 px-4 sm:px-5 border-none">
+    <DropdownMenuContent
+        align="end"
+        className="w-[280px] sm:w-[300px] bg-[#2d2d2d] rounded-[10px] shadow-lg py-4 sm:py-4 px-4 sm:px-5 border-none"
+    >
         <div className="flex items-center justify-between mb-4 gap-3">
             <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-300 flex items-center justify-center">
                 <User className="w-6 h-6 text-gray-600" />
             </div>
-            <WalletInfo address={userAddress} balance={displayBalance} symbol={balanceSymbol} onCopy={onCopy} />
+            <WalletInfo
+                address={userAddress}
+                balance={displayBalance}
+                symbol={balanceSymbol}
+                onCopy={onCopy}
+            />
         </div>
         <DropdownMenuItem asChild>
             <Button
@@ -132,7 +169,7 @@ const Header = memo<HeaderProps>(
         copyAddress,
     }) => {
         const withdrawFunds = () => {
-            console.log("withdrawing funds");
+            console.log('withdrawing funds');
         };
 
         return (
@@ -157,12 +194,21 @@ const Header = memo<HeaderProps>(
                         />
                     </DropdownMenu>
 
-                    <Button variant="ghost" onClick={handleLogout} className="text-red-500 hover:text-red-400 hover:bg-transparent hidden sm:flex">
+                    <Button
+                        variant="ghost"
+                        onClick={handleLogout}
+                        className="text-red-500 hover:text-red-400 hover:bg-transparent hidden sm:flex"
+                    >
                         <LogOut className="mr-2 h-4 w-4" />
                         <span className="text-sm">Logout</span>
                     </Button>
 
-                    <Button variant="ghost" size="icon" className="block sm:hidden text-[#A3A3A3] hover:text-white p-1" onClick={toggleSidebar}>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="block sm:hidden text-[#A3A3A3] hover:text-white p-1"
+                        onClick={toggleSidebar}
+                    >
                         <Menu className="w-5 h-5" />
                     </Button>
                 </div>
@@ -172,12 +218,12 @@ const Header = memo<HeaderProps>(
 );
 
 // Add display names
-HeaderLeft.displayName = "HeaderLeft";
-LiveIndicator.displayName = "LiveIndicator";
-UserAvatar.displayName = "UserAvatar";
-NetworkStatus.displayName = "NetworkStatus";
-WalletInfo.displayName = "WalletInfo";
-UserDropdownContent.displayName = "UserDropdownContent";
-Header.displayName = "Header";
+HeaderLeft.displayName = 'HeaderLeft';
+LiveIndicator.displayName = 'LiveIndicator';
+UserAvatar.displayName = 'UserAvatar';
+NetworkStatus.displayName = 'NetworkStatus';
+WalletInfo.displayName = 'WalletInfo';
+UserDropdownContent.displayName = 'UserDropdownContent';
+Header.displayName = 'Header';
 
 export default Header;

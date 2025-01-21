@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Image from 'next/image';
 
 const Logo = () => (
     <h1 className="text-3xl font-bold flex items-center space-x-2">

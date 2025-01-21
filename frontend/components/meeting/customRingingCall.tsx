@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 import {
     useCall,
     useCallStateHooks,
@@ -10,28 +10,29 @@ import {
     IconButton,
     Avatar,
     useI18n,
-} from "@stream-io/video-react-sdk";
+} from '@stream-io/video-react-sdk';
 
 type RingingCallProps = {
     showMemberCount?: number;
 };
 
 const CALLING_STATE_TO_LABEL: Record<CallingState, string> = {
-    [CallingState.JOINING]: "Joining",
-    [CallingState.RINGING]: "Incoming call",
-    [CallingState.RECONNECTING]: "Re-connecting",
-    [CallingState.RECONNECTING_FAILED]: "Failed",
-    [CallingState.OFFLINE]: "No internet connection",
-    [CallingState.IDLE]: "",
-    [CallingState.UNKNOWN]: "",
-    [CallingState.JOINED]: "Joined",
-    [CallingState.LEFT]: "Left call",
-    [CallingState.MIGRATING]: "",
+    [CallingState.JOINING]: 'Joining',
+    [CallingState.RINGING]: 'Incoming call',
+    [CallingState.RECONNECTING]: 'Re-connecting',
+    [CallingState.RECONNECTING_FAILED]: 'Failed',
+    [CallingState.OFFLINE]: 'No internet connection',
+    [CallingState.IDLE]: '',
+    [CallingState.UNKNOWN]: '',
+    [CallingState.JOINED]: 'Joined',
+    [CallingState.LEFT]: 'Left call',
+    [CallingState.MIGRATING]: '',
 };
 
 export const CustomRingingCall: React.FC<RingingCallProps> = ({ showMemberCount = 1 }) => {
     const call = useCall();
-    const { useCallCreatedBy, useCameraState, useCallCallingState, useMicrophoneState } = useCallStateHooks();
+    const { useCallCreatedBy, useCameraState, useCallCallingState, useMicrophoneState } =
+        useCallStateHooks();
     const { t } = useI18n();
 
     const creator: UserResponse | null = useCallCreatedBy() ?? null;
@@ -59,16 +60,22 @@ export const CustomRingingCall: React.FC<RingingCallProps> = ({ showMemberCount 
 
     const CallCallingStateLabel: React.FC = () => {
         const callingStateLabel = CALLING_STATE_TO_LABEL[callingState];
-        return callingStateLabel ? <div className="text-[#AFAFAF] text-center mt-4">{t(callingStateLabel)}</div> : null;
+        return callingStateLabel ? (
+            <div className="text-[#AFAFAF] text-center mt-4">{t(callingStateLabel)}</div>
+        ) : null;
     };
 
     const CallControls: React.FC = () => {
         return (
             <div className="flex justify-center space-x-4 mt-6">
                 <CancelCallButton onClick={() => call.leave({ reject: true })} />
-                <button className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">Decline</button>
+                <button className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
+                    Decline
+                </button>
                 <AcceptCallButton />
-                <button className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">Accept</button>
+                <button className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
+                    Accept
+                </button>
             </div>
         );
     };

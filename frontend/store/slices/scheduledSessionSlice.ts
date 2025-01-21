@@ -1,5 +1,5 @@
 // store/slices/scheduledSessionsSlice.ts
-import { StreamCallData } from "@/components/pod/streamCallData";
+import { StreamCallData } from '@/components/pod/streamCallData';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 export interface scheduledSessionsState {
@@ -7,7 +7,7 @@ export interface scheduledSessionsState {
 }
 
 const initialState: scheduledSessionsState = {
-    sessions: []
+    sessions: [],
 };
 
 const scheduledSessionsSlice = createSlice({
@@ -20,11 +20,12 @@ const scheduledSessionsSlice = createSlice({
         addScheduledSession: (state, action: PayloadAction<StreamCallData>) => {
             state.sessions.push(action.payload);
         },
-        clearScheduledSessions: (state) => {
+        clearScheduledSessions: state => {
             state.sessions = [];
-        }
-    }
+        },
+    },
 });
 
-export const { setScheduledSessions, addScheduledSession, clearScheduledSessions } = scheduledSessionsSlice.actions;
+export const { setScheduledSessions, addScheduledSession, clearScheduledSessions } =
+    scheduledSessionsSlice.actions;
 export default scheduledSessionsSlice.reducer;

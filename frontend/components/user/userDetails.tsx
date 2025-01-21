@@ -1,40 +1,46 @@
-"use client";
+'use client';
 
-import React, { useState, useMemo, useCallback, memo } from "react";
-import { useRouter } from "next/navigation";
-import { Settings, LogOut, Clock, Edit2, Check, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { usePrivy } from "@privy-io/react-auth";
-import dynamic from "next/dynamic";
-import { UserDetailsProps, UserState } from "./userDetailsProps";
-import { useAppDispatch } from "@/store/hooks";
-import { updateUser } from "@/store/slices/userSlice";
-import Logo from "@/public/images/icons/Logo";
+import React, { useState, useMemo, useCallback, memo } from 'react';
+import { useRouter } from 'next/navigation';
+import { Settings, LogOut, Clock, Edit2, Check, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { usePrivy } from '@privy-io/react-auth';
+import dynamic from 'next/dynamic';
+import { UserDetailsProps, UserState } from './userDetailsProps';
+import { useAppDispatch } from '@/store/hooks';
+import { updateUser } from '@/store/slices/userSlice';
+import Logo from '@/public/images/icons/Logo';
 
 // Dynamic import for wallet operations
-const WalletOperations = dynamic(() => import("./walletOperations"), {
+const WalletOperations = dynamic(() => import('./walletOperations'), {
     ssr: false,
     loading: () => null,
 });
 
 // Utility function
-const formatAddress = (addr: string): string => (addr.length < 10 ? addr : `${addr.slice(0, 6)}...${addr.slice(-4)}`);
+const formatAddress = (addr: string): string =>
+    addr.length < 10 ? addr : `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 
 const UserDetails = memo<UserDetailsProps>(({ user }) => {
     const router = useRouter();
     const dispatch = useAppDispatch();
     const { logout } = usePrivy();
     const [isEditing, setIsEditing] = useState(false);
-    const [editedUsername, setEditedUsername] = useState(user?.username || "");
+    const [editedUsername, setEditedUsername] = useState(user?.username || '');
     const [state, setState] = useState<UserState>({
         isOpen: false,
         isSettingsOpen: false,
         isWarningOpen: false,
         isWithdrawOpen: false,
-        amount: "",
-        address: "",
+        amount: '',
+        address: '',
     });
 
     // Memoized user info
@@ -42,19 +48,19 @@ const UserDetails = memo<UserDetailsProps>(({ user }) => {
         () => ({
             displayName: user?.username || formatAddress(user?.walletAddress),
             initials: (user?.username || user?.walletAddress).slice(0, 2).toUpperCase(),
-            isPrivyWallet: user?.walletClientType === "privy",
+            isPrivyWallet: user?.walletClientType === 'privy',
         }),
         [user]
     );
 
     const handleLogout = useCallback(() => {
         logout();
-        router.push("/");
+        router.push('/');
     }, [logout, router]);
 
     const handleEditClick = useCallback(() => {
         setIsEditing(true);
-        setEditedUsername(user?.username || "");
+        setEditedUsername(user?.username || '');
     }, [user?.username]);
 
     const handleSaveUsername = useCallback(() => {
@@ -66,12 +72,12 @@ const UserDetails = memo<UserDetailsProps>(({ user }) => {
 
     const handleCancelEdit = useCallback(() => {
         setIsEditing(false);
-        setEditedUsername(user?.username || "");
+        setEditedUsername(user?.username || '');
     }, [user?.username]);
 
     // Wallet operation handlers
     const handleWithdrawClick = useCallback(() => {
-        setState((prev) => ({
+        setState(prev => ({
             ...prev,
             isSettingsOpen: false,
             isWarningOpen: true,
@@ -79,7 +85,7 @@ const UserDetails = memo<UserDetailsProps>(({ user }) => {
     }, []);
 
     const handleWarningConfirm = useCallback(() => {
-        setState((prev) => ({
+        setState(prev => ({
             ...prev,
             isWarningOpen: false,
             isWithdrawOpen: true,
@@ -98,7 +104,7 @@ const UserDetails = memo<UserDetailsProps>(({ user }) => {
                     <div className="flex items-center space-x-2">
                         <Input
                             value={editedUsername}
-                            onChange={(e) => setEditedUsername(e.target.value)}
+                            onChange={e => setEditedUsername(e.target.value)}
                             className="h-8 w-40 bg-[#444444] border-none text-white font-medium"
                             autoFocus
                         />
@@ -118,7 +124,7 @@ const UserDetails = memo<UserDetailsProps>(({ user }) => {
                 ) : (
                     <div className="flex items-center space-x-2">
                         <span className="font-medium">{userInfo.displayName}</span>
-                        
+
                         <Button
                             onClick={handleEditClick}
                             className="p-1 hover:bg-[#444444] rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
@@ -128,13 +134,19 @@ const UserDetails = memo<UserDetailsProps>(({ user }) => {
                     </div>
                 )}
             </div>
-           <div className="w-[180px] h-[44px]">
-           <Logo />
-           </div>
+            <div className="w-[180px] h-[44px]">
+                <Logo />
+            </div>
             {/* Settings dropdown */}
-            <DropdownMenu open={state.isOpen} onOpenChange={(open) => setState((prev) => ({ ...prev, isOpen: open }))}>
+            <DropdownMenu
+                open={state.isOpen}
+                onOpenChange={open => setState(prev => ({ ...prev, isOpen: open }))}
+            >
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="text-[#A3A3A3] hover:text-white hover:bg-transparent focus:bg-transparent">
+                    <Button
+                        variant="ghost"
+                        className="text-[#A3A3A3] hover:text-white hover:bg-transparent focus:bg-transparent"
+                    >
                         <Settings className="h-5 w-5 mr-2" /> Settings
                     </Button>
                 </DropdownMenuTrigger>
@@ -160,7 +172,10 @@ const UserDetails = memo<UserDetailsProps>(({ user }) => {
                         <span>Session history</span>
                     </DropdownMenuItem>
 
-                    <DropdownMenuItem className="flex items-center px-3 py-2 cursor-pointer text-red-500" onSelect={handleLogout}>
+                    <DropdownMenuItem
+                        className="flex items-center px-3 py-2 cursor-pointer text-red-500"
+                        onSelect={handleLogout}
+                    >
                         <LogOut className="mr-2 h-4 w-4" />
                         <span>Log out</span>
                     </DropdownMenuItem>
@@ -170,5 +185,5 @@ const UserDetails = memo<UserDetailsProps>(({ user }) => {
     );
 });
 
-UserDetails.displayName = "UserDetails";
+UserDetails.displayName = 'UserDetails';
 export default UserDetails;

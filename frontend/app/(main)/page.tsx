@@ -1,25 +1,25 @@
-"use client";
+'use client';
 
-import { useCallback, useState, useEffect } from "react";
-import { usePrivy } from "@privy-io/react-auth";
-import { useAppDispatch } from "@/store/hooks";
-import { logOut } from "@/store/slices/userSlice";
-import localFont from "next/font/local";
-import dynamic from "next/dynamic";
+import { useCallback, useState, useEffect } from 'react';
+import { usePrivy } from '@privy-io/react-auth';
+import { useAppDispatch } from '@/store/hooks';
+import { logOut } from '@/store/slices/userSlice';
+import localFont from 'next/font/local';
+import dynamic from 'next/dynamic';
 
 // Dynamically import components that aren't needed for initial render
-const Logo = dynamic(() => import("@/public/images/icons/Logo"), {
+const Logo = dynamic(() => import('@/public/images/icons/Logo'), {
     loading: () => <div className="w-[174px] h-[43px] animate-pulse bg-gray-700" />,
 });
 
-const Footer = dynamic(() => import("@/components/common/Footer"));
-const RetroGrid = dynamic(() => import("@/components/ui/retro-grid"));
+const Footer = dynamic(() => import('@/components/common/Footer'));
+const RetroGrid = dynamic(() => import('@/components/ui/retro-grid'));
 
 const balige = localFont({
-    src: "../fonts/Balige - Personal Use.otf",
-    variable: "--font-balige",
+    src: '../fonts/Balige - Personal Use.otf',
+    variable: '--font-balige',
     preload: true,
-    display: "swap",
+    display: 'swap',
 });
 
 export default function LandingPage() {
@@ -32,14 +32,16 @@ export default function LandingPage() {
             dispatch(logOut());
             await login();
         } catch (error) {
-            console.error("Error connecting wallet:", error);
-        } 
+            console.error('Error connecting wallet:', error);
+        }
     }, [logout, dispatch, login]);
 
     if (!ready) return null;
 
     return (
-        <main className={`bg-[#212121] text-white flex flex-col items-center justify-center p-4 ${balige.variable}`}>
+        <main
+            className={`bg-[#212121] text-white flex flex-col items-center justify-center p-4 ${balige.variable}`}
+        >
             <div className="container mx-auto">
                 <div className="flex flex-col gap-[300px]">
                     <div className="max-w-[665px] flex flex-col justify-center items-center gap-[130px]">
@@ -54,10 +56,12 @@ export default function LandingPage() {
                                     </span>
                                 </div>
                                 <h1 className="text-4xl lg:text-[36px] text-center font-balige lg:leading-[45px] text-gray-200">
-                                    Host meetings, record sessions, earn proof of attendance, and{" "}
+                                    Host meetings, record sessions, earn proof of attendance, and{' '}
                                     <span className="inline-block">
-                                        <span className="bg-gradient-to-r from-[#D7B35D] to-[#552FC9] text-transparent bg-clip-text">tip</span>
-                                    </span>{" "}
+                                        <span className="bg-gradient-to-r from-[#D7B35D] to-[#552FC9] text-transparent bg-clip-text">
+                                            tip
+                                        </span>
+                                    </span>{' '}
                                     seamlessly
                                 </h1>
                             </div>

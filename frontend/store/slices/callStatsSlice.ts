@@ -19,10 +19,10 @@ const initialState: CallStatsState = {
     reports: [],
     timeRange: {
         startDate: null,
-        endDate: null
+        endDate: null,
     },
     loading: false,
-    error: null
+    error: null,
 };
 
 const callStatsSlice = createSlice({
@@ -41,7 +41,10 @@ const callStatsSlice = createSlice({
             state.reports = action.payload;
             state.error = null;
         },
-        setTimeRange: (state, action: PayloadAction<{ startDate: string | null; endDate: string | null }>) => {
+        setTimeRange: (
+            state,
+            action: PayloadAction<{ startDate: string | null; endDate: string | null }>
+        ) => {
             state.timeRange = action.payload;
         },
         setLoading: (state, action: PayloadAction<boolean>) => {
@@ -50,13 +53,13 @@ const callStatsSlice = createSlice({
         setError: (state, action: PayloadAction<string>) => {
             state.error = action.payload;
         },
-        clearStats: (state) => {
+        clearStats: state => {
             state.basicStats = null;
             state.detailedAnalytics = null;
             state.reports = [];
             state.error = null;
-        }
-    }
+        },
+    },
 });
 
 export const {
@@ -66,7 +69,7 @@ export const {
     setTimeRange,
     setLoading,
     setError,
-    clearStats
+    clearStats,
 } = callStatsSlice.actions;
 
 export default callStatsSlice.reducer;

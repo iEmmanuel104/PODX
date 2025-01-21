@@ -1,6 +1,9 @@
-import React, { type ReactNode } from "react";
+import React, { type ReactNode } from 'react';
 
-export class ErrorBoundary extends React.Component<{ children: ReactNode; fallback: ReactNode }, { hasError: boolean }> {
+export class ErrorBoundary extends React.Component<
+    { children: ReactNode; fallback: ReactNode },
+    { hasError: boolean }
+> {
     constructor(props: { children: ReactNode; fallback: ReactNode }) {
         super(props);
         this.state = { hasError: false };
@@ -11,7 +14,7 @@ export class ErrorBoundary extends React.Component<{ children: ReactNode; fallba
     }
 
     componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-        console.error("Stream client error:", error, errorInfo);
+        console.error('Stream client error:', error, errorInfo);
     }
 
     render() {

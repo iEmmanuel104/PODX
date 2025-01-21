@@ -1,6 +1,6 @@
-"use client";
-import React, { useState } from "react";
-import Image from "next/image";
+'use client';
+import React, { useState } from 'react';
+import Image from 'next/image';
 interface VideoPreviewProps {
     isMuted: boolean;
 }
@@ -25,7 +25,6 @@ const VideoPreview: React.FC<VideoPreviewProps> = ({ isMuted }) => (
             )}
         </div>
     </div>
-)
-
+);
 
 export default VideoPreview;

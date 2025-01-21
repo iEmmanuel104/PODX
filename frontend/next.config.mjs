@@ -23,7 +23,7 @@ const nextConfig = {
             '@stream-io/video-react-sdk',
             'stream-chat-react',
             'lucide-react',
-            'recharts'
+            'recharts',
         ],
     },
 
@@ -69,10 +69,16 @@ const nextConfig = {
                     { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
                     { key: 'X-Content-Type-Options', value: 'nosniff' },
                     // Add security headers for production
-                    { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' },
+                    {
+                        key: 'Strict-Transport-Security',
+                        value: 'max-age=31536000; includeSubDomains',
+                    },
                     { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
                     // Updated Permissions-Policy to allow camera and microphone
-                    { key: 'Permissions-Policy', value: 'camera=self, microphone=self, geolocation=()' }, // This is the default value
+                    {
+                        key: 'Permissions-Policy',
+                        value: 'camera=self, microphone=self, geolocation=()',
+                    }, // This is the default value
                 ],
             },
         ];

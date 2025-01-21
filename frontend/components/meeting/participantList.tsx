@@ -1,18 +1,10 @@
-"use client";
+'use client';
 
-import React, { useState, useMemo, memo } from "react";
-import {
-    ChevronDown,
-    Mic,
-    MicOff,
-    Video,
-    VideoOff,
-    DollarSign,
-    UsersRound,
-} from "lucide-react";
-import { StreamVideoParticipant, OwnUserResponse } from "@stream-io/video-react-sdk";
-import { Button } from "@/components/ui/button";
-import Image from "next/image";
+import React, { useState, useMemo, memo } from 'react';
+import { ChevronDown, Mic, MicOff, Video, VideoOff, DollarSign, UsersRound } from 'lucide-react';
+import { StreamVideoParticipant, OwnUserResponse } from '@stream-io/video-react-sdk';
+import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 
 // Types
 interface ParticipantsSidebarProps {
@@ -24,7 +16,7 @@ interface ParticipantsSidebarProps {
 }
 
 const formatName = (name: string, maxLength: number = 15): string => {
-    if (!name) return "";
+    if (!name) return '';
     if (name.length <= maxLength) return name;
     return `${name.slice(0, maxLength)}...`;
 };
@@ -82,14 +74,14 @@ const ActionButton = memo<{
     icon: React.ReactNode;
     text: string;
     onClick?: () => void;
-    variant?: "primary" | "secondary";
+    variant?: 'primary' | 'secondary';
     className?: string;
-}>(({ icon, text, onClick, variant = "primary", className = "" }) => (
+}>(({ icon, text, onClick, variant = 'primary', className = '' }) => (
     <Tooltip content={text}>
         <Button
             onClick={onClick}
             className={`flex items-center space-x-1 px-2.5 py-1.5
-                ${variant === "primary" ? "bg-[#6032F6] hover:bg-[#4C28C4]" : "bg-[#383838] hover:bg-[#424242]"}
+                ${variant === 'primary' ? 'bg-[#6032F6] hover:bg-[#4C28C4]' : 'bg-[#383838] hover:bg-[#424242]'}
                 transition-colors duration-200 rounded-full
                 text-white text-xs ${className}`}
         >
@@ -109,13 +101,17 @@ const ParticipantControls = memo<{
     <div className="flex items-center">
         <div
             className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center 
-            ${isAudioActive ? "bg-[#7C3AED]" : "bg-red-500"}`}
+            ${isAudioActive ? 'bg-[#7C3AED]' : 'bg-red-500'}`}
         >
-            {isAudioActive ? <Mic className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" /> : <MicOff className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />}
+            {isAudioActive ? (
+                <Mic className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
+            ) : (
+                <MicOff className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
+            )}
         </div>
         <div
             className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center ml-1 
-            ${isVideoActive ? "bg-[#7C3AED]" : "bg-red-500"}`}
+            ${isVideoActive ? 'bg-[#7C3AED]' : 'bg-red-500'}`}
         >
             {isVideoActive ? (
                 <Video className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
@@ -123,7 +119,12 @@ const ParticipantControls = memo<{
                 <VideoOff className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
             )}
         </div>
-        {showControls && <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 ml-1 cursor-pointer" onClick={onExpandClick} />}
+        {showControls && (
+            <ChevronDown
+                className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 ml-1 cursor-pointer"
+                onClick={onExpandClick}
+            />
+        )}
     </div>
 ));
 
@@ -134,8 +135,11 @@ const ParticipantActions = memo<{
     onUpdateRole: (userId: string, newRole: string) => void;
 }>(({ participant, currentUserRole, onTip, onUpdateRole }) => {
     const { canPromote } = useMemo(() => {
-        const isCurrentUserHost = currentUserRole?.some((role) => ["host", "cohost"].includes(role)) || false;
-        const isTargetPrivileged = participant.roles.some((role) => ["host", "cohost"].includes(role));
+        const isCurrentUserHost =
+            currentUserRole?.some(role => ['host', 'cohost'].includes(role)) || false;
+        const isTargetPrivileged = participant.roles.some(role =>
+            ['host', 'cohost'].includes(role)
+        );
         return {
             canPromote: isCurrentUserHost && !isTargetPrivileged,
         };
@@ -154,7 +158,7 @@ const ParticipantActions = memo<{
                 <ActionButton
                     icon={<UsersRound className="text-[#DDB958] w-3 h-3 sm:w-4 sm:h-4" />}
                     text="Make Co-host"
-                    onClick={() => onUpdateRole(participant.userId, "cohost")}
+                    onClick={() => onUpdateRole(participant.userId, 'cohost')}
                     variant="secondary"
                 />
             )}
@@ -167,10 +171,15 @@ const PendingParticipantsList = memo<{
     onJoinRequest: (userId: string, accept: boolean) => void;
 }>(({ participants, onJoinRequest }) => (
     <div className="mb-4 sm:mb-6">
-        <h3 className="text-[#AFAFAF] text-xs sm:text-sm font-semibold mb-2 sm:mb-3">Pending Requests</h3>
+        <h3 className="text-[#AFAFAF] text-xs sm:text-sm font-semibold mb-2 sm:mb-3">
+            Pending Requests
+        </h3>
         <div className="space-y-2">
-            {participants.map((participant) => (
-                <div key={participant.userId} className="flex items-center justify-between bg-[#2C2C2C] p-2.5 sm:p-3 rounded-[10px]">
+            {participants.map(participant => (
+                <div
+                    key={participant.userId}
+                    className="flex items-center justify-between bg-[#2C2C2C] p-2.5 sm:p-3 rounded-[10px]"
+                >
                     <span className="text-white text-xs sm:text-sm font-medium truncate max-w-[150px] sm:max-w-[200px]">
                         {formatName(participant.name || participant.userId)}
                     </span>
@@ -210,14 +219,18 @@ const ParticipantItem = memo<{
 
     const { role, currentUserRoles, displayName } = useMemo(
         () => ({
-            role: participant.roles.includes("host")
-                ? "host"
-                : participant.roles.includes("cohost")
-                    ? "cohost"
-                    : participant.roles.includes("user")
-                        ? "user"
-                        : "listener",
-            currentUserRoles: !currentUser?.role ? undefined : Array.isArray(currentUser.role) ? currentUser.role : [currentUser.role],
+            role: participant.roles.includes('host')
+                ? 'host'
+                : participant.roles.includes('cohost')
+                  ? 'cohost'
+                  : participant.roles.includes('user')
+                    ? 'user'
+                    : 'listener',
+            currentUserRoles: !currentUser?.role
+                ? undefined
+                : Array.isArray(currentUser.role)
+                  ? currentUser.role
+                  : [currentUser.role],
             displayName: formatName(participant.name || participant.userId),
         }),
         [participant, currentUser?.role]
@@ -227,9 +240,9 @@ const ParticipantItem = memo<{
     const isVideoActive = participant.publishedTracks.includes(2);
 
     const roleStyles = {
-        host: "bg-[#6032F6] text-white",
-        cohost: "bg-[#4C28C4] text-white",
-        default: "bg-[#383838] text-gray-400",
+        host: 'bg-[#6032F6] text-white',
+        cohost: 'bg-[#4C28C4] text-white',
+        default: 'bg-[#383838] text-gray-400',
     };
 
     return (
@@ -237,11 +250,19 @@ const ParticipantItem = memo<{
             <div className="flex items-center justify-between p-2.5">
                 <div className="flex flex-col min-w-0 flex-1 mr-2">
                     <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-white text-xs sm:text-sm font-medium truncate max-w-[120px] sm:max-w-[200px]">{displayName}</span>
-                        {isCurrentUser && <span className="text-gray-400 text-xs px-1.5 py-0.5 bg-[#383838] rounded-full">You</span>}
+                        <span className="text-white text-xs sm:text-sm font-medium truncate max-w-[120px] sm:max-w-[200px]">
+                            {displayName}
+                        </span>
+                        {isCurrentUser && (
+                            <span className="text-gray-400 text-xs px-1.5 py-0.5 bg-[#383838] rounded-full">
+                                You
+                            </span>
+                        )}
                     </div>
                     <div className="flex items-center gap-2 mt-1">
-                        <span className={`text-xs px-1.5 py-0.5 rounded-full ${roleStyles[role as keyof typeof roleStyles] || roleStyles.default}`}>
+                        <span
+                            className={`text-xs px-1.5 py-0.5 rounded-full ${roleStyles[role as keyof typeof roleStyles] || roleStyles.default}`}
+                        >
                             {role.charAt(0).toUpperCase() + role.slice(1)}
                         </span>
                     </div>
@@ -270,9 +291,9 @@ const ParticipantItem = memo<{
                         <p className="">Send Tip</p>
                     </Button>
 
-                    {currentUserRoles?.includes("host") && !participant.roles.includes("host") && (
+                    {currentUserRoles?.includes('host') && !participant.roles.includes('host') && (
                         <Button
-                            onClick={() => onUpdateRole(participant.userId, "cohost")}
+                            onClick={() => onUpdateRole(participant.userId, 'cohost')}
                             className="flex items-center gap-1.5 bg-[#383838] hover:bg-[#424242] text-white text-xs px-3 py-1.5 rounded-full"
                         >
                             <UsersRound className="w-3 h-3 sm:w-4 sm:h-4 text-[#DDB958]" />
@@ -290,26 +311,30 @@ const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
     ({ participants, currentUser, openTipModal, updateParticipantRole, handleJoinRequest }) => {
         const [expandedParticipant, setExpandedParticipant] = useState<string | null>(null);
 
-        const { sortedParticipants, pendingParticipants, activeParticipants, isCurrentUserHost } = useMemo(() => {
-            const sorted = [...participants].sort((a, b) => {
-                const getRoleWeight = (roles: string[]) => {
-                    if (roles.includes("host")) return 3;
-                    if (roles.includes("cohost")) return 2;
-                    if (roles.includes("user")) return 1;
-                    return 0;
+        const { sortedParticipants, pendingParticipants, activeParticipants, isCurrentUserHost } =
+            useMemo(() => {
+                const sorted = [...participants].sort((a, b) => {
+                    const getRoleWeight = (roles: string[]) => {
+                        if (roles.includes('host')) return 3;
+                        if (roles.includes('cohost')) return 2;
+                        if (roles.includes('user')) return 1;
+                        return 0;
+                    };
+                    return getRoleWeight(b.roles) - getRoleWeight(a.roles);
+                });
+
+                const isCurrentUserHost =
+                    currentUser?.role?.includes('host') ||
+                    currentUser?.role?.includes('cohost') ||
+                    false;
+
+                return {
+                    sortedParticipants: sorted,
+                    pendingParticipants: sorted.filter(p => p.roles.includes('pending')),
+                    activeParticipants: sorted.filter(p => !p.roles.includes('pending')),
+                    isCurrentUserHost,
                 };
-                return getRoleWeight(b.roles) - getRoleWeight(a.roles);
-            });
-
-            const isCurrentUserHost = currentUser?.role?.includes("host") || currentUser?.role?.includes("cohost") || false;
-
-            return {
-                sortedParticipants: sorted,
-                pendingParticipants: sorted.filter((p) => p.roles.includes("pending")),
-                activeParticipants: sorted.filter((p) => !p.roles.includes("pending")),
-                isCurrentUserHost,
-            };
-        }, [participants, currentUser]);
+            }, [participants, currentUser]);
 
         return (
             <div className="flex flex-col h-full bg-[#1F1F1F]">
@@ -321,14 +346,14 @@ const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
                             onJoinRequest={handleJoinRequest}
                         />
                     )}
-                    {sortedParticipants.map((participant) => (
+                    {sortedParticipants.map(participant => (
                         <ParticipantItem
                             key={participant.userId}
                             participant={participant}
                             currentUser={currentUser}
                             isExpanded={expandedParticipant === participant.userId}
                             onExpand={() =>
-                                setExpandedParticipant((prev) =>
+                                setExpandedParticipant(prev =>
                                     prev === participant.userId ? null : participant.userId
                                 )
                             }
@@ -341,10 +366,12 @@ const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
                 {/* Fixed Bottom Section */}
                 <div className="sticky bottom-0 bg-[#2C2C2C] p-4">
                     <h1>Your session is live!</h1>
-                    <p className="mb-4 text-gray-400">Click the button below to copy the call link</p>
+                    <p className="mb-4 text-gray-400">
+                        Click the button below to copy the call link
+                    </p>
                     <Button
                         className="w-full bg-[#6032F6] hover:bg-[#4C28C4] text-white px-4 py-2 rounded-lg"
-                        onClick={() => navigator.clipboard.writeText("Session Link")}
+                        onClick={() => navigator.clipboard.writeText('Session Link')}
                     >
                         Copy Link
                     </Button>
@@ -355,13 +382,13 @@ const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
 );
 
 // Add display names for debugging
-ParticipantControls.displayName = "ParticipantControls";
-ParticipantActions.displayName = "ParticipantActions";
-PendingParticipantsList.displayName = "PendingParticipantsList";
-ParticipantItem.displayName = "ParticipantItem";
-ParticipantsSidebar.displayName = "ParticipantsSidebar";
-Tooltip.displayName = "Tooltip";
-ActionButton.displayName = "ActionButton";
-RequestHostButton.displayName = "RequestHostButton";
+ParticipantControls.displayName = 'ParticipantControls';
+ParticipantActions.displayName = 'ParticipantActions';
+PendingParticipantsList.displayName = 'PendingParticipantsList';
+ParticipantItem.displayName = 'ParticipantItem';
+ParticipantsSidebar.displayName = 'ParticipantsSidebar';
+Tooltip.displayName = 'Tooltip';
+ActionButton.displayName = 'ActionButton';
+RequestHostButton.displayName = 'RequestHostButton';
 
 export default ParticipantsSidebar;

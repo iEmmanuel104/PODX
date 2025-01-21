@@ -1,6 +1,11 @@
 import { useState, useCallback } from 'react';
-import { StreamVideoParticipant, useCall, useConnectedUser, CustomVideoEvent } from "@stream-io/video-react-sdk";
-import { useSendTransaction } from "@privy-io/react-auth";
+import {
+    StreamVideoParticipant,
+    useCall,
+    useConnectedUser,
+    CustomVideoEvent,
+} from '@stream-io/video-react-sdk';
+import { useSendTransaction } from '@privy-io/react-auth';
 import { useSendTransaction as useSendTransactionWagmi } from 'wagmi';
 import { isAddress, parseEther } from 'ethers';
 import toast from 'react-hot-toast';
@@ -16,7 +21,7 @@ interface TippingState {
 export const useTipping = (isEmbeddedWallet: boolean) => {
     const [state, setState] = useState<TippingState>({
         showTipModal: false,
-        tipAmount: "",
+        tipAmount: '',
         showTipSuccess: false,
         selectedTipRecipient: null,
         receivedTips: [],
@@ -27,11 +32,11 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
 
     // Embedded wallet transaction handling
     const { sendTransaction: sendTransactionEmbedded } = useSendTransaction({
-        onError: (error) => {
-            console.error("Embedded wallet transaction failed:", error);
+        onError: error => {
+            console.error('Embedded wallet transaction failed:', error);
         },
-        onSuccess: (response) => {
-            console.log("Embedded wallet transaction successful:", response);
+        onSuccess: response => {
+            console.log('Embedded wallet transaction successful:', response);
             if (state.selectedTipRecipient) {
                 toast.success(
                     `You successfully tipped ${state.selectedTipRecipient.name || state.selectedTipRecipient.userId} ${state.tipAmount} ETH`,
@@ -45,9 +50,9 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
     const { sendTransactionAsync: sendTransactionWagmi } = useSendTransactionWagmi();
 
     const sendETHExternal = async (recipient: string, amount: string) => {
-        const notification = toast.loading("Sending tip...");
+        const notification = toast.loading('Sending tip...');
         try {
-            if (!isAddress(recipient)) throw new Error("Invalid recipient address");
+            if (!isAddress(recipient)) throw new Error('Invalid recipient address');
             const parsedAmount = parseEther(amount);
 
             if (sendTransactionWagmi) {
@@ -55,20 +60,22 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
                     to: recipient as `0x${string}`,
                     value: parsedAmount,
                 });
-                toast.success("tip successful", { id: notification });
+                toast.success('tip successful', { id: notification });
             } else {
-                throw new Error("Transaction cannot be sent. Make sure you're connected to a wallet.");
+                throw new Error(
+                    "Transaction cannot be sent. Make sure you're connected to a wallet."
+                );
             }
         } catch (error) {
-            console.error("Error sending ETH:", error);
-            toast.error("Failed to send tip. Please try again.", { id: notification });
+            console.error('Error sending ETH:', error);
+            toast.error('Failed to send tip. Please try again.', { id: notification });
         }
     };
 
     const sendETHEmbedded = async (recipient: string, amount: string) => {
-        const notification = toast.loading("Sending tip...");
+        const notification = toast.loading('Sending tip...');
         try {
-            if (!isAddress(recipient)) throw new Error("Invalid recipient address");
+            if (!isAddress(recipient)) throw new Error('Invalid recipient address');
             const parsedAmount = parseEther(amount.toString());
 
             await sendTransactionEmbedded({
@@ -77,10 +84,10 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
                 value: parsedAmount,
                 gasLimit: 21000,
             });
-            toast.success("tip successful", { id: notification });
+            toast.success('tip successful', { id: notification });
         } catch (error) {
-            console.error("Error sending ETH:", error);
-            toast.error("Failed to send tip. Please try again.", { id: notification });
+            console.error('Error sending ETH:', error);
+            toast.error('Failed to send tip. Please try again.', { id: notification });
         }
     };
 
@@ -97,8 +104,8 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
             if (!call) return;
 
             await call.sendCustomEvent({
-                type: "tip",
-                from: connectedUser?.id || "Unknown",
+                type: 'tip',
+                from: connectedUser?.id || 'Unknown',
                 to: recipient,
                 amount: amount,
             });
@@ -109,35 +116,40 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
     const handleTip = async () => {
         if (state.selectedTipRecipient && state.tipAmount) {
             try {
-                const recipientAddress = (state.selectedTipRecipient?.custom?.fields?.walletAddress?.kind as any).stringValue || "0xaa";
+                const recipientAddress =
+                    (state.selectedTipRecipient?.custom?.fields?.walletAddress?.kind as any)
+                        .stringValue || '0xaa';
                 await sendETH(recipientAddress, state.tipAmount);
                 await sendTipEvent(state.selectedTipRecipient.userId, state.tipAmount);
                 setState(prev => ({ ...prev, showTipModal: false }));
             } catch (error) {
-                console.error("Error sending tip:", error);
-                toast.error("Failed to send tip. Please try again.");
+                console.error('Error sending tip:', error);
+                toast.error('Failed to send tip. Please try again.');
             }
         }
     };
 
-    const handleTipEvent = useCallback((event: CustomVideoEvent) => {
-        if (event.custom.type === "tip") {
-            console.log("event.custom", event.custom)
-            const { from, to, amount } = event.custom;
-            if (to === connectedUser?.id) {
-                setState(prev => ({
-                    ...prev,
-                    receivedTips: [...prev.receivedTips, { from, amount }]
-                }));
+    const handleTipEvent = useCallback(
+        (event: CustomVideoEvent) => {
+            if (event.custom.type === 'tip') {
+                console.log('event.custom', event.custom);
+                const { from, to, amount } = event.custom;
+                if (to === connectedUser?.id) {
+                    setState(prev => ({
+                        ...prev,
+                        receivedTips: [...prev.receivedTips, { from, amount }],
+                    }));
+                }
             }
-        }
-    }, [connectedUser?.id]);
+        },
+        [connectedUser?.id]
+    );
 
     const openTipModal = (participant: StreamVideoParticipant) => {
         setState(prev => ({
             ...prev,
             selectedTipRecipient: participant,
-            showTipModal: true
+            showTipModal: true,
         }));
     };
 
@@ -145,8 +157,8 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
         setState(prev => ({
             ...prev,
             showTipModal: false,
-            tipAmount: "",
-            selectedTipRecipient: null
+            tipAmount: '',
+            selectedTipRecipient: null,
         }));
     };
 
