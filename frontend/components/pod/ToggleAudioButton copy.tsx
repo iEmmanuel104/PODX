@@ -45,16 +45,19 @@ const ToggleAudioButton = () => {
             <CallControlButton
                 icon={
                     isMicrophoneMute ? (
-                        <MicOffFilled width={ICON_SIZE} height={ICON_SIZE} />
+                        <MicOffFilled className="w-5 h-5 sm:w-6 sm:h-6" />
                     ) : (
-                        <MicFilled width={ICON_SIZE} height={ICON_SIZE} />
+                        <MicFilled className="w-5 h-5 sm:w-6 sm:h-6" />
                     )
                 }
                 title={isMicrophoneMute ? 'Turn on microphone' : 'Turn off microphone'}
                 onClick={toggleMicrophone}
                 active={isMicrophoneMute}
                 alert={!hasBrowserPermission}
-                className={clsx(isMicrophoneMute && 'toggle-button-alert')}
+                className={clsx(
+                    'bg-[#2D2D2D] hover:bg-[#3D3D3D]',
+                    isMicrophoneMute && 'bg-[#1D1D1D] text-red-500'
+                )}
             />
         </ToggleButtonContainer>
     );

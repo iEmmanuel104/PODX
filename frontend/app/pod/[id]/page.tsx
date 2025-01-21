@@ -31,6 +31,7 @@ import CallControlButton from '@/components/pod/CallControlButton';
 import Mood from '@/components/icons/Mood';
 import PresentToAll from '@/components/icons/PresentToAll';
 import CallEndFilled from '@/components/icons/CallEndFilled';
+import MeetingFooter from '@/components/meeting/meetingFooter';
 
 interface MeetingProps {
     params: {
@@ -225,7 +226,6 @@ export default function MeetingInterface({ params }: MeetingProps) {
     return (
         <StreamTheme className="root-theme">
             <div className="h-screen bg-[#121212] text-white flex flex-col w-[95%] mx-auto">
-                {/* Header Title */}
                 <Header
                     userInfo={user}
                     withdrawFunds={isEmbeddedWallet}
@@ -237,13 +237,17 @@ export default function MeetingInterface({ params }: MeetingProps) {
                     toggleParticipants={toggleParticipants}
                     copyAddress={copyAddress}
                 />
-                <div className="flex-grow flex overflow-hidden relative">
-                    <div className={`flex-1 relative ${showParticipants ? 'sm:mr-56 lg:mr-64 xl:mr-80' : ''}`}>
+
+                {/* Main content area */}
+                <div className="flex-grow flex overflow-hidden relative mb-20">
+                    <div
+                        className={`flex-1 relative ${showParticipants ? 'sm:mr-56 lg:mr-64 xl:mr-80' : ''}`}
+                    >
                         {isSpeakerView && <SpeakerLayout />}
                         {!isSpeakerView && <GridLayout />}
                     </div>
 
-                    {/* Participants sidebar with animation */}
+                    {/* Participants sidebar */}
                     <div
                         className={`
                             fixed sm:absolute right-0 top-0 h-full
@@ -265,32 +269,8 @@ export default function MeetingInterface({ params }: MeetingProps) {
                     </div>
                 </div>
 
-                {/* Meeting Controls */}
-                <div className="relative flex grow shrink basis-1/4 items-center justify-center px-1.5 gap-3 ml-0">
-                    <ToggleAudioButton />
-                    <ToggleVideoButton />
-                    <CallControlButton
-                        icon={<Mood />}
-                        title={'Send a reaction'}
-                        className="hidden sm:inline-flex"
-                    />
-                    <CallControlButton
-                        onClick={toggleScreenShare}
-                        icon={<PresentToAll />}
-                        title={'Present now'}
-                    />
-                    {/* <RecordCallButton /> */}
-                    {/* <div className="hidden sm:block relative">
-                        <CallControlButton onClick={toggleRecordingsList} icon={<MoreVert />} title={"View recording list"} />
-                        <RecordingsPopup isOpen={isRecordingListOpen} onClose={() => setIsRecordingListOpen(false)} />
-                    </div> */}
-                    <CallControlButton
-                        onClick={leaveCall}
-                        icon={<CallEndFilled />}
-                        title={'Leave call'}
-                        className="leave-call-button"
-                    />
-                </div>
+                {/* New Footer Component */}
+                <MeetingFooter leaveCall={leaveCall} toggleScreenShare={toggleScreenShare} />
                 {showTipModal && selectedTipRecipient && (
                     <TipModal
                         selectedTipRecipient={selectedTipRecipient}

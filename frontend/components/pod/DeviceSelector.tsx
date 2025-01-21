@@ -32,7 +32,7 @@ export const DeviceSelector = ({
     dark = false,
 }: DeviceSelectorProps) => {
     const label =
-        devices?.find(device => device.deviceId === selectedDeviceId)?.label! || 'Default - ...';
+        devices?.find(device => device.deviceId === selectedDeviceId)?.label || 'Default Device';
 
     return (
         <Dropdown
@@ -42,9 +42,9 @@ export const DeviceSelector = ({
             onChange={value => onSelect(value)}
             options={
                 devices?.map(device => ({
-                    label: device.label,
+                    label: device.label || 'Default Device',
                     value: device.deviceId,
-                }))!
+                })) || []
             }
             disabled={disabled}
             className={className}

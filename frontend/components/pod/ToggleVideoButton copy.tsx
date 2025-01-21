@@ -31,25 +31,28 @@ const ToggleVideoButton = () => {
                     disabled={!hasBrowserPermission}
                 />
             }
-            icons={
-                <div title="Apply visual effects">
-                    <VisualEffects width={ICON_SIZE} height={ICON_SIZE} />
-                </div>
-            }
+            // icons={
+            //     <div title="Apply visual effects">
+            //         <VisualEffects className="w-5 h-5 sm:w-6 sm:h-6" />
+            //     </div>
+            // }
         >
             <CallControlButton
                 icon={
                     isCameraMute ? (
-                        <VideocamOff width={ICON_SIZE} height={ICON_SIZE} />
+                        <VideocamOff className="w-5 h-5 sm:w-6 sm:h-6" />
                     ) : (
-                        <Videocam width={ICON_SIZE} height={ICON_SIZE} />
+                        <Videocam className="w-5 h-5 sm:w-6 sm:h-6" />
                     )
                 }
                 title={isCameraMute ? 'Turn on camera' : 'Turn off camera'}
                 onClick={toggleCamera}
                 active={isCameraMute}
                 alert={!hasBrowserPermission}
-                className={clsx(isCameraMute && 'toggle-button-alert')}
+                className={clsx(
+                    'bg-[#2D2D2D] hover:bg-[#3D3D3D]',
+                    isCameraMute && 'bg-[#1D1D1D] text-red-500'
+                )}
             />
         </ToggleButtonContainer>
     );

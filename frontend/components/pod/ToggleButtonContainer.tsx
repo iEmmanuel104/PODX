@@ -1,6 +1,5 @@
 import { MutableRefObject, useState } from 'react';
 import clsx from 'clsx';
-
 import ExpandLess from '../icons/ExpandLess';
 import ExpandMore from '../icons/ExpandMore';
 import Settings from '../icons/Settings';
@@ -28,36 +27,52 @@ const ToggleButtonContainer = ({
     };
 
     return (
-        <div className="flex items-center h-10 bg-meet-dark-gray rounded-full">
-            <div
-                className={clsx(
-                    isOpen ? 'block' : 'hidden',
-                    'z-3 absolute left-0 bottom-13 h-14 w-[30.25rem] flex items-center justify-between p-2.5 bg-container-gray rounded-full shadow-[0_2px_2px_0_rgba(0,0,0,.14),0_3px_1px_-2px_rgba(0,0,0,.12),0_1px_5px_0_rgba(0,0,0,.2)]'
-                )}
-            >
-                <div className="flex self-start items-start gap-2.5">{deviceSelectors}</div>
-                <div className="flex items-center gap-0.5 [&>div]:w-9 [&>div]:h-9 [&>div]:flex [&>div]:items-center [&>div]:justify-center [&>div]:px-1 [&>div]:py-1.5 [&>div]:rounded-full [&>div]:cursor-pointer [&>div:hover]:bg-[#333]">
-                    {icons}
-                    <div title="Settings">
-                        <Settings width={20} height={20} color="white" />
+        <div className="relative flex items-center">
+            <div className="flex items-center h-10 bg-[#2D2D2D] rounded-full">
+                {children}
+                <div
+                    ref={buttonRef}
+                    onClick={toggleMenu}
+                    title="Device settings"
+                    className="hidden h-full w-6 sm:flex items-center justify-center cursor-pointer hover:bg-[#3D3D3D] rounded-r-full transition-colors"
+                >
+                    <div className="h-6 w-6 flex justify-center items-center">
+                        {isOpen ? (
+                            <ExpandMore width={18} height={18} className="text-blue-400" />
+                        ) : (
+                            <ExpandLess width={18} height={18} className="text-white" />
+                        )}
                     </div>
                 </div>
             </div>
+
+            {/* Device Selector Dropdown */}
             <div
-                ref={buttonRef}
-                onClick={toggleMenu}
-                title="Audio settings"
-                className="hidden h-full w-6.5 sm:flex items-center justify-center cursor-pointer"
+                className={clsx(
+                    'absolute left-0 bottom-full mb-2',
+                    'min-w-[300px] bg-[#2D2D2D] rounded-lg shadow-lg',
+                    'transform transition-all duration-200 ease-in-out',
+                    isOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
+                )}
             >
-                <div className="h-6 w-6 flex justify-center items-center [&>svg]:ml-[3px]">
-                    {isOpen ? (
-                        <ExpandMore width={18} height={18} color="var(--icon-blue)" />
-                    ) : (
-                        <ExpandLess width={18} height={18} />
+                <div className="p-4 space-y-4">
+                    {/* Device Selectors */}
+                    <div className="space-y-2">{deviceSelectors}</div>
+
+                    {/* Bottom Icons */}
+                    {(icons || true) && (
+                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#3D3D3D]">
+                            {icons}
+                            <div
+                                title="Settings"
+                                className="p-2 rounded-full hover:bg-[#3D3D3D] cursor-pointer transition-colors"
+                            >
+                                <Settings width={20} height={20} className="text-white" />
+                            </div>
+                        </div>
                     )}
                 </div>
             </div>
-            {children}
         </div>
     );
 };
