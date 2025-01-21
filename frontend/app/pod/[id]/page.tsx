@@ -68,6 +68,8 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const userAddress = user?.walletAddress as `0x${string}`;
     const walletClientType = useAppSelector(state => state.user.user?.walletType);
     const isEmbeddedWallet = walletClientType === 'privy';
+    const isUnkownOrIdle =
+        callingState === CallingState.UNKNOWN || callingState === CallingState.IDLE;
 
     const {
         showTipModal,
@@ -95,6 +97,20 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const isSpeakerView = useMemo(() => {
         return hasOngoingScreenShare || participants.length > 1;
     }, [hasOngoingScreenShare, participants.length]);
+
+    useEffect(() => {
+        const startup = async () => {
+            if (isUnkownOrIdle) {
+                router.push(`/pod/join/${id}`);
+            }
+            //   else if (chatClient) {
+            //       const channel = chatClient.channel('messaging', meetingId);
+            //       setChatChannel(channel);
+            //   }
+        };
+        startup();
+        //   }, [router, meetingId, isUnkownOrIdle, chatClient]);
+    }, [router, id, isUnkownOrIdle]);
 
     useEffect(() => {
         if (!call) return;
@@ -227,19 +243,19 @@ export default function MeetingInterface({ params }: MeetingProps) {
                         {isSpeakerView && <SpeakerLayout />}
                         {!isSpeakerView && <GridLayout />}
                     </div>
-
+                    ``
                     {/* Responsive sidebar */}
                     <div
                         className={`
-                    ${showSidebar ? 'translate-y-0' : 'translate-y-full sm:translate-y-0'} 
-                    transition-transform duration-300 ease-in-out
-                    fixed sm:relative inset-0 sm:inset-auto top-16 sm:top-0 
-                    h-[calc(100vh-4rem)] sm:h-full 
-                    w-full sm:w-56 lg:w-64 xl:w-80 
-                    bg-[#1E1E1E] sm:bg-transparent 
-                    z-20 sm:z-auto
-                    overflow-hidden
-                `}
+                            ${showSidebar ? 'translate-y-0' : 'translate-y-full sm:translate-y-0'} 
+                            transition-transform duration-300 ease-in-out
+                            fixed sm:relative inset-0 sm:inset-auto top-16 sm:top-0 
+                            h-[calc(100vh-4rem)] sm:h-full 
+                            w-full sm:w-56 lg:w-64 xl:w-80 
+                            bg-[#1E1E1E] sm:bg-transparent 
+                            z-20 sm:z-auto
+                            overflow-hidden
+                        `}
                     >
                         <ParticipantsSidebar
                             participants={participants}
