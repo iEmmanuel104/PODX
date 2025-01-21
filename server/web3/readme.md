@@ -1,5 +1,5 @@
 POAP.sol
-
+CA: CA: 0xf2bb496b045df0f787Ecd8A84c6890b6d2a3CFa7
 1. Core Features:
 - It creates non-transferable ERC721 tokens (NFTs)
 - Each token represents attendance or participation in a "session"
