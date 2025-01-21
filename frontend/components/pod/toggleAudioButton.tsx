@@ -7,8 +7,6 @@ import MicFilled from '../icons/MicFilled';
 import MicOffFilled from '../icons/MicOffFilled';
 import ToggleButtonContainer from './toggleButtonContainer';
 
-const ICON_SIZE = 20;
-
 const ToggleAudioButton = () => {
     const { useMicrophoneState } = useCallStateHooks();
     const {

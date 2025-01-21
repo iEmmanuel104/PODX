@@ -25,12 +25,6 @@ import Image from 'next/image';
 import { useTipping } from '@/hooks/useTipping';
 import SpeakerLayout from '@/components/pod/speakerLayout';
 import GridLayout from '@/components/pod/gridLayout';
-import ToggleAudioButton from '@/components/pod/toggleAudioButton';
-import ToggleVideoButton from '@/components/pod/toggleVideoButton';
-import CallControlButton from '@/components/pod/callControlButton';
-import Mood from '@/components/icons/Mood';
-import PresentToAll from '@/components/icons/PresentToAll';
-import CallEndFilled from '@/components/icons/CallEndFilled';
 import MeetingFooter from '@/components/meeting/meetingFooter';
 
 interface MeetingProps {
@@ -160,11 +154,6 @@ export default function MeetingInterface({ params }: MeetingProps) {
     useEffect(() => {
         handleJoinSession();
     }, [handleJoinSession]);
-
-    const handleLeave = () => {
-        router.push('/pod/end');
-        // setShowThankYouModal(true);
-    };
 
     const leaveCall = async () => {
         await call?.leave();

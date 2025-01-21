@@ -7,5 +7,10 @@
     "bracketSpacing": true,
     "jsxBracketSameLine": false,
     "arrowParens": "avoid",
-    "printWidth": 100
+    "printWidth": 100,
+    "endOfLine": "auto",
+    "bracketSameLine": false,
+    "proseWrap": "preserve",
+    "embeddedLanguageFormatting": "auto",
+    "singleAttributePerLine": false
 }
