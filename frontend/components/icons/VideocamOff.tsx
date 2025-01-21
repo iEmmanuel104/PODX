@@ -7,7 +7,6 @@ interface IconProps {
     className?: string;
 }
 
-
 const VideocamOff = ({ width = 24, height = 24, color = '#fff', className }: IconProps) => {
     return (
         <svg
