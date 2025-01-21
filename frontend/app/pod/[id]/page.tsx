@@ -61,6 +61,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
     const [showTipSuccess, setShowTipSuccess] = useState(false);
     const [showThankYouModal, setShowThankYouModal] = useState(false);
+    const [showParticipants, setShowParticipants] = useState(false);
     const [joinRequests, setJoinRequests] = useState<string[]>([]);
     const [speakRequests, setSpeakRequests] = useState<string[]>([]);
     const [showSidebar, setShowSidebar] = useState(false);
@@ -93,6 +94,10 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
     const formattedBalance = balance ? Number(balance.value) / 1e18 : 0;
     const displayBalance = formattedBalance.toFixed(4);
+
+    const toggleParticipants = () => {
+        setShowParticipants(!showParticipants);
+    };
 
     const isSpeakerView = useMemo(() => {
         return hasOngoingScreenShare || participants.length > 1;
@@ -229,32 +234,25 @@ export default function MeetingInterface({ params }: MeetingProps) {
                     userAddress={userAddress}
                     displayBalance={displayBalance}
                     balanceSymbol={balance?.symbol}
-                    toggleSidebar={toggleSidebar}
-                    handleLogout={handleLogout}
+                    toggleParticipants={toggleParticipants}
                     copyAddress={copyAddress}
                 />
                 <div className="flex-grow flex overflow-hidden relative">
-                    <div
-                        className={`
-                    flex-1 relative
-                    ${showSidebar ? 'sm:mr-56 lg:mr-64 xl:mr-80' : ''}
-                `}
-                    >
+                    <div className={`flex-1 relative ${showParticipants ? 'sm:mr-56 lg:mr-64 xl:mr-80' : ''}`}>
                         {isSpeakerView && <SpeakerLayout />}
                         {!isSpeakerView && <GridLayout />}
                     </div>
-                    ``
-                    {/* Responsive sidebar */}
+
+                    {/* Participants sidebar with animation */}
                     <div
                         className={`
-                            ${showSidebar ? 'translate-y-0' : 'translate-y-full sm:translate-y-0'} 
-                            transition-transform duration-300 ease-in-out
-                            fixed sm:relative inset-0 sm:inset-auto top-16 sm:top-0 
-                            h-[calc(100vh-4rem)] sm:h-full 
-                            w-full sm:w-56 lg:w-64 xl:w-80 
-                            bg-[#1E1E1E] sm:bg-transparent 
-                            z-20 sm:z-auto
-                            overflow-hidden
+                            fixed sm:absolute right-0 top-0 h-full
+                            w-full sm:w-56 lg:w-64 xl:w-80
+                            bg-[#1E1E1E] 
+                            transform transition-transform duration-300 ease-in-out
+                            ${showParticipants ? 'translate-x-0' : 'translate-x-full'}
+                            z-20
+                            overflow-y-auto
                         `}
                     >
                         <ParticipantsSidebar

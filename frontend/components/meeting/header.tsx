@@ -1,7 +1,7 @@
 'use client';
 
 import React, { memo, useMemo } from 'react';
-import { Menu, Copy, User, ArrowUp, LogOut, ChevronDown } from 'lucide-react';
+import { Menu, Copy, User, ArrowUp, LogOut, ChevronDown, Users } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,8 +20,7 @@ interface HeaderProps {
     displayBalance: string;
     balanceSymbol: string | undefined;
     withdrawFunds?: boolean;
-    toggleSidebar: () => void;
-    handleLogout: () => void;
+    toggleParticipants: () => void;
     copyAddress: () => void;
 }
 
@@ -46,7 +45,9 @@ const HeaderLeft = memo<{
                 priority
             />
         </div>
-        <div className="hidden sm:block">
+        <div className="hidden sm:flex items-center gap-4">
+            {' '}
+            <span className="text-gray-300">|</span>
             <p className="text-sm md:text-base truncate max-w-[150px] md:max-w-full">{title}</p>
         </div>
         <LiveIndicator isLive={live} />
@@ -62,7 +63,7 @@ const LiveIndicator = memo<{ isLive: boolean }>(({ isLive }) => (
 
 // User Avatar component
 const UserAvatar = memo<{ username: string | undefined }>(({ username }) => (
-    <div className="bg-[#6032F6] rounded-full w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center text-xs sm:text-sm font-bold">
+    <div className="bg-[#6032F6] rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">
         {username?.[0]} {username?.[1]}
     </div>
 ));
@@ -164,8 +165,7 @@ const Header = memo<HeaderProps>(
         displayBalance,
         balanceSymbol,
         withdrawFunds: isEmbeddedWallet,
-        toggleSidebar,
-        handleLogout,
+        toggleParticipants,
         copyAddress,
     }) => {
         const withdrawFunds = () => {
@@ -173,13 +173,12 @@ const Header = memo<HeaderProps>(
         };
 
         return (
-            <header className="flex flex-wrap justify-between items-center px-2 sm:px-4 py-2 bg-[#1d1d1d] rounded-full w-full mx-auto my-2 sm:my-5">
+            <header className="flex flex-wrap justify-between items-center h-12 px-2 sm:px-4 py-2 rounded-full w-full mx-auto my-2 sm:my-5">
                 <HeaderLeft title={customData.title} live={live} />
-
                 <div className="flex items-center space-x-1 sm:space-x-2">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <div className="flex items-center space-x-1 sm:space-x-2 bg-[#333333] rounded-full px-2 py-1 hover:cursor-pointer">
+                            <div className="flex items-center space-x-2 bg-[#333333] rounded-full h-8 px-2 hover:cursor-pointer">
                                 <UserAvatar username={userInfo?.username} />
                                 <ChevronDown className="w-4 h-4" />
                             </div>
@@ -196,20 +195,11 @@ const Header = memo<HeaderProps>(
 
                     <Button
                         variant="ghost"
-                        onClick={handleLogout}
-                        className="text-red-500 hover:text-red-400 hover:bg-transparent hidden sm:flex"
-                    >
-                        <LogOut className="mr-2 h-4 w-4" />
-                        <span className="text-sm">Logout</span>
-                    </Button>
-
-                    <Button
-                        variant="ghost"
                         size="icon"
-                        className="block sm:hidden text-[#A3A3A3] hover:text-white p-1"
-                        onClick={toggleSidebar}
+                        className="text-[#A3A3A3] hover:text-white h-8 w-8 p-0"
+                        onClick={toggleParticipants}
                     >
-                        <Menu className="w-5 h-5" />
+                        <Users className="w-5 h-5" />
                     </Button>
                 </div>
             </header>
