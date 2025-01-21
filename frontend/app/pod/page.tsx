@@ -1,4 +1,4 @@
-// app/pod/index.tsx
+// app/pod/page.tsx
 "use client";
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";

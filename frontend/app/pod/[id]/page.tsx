@@ -1,3 +1,4 @@
+//app/pod/[id]/page.tsx
 "use client";
 
 import "@stream-io/video-react-sdk/dist/css/styles.css";
@@ -13,9 +14,6 @@ import {
     useCallStateHooks,
     useConnectedUser,
     StreamVideoEvent,
-    PaginatedGridLayout,
-    SpeakerLayout,
-    CallControls,
     CallingState,
     CustomVideoEvent,
 } from "@stream-io/video-react-sdk";
@@ -25,7 +23,14 @@ import { useAppSelector } from "@/store/hooks";
 import EndScreen from "@/components/meeting/end-screen";
 import Image from "next/image";
 import { useTipping } from "@/hooks/useTipping";
-import ResponsiveMeetingLayout from "@/components/meeting/responsiveMeetingLayout";
+import SpeakerLayout from "@/components/pod/SpeakerLayout copy";
+import GridLayout from "@/components/pod/GridLayout copy";
+import ToggleAudioButton from "@/components/pod/ToggleAudioButton copy";
+import ToggleVideoButton from "@/components/pod/ToggleVideoButton copy";
+import CallControlButton from "@/components/pod/CallControlButton";
+import Mood from "@/components/icons/Mood";
+import PresentToAll from "@/components/icons/PresentToAll";
+import CallEndFilled from "@/components/icons/CallEndFilled";
 
 interface MeetingProps {
     params: {
@@ -37,11 +42,13 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const call = useCall();
     const { id } = params;
     const router = useRouter();
-    const { useParticipants, useIsCallLive, useCallCustomData, useHasOngoingScreenShare, useCallCallingState } = useCallStateHooks();
+    const { useParticipants, useIsCallLive, useCallCustomData, useHasOngoingScreenShare, useCallCallingState, useScreenShareState } =
+        useCallStateHooks();
 
     const participants = useParticipants();
     const customData = useCallCustomData();
     const live = useIsCallLive();
+    const { screenShare } = useScreenShareState();
     const connectedUser = useConnectedUser();
     const hasOngoingScreenShare = useHasOngoingScreenShare();
     const callingState = useCallCallingState();
@@ -122,6 +129,19 @@ export default function MeetingInterface({ params }: MeetingProps) {
         // setShowThankYouModal(true);
     };
 
+    const leaveCall = async () => {
+        await call?.leave();
+        router.push(`/pod/end`);
+    };
+
+    const toggleScreenShare = async () => {
+        try {
+            await screenShare.toggle();
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
     const confirmLeave = async () => {
         router.push("/pod");
     };
@@ -189,7 +209,8 @@ export default function MeetingInterface({ params }: MeetingProps) {
                     ${showSidebar ? "sm:mr-56 lg:mr-64 xl:mr-80" : ""}
                 `}
                     >
-                        <ResponsiveMeetingLayout hasOngoingScreenShare={hasOngoingScreenShare} participants={participants} isSpeaker={isSpeakerView} />
+                        {isSpeakerView && <SpeakerLayout />}
+                        {!isSpeakerView && <GridLayout />}
                     </div>
 
                     {/* Responsive sidebar */}
@@ -215,9 +236,19 @@ export default function MeetingInterface({ params }: MeetingProps) {
                     </div>
                 </div>
 
-                <footer className="bg-[#1E1E1E] p-2 sm:p-4 flex justify-center items-center gap-2 sm:gap-4 h-16 sm:h-20">
-                    <CallControls onLeave={handleLeave} />
-                </footer>
+                {/* Meeting Controls */}
+                <div className="relative flex grow shrink basis-1/4 items-center justify-center px-1.5 gap-3 ml-0">
+                    <ToggleAudioButton />
+                    <ToggleVideoButton />
+                    <CallControlButton icon={<Mood />} title={"Send a reaction"} className="hidden sm:inline-flex" />
+                    <CallControlButton onClick={toggleScreenShare} icon={<PresentToAll />} title={"Present now"} />
+                    {/* <RecordCallButton /> */}
+                    {/* <div className="hidden sm:block relative">
+                        <CallControlButton onClick={toggleRecordingsList} icon={<MoreVert />} title={"View recording list"} />
+                        <RecordingsPopup isOpen={isRecordingListOpen} onClose={() => setIsRecordingListOpen(false)} />
+                    </div> */}
+                    <CallControlButton onClick={leaveCall} icon={<CallEndFilled />} title={"Leave call"} className="leave-call-button" />
+                </div>
                 {showTipModal && selectedTipRecipient && (
                     <TipModal
                         selectedTipRecipient={selectedTipRecipient}
