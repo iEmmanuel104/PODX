@@ -82,13 +82,13 @@ const ParticipantViewUI = () => {
     };
 
     // Special handling for local screen share
-  if (isLocalParticipant && isScreenSharing && trackType === 'screenShareTrack')
-    return (
-      <>
-        <DefaultScreenShareOverlay />
-        <ParticipantDetails />
-      </>
-    );
+    if (isLocalParticipant && isScreenSharing && trackType === 'screenShareTrack')
+        return (
+            <>
+                <DefaultScreenShareOverlay />
+                <ParticipantDetails />
+            </>
+        );
 
     // Enhanced screen share view for other participants
     if (isScreenSharing && trackType === 'screenShareTrack') {
