@@ -19,6 +19,7 @@ import { sessionType } from '@/constants';
 import SimpleTimePicker from './simpleTimePicker';
 import DotPattern from '../ui/dot-pattern';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
 interface CreateSessionModalProps {
     isOpen: boolean;
@@ -132,7 +133,12 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="text-white rounded-[20px] p-[32px] w-full max-w-[500px] flex flex-col gap-[8px] bg-[#1d1d1d] overflow-hidden">
+            <DialogContent className="bg-[#1d1d1d] text-white rounded-2xl p-8 w-full max-w-lg overflow-hidden border border-white/[0.1]">
+                {/* Background gradient - moved behind content */}
+                <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/[0.1] via-transparent to-transparent" />
+                </div>
+
                 <DotPattern
                     width={20}
                     height={20}
@@ -275,6 +281,32 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                             </div>
                         </div>
                     )}
+
+                    <div className="flex items-center justify-between p-4">
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm text-white/70">Token Gating</span>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger>
+                                        <div className="w-4 h-4 rounded-full border border-white/20 flex items-center justify-center text-xs text-white/50 cursor-help">
+                                            ?
+                                        </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Control access using token ownership</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </div>
+
+                        <Switch
+                            className="relative bg-transparent border-2 border-transparent py-2.5 
+                   data-[state=checked]:bg-transparent data-[state=unchecked]:bg-transparent
+                   before:absolute before:inset-0 before:rounded-full
+                   before:bg-gradient-to-r before:from-blue-500 before:to-purple-500
+                   before:-z-10"
+                        />
+                    </div>
 
                     {/* Action Buttons */}
                     <div className="flex justify-between gap-6 pt-3">

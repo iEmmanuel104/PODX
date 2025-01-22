@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useCallback, memo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Settings, LogOut, Clock, Edit2, Check, X } from 'lucide-react';
+import { Settings, LogOut, Clock, Edit2, Check, X, Edit3, ArrowUpRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -17,6 +17,7 @@ import { UserDetailsProps, UserState } from './userDetailsProps';
 import { useAppDispatch } from '@/store/hooks';
 import { updateUser } from '@/store/slices/userSlice';
 import Logo from '@/public/images/icons/Logo';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 // Dynamic import for wallet operations
 const WalletOperations = dynamic(() => import('./walletOperations'), {
@@ -93,53 +94,80 @@ const UserDetails = memo<UserDetailsProps>(({ user }) => {
     }, []);
 
     return (
-        <div className="w-full flex items-center justify-between p-4 text-white">
+        <div className="w-full flex items-center justify-between p-4 text-white mb-24">
             {/* User profile */}
-            <div className="group flex justify-between items-center gap-[4px] bg-[#1d1d1d] rounded-full px-[10px] py-[4px] border border-[#232323]">
-                <div className="w-6 h-6 bg-[#6032F6] rounded-full flex items-center justify-center text-sm font-bold">
-                    {userInfo.initials}
+            {isEditing ? (
+                <div className="flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900 px-3 py-1.5">
+                    <Avatar className="h-6 w-6">
+                        <AvatarImage src={userInfo.initials} alt={userInfo.initials} />
+                        <AvatarFallback>{userInfo.initials}</AvatarFallback>
+                    </Avatar>
+                    <div className="h-1 w-1 rounded-full bg-green-500" />
+                    <Input
+                        value={editedUsername}
+                        onChange={e => setEditedUsername(e.target.value)}
+                        className="h-8 w-40 bg-zinc-800 border-none text-white"
+                        autoFocus
+                    />
+                    <Button
+                        onClick={handleSaveUsername}
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 hover:bg-zinc-800"
+                    >
+                        <Check className="h-4 w-4 text-green-500" />
+                    </Button>
+                    <Button
+                        onClick={handleCancelEdit}
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 hover:bg-zinc-800"
+                    >
+                        <X className="h-4 w-4 text-red-500" />
+                    </Button>
                 </div>
-                <span className="h-[4px] w-[4px] rounded-full bg-[#69CB58]"></span>
-                {isEditing ? (
-                    <div className="flex items-center space-x-2">
-                        <Input
-                            value={editedUsername}
-                            onChange={e => setEditedUsername(e.target.value)}
-                            className="h-8 w-40 bg-[#444444] border-none text-white font-medium"
-                            autoFocus
-                        />
-                        <Button
-                            onClick={handleSaveUsername}
-                            className="p-1 hover:bg-[#444444] rounded-full"
+            ) : (
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <button className="group flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900 px-3 py-1.5 transition-colors hover:bg-zinc-800">
+                            <Avatar className="h-6 w-6">
+                                <AvatarImage src={userInfo.initials} alt={userInfo.initials} />
+                                <AvatarFallback>{userInfo.initials}</AvatarFallback>
+                            </Avatar>
+                            <div className="h-1 w-1 rounded-full bg-green-500" />
+                            <span className="text-sm text-zinc-100">{editedUsername}</span>
+                        </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                        align="end"
+                        className="min-w-[144px] bg-zinc-900 p-2 border-none"
+                    >
+                        <DropdownMenuItem
+                            className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-zinc-100"
+                            onSelect={e => {
+                                e.preventDefault();
+                                handleEditClick();
+                            }}
                         >
-                            <Check className="h-4 w-4 text-green-500" />
-                        </Button>
-                        <Button
-                            onClick={handleCancelEdit}
-                            className="p-1 hover:bg-[#444444] rounded-full"
-                        >
-                            <X className="h-4 w-4 text-red-500" />
-                        </Button>
-                    </div>
-                ) : (
-                    <div className="flex items-center space-x-2">
-                        <span className="font-medium">{userInfo.displayName}</span>
-
-                        <Button
-                            onClick={handleEditClick}
-                            className="p-1 hover:bg-[#444444] rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                            <Edit2 className="h-4 w-4 text-[#A3A3A3]" />
-                        </Button>
-                    </div>
-                )}
-            </div>
-            <div className="w-[180px] h-[44px]">
+                            <Edit3 className="h-4 w-4" />
+                            <span>Edit name</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="flex cursor-pointer items-center justify-between rounded-md px-3 py-2">
+                            <span className="bg-gradient-to-br from-[#552FC9] to-[#D7B35D] bg-clip-text text-transparent">
+                                Buy basename
+                            </span>
+                            <ArrowUpRight className="h-4 w-4 text-zinc-400" />
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            )}
+            <div className="w-[180px] h-[43px]">
                 <Logo />
             </div>
             {/* Settings dropdown */}
             <DropdownMenu
                 open={state.isOpen}
+                dir="ltr"
                 onOpenChange={open => setState(prev => ({ ...prev, isOpen: open }))}
             >
                 <DropdownMenuTrigger asChild>
@@ -154,7 +182,7 @@ const UserDetails = memo<UserDetailsProps>(({ user }) => {
                 <DropdownMenuContent
                     className="w-56 bg-[#1E1E1E] border-[#2E2E2E] text-white rounded-[10px] shadow-lg"
                     align="end"
-                    side="top"
+                    side="bottom"
                     sideOffset={5}
                 >
                     {userInfo.isPrivyWallet && (

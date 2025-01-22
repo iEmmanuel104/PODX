@@ -25,6 +25,7 @@
         "@radix-ui/react-switch": "^1.1.1",
         "@radix-ui/react-tabs": "^1.1.2",
         "@radix-ui/react-toast": "^1.2.2",
+        "@radix-ui/react-tooltip": "^1.1.6",
         "@reduxjs/toolkit": "^2.2.7",
         "@stream-io/video-react-sdk": "^1.6.5",
         "@superdevfavour/basename": "^1.0.6",
