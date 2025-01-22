@@ -1,6 +1,6 @@
 'use client';
 
-import React, { memo, useMemo } from 'react';
+import React, { memo } from 'react';
 import { Menu, Copy, User, ArrowUp, LogOut, ChevronDown, Users } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -68,7 +68,6 @@ const UserAvatar = memo<{ username: string | undefined }>(({ username }) => (
     </div>
 ));
 
-// Network Status component
 const NetworkStatus = memo<{
     address: string;
     onCopy: () => void;
@@ -144,6 +143,7 @@ const UserDropdownContent = memo<{
         </div>
         <DropdownMenuItem asChild>
             <Button
+                variant="default"
                 disabled={!isEmbeddedWallet}
                 onClick={onWithdraw}
                 className="flex items-center bg-[#6032F6] hover:bg-[#4006fc] hover:cursor-pointer rounded-full px-5 py-2 w-full"
@@ -196,8 +196,8 @@ const Header = memo<HeaderProps>(
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="text-[#A3A3A3] hover:text-white h-8 w-8 p-0"
                         onClick={toggleParticipants}
+                        className="text-[#A3A3A3] hover:text-white"
                     >
                         <Users className="w-5 h-5" />
                     </Button>

@@ -16,6 +16,8 @@ import {
     StreamVideoEvent,
     CallingState,
     CustomVideoEvent,
+    hasScreenShare,
+    isPinned,
 } from '@stream-io/video-react-sdk';
 import { useRouter } from 'next/navigation';
 import { useBalance } from 'wagmi';
@@ -41,7 +43,6 @@ export default function MeetingInterface({ params }: MeetingProps) {
         useParticipants,
         useIsCallLive,
         useCallCustomData,
-        useHasOngoingScreenShare,
         useCallCallingState,
         useScreenShareState,
     } = useCallStateHooks();
@@ -51,7 +52,6 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const live = useIsCallLive();
     const { screenShare } = useScreenShareState() || {};
     const connectedUser = useConnectedUser();
-    const hasOngoingScreenShare = useHasOngoingScreenShare();
     const callingState = useCallCallingState();
 
     const [showTipSuccess, setShowTipSuccess] = useState(false);
@@ -62,6 +62,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const [showSidebar, setShowSidebar] = useState(false);
     const { user } = useAppSelector(state => state.user);
     const userAddress = user?.walletAddress as `0x${string}`;
+    const [participantInSpotlight, _] = participants;
     const walletClientType = useAppSelector(state => state.user.user?.walletType);
     const isEmbeddedWallet = walletClientType === 'privy';
     const isUnkownOrIdle =
@@ -94,9 +95,12 @@ export default function MeetingInterface({ params }: MeetingProps) {
         setShowParticipants(!showParticipants);
     };
 
-    const isSpeakerView = useMemo(() => {
-        return hasOngoingScreenShare || participants.length > 1;
-    }, [hasOngoingScreenShare, participants.length]);
+    const isSpeakerLayout = useMemo(() => {
+        if (participantInSpotlight) {
+            return hasScreenShare(participantInSpotlight) || isPinned(participantInSpotlight);
+        }
+        return false;
+    }, [participantInSpotlight]);
 
     useEffect(() => {
         if (!call) return;
@@ -236,8 +240,8 @@ export default function MeetingInterface({ params }: MeetingProps) {
                     <div
                         className={`flex-1 relative ${showParticipants ? 'sm:mr-56 lg:mr-64 xl:mr-80' : ''}`}
                     >
-                        {isSpeakerView && <SpeakerLayout />}
-                        {!isSpeakerView && <GridLayout />}
+                        {isSpeakerLayout && <SpeakerLayout />}
+                        {!isSpeakerLayout && <GridLayout />}
                     </div>
 
                     {/* Participants sidebar */}
@@ -263,7 +267,11 @@ export default function MeetingInterface({ params }: MeetingProps) {
                 </div>
 
                 {/* New Footer Component */}
-                <MeetingFooter leaveCall={leaveCall} toggleScreenShare={toggleScreenShare} />
+                <MeetingFooter
+                    leaveCall={leaveCall}
+                    toggleScreenShare={toggleScreenShare}
+                    customData={customData}
+                />
                 {showTipModal && selectedTipRecipient && (
                     <TipModal
                         selectedTipRecipient={selectedTipRecipient}

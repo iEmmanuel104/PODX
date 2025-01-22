@@ -11,9 +11,12 @@ import ReactionButton from '@/components/pod/reactionButton';
 interface MeetingFooterProps {
     leaveCall: () => void;
     toggleScreenShare: () => void;
+    customData: Record<string, any>;
 }
 
-const MeetingFooter = memo<MeetingFooterProps>(({ leaveCall, toggleScreenShare }) => {
+const MeetingFooter = memo<MeetingFooterProps>(({ leaveCall, toggleScreenShare, customData }) => {
+    const isAudioSession = customData?.type === 'Audio Session';
+
     return (
         <div className="fixed bottom-0 left-0 right-0 bg-[#121212]/80 backdrop-blur-sm">
             <div className="max-w-screen-xl mx-auto px-4 py-4">
@@ -21,8 +24,8 @@ const MeetingFooter = memo<MeetingFooterProps>(({ leaveCall, toggleScreenShare }
                     {/* Audio Control */}
                     <ToggleAudioButton />
 
-                    {/* Video Control */}
-                    <ToggleVideoButton />
+                    {/* Video Control - Only show if not an audio session */}
+                    {!isAudioSession && <ToggleVideoButton />}
 
                     {/* Replace Mood button with ReactionButton */}
                     <div className="hidden sm:block">

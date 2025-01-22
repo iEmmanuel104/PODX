@@ -1,51 +1,51 @@
-import { forwardRef, useMemo } from 'react';
+import { forwardRef } from 'react';
 import Image from 'next/image';
 import { useParticipantViewContext, type VideoPlaceholderProps } from '@stream-io/video-react-sdk';
-import clsx from 'clsx';
-
-import useUserColor from '../../hooks/useUserColor';
 
 export const placeholderClassName = 'participant-view-placeholder';
-const WIDTH = 160;
+
+const PLACEHOLDER_COLORS = [
+    'linear-gradient(135deg, #6366F1 0%, #7C3AED 100%)', // Modern Indigo
+    'linear-gradient(135deg, #2563EB 0%, #3B82F6 100%)', // Tech Blue
+    'linear-gradient(135deg, #059669 0%, #10B981 100%)', // AI Green
+    'linear-gradient(135deg, #7C3AED 0%, #8B5CF6 100%)', // Neural Purple
+    'linear-gradient(135deg, #0EA5E9 0%, #38BDF8 100%)', // Quantum Blue
+    'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)', // Deep Neural
+];
 
 const VideoPlaceholder = forwardRef<HTMLDivElement, VideoPlaceholderProps>(
     function VideoPlaceholder({ style }, ref) {
-        const color = useUserColor();
         const { participant } = useParticipantViewContext();
         const name = participant.name || participant.userId;
 
-        const randomColor = useMemo(() => {
-            return color(name);
-        }, [color, name]);
+        // Generate consistent color based on participant ID
+        const colorIndex =
+            participant.sessionId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) %
+            PLACEHOLDER_COLORS.length;
+        const backgroundColor = PLACEHOLDER_COLORS[colorIndex];
 
         return (
             <div
                 ref={ref}
                 style={style}
-                className={`absolute w-full h-full rounded-[inherit] bg-dark-gray flex items-center justify-center ${placeholderClassName}`}
+                className={`absolute inset-0 bg-[#1E1E1E] flex items-center justify-center ${placeholderClassName}`}
             >
-                {participant.image && (
+                {participant.image ? (
                     <Image
-                        className="max-w-3/10 rounded-full overflow-hidden"
-                        src={participant.image}
-                        alt={participant.userId}
-                        width={WIDTH}
-                        height={WIDTH}
+                        className="w-24 h-24 rounded-full"
+                        src={participant.image || '/placeholder.svg'}
+                        alt={name}
+                        width={96}
+                        height={96}
                     />
+                ) : (
+                    <div
+                        style={{ background: backgroundColor }}
+                        className="w-24 h-24 rounded-full flex items-center justify-center backdrop-blur-sm shadow-lg"
+                    >
+                        <span className="text-2xl font-medium text-white uppercase">{name[0]}</span>
+                    </div>
                 )}
-                <div
-                    style={{
-                        backgroundColor: randomColor,
-                    }}
-                    className={clsx(
-                        participant.image && 'hidden',
-                        'relative avatar w-3/10 max-w-40 aspect-square uppercase rounded-full text-white font-sans-serif font-medium flex items-center justify-center'
-                    )}
-                >
-                    <span className="text-[clamp(30px,_calc(100vw_*_0.05),_65px)] select-none">
-                        {name[0]}
-                    </span>
-                </div>
             </div>
         );
     }

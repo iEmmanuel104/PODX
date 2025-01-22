@@ -1,4 +1,4 @@
-import { ComponentProps, ForwardedRef, forwardRef, ReactNode, useState } from 'react';
+import { ComponentProps, ForwardedRef, forwardRef, ReactNode, useState, useEffect } from 'react';
 import {
     DefaultParticipantViewUIProps,
     DefaultScreenShareOverlay,
@@ -20,25 +20,55 @@ import KeepFilled from '../icons/KeepFilled';
 import KeepOffFilled from '../icons/KeepOffFilled';
 import KeepPublicFilled from '../icons/KeepPublicFilled';
 import MicOffFilled from '../icons/MicOffFilled';
-import SpeechIndicator from './speechIndicator';
-import VisualEffects from '../icons/VisualEffects';
 import MoreVert from '../icons/MoreVert';
+import SpeechIndicator from './speechIndicator';
 
 export const speechRingClassName = 'speech-ring';
 export const menuOverlayClassName = 'menu-overlay';
 
 const ParticipantViewUI = () => {
     const call = useCall();
-    const { useHasPermissions } = useCallStateHooks();
+    const { useHasPermissions, useScreenShareState } = useCallStateHooks();
     const { participant, trackType } = useParticipantViewContext();
     const [showMenu, setShowMenu] = useState(false);
+    const { status: screenShareStatus } = useScreenShareState();
 
-    const { pin, sessionId, isLocalParticipant, isSpeaking, isDominantSpeaker, userId } =
-        participant;
+    const {
+        pin,
+        sessionId,
+        isLocalParticipant,
+        isSpeaking,
+        isDominantSpeaker,
+        userId,
+        screenShareStream,
+        screenShareAudioStream,
+    } = participant;
+
     const isScreenSharing = hasScreenShare(participant);
     const hasAudioTrack = hasAudio(participant);
     const canUnpinForEveryone = useHasPermissions(OwnCapability.PIN_FOR_EVERYONE);
     const pinned = isPinned(participant);
+
+    // Automatically pin screen sharing participant
+    useEffect(() => {
+        if (isScreenSharing && !pinned) {
+            call?.pin(sessionId);
+        }
+    }, [isScreenSharing, pinned, sessionId, call]);
+
+    // Handle screen share audio
+    useEffect(() => {
+        if (screenShareAudioStream && isScreenSharing) {
+            const audioElement = new Audio();
+            audioElement.srcObject = screenShareAudioStream;
+            audioElement.play().catch(console.error);
+
+            return () => {
+                audioElement.pause();
+                audioElement.srcObject = null;
+            };
+        }
+    }, [screenShareAudioStream, isScreenSharing]);
 
     const unpin = () => {
         if (pin?.isLocalPin || !canUnpinForEveryone) {
@@ -51,13 +81,37 @@ const ParticipantViewUI = () => {
         }
     };
 
-    if (isLocalParticipant && isScreenSharing && trackType === 'screenShareTrack')
+    // Special handling for local screen share
+    if (isLocalParticipant && isScreenSharing && trackType === 'screenShareTrack') {
         return (
-            <>
+            <div className="relative w-full h-full">
                 <DefaultScreenShareOverlay />
+                <div className="absolute top-2 left-2 bg-black bg-opacity-50 text-white px-3 py-1 rounded-lg">
+                    You are sharing your screen
+                </div>
                 <ParticipantDetails />
-            </>
+            </div>
         );
+    }
+
+    // Enhanced screen share view for other participants
+    if (isScreenSharing && trackType === 'screenShareTrack') {
+        return (
+            <div className="relative w-full h-full">
+                {participant.reaction && (
+                    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10">
+                        <div className="text-4xl animate-bounce">
+                            {participant.reaction.emoji_code}
+                        </div>
+                    </div>
+                )}
+                <ParticipantDetails />
+                <div className="absolute top-2 left-2 bg-black bg-opacity-50 text-white px-3 py-1 rounded-lg">
+                    Screen share from {participant.name || participant.userId}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <>
@@ -89,9 +143,7 @@ const ParticipantViewUI = () => {
             />
             {/* Menu Overlay */}
             <div
-                onMouseOver={() => {
-                    setShowMenu(true);
-                }}
+                onMouseOver={() => setShowMenu(true)}
                 onMouseOut={() => setShowMenu(false)}
                 className={`absolute z-1 left-0 top-0 w-full h-full rounded-xl bg-transparent ${menuOverlayClassName}`}
             />
@@ -115,7 +167,6 @@ const ParticipantViewUI = () => {
                     )}
                     {pinned && <Button title="Unpin" onClick={unpin} icon={<KeepOffFilled />} />}
                 </div>
-                <Button title="Apply visual effects" icon={<VisualEffects />} />
                 <div className="[&_ul>*:nth-child(-n+3)]:hidden">
                     <MenuToggle
                         strategy="fixed"
