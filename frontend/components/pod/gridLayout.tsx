@@ -69,16 +69,16 @@ const GridLayout = () => {
 
     const getParticipantClass = (participant: StreamVideoParticipant, totalCount: number) => {
         const baseClasses =
-            'relative rounded-xl overflow-hidden transition-all duration-300 ease-in-out';
+            'relative rounded-xl overflow-hidden transition-all duration-300 ease-in-out flex items-center justify-center';
 
         if (totalCount === 1) {
-            return clsx(baseClasses, 'w-full h-full col-span-2 row-span-2');
+            return clsx(baseClasses, 'w-full h-full max-w-4xl mx-auto');
         }
 
         if (totalCount === 2) {
             return clsx(
                 baseClasses,
-                'w-full h-[70vh]',
+                'w-full h-[70vh] md:h-[80vh]',
                 'my-auto',
                 isPinned(participant) && 'hover:scale-[1.02]'
             );
@@ -91,18 +91,20 @@ const GridLayout = () => {
     if (hasOngoingScreenShare && screenSharingParticipant) {
         return (
             <div ref={ref} className="w-full h-full relative overflow-hidden">
-                <div className="h-full p-2 grid grid-rows-[1fr,auto] gap-2">
-                    <div className="w-full h-full rounded-xl overflow-hidden">
-                        <ParticipantView
-                            participant={screenSharingParticipant}
-                            trackType="screenShareTrack"
-                            ParticipantViewUI={ParticipantViewUI}
-                            VideoPlaceholder={VideoPlaceholder}
-                        />
+                <div className="h-full p-2 md:p-4 grid grid-rows-[1fr,auto] gap-2 md:gap-4">
+                    <div className="w-full h-full flex items-center justify-center">
+                        <div className="w-full h-full max-w-7xl mx-auto rounded-xl overflow-hidden">
+                            <ParticipantView
+                                participant={screenSharingParticipant}
+                                trackType="screenShareTrack"
+                                ParticipantViewUI={ParticipantViewUI}
+                                VideoPlaceholder={VideoPlaceholder}
+                            />
+                        </div>
                     </div>
 
-                    <div className="h-32">
-                        <div className="flex gap-2 h-full overflow-x-auto">
+                    <div className="h-32 md:h-36">
+                        <div className="flex gap-2 h-full overflow-x-auto justify-center">
                             {participants
                                 .filter(p => !hasScreenShare(p))
                                 .map(participant => (
@@ -131,11 +133,7 @@ const GridLayout = () => {
 
     // Regular grid layout render
     return (
-        <div
-            ref={ref}
-            className="w-full h-full relative overflow-hidden str-video__paginated-grid-layout"
-        >
-            {/* Navigation buttons */}
+        <div ref={ref} className="w-full h-full relative overflow-hidden">
             {pageCount > 1 && (
                 <IconButton
                     icon="caret-left"
@@ -146,16 +144,9 @@ const GridLayout = () => {
             )}
             <div
                 className={clsx(
-                    'grid w-full h-full gap-4 p-2',
+                    'grid w-full h-full gap-2 md:gap-4 p-2 md:p-4',
                     getGridLayout(selectedGroup?.length || 0),
-                    {
-                        'str-video__paginated-grid-layout--one': selectedGroup?.length === 1,
-                        'str-video__paginated-grid-layout--two-four':
-                            selectedGroup?.length >= 2 && selectedGroup?.length <= 4,
-                        'str-video__paginated-grid-layout--five-nine':
-                            selectedGroup?.length >= 5 && selectedGroup?.length <= 9,
-                    },
-                    selectedGroup?.length === 2 && 'place-items-center items-center'
+                    'max-w-7xl mx-auto'
                 )}
             >
                 {call && selectedGroup?.length > 0 && (

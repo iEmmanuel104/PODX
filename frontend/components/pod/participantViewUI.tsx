@@ -82,17 +82,13 @@ const ParticipantViewUI = () => {
     };
 
     // Special handling for local screen share
-    if (isLocalParticipant && isScreenSharing && trackType === 'screenShareTrack') {
-        return (
-            <div className="relative w-full h-full">
-                <DefaultScreenShareOverlay />
-                <div className="absolute top-2 left-2 bg-black bg-opacity-50 text-white px-3 py-1 rounded-lg">
-                    You are sharing your screen
-                </div>
-                <ParticipantDetails />
-            </div>
-        );
-    }
+  if (isLocalParticipant && isScreenSharing && trackType === 'screenShareTrack')
+    return (
+      <>
+        <DefaultScreenShareOverlay />
+        <ParticipantDetails />
+      </>
+    );
 
     // Enhanced screen share view for other participants
     if (isScreenSharing && trackType === 'screenShareTrack') {
@@ -106,9 +102,6 @@ const ParticipantViewUI = () => {
                     </div>
                 )}
                 <ParticipantDetails />
-                <div className="absolute top-2 left-2 bg-black bg-opacity-50 text-white px-3 py-1 rounded-lg">
-                    Screen share from {participant.name || participant.userId}
-                </div>
             </div>
         );
     }
