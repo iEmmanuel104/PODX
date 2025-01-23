@@ -1,25 +1,22 @@
-'use client';
-import React, { useState, useCallback } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { Mic, Video, CalendarIcon, Clock } from 'lucide-react';
-import { format, addDays, isBefore, startOfDay } from 'date-fns';
-import { sessionType } from '@/constants';
-import SimpleTimePicker from './simpleTimePicker';
-import DotPattern from '../ui/dot-pattern';
-import { cn } from '@/lib/utils';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+"use client";
+import React, { useState, useCallback } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Mic, Video, CalendarIcon, Clock, Sparkles } from "lucide-react";
+import { format, addDays, isBefore, startOfDay } from "date-fns";
+import { sessionType } from "@/constants";
+import SimpleTimePicker from "./simpleTimePicker";
+import DotPattern from "../ui/dot-pattern";
+import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
+import Retry from "@/public/images/icons/Retry";
+import Twinkle from "@/public/images/icons/Twinkle";
+import { MultiSelect } from "../ui/multi-select";
 
 interface CreateSessionModalProps {
     isOpen: boolean;
@@ -289,11 +286,29 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                                 <Tooltip>
                                     <TooltipTrigger>
                                         <div className="w-4 h-4 rounded-full border border-white/20 flex items-center justify-center text-xs text-white/50 cursor-help">
-                                            ?
+                                            !
                                         </div>
                                     </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>Control access using token ownership</p>
+                                    <TooltipContent className="bg-[#2B2B2B] rounded-xl border-none min-w-[329px]">
+                                        <div className="flex items-center justify-between p-2">
+                                            <div className="flex items-center gap-2">
+                                                <Twinkle />
+                                                <span className="text-sm bg-gradient-to-br from-[#6032F6] to-[#DDB958] text-transparent bg-clip-text">
+                                                    AI Assisted
+                                                </span>
+                                            </div>
+                                            <button type="button" className="text-sm flex items-center gap-2 hover:cursor-pointer bg-[#444343] px-2 py-1 rounded-full">
+                                                <Retry />
+                                                Reexplain
+                                            </button>
+                                        </div>
+                                        <div className="p-4">
+                                            <p className="text-base font-medium text-white mb-2">What is Token Gating</p>
+                                            <p className="text-sm text-white/70 max-w-sm">
+                                                PodX uses Proof of Attendance NFTs to restrict access. Attendees earn these onchain NFTs, which can
+                                                grant entry to future exclusive events
+                                            </p>
+                                        </div>
                                     </TooltipContent>
                                 </Tooltip>
                             </TooltipProvider>
@@ -307,6 +322,8 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                    before:-z-10"
                         />
                     </div>
+
+                    <MultiSelect />
 
                     {/* Action Buttons */}
                     <div className="flex justify-between gap-6 pt-3">
