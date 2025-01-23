@@ -4,12 +4,9 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
     useScheduleCallMutation,
     useGetUserScheduledCallsQuery,
-    scheduledCallsApiSlice
+    scheduledCallsApiSlice,
 } from '@/store/api/scheduledCallsApi';
-import {
-    setScheduledSessions,
-    clearScheduledSessions
-} from '@/store/slices/scheduledSessionSlice';
+import { setScheduledSessions, clearScheduledSessions } from '@/store/slices/scheduledSessionSlice';
 import type { StreamCallData } from '@/components/pod/streamCallData';
 import type { ApiResponse } from '@/store/api/api';
 import type { ScheduleCallArgs, GetScheduledCallResponse } from '@/store/api/scheduledCallsApi';
@@ -23,7 +20,7 @@ interface UseScheduledCallsReturn {
 
 export const useScheduledCalls = (): UseScheduledCallsReturn => {
     const dispatch = useAppDispatch();
-    const scheduledSessions = useAppSelector((state) => state.scheduledSessions.sessions);
+    const scheduledSessions = useAppSelector(state => state.scheduledSessions.sessions);
 
     // RTK Query hooks
     const [scheduleCallMutation, { isLoading: isScheduling }] = useScheduleCallMutation();
@@ -44,7 +41,9 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
     }, [dispatch]);
 
     // Get a single scheduled call using RTK Query
-    const getScheduledCall = async (sessionId: string): Promise<ApiResponse<GetScheduledCallResponse | null>> => {
+    const getScheduledCall = async (
+        sessionId: string
+    ): Promise<ApiResponse<GetScheduledCallResponse | null>> => {
         try {
             const result = await dispatch(
                 scheduledCallsApiSlice.endpoints.getScheduledCall.initiate(sessionId)
@@ -53,7 +52,7 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
             if ('error' in result) {
                 throw new Error('Failed to fetch scheduled call');
             }
-            
+
             return result.data as ApiResponse<GetScheduledCallResponse | null>;
         } catch (error) {
             console.error('Failed to get scheduled call:', error);

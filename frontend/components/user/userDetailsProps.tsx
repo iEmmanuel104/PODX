@@ -1,4 +1,4 @@
-"use client";
+'use client';
 // Types
 export interface User {
     username?: string;

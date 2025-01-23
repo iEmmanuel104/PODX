@@ -1,6 +1,5 @@
 'use client';
-import { CallResponse, UserResponse } from "@stream-io/video-react-sdk";
-
+import { CallResponse, UserResponse } from '@stream-io/video-react-sdk';
 
 export interface StreamCallData extends CallResponse {
     custom: {

@@ -1,28 +1,44 @@
-import React, { useEffect, useCallback, useState } from "react";
-import { VideoPreview, useCallStateHooks, useConnectedUser, createSoundDetector } from "@stream-io/video-react-sdk";
-import { useAppSelector, useAppDispatch } from "@/store/hooks";
-import { setAudioEnabled, setVideoEnabled, setSoundDetected } from "@/store/slices/mediaSlice";
-import { setToast } from "@/store/slices/toastSlice";
-import SpeechIndicator from "./speechIndicator";
-import { Mic, MicOff, Video, VideoOff, MoreVertical, Sparkles, Volume2 } from "lucide-react";
-import { AudioInputDeviceSelector, AudioOutputDeviceSelector, VideoInputDeviceSelector } from "./deviceSelector";
-import DeviceSelectorPopover from "@/components/join/deviceSelectorPopover";
-import { Button } from "@/components/ui/button";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import React, { useEffect, useCallback, useState } from 'react';
+import {
+    VideoPreview,
+    useCallStateHooks,
+    useConnectedUser,
+    createSoundDetector,
+} from '@stream-io/video-react-sdk';
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { setAudioEnabled, setVideoEnabled, setSoundDetected } from '@/store/slices/mediaSlice';
+import { setToast } from '@/store/slices/toastSlice';
+import SpeechIndicator from './speechIndicator';
+import { Mic, MicOff, Video, VideoOff, MoreVertical, Sparkles, Volume2 } from 'lucide-react';
+import {
+    AudioInputDeviceSelector,
+    AudioOutputDeviceSelector,
+    VideoInputDeviceSelector,
+} from './deviceSelector';
+import DeviceSelectorPopover from '@/components/join/deviceSelectorPopover';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 const MeetingPreview: React.FC = () => {
     const user = useConnectedUser();
     const dispatch = useAppDispatch();
-    const { isAudioEnabled, isVideoEnabled, isSoundDetected } = useAppSelector((state) => state.media);
-    const { streamCallType } = useAppSelector((state) => state.pod);
-    const isAudioSession = streamCallType === "audio_room";
-    const toast = useAppSelector((state) => state.toast);
-    const [videoPreviewText, setVideoPreviewText] = useState("");
+    const { isAudioEnabled, isVideoEnabled, isSoundDetected } = useAppSelector(
+        state => state.media
+    );
+    const { streamCallType } = useAppSelector(state => state.pod);
+    const isAudioSession = streamCallType === 'audio_room';
+    const toast = useAppSelector(state => state.toast);
+    const [videoPreviewText, setVideoPreviewText] = useState('');
     const [isInitializing, setIsInitializing] = useState(true);
 
     const { useCameraState, useMicrophoneState, useSpeakerState } = useCallStateHooks();
     const { camera, hasBrowserPermission: hasCameraPermission } = useCameraState();
-    const { microphone, hasBrowserPermission: hasMicrophonePermission, status: microphoneStatus, mediaStream } = useMicrophoneState();
+    const {
+        microphone,
+        hasBrowserPermission: hasMicrophonePermission,
+        status: microphoneStatus,
+        mediaStream,
+    } = useMicrophoneState();
     const { speaker } = useSpeakerState();
 
     // Initialize devices
@@ -39,16 +55,20 @@ const MeetingPreview: React.FC = () => {
                         await camera.enable();
                         if (isMounted) dispatch(setVideoEnabled(true));
                     } catch (error) {
-                        console.error("Camera error:", error);
+                        console.error('Camera error:', error);
                         if (isMounted) {
                             dispatch(setVideoEnabled(false));
-                            dispatch(setToast(`Camera error: ${error instanceof Error ? error.message : String(error)}`));
+                            dispatch(
+                                setToast(
+                                    `Camera error: ${error instanceof Error ? error.message : String(error)}`
+                                )
+                            );
                         }
                     }
                 }
 
                 // Wait a bit before initializing microphone to prevent conflicts
-                await new Promise((resolve) => setTimeout(resolve, 500));
+                await new Promise(resolve => setTimeout(resolve, 500));
 
                 // Always enable microphone as it's needed for both session types
                 if (hasMicrophonePermission && microphone) {
@@ -56,10 +76,14 @@ const MeetingPreview: React.FC = () => {
                         await microphone.enable();
                         if (isMounted) dispatch(setAudioEnabled(true));
                     } catch (error) {
-                        console.error("Microphone error:", error);
+                        console.error('Microphone error:', error);
                         if (isMounted) {
                             dispatch(setAudioEnabled(false));
-                            dispatch(setToast(`Microphone error: ${error instanceof Error ? error.message : String(error)}`));
+                            dispatch(
+                                setToast(
+                                    `Microphone error: ${error instanceof Error ? error.message : String(error)}`
+                                )
+                            );
                         }
                     }
                 }
@@ -76,7 +100,14 @@ const MeetingPreview: React.FC = () => {
             if (camera?.enabled) camera.disable().catch(console.error);
             if (microphone?.enabled) microphone.disable().catch(console.error);
         };
-    }, [camera, microphone, hasCameraPermission, hasMicrophonePermission, dispatch, isAudioSession]);
+    }, [
+        camera,
+        microphone,
+        hasCameraPermission,
+        hasMicrophonePermission,
+        dispatch,
+        isAudioSession,
+    ]);
 
     const AudioSessionPreview = () => (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-[#6032F6]/20 to-[#381D90]/20">
@@ -84,13 +115,15 @@ const MeetingPreview: React.FC = () => {
                 <Mic className="w-10 h-10 text-white/80" />
             </div>
             <div className="text-xl text-white/90 font-medium">Audio Session</div>
-            <div className="text-sm text-white/60 mt-2">{isAudioEnabled ? "Your microphone is enabled" : "Your microphone is muted"}</div>
+            <div className="text-sm text-white/60 mt-2">
+                {isAudioEnabled ? 'Your microphone is enabled' : 'Your microphone is muted'}
+            </div>
         </div>
     );
 
     // Sound detector setup
     useEffect(() => {
-        if (!hasMicrophonePermission || microphoneStatus !== "enabled" || !mediaStream) return;
+        if (!hasMicrophonePermission || microphoneStatus !== 'enabled' || !mediaStream) return;
 
         let isMounted = true;
         const disposeSoundDetector = createSoundDetector(
@@ -112,7 +145,7 @@ const MeetingPreview: React.FC = () => {
 
     const toggleAudio = useCallback(async () => {
         if (!hasMicrophonePermission) {
-            dispatch(setToast("Microphone permission not granted"));
+            dispatch(setToast('Microphone permission not granted'));
             return;
         }
 
@@ -126,18 +159,18 @@ const MeetingPreview: React.FC = () => {
 
     const toggleVideo = useCallback(async () => {
         if (!hasCameraPermission) {
-            dispatch(setToast("Camera permission not granted"));
+            dispatch(setToast('Camera permission not granted'));
             return;
         }
 
-        setVideoPreviewText(isVideoEnabled ? "Camera is off" : "Camera is starting");
+        setVideoPreviewText(isVideoEnabled ? 'Camera is off' : 'Camera is starting');
         try {
             await camera.toggle();
             dispatch(setVideoEnabled(!isVideoEnabled));
-            setVideoPreviewText(isVideoEnabled ? "Camera is off" : "");
+            setVideoPreviewText(isVideoEnabled ? 'Camera is off' : '');
         } catch (error) {
             dispatch(setToast(`Camera toggle error: ${String(error)}`));
-            setVideoPreviewText("Camera error occurred");
+            setVideoPreviewText('Camera error occurred');
         }
     }, [camera, dispatch, isVideoEnabled, hasCameraPermission]);
 
@@ -166,10 +199,13 @@ const MeetingPreview: React.FC = () => {
                     <AudioSessionPreview />
                 ) : (
                     <div className="absolute inset-0 flex items-center justify-center [&_video]:-scale-x-100">
-                        <VideoPreview 
+                        <VideoPreview
                             DisabledVideoPreview={() => (
                                 <div className="text-2xl text-white">
-                                    {videoPreviewText || (isVideoEnabled ? "Camera is starting..." : "Camera is off")}
+                                    {videoPreviewText ||
+                                        (isVideoEnabled
+                                            ? 'Camera is starting...'
+                                            : 'Camera is off')}
                                 </div>
                             )}
                         />
@@ -178,15 +214,18 @@ const MeetingPreview: React.FC = () => {
 
                 {/* User name with speech indicator */}
                 <div className="absolute left-2 top-2 max-w-[80%] flex items-center">
-                    <SpeechIndicator isSpeaking={isSoundDetected} isMicrophoneEnabled={microphoneStatus === "enabled"} />
+                    <SpeechIndicator
+                        isSpeaking={isSoundDetected}
+                        isMicrophoneEnabled={microphoneStatus === 'enabled'}
+                    />
                     <span className="relative mr-2 text-white text-xs font-thin truncate max-w-[120px]">
                         {(() => {
-                            const name = user?.name || "Anonymous";
+                            const name = user?.name || 'Anonymous';
                             return name.length > 12 ? `${name.slice(0, 12)}...` : name;
                         })()}
                         <span
                             className={`absolute -right-2 top-1/2 transform -translate-y-1/2 w-1.5 h-1.5 rounded-full ${
-                                hasMicrophonePermission ? "bg-[#6032F6]" : "bg-red-500"
+                                hasMicrophonePermission ? 'bg-[#6032F6]' : 'bg-red-500'
                             }`}
                         ></span>
                     </span>
@@ -214,7 +253,13 @@ const MeetingPreview: React.FC = () => {
                 <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center space-x-4">
                     {!isAudioSession && (
                         <DeviceSelectorPopover
-                            icon={isVideoEnabled ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
+                            icon={
+                                isVideoEnabled ? (
+                                    <Video className="w-4 h-4" />
+                                ) : (
+                                    <VideoOff className="w-4 h-4" />
+                                )
+                            }
                             onClick={toggleVideo}
                             className="w-full h-8 rounded-full bg-black/20 border-white/10 hover:bg-black/30 hover:border-white/20"
                         >
@@ -223,7 +268,13 @@ const MeetingPreview: React.FC = () => {
                     )}
 
                     <DeviceSelectorPopover
-                        icon={isAudioEnabled ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
+                        icon={
+                            isAudioEnabled ? (
+                                <Mic className="w-4 h-4" />
+                            ) : (
+                                <MicOff className="w-4 h-4" />
+                            )
+                        }
                         onClick={toggleAudio}
                         className="w-full h-8 rounded-full bg-black/20 border-white/10 hover:bg-black/30 hover:border-white/20"
                     >

@@ -1,8 +1,8 @@
-import React, { useReducer, useCallback, useTransition } from "react";
-import { useAppDispatch } from "@/store/hooks";
-import { setFirstTimeUser, updateUser } from "@/store/slices/userSlice";
-import UserInfoModal from "./userInfoModal";
-import OnboardingStep from "./onboardingSteps";
+import React, { useReducer, useCallback, useTransition } from 'react';
+import { useAppDispatch } from '@/store/hooks';
+import { setFirstTimeUser, updateUser } from '@/store/slices/userSlice';
+import UserInfoModal from './userInfoModal';
+import OnboardingStep from './onboardingSteps';
 
 interface UserOnboardingFlowProps {
     isOpen: boolean;
@@ -19,7 +19,11 @@ interface FlowState {
     isTransitioning: boolean;
 }
 
-type FlowAction = { type: "NEXT_STEP" } | { type: "COMPLETE_ONBOARDING" } | { type: "SHOW_USERNAME_MODAL" } | { type: "RESET" };
+type FlowAction =
+    | { type: 'NEXT_STEP' }
+    | { type: 'COMPLETE_ONBOARDING' }
+    | { type: 'SHOW_USERNAME_MODAL' }
+    | { type: 'RESET' };
 
 const initialState = (firstTimeUser: boolean): FlowState => ({
     showOnboarding: firstTimeUser,
@@ -30,26 +34,26 @@ const initialState = (firstTimeUser: boolean): FlowState => ({
 
 function flowReducer(state: FlowState, action: FlowAction): FlowState {
     switch (action.type) {
-        case "NEXT_STEP":
+        case 'NEXT_STEP':
             return {
                 ...state,
                 activeStep: state.activeStep + 1,
                 isTransitioning: true,
             };
-        case "COMPLETE_ONBOARDING":
+        case 'COMPLETE_ONBOARDING':
             return {
                 ...state,
                 showOnboarding: false,
                 showUsernameModal: true,
                 isTransitioning: false,
             };
-        case "SHOW_USERNAME_MODAL":
+        case 'SHOW_USERNAME_MODAL':
             return {
                 ...state,
                 showUsernameModal: true,
                 isTransitioning: false,
             };
-        case "RESET":
+        case 'RESET':
             return {
                 ...state,
                 isTransitioning: false,
@@ -59,14 +63,20 @@ function flowReducer(state: FlowState, action: FlowAction): FlowState {
     }
 }
 
-const UserOnboardingFlow: React.FC<UserOnboardingFlowProps> = ({ isOpen, onClose, initialUsername, onUpdate, firstTimeUser }) => {
+const UserOnboardingFlow: React.FC<UserOnboardingFlowProps> = ({
+    isOpen,
+    onClose,
+    initialUsername,
+    onUpdate,
+    firstTimeUser,
+}) => {
     const dispatch = useAppDispatch();
     const [isPending, startTransition] = useTransition();
     const [state, dispatchFlow] = useReducer(flowReducer, firstTimeUser, initialState);
 
     const handleOnboardingComplete = useCallback(() => {
         startTransition(() => {
-            dispatchFlow({ type: "COMPLETE_ONBOARDING" });
+            dispatchFlow({ type: 'COMPLETE_ONBOARDING' });
             dispatch(setFirstTimeUser(false));
             dispatch(updateUser({ firstTimeUser: false }));
         });
@@ -77,10 +87,10 @@ const UserOnboardingFlow: React.FC<UserOnboardingFlowProps> = ({ isOpen, onClose
             handleOnboardingComplete();
         } else {
             startTransition(() => {
-                dispatchFlow({ type: "NEXT_STEP" });
+                dispatchFlow({ type: 'NEXT_STEP' });
                 // Reset transition state after animation
                 setTimeout(() => {
-                    dispatchFlow({ type: "RESET" });
+                    dispatchFlow({ type: 'RESET' });
                 }, 300);
             });
         }
@@ -110,7 +120,7 @@ const UserOnboardingFlow: React.FC<UserOnboardingFlowProps> = ({ isOpen, onClose
     React.useEffect(() => {
         if (isOpen && !firstTimeUser) {
             startTransition(() => {
-                dispatchFlow({ type: "SHOW_USERNAME_MODAL" });
+                dispatchFlow({ type: 'SHOW_USERNAME_MODAL' });
             });
         }
     }, [isOpen, firstTimeUser]);

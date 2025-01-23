@@ -1,10 +1,10 @@
-import React, { useState, useMemo, memo } from "react";
-import { Button } from "@/components/ui/button";
-import { Calendar, Link, Copy, Check, Share2, Search, X } from "lucide-react";
-import { format, differenceInMinutes } from "date-fns";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { StreamCallData } from "./streamCallData";
+import React, { useState, useMemo, memo } from 'react';
+import { Button } from '@/components/ui/button';
+import { Calendar, Link, Copy, Check, Share2, Search, X } from 'lucide-react';
+import { format, differenceInMinutes } from 'date-fns';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { StreamCallData } from './streamCallData';
 
 interface ScheduledPodsProps {
     sessions: StreamCallData[];
@@ -39,17 +39,17 @@ const getSessionStatus = (startsAt: string) => {
     if (minutesUntilStart > 5) {
         return {
             text: `Starts in ${Math.floor(minutesUntilStart / 60)}h ${minutesUntilStart % 60}m`,
-            color: "text-[#A3A3A3]",
+            color: 'text-[#A3A3A3]',
         };
     } else if (minutesUntilStart > -60) {
         return {
-            text: minutesUntilStart > 0 ? "Starting soon" : "In progress",
-            color: "text-green-500",
+            text: minutesUntilStart > 0 ? 'Starting soon' : 'In progress',
+            color: 'text-green-500',
         };
     } else {
         return {
-            text: "Ended",
-            color: "text-red-500",
+            text: 'Ended',
+            color: 'text-red-500',
         };
     }
 };
@@ -79,7 +79,7 @@ const ShareDialog = memo(function ShareDialog({
             setter(true);
             setTimeout(() => setter(false), 2000);
         } catch (error) {
-            console.error("Failed to copy:", error);
+            console.error('Failed to copy:', error);
         }
     };
 
@@ -97,9 +97,21 @@ const ShareDialog = memo(function ShareDialog({
                             Invite link
                         </label>
                         <div className="flex gap-2">
-                            <Input value={inviteLink} readOnly className="flex-1 bg-[#2C2C2C] text-sm border-[#3c3c3c]" />
-                            <Button onClick={() => copyToClipboard(inviteLink, true)} className="bg-[#6032F6] hover:bg-[#4C28C4]" size="icon">
-                                {linkCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                            <Input
+                                value={inviteLink}
+                                readOnly
+                                className="flex-1 bg-[#2C2C2C] text-sm border-[#3c3c3c]"
+                            />
+                            <Button
+                                onClick={() => copyToClipboard(inviteLink, true)}
+                                className="bg-[#6032F6] hover:bg-[#4C28C4]"
+                                size="icon"
+                            >
+                                {linkCopied ? (
+                                    <Check className="h-4 w-4" />
+                                ) : (
+                                    <Copy className="h-4 w-4" />
+                                )}
                             </Button>
                         </div>
                     </div>
@@ -111,9 +123,21 @@ const ShareDialog = memo(function ShareDialog({
                             Meeting code
                         </label>
                         <div className="flex gap-2">
-                            <Input value={sessionId} readOnly className="flex-1 bg-[#2C2C2C] text-sm border-[#3c3c3c]" />
-                            <Button onClick={() => copyToClipboard(sessionId, false)} className="bg-[#6032F6] hover:bg-[#4C28C4]" size="icon">
-                                {codeCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                            <Input
+                                value={sessionId}
+                                readOnly
+                                className="flex-1 bg-[#2C2C2C] text-sm border-[#3c3c3c]"
+                            />
+                            <Button
+                                onClick={() => copyToClipboard(sessionId, false)}
+                                className="bg-[#6032F6] hover:bg-[#4C28C4]"
+                                size="icon"
+                            >
+                                {codeCopied ? (
+                                    <Check className="h-4 w-4" />
+                                ) : (
+                                    <Copy className="h-4 w-4" />
+                                )}
                             </Button>
                         </div>
                     </div>
@@ -157,7 +181,7 @@ const SessionCard = memo(function SessionCard({
             return; // Button will be disabled
         }
 
-        if (!isCreator && status?.text !== "In progress") {
+        if (!isCreator && status?.text !== 'In progress') {
             return; // Button will be disabled
         }
 
@@ -173,7 +197,12 @@ const SessionCard = memo(function SessionCard({
                         Found Session
                     </div>
                     {onClose && (
-                        <Button variant="ghost" size="sm" className="text-[#A3A3A3] hover:text-white p-1 h-auto" onClick={onClose}>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-[#A3A3A3] hover:text-white p-1 h-auto"
+                            onClick={onClose}
+                        >
                             <X className="h-4 w-4" />
                         </Button>
                     )}
@@ -186,10 +215,17 @@ const SessionCard = memo(function SessionCard({
                     </div>
                     <div>
                         <h3 className="text-white font-medium">{session.custom.title}</h3>
-                        <p className="text-sm text-[#A3A3A3]">{startsAt ? format(startsAt, "PPP 'at' p") : "Time not set"}</p>
+                        <p className="text-sm text-[#A3A3A3]">
+                            {startsAt ? format(startsAt, "PPP 'at' p") : 'Time not set'}
+                        </p>
                         <div className="flex items-center gap-2">
-                            <p className="text-xs text-[#A3A3A3]">Host: {session.created_by.custom?.username || session.created_by.name}</p>
-                            {status && <span className={`text-xs ${status.color}`}>• {status.text}</span>}
+                            <p className="text-xs text-[#A3A3A3]">
+                                Host:{' '}
+                                {session.created_by.custom?.username || session.created_by.name}
+                            </p>
+                            {status && (
+                                <span className={`text-xs ${status.color}`}>• {status.text}</span>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -215,13 +251,13 @@ const SessionCard = memo(function SessionCard({
                     <Button
                         className={`
                             ${
-                                canJoin && (isCreator || status?.text === "In progress")
-                                    ? "bg-[#6032F6] hover:bg-[#4C28C4]"
-                                    : "bg-[#2C2C2C] hover:bg-[#3C3C3C]"
+                                canJoin && (isCreator || status?.text === 'In progress')
+                                    ? 'bg-[#6032F6] hover:bg-[#4C28C4]'
+                                    : 'bg-[#2C2C2C] hover:bg-[#3C3C3C]'
                             } text-white rounded-[10px] px-6
                         `}
                         onClick={handleJoinClick}
-                        disabled={!canJoin || (!isCreator && status?.text !== "In progress")}
+                        disabled={!canJoin || (!isCreator && status?.text !== 'In progress')}
                         title={getButtonTitle(isCreator, canJoin, status?.text)}
                     >
                         {getButtonText(isCreator, canJoin, status?.text)}
@@ -233,14 +269,23 @@ const SessionCard = memo(function SessionCard({
 });
 
 // Main component
-export default function ScheduledPods({ sessions, foundSession, onJoinSession, currentUserId, isLoading, onClearFoundSession }: ScheduledPodsProps) {
+export default function ScheduledPods({
+    sessions,
+    foundSession,
+    onJoinSession,
+    currentUserId,
+    isLoading,
+    onClearFoundSession,
+}: ScheduledPodsProps) {
     const [showAllSessions, setShowAllSessions] = useState(false);
     const [shareSession, setShareSession] = useState<ShareSessionState | null>(null);
 
     // Memoize session calculations
     const { upcomingSessions } = useMemo(() => {
         const userSessions = sessions.filter(
-            (session) => session.created_by.id === currentUserId || differenceInMinutes(new Date(session.starts_at), new Date()) <= 5
+            session =>
+                session.created_by.id === currentUserId ||
+                differenceInMinutes(new Date(session.starts_at), new Date()) <= 5
         );
 
         const sorted = [...userSessions].sort((a, b) => {
@@ -249,7 +294,9 @@ export default function ScheduledPods({ sessions, foundSession, onJoinSession, c
             return dateA - dateB;
         });
 
-        const upcoming = sorted.filter((session) => differenceInMinutes(new Date(session.starts_at), new Date()) > -60);
+        const upcoming = sorted.filter(
+            session => differenceInMinutes(new Date(session.starts_at), new Date()) > -60
+        );
 
         return { upcomingSessions: upcoming };
     }, [sessions, currentUserId]);
@@ -285,18 +332,26 @@ export default function ScheduledPods({ sessions, foundSession, onJoinSession, c
                 {/* User's Scheduled Sessions Section */}
                 <div>
                     {upcomingSessions.length === 0 ? (
-                        <div className="text-center text-[#A3A3A3] py-4">No scheduled sessions available</div>
+                        <div className="text-center text-[#A3A3A3] py-4">
+                            No scheduled sessions available
+                        </div>
                     ) : (
                         <div className="space-y-4">
                             <div className="flex justify-between items-center mb-4">
-                                <h2 className="text-xl font-semibold text-white">Your Scheduled Sessions</h2>
+                                <h2 className="text-xl font-semibold text-white">
+                                    Your Scheduled Sessions
+                                </h2>
                                 {upcomingSessions.length > 1 && (
-                                    <Button variant="ghost" onClick={() => setShowAllSessions(true)} className="text-[#6032F6] hover:text-[#4C28C4]">
+                                    <Button
+                                        variant="ghost"
+                                        onClick={() => setShowAllSessions(true)}
+                                        className="text-[#6032F6] hover:text-[#4C28C4]"
+                                    >
                                         View All ({upcomingSessions.length})
                                     </Button>
                                 )}
                             </div>
-                            {upcomingSessions.slice(0, 1).map((session) => (
+                            {upcomingSessions.slice(0, 1).map(session => (
                                 <SessionCard
                                     key={session.id}
                                     session={session}
@@ -331,9 +386,11 @@ export default function ScheduledPods({ sessions, foundSession, onJoinSession, c
                         )}
 
                         <div>
-                            <h3 className="text-sm font-medium text-[#A3A3A3] mb-3">Your Sessions</h3>
+                            <h3 className="text-sm font-medium text-[#A3A3A3] mb-3">
+                                Your Sessions
+                            </h3>
                             <div className="space-y-2">
-                                {upcomingSessions.map((session) => (
+                                {upcomingSessions.map(session => (
                                     <SessionCard
                                         key={session.id}
                                         session={session}
@@ -364,20 +421,20 @@ export default function ScheduledPods({ sessions, foundSession, onJoinSession, c
 
 function getButtonTitle(isCreator: boolean, canJoin: boolean, status?: string): string {
     if (!canJoin) {
-        return "Session can only be joined 5 minutes before start time";
+        return 'Session can only be joined 5 minutes before start time';
     }
-    if (!isCreator && status !== "In progress") {
-        return "Only the host can join before the session starts";
+    if (!isCreator && status !== 'In progress') {
+        return 'Only the host can join before the session starts';
     }
-    return "Join session";
+    return 'Join session';
 }
 
 function getButtonText(isCreator: boolean, canJoin: boolean, status?: string): string {
     if (!canJoin) {
-        return "Not started";
+        return 'Not started';
     }
-    if (!isCreator && status !== "In progress") {
-        return "Waiting for host";
+    if (!isCreator && status !== 'In progress') {
+        return 'Waiting for host';
     }
-    return "Join session";
+    return 'Join session';
 }

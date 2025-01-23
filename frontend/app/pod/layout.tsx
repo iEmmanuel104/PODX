@@ -1,10 +1,11 @@
-"use client";
-import React, { useEffect, useState, memo } from "react";
-import { useParams, useRouter, usePathname } from "next/navigation";
-import type { ReactNode } from "react";
-import { LoadingOverlay } from "@/components/ui/loading";
-import { ErrorBoundary } from "@/components/pod/errorBoundary";
-import nextDynamic from "next/dynamic";
+'use client';
+import React, { useEffect, useState, memo } from 'react';
+import { useParams, useRouter, usePathname } from 'next/navigation';
+import type { ReactNode } from 'react';
+import { LoadingOverlay } from '@/components/ui/loading';
+import { ErrorBoundary } from '@/components/pod/errorBoundary';
+import nextDynamic from 'next/dynamic';
+
 // Types
 type LayoutProps = {
     children: ReactNode;
@@ -14,7 +15,7 @@ type LayoutProps = {
 };
 
 // Dynamic import helper
-const DynamicMeetProvider = nextDynamic(() => import("@/providers/meetProvider/index"), {
+const DynamicMeetProvider = nextDynamic(() => import('@/providers/meetProvider/index'), {
     ssr: false,
     loading: () => (
         <div className="min-h-screen bg-[#121212]">
@@ -39,9 +40,9 @@ const LayoutContent = memo<LayoutProps>(({ children, params }) => {
     if (isMounted) {
         const isValidMeetingId = meetingId ? /^[a-z]{3}-[a-z]{4}-[a-z]{3}$/.test(meetingId) : true;
 
-        if (pathname !== "/pod" && !pathname.startsWith("/pod/join") && !isValidMeetingId) {
-            console.log("Invalid meeting ID and not on join page. Redirecting to /pod");
-            router.push("/pod");
+        if (pathname !== '/pod' && !pathname.startsWith('/pod/join') && !isValidMeetingId) {
+            console.log('Invalid meeting ID and not on join page. Redirecting to /pod');
+            router.push('/pod');
             return null;
         }
     }
@@ -57,7 +58,7 @@ const LayoutContent = memo<LayoutProps>(({ children, params }) => {
     );
 });
 
-LayoutContent.displayName = "LayoutContent";
+LayoutContent.displayName = 'LayoutContent';
 
 export default function Layout(props: LayoutProps) {
     return <LayoutContent {...props} />;

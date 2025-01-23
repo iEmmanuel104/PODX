@@ -1,43 +1,43 @@
-import React from "react"
-import { Menu, Copy, User, ArrowUp } from "lucide-react"
-import Image from "next/image"
-import { Button } from "@/components/ui/button"
+import React from 'react';
+import { Menu, Copy, User, ArrowUp } from 'lucide-react';
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { getBasename, getBasenameAvatar } from "@/app/apis/basenames"
+} from '@/components/ui/dropdown-menu';
+import { getBasename, getBasenameAvatar } from '@/app/apis/basenames';
 
 async function fetchData(address: `0x${string}`) {
     try {
-        const basename = await getBasename(address)
+        const basename = await getBasename(address);
         if (basename) {
-            const avatar = await getBasenameAvatar(basename)
-            return { basename, avatar }
+            const avatar = await getBasenameAvatar(basename);
+            return { basename, avatar };
         } else {
-            return { basename: null, avatar: null }
+            return { basename: null, avatar: null };
         }
     } catch (error) {
-        console.error("Error fetching data:", error)
-        return { basename: null, avatar: null }
+        console.error('Error fetching data:', error);
+        return { basename: null, avatar: null };
     }
 }
 
 function truncateAddress(address: string): string {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
 interface HeaderProps {
-    customData: Record<string, any>
-    live: boolean
-    userAddress: `0x${string}`
-    displayBalance: string
-    balanceSymbol: string | undefined
-    toggleSidebar: () => void
-    handleLogout: () => void
-    copyAddress: () => void
+    customData: Record<string, any>;
+    live: boolean;
+    userAddress: `0x${string}`;
+    displayBalance: string;
+    balanceSymbol: string | undefined;
+    toggleSidebar: () => void;
+    handleLogout: () => void;
+    copyAddress: () => void;
 }
 
 export default async function Header({
@@ -50,21 +50,31 @@ export default async function Header({
     handleLogout,
     copyAddress,
 }: HeaderProps) {
-    const { basename, avatar } = await fetchData(userAddress)
-    console.log({ basename, avatar })
+    const { basename, avatar } = await fetchData(userAddress);
+    console.log({ basename, avatar });
 
     const withdrawFunds = () => {
-        console.log("withdrawing funds")
-    }
+        console.log('withdrawing funds');
+    };
 
     return (
         <header className="flex justify-between items-center px-2 sm:px-4 py-2 bg-[#1d1d1d] rounded-full w-[98%] sm:w-[95%] mx-auto my-1 sm:my-2">
             <div className="flex items-center justify-between gap-1 sm:gap-2">
                 <div className="relative w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 flex-shrink-0">
-                    <Image src="/logo.png" layout="fill" objectFit="contain" alt="Podx" className="p-0.5 sm:p-1" />
+                    <Image
+                        src="/logo.png"
+                        layout="fill"
+                        objectFit="contain"
+                        alt="Podx"
+                        className="p-0.5 sm:p-1"
+                    />
                 </div>
-                <p className="text-xs sm:text-sm md:text-base mr-1 sm:mr-2 w-24 sm:w-full sm:text-center truncate">{customData.title}</p>
-                <p className="bg-red-500 text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 py-0.5 rounded-full">{live ? "Live" : "Offline"}</p>
+                <p className="text-xs sm:text-sm md:text-base mr-1 sm:mr-2 w-24 sm:w-full sm:text-center truncate">
+                    {customData.title}
+                </p>
+                <p className="bg-red-500 text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 py-0.5 rounded-full">
+                    {live ? 'Live' : 'Offline'}
+                </p>
             </div>
             <div className="flex items-center">
                 <DropdownMenu>
@@ -74,11 +84,20 @@ export default async function Header({
                             <span className="sr-only">Toggle profile dropdown</span>
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-64 bg-[#2d2d2d] rounded-[10px] shadow-lg py-4 sm:py-4 px-4 sm:px-5">
+                    <DropdownMenuContent
+                        align="end"
+                        className="w-64 bg-[#2d2d2d] rounded-[10px] shadow-lg py-4 sm:py-4 px-4 sm:px-5"
+                    >
                         <div className="flex items-center mb-4">
                             <div className="flex items-center">
                                 {avatar ? (
-                                    <Image src={avatar} width={32} height={32} alt="Avatar" className="w-6 h-6 sm:w-8 sm:h-8 rounded-full mr-2" />
+                                    <Image
+                                        src={avatar}
+                                        width={32}
+                                        height={32}
+                                        alt="Avatar"
+                                        className="w-6 h-6 sm:w-8 sm:h-8 rounded-full mr-2"
+                                    />
                                 ) : (
                                     <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full mr-2 bg-gray-300 flex items-center justify-center">
                                         <User className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
@@ -94,12 +113,25 @@ export default async function Header({
                                         </p>
                                     </div>
                                     <div className="flex items-center justify-between bg-[#1d1d1d] p-1 sm:p-2 mb-1 sm:mb-2 rounded-full">
-                                        <Image src="/images/base.png" alt="Base" width={16} height={16} className="w-4 h-4 sm:w-5 sm:h-5" />
+                                        <Image
+                                            src="/images/base.png"
+                                            alt="Base"
+                                            width={16}
+                                            height={16}
+                                            className="w-4 h-4 sm:w-5 sm:h-5"
+                                        />
                                         <div className="flex items-center">
                                             <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-green-500 rounded-full mr-1 sm:mr-2"></div>
-                                            <span className="text-[#A3A3A3] text-[10px] sm:text-xs">{truncateAddress(userAddress)}</span>
+                                            <span className="text-[#A3A3A3] text-[10px] sm:text-xs">
+                                                {truncateAddress(userAddress)}
+                                            </span>
                                         </div>
-                                        <Button variant="ghost" size="icon" onClick={copyAddress} className="text-[#A3A3A3] hover:text-white">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={copyAddress}
+                                            className="text-[#A3A3A3] hover:text-white"
+                                        >
                                             <Copy className="w-3 h-3 sm:w-4 sm:h-4" />
                                         </Button>
                                     </div>
@@ -128,5 +160,5 @@ export default async function Header({
                 </Button>
             </div>
         </header>
-    )
+    );
 }

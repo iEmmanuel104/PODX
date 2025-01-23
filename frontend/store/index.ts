@@ -32,10 +32,9 @@ export const store = configureStore({
         media: mediaReducer,
         toast: toastReducer,
         scheduledSessions: scheduledSessionsReducer,
-        callStats: callStatsReducer
+        callStats: callStatsReducer,
     },
-    middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware().concat(apiSlice.middleware),
+    middleware: getDefaultMiddleware => getDefaultMiddleware().concat(apiSlice.middleware),
     devTools: process.env.NODE_ENV !== 'production',
 });
 

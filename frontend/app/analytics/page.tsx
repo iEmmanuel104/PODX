@@ -1,26 +1,42 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useState } from "react";
-import { Bar, BarChart, Line, LineChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
-import { Download, Link, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
-import Logo from "@/components/ui/logo";
-import { useGetDetailedCallStatsQuery } from "@/store/api/callAnalyticsApi";
-import { format } from "date-fns";
-import { exportMetricsToCSV } from "@/utils/exportMetrics";
+import { useEffect, useMemo, useState } from 'react';
+import {
+    Bar,
+    BarChart,
+    Line,
+    LineChart,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    ResponsiveContainer,
+} from 'recharts';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
+import { Download, Link, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import Logo from '@/components/ui/logo';
+import { useGetDetailedCallStatsQuery } from '@/store/api/callAnalyticsApi';
+import { format } from 'date-fns';
+import { exportMetricsToCSV } from '@/utils/exportMetrics';
 
 // Pagination controls component
-const PaginationControls = ({ 
-    hasMore, 
-    onNext, 
-    onPrevious, 
+const PaginationControls = ({
+    hasMore,
+    onNext,
+    onPrevious,
     currentPage,
-    isLoading 
-}: { 
+    isLoading,
+}: {
     hasMore: boolean;
     onNext: () => void;
     onPrevious: () => void;
@@ -28,20 +44,12 @@ const PaginationControls = ({
     isLoading: boolean;
 }) => (
     <div className="flex items-center justify-center gap-4 mt-4">
-        <Button 
-            variant="outline" 
-            onClick={onPrevious}
-            disabled={currentPage === 1 || isLoading}
-        >
+        <Button variant="outline" onClick={onPrevious} disabled={currentPage === 1 || isLoading}>
             <ChevronLeft className="h-4 w-4 mr-2" />
             Previous
         </Button>
         <span className="text-sm text-gray-400">Page {currentPage}</span>
-        <Button 
-            variant="outline" 
-            onClick={onNext}
-            disabled={!hasMore || isLoading}
-        >
+        <Button variant="outline" onClick={onNext} disabled={!hasMore || isLoading}>
             Next
             <ChevronRight className="h-4 w-4 ml-2" />
         </Button>
@@ -66,14 +74,14 @@ export default function AnalyticsDashboard() {
     const handleNextPage = () => {
         if (statsData?.data?.pagination?.next) {
             setNextToken(statsData.data.pagination.next);
-            setCurrentPage((prev) => prev + 1);
+            setCurrentPage(prev => prev + 1);
         }
     };
 
     const handlePreviousPage = () => {
         if (currentPage > 1) {
             setNextToken(undefined); // Reset to first page
-            setCurrentPage((prev) => prev - 1);
+            setCurrentPage(prev => prev - 1);
         }
     };
 
@@ -82,7 +90,7 @@ export default function AnalyticsDashboard() {
         if (!statsData?.data?.analytics?.timeDistribution) return [];
         return Object.entries(statsData.data.analytics.timeDistribution)
             .map(([date, count]) => ({
-                date: format(new Date(date), "MM/dd"),
+                date: format(new Date(date), 'MM/dd'),
                 calls: count,
             }))
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -91,16 +99,19 @@ export default function AnalyticsDashboard() {
     const callTypeData = useMemo(() => {
         if (!statsData?.data?.reports) return [];
 
-        const typeCount = statsData.data.reports.reduce((acc: { [key: string]: number }, report) => {
-            const callType = report.call_cid.split(":")[0] || "unknown";
-            acc[callType] = (acc[callType] || 0) + 1;
-            return acc;
-        }, {});
+        const typeCount = statsData.data.reports.reduce(
+            (acc: { [key: string]: number }, report) => {
+                const callType = report.call_cid.split(':')[0] || 'unknown';
+                acc[callType] = (acc[callType] || 0) + 1;
+                return acc;
+            },
+            {}
+        );
 
         return Object.entries(typeCount).map(([type, value]) => ({
             type: type.charAt(0).toUpperCase() + type.slice(1),
             value,
-            color: type === "default" ? "#FF8FAB" : "#60A5FA",
+            color: type === 'default' ? '#FF8FAB' : '#60A5FA',
         }));
     }, [statsData]);
 
@@ -108,10 +119,10 @@ export default function AnalyticsDashboard() {
     const formattedReports = useMemo(() => {
         if (!statsData?.data?.reports) return [];
 
-        return statsData.data.reports.map((report) => ({
+        return statsData.data.reports.map(report => ({
             ...report,
-            displaySessionId: report.call_cid.split(":")[1] || report.call_session_id,
-            callType: report.call_cid.split(":")[0] || "unknown",
+            displaySessionId: report.call_cid.split(':')[1] || report.call_session_id,
+            callType: report.call_cid.split(':')[0] || 'unknown',
         }));
     }, [statsData]);
 
@@ -141,7 +152,12 @@ export default function AnalyticsDashboard() {
                     <Logo />
                 </div>
                 <div className="text-sm text-gray-400">
-                    {new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+                    {new Date().toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                    })}
                 </div>
             </header>
 
@@ -150,7 +166,11 @@ export default function AnalyticsDashboard() {
                     <div className="flex items-center justify-between">
                         <h1 className="text-2xl font-bold">Analytics Dashboard</h1>
                         <div className="flex items-center gap-2">
-                            <Button variant="outline" onClick={() => exportMetricsToCSV(statsData?.data)} disabled={isLoading || !statsData?.data}>
+                            <Button
+                                variant="outline"
+                                onClick={() => exportMetricsToCSV(statsData?.data)}
+                                disabled={isLoading || !statsData?.data}
+                            >
                                 <Download className="mr-2 h-4 w-4" />
                                 Export to CSV
                             </Button>
@@ -164,56 +184,84 @@ export default function AnalyticsDashboard() {
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                         <Card className="text-gray-100">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Total Calls (100 batch metrics)</CardTitle>
+                                <CardTitle className="text-sm font-medium">
+                                    Total Calls (100 batch metrics)
+                                </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold text-purple-400">{analytics?.totalCalls || 0}</div>
-                                <p className="text-xs text-gray-400">All calls completed successfully</p>
+                                <div className="text-2xl font-bold text-purple-400">
+                                    {analytics?.totalCalls || 0}
+                                </div>
+                                <p className="text-xs text-gray-400">
+                                    All calls completed successfully
+                                </p>
                             </CardContent>
                         </Card>
                         <Card className="text-gray-100">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Total Duration</CardTitle>
+                                <CardTitle className="text-sm font-medium">
+                                    Total Duration
+                                </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold text-purple-400">{Math.round((analytics?.totalDuration ?? 0) / 60)}</div>
+                                <div className="text-2xl font-bold text-purple-400">
+                                    {Math.round((analytics?.totalDuration ?? 0) / 60)}
+                                </div>
                                 <p className="text-xs text-gray-400">Minutes of calls</p>
                             </CardContent>
                         </Card>
                         <Card className="text-gray-100">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Average Quality Score</CardTitle>
+                                <CardTitle className="text-sm font-medium">
+                                    Average Quality Score
+                                </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold text-purple-400">{analytics?.averageQualityScore.toFixed(1) || 0}%</div>
+                                <div className="text-2xl font-bold text-purple-400">
+                                    {analytics?.averageQualityScore.toFixed(1) || 0}%
+                                </div>
                                 <p className="text-xs text-gray-400">Overall call quality</p>
                             </CardContent>
                         </Card>
                         <Card className="text-gray-100">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Average Duration</CardTitle>
+                                <CardTitle className="text-sm font-medium">
+                                    Average Duration
+                                </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold text-purple-400">{Math.round((analytics?.averageDuration ?? 0) / 60)}</div>
+                                <div className="text-2xl font-bold text-purple-400">
+                                    {Math.round((analytics?.averageDuration ?? 0) / 60)}
+                                </div>
                                 <p className="text-xs text-gray-400">Minutes per call</p>
                             </CardContent>
                         </Card>
                         <Card className="text-gray-100">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Quality Distribution</CardTitle>
+                                <CardTitle className="text-sm font-medium">
+                                    Quality Distribution
+                                </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold text-purple-400">{analytics?.qualityScoreRanges.excellent || 0}</div>
+                                <div className="text-2xl font-bold text-purple-400">
+                                    {analytics?.qualityScoreRanges.excellent || 0}
+                                </div>
                                 <p className="text-xs text-gray-400">Excellent quality calls</p>
                             </CardContent>
                         </Card>
                         <Card className="text-gray-100">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Call Duration Types</CardTitle>
+                                <CardTitle className="text-sm font-medium">
+                                    Call Duration Types
+                                </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold text-purple-400">{analytics?.callsByDuration.long || 0}</div>
-                                <p className="text-xs text-gray-400">Long duration calls ({">"}15min)</p>
+                                <div className="text-2xl font-bold text-purple-400">
+                                    {analytics?.callsByDuration.long || 0}
+                                </div>
+                                <p className="text-xs text-gray-400">
+                                    Long duration calls ({'>'}15min)
+                                </p>
                             </CardContent>
                         </Card>
                     </div>
@@ -228,19 +276,39 @@ export default function AnalyticsDashboard() {
                                 <ChartContainer
                                     config={{
                                         value: {
-                                            label: "Calls",
-                                            color: "hsl(var(--primary))",
+                                            label: 'Calls',
+                                            color: 'hsl(var(--primary))',
                                         },
                                     }}
                                     className="aspect-[4/3]"
                                 >
                                     <ResponsiveContainer width="100%" height={300}>
-                                        <BarChart data={callTypeData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#374151" />
-                                            <XAxis dataKey="type" axisLine={false} tickLine={false} tick={{ fill: "#9CA3AF" }} />
-                                            <YAxis axisLine={false} tickLine={false} tick={{ fill: "#9CA3AF" }} />
+                                        <BarChart
+                                            data={callTypeData}
+                                            margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                                        >
+                                            <CartesianGrid
+                                                strokeDasharray="3 3"
+                                                vertical={false}
+                                                stroke="#374151"
+                                            />
+                                            <XAxis
+                                                dataKey="type"
+                                                axisLine={false}
+                                                tickLine={false}
+                                                tick={{ fill: '#9CA3AF' }}
+                                            />
+                                            <YAxis
+                                                axisLine={false}
+                                                tickLine={false}
+                                                tick={{ fill: '#9CA3AF' }}
+                                            />
                                             <ChartTooltip />
-                                            <Bar dataKey="value" fill="currentColor" radius={[4, 4, 0, 0]} />
+                                            <Bar
+                                                dataKey="value"
+                                                fill="currentColor"
+                                                radius={[4, 4, 0, 0]}
+                                            />
                                         </BarChart>
                                     </ResponsiveContainer>
                                 </ChartContainer>
@@ -255,19 +323,41 @@ export default function AnalyticsDashboard() {
                                 <ChartContainer
                                     config={{
                                         calls: {
-                                            label: "Calls",
-                                            color: "#A78BFA",
+                                            label: 'Calls',
+                                            color: '#A78BFA',
                                         },
                                     }}
                                     className="aspect-[4/3]"
                                 >
                                     <ResponsiveContainer width="100%" height={300}>
-                                        <LineChart data={callMetricsData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#374151" />
-                                            <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: "#9CA3AF" }} />
-                                            <YAxis axisLine={false} tickLine={false} tick={{ fill: "#9CA3AF" }} />
+                                        <LineChart
+                                            data={callMetricsData}
+                                            margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                                        >
+                                            <CartesianGrid
+                                                strokeDasharray="3 3"
+                                                vertical={false}
+                                                stroke="#374151"
+                                            />
+                                            <XAxis
+                                                dataKey="date"
+                                                axisLine={false}
+                                                tickLine={false}
+                                                tick={{ fill: '#9CA3AF' }}
+                                            />
+                                            <YAxis
+                                                axisLine={false}
+                                                tickLine={false}
+                                                tick={{ fill: '#9CA3AF' }}
+                                            />
                                             <ChartTooltip />
-                                            <Line type="monotone" dataKey="calls" stroke="#A78BFA" strokeWidth={2} dot={{ fill: "#A78BFA", r: 4 }} />
+                                            <Line
+                                                type="monotone"
+                                                dataKey="calls"
+                                                stroke="#A78BFA"
+                                                strokeWidth={2}
+                                                dot={{ fill: '#A78BFA', r: 4 }}
+                                            />
                                         </LineChart>
                                     </ResponsiveContainer>
                                 </ChartContainer>
@@ -280,7 +370,8 @@ export default function AnalyticsDashboard() {
                             <div className="flex items-center justify-between">
                                 <CardTitle>Recent Calls</CardTitle>
                                 <div className="text-sm text-gray-400">
-                                    Showing {formattedReports.length} of {pagination?.total || 0} calls
+                                    Showing {formattedReports.length} of {pagination?.total || 0}{' '}
+                                    calls
                                 </div>
                             </div>
                         </CardHeader>
@@ -289,22 +380,43 @@ export default function AnalyticsDashboard() {
                                 <Table>
                                     <TableHeader>
                                         <TableRow className="border-gray-800 bg-gray-900">
-                                            <TableHead className="text-gray-300">Session ID</TableHead>
-                                            <TableHead className="text-gray-300">Duration</TableHead>
+                                            <TableHead className="text-gray-300">
+                                                Session ID
+                                            </TableHead>
+                                            <TableHead className="text-gray-300">
+                                                Duration
+                                            </TableHead>
                                             <TableHead className="text-gray-300">Type</TableHead>
-                                            <TableHead className="text-gray-300">Quality Score</TableHead>
-                                            <TableHead className="text-gray-300">Created At</TableHead>
+                                            <TableHead className="text-gray-300">
+                                                Quality Score
+                                            </TableHead>
+                                            <TableHead className="text-gray-300">
+                                                Created At
+                                            </TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {formattedReports.map((report) => (
-                                            <TableRow key={report.call_cid} className="border-gray-700">
-                                                <TableCell className="font-medium text-purple-400">{report.displaySessionId}</TableCell>
-                                                <TableCell>{Math.round(report.call_duration_seconds / 60)} min</TableCell>
+                                        {formattedReports.map(report => (
+                                            <TableRow
+                                                key={report.call_cid}
+                                                className="border-gray-700"
+                                            >
+                                                <TableCell className="font-medium text-purple-400">
+                                                    {report.displaySessionId}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {Math.round(report.call_duration_seconds / 60)}{' '}
+                                                    min
+                                                </TableCell>
                                                 <TableCell>{report.callType}</TableCell>
                                                 <TableCell>{report.quality_score}%</TableCell>
                                                 <TableCell>
-                                                    {report.created_at ? format(new Date(report.created_at), "MMM dd, yyyy") : "N/A"}
+                                                    {report.created_at
+                                                        ? format(
+                                                              new Date(report.created_at),
+                                                              'MMM dd, yyyy'
+                                                          )
+                                                        : 'N/A'}
                                                 </TableCell>
                                             </TableRow>
                                         ))}

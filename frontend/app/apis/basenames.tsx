@@ -6,28 +6,27 @@ import {
     http,
     keccak256,
     namehash,
-} from "viem";
-import { base, mainnet } from "viem/chains";
-import L2ResolverAbi from "../abis/L2ResolverAbi";
+} from 'viem';
+import { base, mainnet } from 'viem/chains';
+import L2ResolverAbi from '../abis/L2ResolverAbi';
 
 export type Basename = `${string}.base.eth`;
 
-export const BASENAME_L2_RESOLVER_ADDRESS =
-    "0xC6d566A56A1aFf6508b41f6c90ff131615583BCD";
+export const BASENAME_L2_RESOLVER_ADDRESS = '0xC6d566A56A1aFf6508b41f6c90ff131615583BCD';
 
 export enum BasenameTextRecordKeys {
-    Description = "description",
-    Keywords = "keywords",
-    Url = "url",
-    Email = "email",
-    Phone = "phone",
-    Github = "com.github",
-    Twitter = "com.twitter",
-    Farcaster = "xyz.farcaster",
-    Lens = "xyz.lens",
-    Telegram = "org.telegram",
-    Discord = "com.discord",
-    Avatar = "avatar",
+    Description = 'description',
+    Keywords = 'keywords',
+    Url = 'url',
+    Email = 'email',
+    Phone = 'phone',
+    Github = 'com.github',
+    Twitter = 'com.twitter',
+    Farcaster = 'xyz.farcaster',
+    Lens = 'xyz.lens',
+    Telegram = 'org.telegram',
+    Discord = 'com.discord',
+    Avatar = 'avatar',
 }
 
 export const textRecordsKeysEnabled = [
@@ -47,7 +46,7 @@ export const textRecordsKeysEnabled = [
 
 const baseClient = createPublicClient({
     chain: base,
-    transport: http("https://mainnet.base.org"),
+    transport: http('https://mainnet.base.org'),
 });
 
 export async function getBasenameAvatar(basename: Basename) {
@@ -67,35 +66,31 @@ export function buildBasenameTextRecordContract(
         abi: L2ResolverAbi,
         address: BASENAME_L2_RESOLVER_ADDRESS,
         args: [namehash(basename), key],
-        functionName: "text",
+        functionName: 'text',
     };
 }
 
 // Get a single TextRecord
-export async function getBasenameTextRecord(
-    basename: Basename,
-    key: BasenameTextRecordKeys
-) {
+export async function getBasenameTextRecord(basename: Basename, key: BasenameTextRecordKeys) {
     try {
         const contractParameters = buildBasenameTextRecordContract(basename, key);
         const textRecord = await baseClient.readContract(contractParameters);
         return textRecord as string;
-    } catch (error) { }
+    } catch (error) {}
 }
 
 // Get a all TextRecords
 export async function getBasenameTextRecords(basename: Basename) {
     try {
-        const readContracts: ContractFunctionParameters[] =
-            textRecordsKeysEnabled.map((key) =>
-                buildBasenameTextRecordContract(basename, key)
-            );
+        const readContracts: ContractFunctionParameters[] = textRecordsKeysEnabled.map(key =>
+            buildBasenameTextRecordContract(basename, key)
+        );
         const textRecords = await baseClient.multicall({
             contracts: readContracts,
         });
 
         return textRecords;
-    } catch (error) { }
+    } catch (error) {}
 }
 
 /**
@@ -104,7 +99,7 @@ export async function getBasenameTextRecords(basename: Basename) {
 export const convertChainIdToCoinType = (chainId: number): string => {
     // L1 resolvers to addr
     if (chainId === mainnet.id) {
-        return "addr";
+        return 'addr';
     }
 
     const cointype = (0x80000000 | chainId) >>> 0;
@@ -114,18 +109,13 @@ export const convertChainIdToCoinType = (chainId: number): string => {
 /**
  * Convert an address to a reverse node for ENS resolution
  */
-export const convertReverseNodeToBytes = (
-    address: Address,
-    chainId: number
-) => {
+export const convertReverseNodeToBytes = (address: Address, chainId: number) => {
     const addressFormatted = address.toLocaleLowerCase() as Address;
     const addressNode = keccak256(addressFormatted.substring(2) as Address);
     const chainCoinType = convertChainIdToCoinType(chainId);
-    const baseReverseNode = namehash(
-        `${chainCoinType.toLocaleUpperCase()}.reverse`
-    );
+    const baseReverseNode = namehash(`${chainCoinType.toLocaleUpperCase()}.reverse`);
     const addressReverseNode = keccak256(
-        encodePacked(["bytes32", "bytes32"], [baseReverseNode, addressNode])
+        encodePacked(['bytes32', 'bytes32'], [baseReverseNode, addressNode])
     );
     return addressReverseNode;
 };
@@ -136,11 +126,11 @@ export async function getBasename(address: Address) {
         const basename = await baseClient.readContract({
             abi: L2ResolverAbi,
             address: BASENAME_L2_RESOLVER_ADDRESS,
-            functionName: "name",
+            functionName: 'name',
             args: [addressReverseNode],
         });
         if (basename) {
             return basename as Basename;
         }
-    } catch (error) { }
+    } catch (error) {}
 }

@@ -1,7 +1,7 @@
-import Image from "next/image"
-import { LogOut } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import Image from 'next/image';
+import { LogOut } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function ErrorPage() {
     return (
@@ -27,7 +27,8 @@ export default function ErrorPage() {
                     </div>
                     <h1 className="text-2xl font-bold mb-2">Network Error</h1>
                     <p className="text-zinc-400 text-sm mb-8">
-                        Unfortunately, there seems to be a problem with the network at the moment, please try again later
+                        Unfortunately, there seems to be a problem with the network at the moment,
+                        please try again later
                     </p>
                     <div className="flex items-center justify-center space-x-2">
                         <Avatar className="h-6 w-6">
@@ -47,5 +48,5 @@ export default function ErrorPage() {
                 </div>
             </div>
         </div>
-    )
+    );
 }

@@ -1,11 +1,11 @@
-"use client";
-import React, { useEffect, useState, memo } from "react";
-import { MeetProviderProps } from "./types";
-import { StreamMeetProvider } from "./streamMeetProvider";
-import { SimpleMeetProvider } from "./components";
-import { ErrorBoundary } from "@/components/pod/errorBoundary";
+'use client';
+import React, { useEffect, useState, memo } from 'react';
+import { MeetProviderProps } from './types';
+import { StreamMeetProvider } from './streamMeetProvider';
+import { SimpleMeetProvider } from './components';
+import { ErrorBoundary } from '@/components/pod/errorBoundary';
 
-const MeetProvider = memo<MeetProviderProps>(({ meetingId, children, language = "en" }) => {
+const MeetProvider = memo<MeetProviderProps>(({ meetingId, children, language = 'en' }) => {
     const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
@@ -17,7 +17,9 @@ const MeetProvider = memo<MeetProviderProps>(({ meetingId, children, language = 
     }
 
     return (
-        <ErrorBoundary fallback={<div>Failed to load meeting provider. Please refresh the page.</div>}>
+        <ErrorBoundary
+            fallback={<div>Failed to load meeting provider. Please refresh the page.</div>}
+        >
             <div className="w-full h-full">
                 {!meetingId ? (
                     <SimpleMeetProvider>{children}</SimpleMeetProvider>
@@ -30,7 +32,7 @@ const MeetProvider = memo<MeetProviderProps>(({ meetingId, children, language = 
         </ErrorBoundary>
     );
 });
-MeetProvider.displayName = "MeetProvider";
+MeetProvider.displayName = 'MeetProvider';
 
 export default MeetProvider;
-export * from "./types";
+export * from './types';

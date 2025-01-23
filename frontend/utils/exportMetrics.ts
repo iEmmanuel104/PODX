@@ -1,6 +1,6 @@
 // utils/exportMetrics.ts
-import { CallStatsReport } from "@/store/api/callAnalyticsApi";
-import { format } from "date-fns";
+import { CallStatsReport } from '@/store/api/callAnalyticsApi';
+import { format } from 'date-fns';
 
 export const exportMetricsToCSV = (data: any) => {
     if (!data) return;
@@ -28,11 +28,11 @@ export const exportMetricsToCSV = (data: any) => {
         ['Long Calls (>15min)', analytics.callsByDuration.long],
         [''],
         ['Detailed Call Records'],
-        ['Session ID', 'Call Type', 'Duration (min)', 'Quality Score', 'Status', 'Created At']
+        ['Session ID', 'Call Type', 'Duration (min)', 'Quality Score', 'Status', 'Created At'],
     ];
 
     // Add detailed call records
-    reports.forEach((report: CallStatsReport ) => {
+    reports.forEach((report: CallStatsReport) => {
         const sessionId = report.call_cid.split(':')[1] || report.call_session_id;
         const callType = report.call_cid.split(':')[0] || 'unknown';
         summaryData.push([
@@ -41,19 +41,23 @@ export const exportMetricsToCSV = (data: any) => {
             Math.round(report.call_duration_seconds / 60).toString(),
             report.quality_score ? `${report.quality_score}%` : 'N/A',
             report.call_status,
-            report.created_at ? format(new Date(report.created_at), "yyyy-MM-dd HH:mm:ss") : 'N/A'
+            report.created_at ? format(new Date(report.created_at), 'yyyy-MM-dd HH:mm:ss') : 'N/A',
         ]);
     });
 
     // Convert to CSV string
     const csvContent = summaryData
-        .map(row => row.map(cell => {
-            // Handle cells that might contain commas
-            if (typeof cell === 'string' && cell.includes(',')) {
-                return `"${cell}"`;
-            }
-            return cell;
-        }).join(','))
+        .map(row =>
+            row
+                .map(cell => {
+                    // Handle cells that might contain commas
+                    if (typeof cell === 'string' && cell.includes(',')) {
+                        return `"${cell}"`;
+                    }
+                    return cell;
+                })
+                .join(',')
+        )
         .join('\n');
 
     // Create and trigger download

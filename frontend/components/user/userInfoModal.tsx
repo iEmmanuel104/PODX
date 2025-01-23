@@ -1,14 +1,14 @@
-import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useUpdateUsernameMutation } from "@/store/api/userApi";
-import { useAppSelector, useAppDispatch } from "@/store/hooks";
-import { updateUser } from "@/store/slices/userSlice";
-import toast from "react-hot-toast";
-import { Loader2 } from "lucide-react";
-import DotPattern from "../ui/dot-pattern";
-import { cn } from "@/lib/utils";
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useUpdateUsernameMutation } from '@/store/api/userApi';
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { updateUser } from '@/store/slices/userSlice';
+import toast from 'react-hot-toast';
+import { Loader2 } from 'lucide-react';
+import DotPattern from '../ui/dot-pattern';
+import { cn } from '@/lib/utils';
 
 interface UsernameUpdateModalProps {
     isOpen: boolean;
@@ -18,10 +18,16 @@ interface UsernameUpdateModalProps {
     firstTimeUser: boolean;
 }
 
-export default function UserInfoModal({ isOpen, onClose, initialUsername, onUpdate, firstTimeUser }: UsernameUpdateModalProps) {
+export default function UserInfoModal({
+    isOpen,
+    onClose,
+    initialUsername,
+    onUpdate,
+    firstTimeUser,
+}: UsernameUpdateModalProps) {
     const [username, setUsername] = useState(initialUsername);
     const [updateUsername] = useUpdateUsernameMutation();
-    const userId = useAppSelector((state) => state.user.user?.id);
+    const userId = useAppSelector(state => state.user.user?.id);
     const dispatch = useAppDispatch();
     const [isLoading, setIsLoading] = useState(false);
 
@@ -37,8 +43,8 @@ export default function UserInfoModal({ isOpen, onClose, initialUsername, onUpda
                     onClose();
                 }
             } catch (error) {
-                toast.error("Username update error");
-                console.error("Failed to update username:", error);
+                toast.error('Username update error');
+                console.error('Failed to update username:', error);
             } finally {
                 setIsLoading(false);
             }
@@ -55,7 +61,7 @@ export default function UserInfoModal({ isOpen, onClose, initialUsername, onUpda
                     cy={2}
                     cr={1}
                     className={cn(
-                        "[mask-image:radial-gradient(to_bottom_right,white,transparent,transparent)] rounded-[20px] top-[6px] left-[8px] px-[10px]"
+                        '[mask-image:radial-gradient(to_bottom_right,white,transparent,transparent)] rounded-[20px] top-[6px] left-[8px] px-[10px]'
                     )}
                 />
                 <DialogHeader className="z-10">
@@ -70,7 +76,7 @@ export default function UserInfoModal({ isOpen, onClose, initialUsername, onUpda
                             id="username"
                             type="text"
                             value={username}
-                            onChange={(e) => setUsername(e.target.value)}
+                            onChange={e => setUsername(e.target.value)}
                             className="w-full border border-[#3C3C3C] bg-[#2B2B2B] rounded-[10px] px-[16px] py-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#6032F6] text-white placeholder-[#6C6C6C]"
                             placeholder="Enter username"
                             disabled={isLoading}
@@ -96,7 +102,7 @@ export default function UserInfoModal({ isOpen, onClose, initialUsername, onUpda
                                     Saving...
                                 </>
                             ) : (
-                                "Save"
+                                'Save'
                             )}
                         </Button>
                     </div>

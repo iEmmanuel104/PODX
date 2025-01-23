@@ -38,7 +38,7 @@ const userSlice = createSlice({
                 localStorage.setItem('user', JSON.stringify(state.user));
             }
         },
-        logOut: (state) => {
+        logOut: state => {
             state.user = null;
             state.signature = null;
             state.isLoggedIn = false;
@@ -48,12 +48,6 @@ const userSlice = createSlice({
     },
 });
 
-export const {
-    setUser,
-    setSignature,
-    updateUser,
-    setFirstTimeUser,
-    logOut,
-} = userSlice.actions;
+export const { setUser, setSignature, updateUser, setFirstTimeUser, logOut } = userSlice.actions;
 
 export default userSlice.reducer;

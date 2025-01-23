@@ -1,11 +1,14 @@
-import { Modal } from "./tips"
+import { Modal } from './tips';
 
 interface LeaveConfirmationModalProps {
-    setShowLeaveConfirmation: (show: boolean) => void
-    confirmLeave: () => void
+    setShowLeaveConfirmation: (show: boolean) => void;
+    confirmLeave: () => void;
 }
 
-const LeaveConfirmationModal: React.FC<LeaveConfirmationModalProps> = ({ setShowLeaveConfirmation, confirmLeave }) => (
+const LeaveConfirmationModal: React.FC<LeaveConfirmationModalProps> = ({
+    setShowLeaveConfirmation,
+    confirmLeave,
+}) => (
     <Modal>
         <h2 className="text-2xl font-bold mb-4">Are you sure you want to leave this session?</h2>
         <div className="flex justify-end gap-4">
@@ -23,6 +26,6 @@ const LeaveConfirmationModal: React.FC<LeaveConfirmationModalProps> = ({ setShow
             </button>
         </div>
     </Modal>
-)
+);
 
-export default LeaveConfirmationModal
+export default LeaveConfirmationModal;

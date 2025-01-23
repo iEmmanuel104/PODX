@@ -1,5 +1,5 @@
-import type { StreamChat } from "stream-chat";
-import type { StreamVideoClient } from "@stream-io/video-react-sdk";
+import type { StreamChat } from 'stream-chat';
+import type { StreamVideoClient } from '@stream-io/video-react-sdk';
 
 export const MAX_POOL_SIZE = 2;
 
@@ -14,7 +14,7 @@ export class StreamConnectionPool {
 
     async getChatClient(apiKey: string): Promise<StreamChat> {
         if (this.chatClients.length < this.maxSize) {
-            const { StreamChat } = await import("stream-chat");
+            const { StreamChat } = await import('stream-chat');
             const client = StreamChat.getInstance(apiKey);
             this.chatClients.push(client);
             return client;
@@ -24,7 +24,7 @@ export class StreamConnectionPool {
 
     async getVideoClient(config: any): Promise<StreamVideoClient> {
         if (this.videoClients.length < this.maxSize) {
-            const { StreamVideoClient } = await import("@stream-io/video-react-sdk");
+            const { StreamVideoClient } = await import('@stream-io/video-react-sdk');
             const client = new StreamVideoClient(config);
             this.videoClients.push(client);
             return client;

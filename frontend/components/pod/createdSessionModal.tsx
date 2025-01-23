@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Link, AlertCircle, Check, Loader2 } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Link, AlertCircle, Check, Loader2 } from 'lucide-react';
 
 interface CreatedSessionModalProps {
     isOpen: boolean;
@@ -16,7 +16,14 @@ interface CreatedSessionModalProps {
     scheduledTime?: string;
 }
 
-const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClose, inviteLink, sessionCode, isJoining, onJoinSession }) => {
+const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({
+    isOpen,
+    onClose,
+    inviteLink,
+    sessionCode,
+    isJoining,
+    onJoinSession,
+}) => {
     const [linkCopied, setLinkCopied] = useState(false);
     const [codeCopied, setCodeCopied] = useState(false);
     const [isCopyingLink, setIsCopyingLink] = useState(false);
@@ -32,7 +39,7 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClo
         try {
             await onJoinSession();
         } catch (error) {
-            console.error("Join session error:", error);
+            console.error('Join session error:', error);
             setIsJoiningInternal(false);
         }
     };
@@ -54,7 +61,7 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClo
                 setTimeout(() => setCodeCopied(false), 2000);
             }
         } catch (error) {
-            console.error("Failed to copy text: ", error);
+            console.error('Failed to copy text: ', error);
         } finally {
             if (isCopyingLink) {
                 setIsCopyingLink(false);
@@ -68,7 +75,9 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClo
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="bg-[#1E1E1E] text-white rounded-[10px] p-6 w-full max-w-md">
                 <DialogHeader className="flex flex-row justify-between items-center mb-6">
-                    <DialogTitle className="text-2xl font-semibold">Your session is created</DialogTitle>
+                    <DialogTitle className="text-2xl font-semibold">
+                        Your session is created
+                    </DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
                     <div>
@@ -95,7 +104,11 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClo
                                 ) : linkCopied ? (
                                     <Check className="w-4 h-4 mr-2" />
                                 ) : null}
-                                {isCopyingLink ? "Copying..." : linkCopied ? "Copied!" : "Copy Link"}
+                                {isCopyingLink
+                                    ? 'Copying...'
+                                    : linkCopied
+                                      ? 'Copied!'
+                                      : 'Copy Link'}
                             </Button>
                         </div>
                     </div>
@@ -121,7 +134,7 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClo
                                 ) : codeCopied ? (
                                     <Check className="w-4 h-4 mr-2" />
                                 ) : null}
-                                {isCopyingCode ? "Copying..." : codeCopied ? "Copied!" : "Copy"}
+                                {isCopyingCode ? 'Copying...' : codeCopied ? 'Copied!' : 'Copy'}
                             </Button>
                         </div>
                     </div>
@@ -138,7 +151,7 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({ isOpen, onClo
                                 <span>Joining...</span>
                             </div>
                         ) : (
-                            "Join Session Now"
+                            'Join Session Now'
                         )}
                     </Button>
                 </div>
