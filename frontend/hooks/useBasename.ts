@@ -3,7 +3,7 @@ import { useAppSelector } from '@/store/hooks';
 
 export const useBasename = ({ walletaddress }: { walletaddress: string }) => {
     const [basename, setBasename] = useState<string | null>(null);
-    const { user } = useAppSelector((state) => state.user);
+    const { user } = useAppSelector(state => state.user);
 
     useEffect(() => {
         const checkBasename = async () => {

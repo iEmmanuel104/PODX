@@ -52,15 +52,15 @@ export interface CallStatsAnalytics {
         [key: string]: number;
     };
     callsByDuration: {
-        short: number;   // < 5 minutes
-        medium: number;  // 5-15 minutes
-        long: number;    // > 15 minutes
+        short: number; // < 5 minutes
+        medium: number; // 5-15 minutes
+        long: number; // > 15 minutes
     };
     qualityScoreRanges: {
-        excellent: number;  // 90-100
-        good: number;      // 70-89
-        fair: number;      // 50-69
-        poor: number;      // < 50
+        excellent: number; // 90-100
+        good: number; // 70-89
+        fair: number; // 50-69
+        poor: number; // < 50
     };
     timeDistribution: {
         [key: string]: number;
@@ -109,10 +109,10 @@ export interface GetDetailedStatsParams {
 
 // API Slice
 export const callAnalyticsApiSlice = apiSlice.injectEndpoints({
-    endpoints: (builder) => ({
+    endpoints: builder => ({
         // Get basic call statistics
         getCallStats: builder.query<ApiResponse<CallStatsResponse>, GetCallStatsParams>({
-            query: (params) => {
+            query: params => {
                 const queryParams = new URLSearchParams();
                 if (params.startDate) queryParams.append('startDate', params.startDate);
                 if (params.endDate) queryParams.append('endDate', params.endDate);
@@ -129,8 +129,11 @@ export const callAnalyticsApiSlice = apiSlice.injectEndpoints({
         }),
 
         // Get detailed call statistics
-        getDetailedCallStats: builder.query<ApiResponse<DetailedCallStatsResponse>, GetDetailedStatsParams>({
-            query: (params) => {
+        getDetailedCallStats: builder.query<
+            ApiResponse<DetailedCallStatsResponse>,
+            GetDetailedStatsParams
+        >({
+            query: params => {
                 const queryParams = new URLSearchParams();
                 if (params.startDate) queryParams.append('startDate', params.startDate);
                 if (params.endDate) queryParams.append('endDate', params.endDate);
@@ -156,7 +159,7 @@ export const callAnalyticsApiSlice = apiSlice.injectEndpoints({
 
         // Get specific call details
         getCallDetails: builder.query<ApiResponse<{ call: any }>, string>({
-            query: (callId) => ({
+            query: callId => ({
                 url: `/calls/${callId}`,
                 method: 'GET',
             }),
@@ -164,8 +167,11 @@ export const callAnalyticsApiSlice = apiSlice.injectEndpoints({
         }),
 
         // Get leaderboard
-        getLeaderboard: builder.query<ApiResponse<{ data: LeaderboardResponse[] }>, GetLeaderboardParams>({
-            query: (params) => {
+        getLeaderboard: builder.query<
+            ApiResponse<{ data: LeaderboardResponse[] }>,
+            GetLeaderboardParams
+        >({
+            query: params => {
                 const queryParams = new URLSearchParams();
                 if (params.limit) queryParams.append('limit', params.limit.toString());
 
@@ -189,4 +195,3 @@ export const {
     // Prefetch actions
     usePrefetch,
 } = callAnalyticsApiSlice;
-

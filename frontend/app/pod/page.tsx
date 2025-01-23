@@ -1,36 +1,54 @@
 // app/pod/index.tsx
-"use client";
-import React, { useState, useCallback, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
-import dynamic from "next/dynamic";
-import { StreamVideoClient, GetCallResponse } from "@stream-io/video-react-sdk";
-import { API_KEY } from "@/providers/meetProvider/streamMeetProvider";
-import { useAppSelector, useAppDispatch } from "@/store/hooks";
-import { customAlphabet } from "nanoid";
-import { AppContext } from "@/providers/appProvider";
-import { clearSessionInfo, setSessionInfo } from "@/store/slices/podSlice";
-import { sessionType } from "@/constants";
-import { updateUser } from "@/store/slices/userSlice";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Flame } from "lucide-react";
-import { useScheduledCalls } from "@/hooks/useScheduledCalls";
-import { addScheduledSession } from "@/store/slices/scheduledSessionSlice";
-import { StreamCallData } from "@/components/pod/streamCallData";
-import { useStreamTokenProvider } from "@/hooks/useStreamTokenProvider";
-import Image from "next/image";
+'use client';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import dynamic from 'next/dynamic';
+import { StreamVideoClient, GetCallResponse } from '@stream-io/video-react-sdk';
+import { API_KEY } from '@/providers/meetProvider/streamMeetProvider';
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { customAlphabet } from 'nanoid';
+import { AppContext } from '@/providers/appProvider';
+import { clearSessionInfo, setSessionInfo } from '@/store/slices/podSlice';
+import { sessionType } from '@/constants';
+import { updateUser } from '@/store/slices/userSlice';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
+import Fire from '@/public/icons/Fire';
+import Info from '@/public/icons/Info';
+import { useScheduledCalls } from '@/hooks/useScheduledCalls';
+import { addScheduledSession } from '@/store/slices/scheduledSessionSlice';
+import { StreamCallData } from '@/components/pod/streamCallData';
+import { useStreamTokenProvider } from '@/hooks/useStreamTokenProvider';
+import Telegram from '@/public/icons/socials/Telegram';
+import X from '@/public/icons/socials/X';
+import Farcaster from '@/public/icons/socials/Farcaster';
+import Link from 'next/link';
 
 // Dynamic imports
-const CreateSessionModal = dynamic(() => import("@/components/pod/createSessionModal"), { ssr: false });
-const CreatedSessionModal = dynamic(() => import("@/components/pod/createdSessionModal"), { ssr: false });
-const UserOnboardingFlow = dynamic(() => import("@/components/user/userOnboardingFlow"), { ssr: false });
-const Logo = dynamic(() => import("@/components/ui/logo"), { ssr: false });
-const UserDetails = dynamic(() => import("@/components/user/userDetails"), {
+const CreateSessionModal = dynamic(() => import('@/components/pod/createSessionModal'), {
+    ssr: false,
+});
+const CreatedSessionModal = dynamic(() => import('@/components/pod/createdSessionModal'), {
+    ssr: false,
+});
+const UserOnboardingFlow = dynamic(() => import('@/components/user/userOnboardingFlow'), {
+    ssr: false,
+});
+const Logo = dynamic(() => import('@/components/ui/logo'), { ssr: false });
+const UserDetails = dynamic(() => import('@/components/user/userDetails'), {
     ssr: false,
     loading: () => <div className="w-full max-w-2xl h-16 bg-[#1E1E1E] rounded-lg animate-pulse" />,
 });
-const ScheduledPods = dynamic(() => import("@/components/pod/scheduledPods"), { ssr: false });
+const ScheduledPods = dynamic(() => import('@/components/pod/scheduledPods'), { ssr: false });
 
 // Error Message Component
 const ErrorMessage = ({ message, onClear }: { message: string; onClear: () => void }) => {
@@ -44,7 +62,7 @@ const ErrorMessage = ({ message, onClear }: { message: string; onClear: () => vo
 
 // Utility functions
 const getMeetingId = () => {
-    const alphabet = "abcdefghijklmnopqrstuvwxyz";
+    const alphabet = 'abcdefghijklmnopqrstuvwxyz';
     const nanoid = customAlphabet(alphabet, 4);
     return `${nanoid(3)}-${nanoid(4)}-${nanoid(3)}`;
 };
@@ -61,16 +79,16 @@ export default function PodPage() {
     const router = useRouter();
     const dispatch = useAppDispatch();
     const { setNewMeeting } = React.useContext(AppContext);
-    const { isLoggedIn, user } = useAppSelector((state) => state.user);
-    const sessionInfo = useAppSelector((state) => state.pod);
+    const { isLoggedIn, user } = useAppSelector(state => state.user);
+    const sessionInfo = useAppSelector(state => state.pod);
     const { scheduledSessions, scheduleCall, getScheduledCall, isLoading } = useScheduledCalls();
     const tokenProvider = useStreamTokenProvider();
 
     const [state, setState] = useState({
-        meetingCode: "",
-        error: "",
-        inviteLink: "",
-        sessionCode: "",
+        meetingCode: '',
+        error: '',
+        inviteLink: '',
+        sessionCode: '',
         isJoining: false,
         isJoiningCreated: false,
         isCreateModalOpen: false,
@@ -81,8 +99,8 @@ export default function PodPage() {
     });
 
     useEffect(() => {
-        if (isLoggedIn && user?.username?.startsWith("guest-")) {
-            setState((prev) => ({ ...prev, showUsernameModal: true }));
+        if (isLoggedIn && user?.username?.startsWith('guest-')) {
+            setState(prev => ({ ...prev, showUsernameModal: true }));
         }
     }, [isLoggedIn, user]);
 
@@ -147,11 +165,11 @@ export default function PodPage() {
                     });
 
                     if (!result.data) {
-                        throw new Error("Failed to schedule call");
+                        throw new Error('Failed to schedule call');
                     }
 
                     dispatch(setSessionInfo(sessionData));
-                    setState((prev) => ({
+                    setState(prev => ({
                         ...prev,
                         isCreateModalOpen: false,
                     }));
@@ -159,17 +177,17 @@ export default function PodPage() {
                     // Don't redirect for scheduled sessions
                     return;
                 } catch (error) {
-                    console.error("Failed to schedule call:", error);
-                    setState((prev) => ({
+                    console.error('Failed to schedule call:', error);
+                    setState(prev => ({
                         ...prev,
-                        error: "Failed to schedule the call",
+                        error: 'Failed to schedule the call',
                     }));
                     return;
                 }
             }
 
             // Only set invite link and show created modal for instant sessions
-            setState((prev) => ({
+            setState(prev => ({
                 ...prev,
                 inviteLink: `https://www.podx.fun/pod/join/${newSessionCode}`,
                 sessionCode: newSessionCode,
@@ -185,7 +203,7 @@ export default function PodPage() {
     const handleJoinSession = useCallback(async () => {
         if (!state.meetingCode || !user) return;
 
-        setState((prev) => ({ ...prev, isJoining: true, error: "" }));
+        setState(prev => ({ ...prev, isJoining: true, error: '' }));
         dispatch(clearSessionInfo());
 
         try {
@@ -202,129 +220,101 @@ export default function PodPage() {
             });
 
             try {
-                console.log("Checking Stream.io for call");
+                console.log('Checking Stream.io for call');
                 const { calls } = await client.queryCalls({
                     filter_conditions: { id: state.meetingCode },
                 });
 
                 if (calls.length > 0 && calls[0].id === state.meetingCode) {
-                    console.log("Call found in Stream.io");
+                    console.log('Call found in Stream.io');
                     const response: GetCallResponse = await calls[0].get();
                     handleStreamCall(response);
                     return;
                 }
             } catch (streamError) {
-                console.log("Stream.io call not found, checking scheduled calls...");
+                console.log('Stream.io call not found, checking scheduled calls...');
             }
 
             // Then check Redis scheduled calls
             try {
-                console.log("checking server for scheduled call");
+                console.log('checking server for scheduled call');
                 const { data } = await getScheduledCall(state.meetingCode);
 
                 if (data?.call) {
-                    setState((prev) => ({ ...prev, foundSession: data.call }));
+                    setState(prev => ({ ...prev, foundSession: data.call }));
                     return;
                 }
             } catch (redisError) {
-                console.log("Scheduled call not found in Server");
+                console.log('Scheduled call not found in Server');
             }
 
-            setState((prev) => ({
+            setState(prev => ({
                 ...prev,
                 error: "Couldn't find the meeting you're trying to join.",
             }));
         } catch (error) {
-            console.error("Join session error:", error);
-            setState((prev) => ({
+            console.error('Join session error:', error);
+            setState(prev => ({
                 ...prev,
-                error: error instanceof Error ? error.message : "Failed to join meeting",
+                error: error instanceof Error ? error.message : 'Failed to join meeting',
             }));
         } finally {
-            setState((prev) => ({ ...prev, isJoining: false }));
+            setState(prev => ({ ...prev, isJoining: false }));
         }
     }, [state.meetingCode, user, dispatch, tokenProvider, handleStreamCall, getScheduledCall]);
 
     const handleJoinCreatedSession = useCallback(async () => {
-        setState((prev) => ({ ...prev, isJoiningCreated: true }));
+        setState(prev => ({ ...prev, isJoiningCreated: true }));
         try {
             router.push(`/pod/join/${state.sessionCode}`);
         } catch (error) {
-            console.error("Failed to join created session:", error);
-            setState((prev) => ({
+            console.error('Failed to join created session:', error);
+            setState(prev => ({
                 ...prev,
-                error: "Failed to join session. Please try again.",
+                error: 'Failed to join session. Please try again.',
             }));
         } finally {
-            setState((prev) => ({ ...prev, isJoiningCreated: false }));
+            setState(prev => ({ ...prev, isJoiningCreated: false }));
         }
     }, [state.sessionCode]);
 
     const handleUpdateUsername = useCallback(
         (newUsername: string) => {
-            setState((prev) => ({ ...prev, showUsernameModal: false }));
+            setState(prev => ({ ...prev, showUsernameModal: false }));
             dispatch(updateUser({ username: newUsername }));
         },
         [dispatch]
     );
 
     const handleClearFoundSession = useCallback(() => {
-        setState((prev) => ({ ...prev, foundSession: undefined }));
+        setState(prev => ({ ...prev, foundSession: undefined }));
     }, []);
 
     if (!isLoggedIn || !user) {
-        router.push("/");
+        router.push('/');
         return null;
     }
 
     return (
         <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4 relative">
             <div className="w-full max-w-2xl flex flex-col items-center">
+                {/* User details section */}
                 <React.Suspense fallback={<div className="h-12" />}>
-                    <Logo />
+                    <UserDetails user={user} />
                 </React.Suspense>
-
-                {/* Session streak dialog */}
-                <Dialog open={state.isOpenDialogue} onOpenChange={(open) => setState((prev) => ({ ...prev, isOpenDialogue: open }))}>
-                    <DialogTrigger asChild>
-                        <Button
-                            variant="ghost"
-                            className="mb-8 bg-[#1E1E1E] hover:bg-[#2E2E2E] text-[#A3A3A3] hover:text-white rounded-full px-4 py-2 text-sm font-medium flex items-center space-x-2 border border-[#2E2E2E]"
-                        >
-                            <Flame className="w-4 h-4 text-[#FF6B00]" />
-                            <span>You have no session streak</span>
-                            <span className="ml-1">→</span>
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px] bg-[#1E1E1E] text-white border border-[#2E2E2E] p-0 rounded-[10px]">
-                        <div className="p-6 flex flex-col items-center gap-4">
-                            <Flame className="w-12 h-12 text-[#FF6B00] mb-4" />
-                            <DialogTitle className="text-4xl text-center font-bold mb-1">0 day</DialogTitle>
-                            <div className="flex flex-col items-center gap-2 mt-4">
-                                <DialogHeader>
-                                    <DialogDescription className="text-[#A3A3A3] text-lg">Session Streak</DialogDescription>
-                                </DialogHeader>
-                                <DialogDescription className="text-center text-[#A3A3A3] mb-6">
-                                    Session streaks are consecutive daily sessions that are either created or attended.
-                                </DialogDescription>
-                            </div>
-                            <Button
-                                className="w-full bg-[#6032F6] hover:bg-[#4C28C4] text-white rounded-[10px] py-2 px-4"
-                                onClick={() => setState((prev) => ({ ...prev, isOpenDialogue: false }))}
-                            >
-                                I understand.
-                            </Button>
-                        </div>
-                    </DialogContent>
-                </Dialog>
 
                 {/* Main grid container */}
                 <div className="w-full flex flex-col md:flex-row gap-6 mb-8 sm:mb-16">
                     {/* Join Session Card */}
-                    <div className="flex-1 rounded-[10px] p-6 bg-[#1E1E1E] flex flex-col justify-between" style={{ minHeight: "200px" }}>
+                    <div
+                        className="flex-1 rounded-[10px] p-6 bg-[#1E1E1E] flex flex-col justify-between"
+                        style={{ minHeight: '200px' }}
+                    >
                         <div>
                             <h2 className="text-[32px] font-semibold text-white">Join Session</h2>
-                            <p className="text-[#A3A3A3] text-sm">Join a meeting instantly and collaborate!</p>
+                            <p className="text-[#A3A3A3] text-sm">
+                                Join a meeting instantly and collaborate!
+                            </p>
                         </div>
                         <div className="flex flex-col gap-4 mt-4">
                             <div className="flex flex-col sm:flex-row gap-4">
@@ -332,7 +322,9 @@ export default function PodPage() {
                                     type="text"
                                     placeholder="Enter meeting code"
                                     value={state.meetingCode}
-                                    onChange={(e) => setState((prev) => ({ ...prev, meetingCode: e.target.value }))}
+                                    onChange={e =>
+                                        setState(prev => ({ ...prev, meetingCode: e.target.value }))
+                                    }
                                     className="flex-1 bg-[#2C2C2C] rounded-[10px] px-4 py-2 text-sm border-[#3c3c3c] focus-within:border-[#3c3c3c] focus:border-[#3c3c3c] focus:ring-[#3c3c3c] text-white placeholder-[#6C6C6C]"
                                 />
                                 <Button
@@ -340,54 +332,145 @@ export default function PodPage() {
                                     disabled={!state.meetingCode || state.isJoining}
                                     className="bg-[#6032F6] text-white px-8 py-2 rounded-[10px] hover:bg-[#4C28C4] transition-all duration-300 ease-in-out text-sm font-medium disabled:bg-gray-500 disabled:cursor-not-allowed"
                                 >
-                                    {state.isJoining ? "Joining..." : "Join"}
+                                    {state.isJoining ? 'Joining...' : 'Join'}
                                 </Button>
                             </div>
-                            <ErrorMessage message={state.error} onClear={() => setState((prev) => ({ ...prev, error: "" }))} />
+                            <ErrorMessage
+                                message={state.error}
+                                onClear={() => setState(prev => ({ ...prev, error: '' }))}
+                            />
                         </div>
                     </div>
 
                     {/* Create Session Card */}
                     <div
                         className="w-full md:w-[42%] rounded-[10px] p-6 bg-gradient-to-br from-[#6032F6] to-[#381D90] flex flex-col justify-between"
-                        style={{ minHeight: "200px" }}
+                        style={{ minHeight: '200px' }}
                     >
                         <div>
-                            <Image src="/images/play-add.svg" alt="Create Session" width={32} height={32} className="mb-4" priority />
+                            <Image
+                                src="/images/play-add.svg"
+                                alt="Create Session"
+                                width={32}
+                                height={32}
+                                className="mb-4"
+                                priority
+                            />
                             <h2 className="text-[32px] font-semibold text-white">Create Session</h2>
                             <p className="text-[#E9D5FF] text-sm mb-4">
-                                Start a meeting or podcast session in seconds - collaborate, share, and record with ease!
+                                Start a meeting or podcast session in seconds - collaborate, share,
+                                and record with ease!
                             </p>
                         </div>
                         <Button
-                            onClick={() => setState((prev) => ({ ...prev, isCreateModalOpen: true }))}
+                            onClick={() => setState(prev => ({ ...prev, isCreateModalOpen: true }))}
                             className="w-full bg-[#DDB958] hover:bg-[#DDB958] text-black font-semibold py-2 px-4 rounded-[10px] transition-colors duration-300"
                         >
                             Create Session
                         </Button>
                     </div>
                 </div>
+
+                {/* Session streak dialog */}
+                <Dialog
+                    open={state.isOpenDialogue}
+                    onOpenChange={open => setState(prev => ({ ...prev, isOpenDialogue: open }))}
+                >
+                    <DialogTrigger className="max-w-[275px] mx-auto" asChild>
+                        <div className="flex justify-center items-center">
+                            <div className="rounded-full bg-gradient-to-r from-[#552FC9]  to-[#D7B35D] p-[1px]">
+                                <Button
+                                    variant="ghost"
+                                    className="flex justify-between items-center rounded-full bg-[#212121] text-white text-xs tracking-wider py-[4px] px-[16px]"
+                                >
+                                    <div className="h-[14px] w-[14px]">
+                                        <Fire />
+                                    </div>
+                                    <span>You have no session streak</span>
+                                    <div className="icon-container h-[14px] w-[14px]">
+                                        <Info />
+                                    </div>
+                                </Button>
+                            </div>
+                        </div>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px] bg-[#1E1E1E] text-white border border-[#2E2E2E] p-0 rounded-[10px]">
+                        <div className="p-6 flex flex-col items-center gap-4">
+                            <div className="h-[14px] w-[14px]">
+                                <Fire />
+                            </div>
+                            <DialogTitle className="text-4xl text-center font-bold mb-1">
+                                0 day
+                            </DialogTitle>
+                            <div className="flex flex-col items-center gap-2 mt-4">
+                                <DialogHeader>
+                                    <DialogDescription className="text-[#A3A3A3] text-lg">
+                                        Session Streak
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <DialogDescription className="text-center text-[#A3A3A3] mb-6">
+                                    Session streaks are consecutive daily sessions that are either
+                                    created or attended.
+                                </DialogDescription>
+                            </div>
+                            <Button
+                                className="w-full bg-[#6032F6] hover:bg-[#4C28C4] text-white rounded-[10px] py-2 px-4"
+                                onClick={() =>
+                                    setState(prev => ({ ...prev, isOpenDialogue: false }))
+                                }
+                            >
+                                I understand.
+                            </Button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
             </div>
 
             {/* Scheduled sessions */}
             <ScheduledPods
                 sessions={scheduledSessions}
                 foundSession={state.foundSession}
-                onJoinSession={(sessionId) => router.push(`/pod/join/${sessionId}`)}
+                onJoinSession={sessionId => router.push(`/pod/join/${sessionId}`)}
                 currentUserId={user?.id}
                 isLoading={isLoading}
                 onClearFoundSession={handleClearFoundSession}
             />
+            <div className="w-full max-w-2xl flex justify-between items-center">
+                <span className="bg-gradient-to-r from-[#D7B35D] to-[#552FC9] text-transparent bg-clip-text font-medium text-sm">
+                    Podx @ {new Date().getFullYear()}
+                </span>
 
-            {/* User details section */}
-            <UserDetails user={user} />
+                <div className="socials flex gap-[8px]">
+                    <a
+                        href="https://t.me/podx_fun"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Join us on Telegram"
+                        className="social-icon h-[24px] w-[24px]"
+                    >
+                        <Telegram />
+                    </a>
+                    <Link href="#" className="text-zinc-400 hover:text-zinc-100 transition-colors">
+                        <Farcaster />
+                    </Link>
+                    <a
+                        href="https://x.com/podx_fun"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Follow us on X"
+                        className="social-icon h-[24px] w-[24px]"
+                    >
+                        <X />
+                    </a>
+                </div>
+            </div>
 
             {/* Modals */}
             <React.Suspense fallback={null}>
                 {state.isCreateModalOpen && (
                     <CreateSessionModal
                         isOpen={state.isCreateModalOpen}
-                        onClose={() => setState((prev) => ({ ...prev, isCreateModalOpen: false }))}
+                        onClose={() => setState(prev => ({ ...prev, isCreateModalOpen: false }))}
                         onCreateSession={handleCreateSession}
                     />
                 )}
@@ -395,7 +478,7 @@ export default function PodPage() {
                 {state.isCreatedModalOpen && (
                     <CreatedSessionModal
                         isOpen={state.isCreatedModalOpen}
-                        onClose={() => setState((prev) => ({ ...prev, isCreatedModalOpen: false }))}
+                        onClose={() => setState(prev => ({ ...prev, isCreatedModalOpen: false }))}
                         inviteLink={state.inviteLink}
                         sessionCode={state.sessionCode}
                         isJoining={state.isJoiningCreated}
@@ -407,7 +490,7 @@ export default function PodPage() {
                 {user && state.showUsernameModal && (
                     <UserOnboardingFlow
                         isOpen={state.showUsernameModal}
-                        onClose={() => setState((prev) => ({ ...prev, showUsernameModal: false }))}
+                        onClose={() => setState(prev => ({ ...prev, showUsernameModal: false }))}
                         initialUsername={user.username}
                         onUpdate={handleUpdateUsername}
                         firstTimeUser={user.firstTimeUser} // Make sure this property exists in your user state

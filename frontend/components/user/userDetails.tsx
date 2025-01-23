@@ -1,40 +1,47 @@
-"use client";
+'use client';
 
-import React, { useState, useMemo, useCallback, memo } from "react";
-import { useRouter } from "next/navigation";
-import { Settings, LogOut, Clock, Edit2, Check, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { usePrivy } from "@privy-io/react-auth";
-import dynamic from "next/dynamic";
-import { UserDetailsProps, UserState } from "./userDetailsProps";
-import { useAppDispatch } from "@/store/hooks";
-import { updateUser } from "@/store/slices/userSlice";
-import Logo from "@/public/images/icons/Logo";
+import React, { useState, useMemo, useCallback, memo } from 'react';
+import { useRouter } from 'next/navigation';
+import { Settings, LogOut, Clock, Edit2, Check, X, Edit3, ArrowUpRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { usePrivy } from '@privy-io/react-auth';
+import dynamic from 'next/dynamic';
+import { UserDetailsProps, UserState } from './userDetailsProps';
+import { useAppDispatch } from '@/store/hooks';
+import { updateUser } from '@/store/slices/userSlice';
+import Logo from '@/public/images/icons/Logo';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 // Dynamic import for wallet operations
-const WalletOperations = dynamic(() => import("./walletOperations"), {
+const WalletOperations = dynamic(() => import('./walletOperations'), {
     ssr: false,
     loading: () => null,
 });
 
 // Utility function
-const formatAddress = (addr: string): string => (addr.length < 10 ? addr : `${addr.slice(0, 6)}...${addr.slice(-4)}`);
+const formatAddress = (addr: string): string =>
+    addr.length < 10 ? addr : `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 
 const UserDetails = memo<UserDetailsProps>(({ user }) => {
     const router = useRouter();
     const dispatch = useAppDispatch();
     const { logout } = usePrivy();
     const [isEditing, setIsEditing] = useState(false);
-    const [editedUsername, setEditedUsername] = useState(user?.username || "");
+    const [editedUsername, setEditedUsername] = useState(user?.username || '');
     const [state, setState] = useState<UserState>({
         isOpen: false,
         isSettingsOpen: false,
         isWarningOpen: false,
         isWithdrawOpen: false,
-        amount: "",
-        address: "",
+        amount: '',
+        address: '',
     });
 
     // Memoized user info
@@ -42,19 +49,19 @@ const UserDetails = memo<UserDetailsProps>(({ user }) => {
         () => ({
             displayName: user?.username || formatAddress(user?.walletAddress),
             initials: (user?.username || user?.walletAddress).slice(0, 2).toUpperCase(),
-            isPrivyWallet: user?.walletClientType === "privy",
+            isPrivyWallet: user?.walletClientType === 'privy',
         }),
         [user]
     );
 
     const handleLogout = useCallback(() => {
         logout();
-        router.push("/");
+        router.push('/');
     }, [logout, router]);
 
     const handleEditClick = useCallback(() => {
         setIsEditing(true);
-        setEditedUsername(user?.username || "");
+        setEditedUsername(user?.username || '');
     }, [user?.username]);
 
     const handleSaveUsername = useCallback(() => {
@@ -66,12 +73,12 @@ const UserDetails = memo<UserDetailsProps>(({ user }) => {
 
     const handleCancelEdit = useCallback(() => {
         setIsEditing(false);
-        setEditedUsername(user?.username || "");
+        setEditedUsername(user?.username || '');
     }, [user?.username]);
 
     // Wallet operation handlers
     const handleWithdrawClick = useCallback(() => {
-        setState((prev) => ({
+        setState(prev => ({
             ...prev,
             isSettingsOpen: false,
             isWarningOpen: true,
@@ -79,7 +86,7 @@ const UserDetails = memo<UserDetailsProps>(({ user }) => {
     }, []);
 
     const handleWarningConfirm = useCallback(() => {
-        setState((prev) => ({
+        setState(prev => ({
             ...prev,
             isWarningOpen: false,
             isWithdrawOpen: true,
@@ -87,54 +94,87 @@ const UserDetails = memo<UserDetailsProps>(({ user }) => {
     }, []);
 
     return (
-        <div className="w-full flex items-center justify-between p-4 text-white">
+        <div className="w-full flex items-center justify-between p-4 text-white mb-24">
             {/* User profile */}
-            <div className="group flex justify-between items-center gap-[4px] bg-[#1d1d1d] rounded-full px-[10px] py-[4px] border border-[#232323]">
-                <div className="w-6 h-6 bg-[#6032F6] rounded-full flex items-center justify-center text-sm font-bold">
-                    {userInfo.initials}
+            {isEditing ? (
+                <div className="flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900 px-3 py-1.5">
+                    <Avatar className="h-6 w-6">
+                        <AvatarImage src={userInfo.initials} alt={userInfo.initials} />
+                        <AvatarFallback>{userInfo.initials}</AvatarFallback>
+                    </Avatar>
+                    <div className="h-1 w-1 rounded-full bg-green-500" />
+                    <Input
+                        value={editedUsername}
+                        onChange={e => setEditedUsername(e.target.value)}
+                        className="h-8 w-40 bg-zinc-800 border-none text-white"
+                        autoFocus
+                    />
+                    <Button
+                        onClick={handleSaveUsername}
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 hover:bg-zinc-800"
+                    >
+                        <Check className="h-4 w-4 text-green-500" />
+                    </Button>
+                    <Button
+                        onClick={handleCancelEdit}
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 hover:bg-zinc-800"
+                    >
+                        <X className="h-4 w-4 text-red-500" />
+                    </Button>
                 </div>
-                <span className="h-[4px] w-[4px] rounded-full bg-[#69CB58]"></span>
-                {isEditing ? (
-                    <div className="flex items-center space-x-2">
-                        <Input
-                            value={editedUsername}
-                            onChange={(e) => setEditedUsername(e.target.value)}
-                            className="h-8 w-40 bg-[#444444] border-none text-white font-medium"
-                            autoFocus
-                        />
-                        <Button
-                            onClick={handleSaveUsername}
-                            className="p-1 hover:bg-[#444444] rounded-full"
+            ) : (
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <button className="group flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900 px-3 py-1.5 transition-colors hover:bg-zinc-800">
+                            <Avatar className="h-6 w-6">
+                                <AvatarImage src={userInfo.initials} alt={userInfo.initials} />
+                                <AvatarFallback>{userInfo.initials}</AvatarFallback>
+                            </Avatar>
+                            <div className="h-1 w-1 rounded-full bg-green-500" />
+                            <span className="text-sm text-zinc-100">{editedUsername}</span>
+                        </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                        align="end"
+                        className="min-w-[144px] bg-zinc-900 p-2 border-none"
+                    >
+                        <DropdownMenuItem
+                            className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-zinc-100"
+                            onSelect={e => {
+                                e.preventDefault();
+                                handleEditClick();
+                            }}
                         >
-                            <Check className="h-4 w-4 text-green-500" />
-                        </Button>
-                        <Button
-                            onClick={handleCancelEdit}
-                            className="p-1 hover:bg-[#444444] rounded-full"
-                        >
-                            <X className="h-4 w-4 text-red-500" />
-                        </Button>
-                    </div>
-                ) : (
-                    <div className="flex items-center space-x-2">
-                        <span className="font-medium">{userInfo.displayName}</span>
-                        
-                        <Button
-                            onClick={handleEditClick}
-                            className="p-1 hover:bg-[#444444] rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                            <Edit2 className="h-4 w-4 text-[#A3A3A3]" />
-                        </Button>
-                    </div>
-                )}
+                            <Edit3 className="h-4 w-4" />
+                            <span>Edit name</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="flex cursor-pointer items-center justify-between rounded-md px-3 py-2">
+                            <span className="bg-gradient-to-br from-[#552FC9] to-[#D7B35D] bg-clip-text text-transparent">
+                                Buy basename
+                            </span>
+                            <ArrowUpRight className="h-4 w-4 text-zinc-400" />
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            )}
+            <div className="w-[180px] h-[43px]">
+                <Logo />
             </div>
-           <div className="w-[180px] h-[44px]">
-           <Logo />
-           </div>
             {/* Settings dropdown */}
-            <DropdownMenu open={state.isOpen} onOpenChange={(open) => setState((prev) => ({ ...prev, isOpen: open }))}>
+            <DropdownMenu
+                open={state.isOpen}
+                dir="ltr"
+                onOpenChange={open => setState(prev => ({ ...prev, isOpen: open }))}
+            >
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="text-[#A3A3A3] hover:text-white hover:bg-transparent focus:bg-transparent">
+                    <Button
+                        variant="ghost"
+                        className="text-[#A3A3A3] hover:text-white hover:bg-transparent focus:bg-transparent"
+                    >
                         <Settings className="h-5 w-5 mr-2" /> Settings
                     </Button>
                 </DropdownMenuTrigger>
@@ -142,7 +182,7 @@ const UserDetails = memo<UserDetailsProps>(({ user }) => {
                 <DropdownMenuContent
                     className="w-56 bg-[#1E1E1E] border-[#2E2E2E] text-white rounded-[10px] shadow-lg"
                     align="end"
-                    side="top"
+                    side="bottom"
                     sideOffset={5}
                 >
                     {userInfo.isPrivyWallet && (
@@ -160,7 +200,10 @@ const UserDetails = memo<UserDetailsProps>(({ user }) => {
                         <span>Session history</span>
                     </DropdownMenuItem>
 
-                    <DropdownMenuItem className="flex items-center px-3 py-2 cursor-pointer text-red-500" onSelect={handleLogout}>
+                    <DropdownMenuItem
+                        className="flex items-center px-3 py-2 cursor-pointer text-red-500"
+                        onSelect={handleLogout}
+                    >
                         <LogOut className="mr-2 h-4 w-4" />
                         <span>Log out</span>
                     </DropdownMenuItem>
@@ -170,5 +213,5 @@ const UserDetails = memo<UserDetailsProps>(({ user }) => {
     );
 });
 
-UserDetails.displayName = "UserDetails";
+UserDetails.displayName = 'UserDetails';
 export default UserDetails;

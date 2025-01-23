@@ -1,28 +1,44 @@
-import React, { useEffect, useMemo, useState } from "react";
+// GridLayout.tsx
+import { useEffect, useMemo, useState } from 'react';
 import {
+    combineComparators,
+    Comparator,
+    IconButton,
     ParticipantView,
+    pinned,
+    screenSharing,
     StreamVideoParticipant,
     useCall,
     useCallStateHooks,
-    combineComparators,
-    Comparator,
-    pinned,
-} from "@stream-io/video-react-sdk";
-import { Mic, MicOff, Video, VideoOff } from "lucide-react";
-import clsx from "clsx";
+    isPinned,
+    hasScreenShare,
+} from '@stream-io/video-react-sdk';
+import clsx from 'clsx';
+
+import ParticipantViewUI from './participantViewUI';
+import useAnimateVideoLayout from '../../hooks/useAnimateVideoLayout';
+import VideoPlaceholder from './videoPlaceholder';
 
 const GROUP_SIZE = 6;
 
-const GridLayout: React.FC = () => {
+const getGridLayout = (count: number) => {
+    if (count === 1) return 'grid-cols-1 grid-rows-1';
+    if (count === 2) return 'grid-cols-2 grid-rows-1 max-w-5xl mx-auto';
+    if (count === 3 || count === 4) return 'grid-cols-2 grid-rows-2';
+    if (count >= 5) return 'grid-cols-3 grid-rows-2';
+    return 'grid-cols-1 grid-rows-1';
+};
+
+const GridLayout = () => {
     const call = useCall();
-    const { useParticipants, useLocalParticipant, useDominantSpeaker } = useCallStateHooks();
+    const { useParticipants, useHasOngoingScreenShare } = useCallStateHooks();
     const participants = useParticipants();
-    const localParticipant = useLocalParticipant();
-    const dominantSpeaker = useDominantSpeaker();
+    const hasOngoingScreenShare = useHasOngoingScreenShare();
     const [page, setPage] = useState(0);
+    const { ref } = useAnimateVideoLayout(false);
 
+    // All hooks must be called at the top level
     const pageCount = useMemo(() => Math.ceil(participants.length / GROUP_SIZE), [participants]);
-
     const participantGroups = useMemo(() => {
         const groups = [];
         for (let i = 0; i < participants.length; i += GROUP_SIZE) {
@@ -31,11 +47,15 @@ const GridLayout: React.FC = () => {
         return groups;
     }, [participants]);
 
-    const selectedGroup = participantGroups[page];
+    // Find screen sharing participant using hasScreenShare helper
+    const screenSharingParticipant = useMemo(
+        () => participants.find(p => hasScreenShare(p)),
+        [participants]
+    );
 
     useEffect(() => {
         if (!call) return;
-        const customSortingPreset = getCustomSortingPreset();
+        const customSortingPreset = combineComparators(screenSharing, pinned);
         call.setSortParticipantsBy(customSortingPreset);
     }, [call]);
 
@@ -45,78 +65,119 @@ const GridLayout: React.FC = () => {
         }
     }, [page, pageCount]);
 
-    const getCustomSortingPreset = (): Comparator<StreamVideoParticipant> => {
-        return combineComparators(pinned);
+    const selectedGroup = participantGroups[page];
+
+    const getParticipantClass = (participant: StreamVideoParticipant, totalCount: number) => {
+        const baseClasses =
+            'relative rounded-xl overflow-hidden transition-all duration-300 ease-in-out flex items-center justify-center';
+
+        if (totalCount === 1) {
+            return clsx(baseClasses, 'w-full h-full max-w-4xl mx-auto');
+        }
+
+        if (totalCount === 2) {
+            return clsx(
+                baseClasses,
+                'w-full h-[70vh] md:h-[80vh]',
+                'my-auto',
+                isPinned(participant) && 'hover:scale-[1.02]'
+            );
+        }
+
+        return clsx(baseClasses, 'w-full h-full', isPinned(participant) && 'hover:scale-[1.02]');
     };
 
-    const ParticipantTile: React.FC<{ participant: StreamVideoParticipant }> = ({ participant }) => {
-        const isLocal = participant.userId === localParticipant?.userId;
-        const isDominant = participant.userId === dominantSpeaker?.userId;
-        const { useMicrophoneState, useCameraState } = useCallStateHooks();
-        const micState = useMicrophoneState();
-        const cameraState = useCameraState();
-
+    // Render screen share layout
+    if (hasOngoingScreenShare && screenSharingParticipant) {
         return (
-            <div
-                className={clsx("relative aspect-video bg-[#2C2C2C] rounded-[10px] overflow-hidden", {
-                    "border-2 border-blue-500": isDominant,
-                    "border-2 border-green-500": isLocal,
-                })}
-            >
-                <ParticipantView participant={participant} />
-                <div className="absolute top-2 left-2 flex items-center space-x-2">
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center ${!micState.isMute ? "bg-[#7C3AED]" : "bg-red-500"}`}>
-                        {!micState.isMute ? <Mic className="w-3 h-3 text-white" /> : <MicOff className="w-3 h-3 text-white" />}
+            <div ref={ref} className="w-full h-full relative overflow-hidden">
+                <div className="h-full p-2 md:p-4 grid grid-rows-[1fr,auto] gap-2 md:gap-4">
+                    <div className="w-full h-full flex items-center justify-center">
+                        <div className="w-full h-full max-w-7xl mx-auto rounded-xl overflow-hidden">
+                            <ParticipantView
+                                participant={screenSharingParticipant}
+                                trackType="screenShareTrack"
+                                ParticipantViewUI={ParticipantViewUI}
+                                VideoPlaceholder={VideoPlaceholder}
+                            />
+                        </div>
                     </div>
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center ${!cameraState.isMute ? "bg-[#7C3AED]" : "bg-red-500"}`}>
-                        {!cameraState.isMute ? <Video className="w-3 h-3 text-white" /> : <VideoOff className="w-3 h-3 text-white" />}
+
+                    <div className="h-32 md:h-36">
+                        <div className="flex gap-2 h-full overflow-x-auto justify-center">
+                            {participants
+                                .filter(p => !hasScreenShare(p))
+                                .map(participant => (
+                                    <div
+                                        key={participant.sessionId}
+                                        className="h-full aspect-[4/3] flex-shrink-0 rounded-xl overflow-hidden"
+                                    >
+                                        <ParticipantView
+                                            participant={participant}
+                                            trackType={
+                                                hasScreenShare(participant)
+                                                    ? 'screenShareTrack'
+                                                    : 'videoTrack'
+                                            }
+                                            ParticipantViewUI={ParticipantViewUI}
+                                            VideoPlaceholder={VideoPlaceholder}
+                                        />
+                                    </div>
+                                ))}
+                        </div>
                     </div>
-                </div>
-                <div className="absolute bottom-2 left-2 right-2 flex justify-between items-center">
-                    <span className="text-white text-xs bg-black bg-opacity-50 px-2 py-1 rounded-full">
-                        {participant.name || participant.userId}
-                        {isLocal && " (You)"}
-                    </span>
-                    {isDominant && <span className="text-white text-xs bg-blue-500 bg-opacity-50 px-2 py-1 rounded-full">Speaking</span>}
                 </div>
             </div>
         );
-    };
+    }
 
+    // Regular grid layout render
     return (
-        <div className={clsx("w-full relative overflow-hidden", "str-video__paginated-grid-layout")}>
+        <div ref={ref} className="w-full h-full relative overflow-hidden">
             {pageCount > 1 && (
-                <button
-                    className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-[#2C2C2C] text-white rounded-full p-2"
+                <IconButton
+                    icon="caret-left"
                     disabled={page === 0}
-                    onClick={() => setPage((currentPage) => Math.max(0, currentPage - 1))}
-                >
-                    &lt;
-                </button>
+                    onClick={() => setPage(p => Math.max(0, p - 1))}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 z-10"
+                />
             )}
             <div
-                className={clsx("str-video__paginated-grid-layout__group", {
-                    "str-video__paginated-grid-layout--one": selectedGroup.length === 1,
-                    "str-video__paginated-grid-layout--two-four": selectedGroup.length >= 2 && selectedGroup.length <= 4,
-                    "str-video__paginated-grid-layout--five-nine": selectedGroup.length >= 5 && selectedGroup.length <= 9,
-                })}
+                className={clsx(
+                    'grid w-full h-full gap-2 md:gap-4 p-2 md:p-4',
+                    getGridLayout(selectedGroup?.length || 0),
+                    'max-w-7xl mx-auto'
+                )}
             >
-                {call && selectedGroup.length > 0 && (
+                {call && selectedGroup?.length > 0 && (
                     <>
-                        {selectedGroup.map((participant) => (
-                            <ParticipantTile key={participant.sessionId} participant={participant} />
+                        {selectedGroup.map(participant => (
+                            <div
+                                key={participant.sessionId}
+                                className={getParticipantClass(participant, selectedGroup.length)}
+                            >
+                                <ParticipantView
+                                    participant={participant}
+                                    trackType={
+                                        hasScreenShare(participant)
+                                            ? 'screenShareTrack'
+                                            : 'videoTrack'
+                                    }
+                                    ParticipantViewUI={ParticipantViewUI}
+                                    VideoPlaceholder={VideoPlaceholder}
+                                />
+                            </div>
                         ))}
                     </>
                 )}
             </div>
             {pageCount > 1 && (
-                <button
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-[#2C2C2C] text-white rounded-full p-2"
+                <IconButton
                     disabled={page === pageCount - 1}
-                    onClick={() => setPage((currentPage) => Math.min(pageCount - 1, currentPage + 1))}
-                >
-                    &gt;
-                </button>
+                    icon="caret-right"
+                    onClick={() => setPage(p => Math.min(pageCount - 1, p + 1))}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 z-10"
+                />
             )}
         </div>
     );

@@ -1,13 +1,15 @@
-import React from "react";
-import { CallParticipantResponse, MemberResponse } from "@stream-io/video-react-sdk";
+import React from 'react';
+import { CallParticipantResponse, MemberResponse } from '@stream-io/video-react-sdk';
 
 interface AvatarProps {
-    participant: CallParticipantResponse | MemberResponse;  
+    participant: CallParticipantResponse | MemberResponse;
     width: number;
 }
 
 const Avatar: React.FC<AvatarProps> = ({ participant, width }) => {
-    const initials = participant.user.name ? participant.user.name.slice(0, 2).toUpperCase() : participant.user.id.slice(0, 2).toUpperCase();
+    const initials = participant.user.name
+        ? participant.user.name.slice(0, 2).toUpperCase()
+        : participant.user.id.slice(0, 2).toUpperCase();
 
     return (
         <div

@@ -51,8 +51,8 @@ export interface PodState {
     screenSharingUserId: string | null;
     sessionTitle: string;
     sessionType: sessionType | '';
-    sessionId: string,
-    streamCallType: typeof streamCallType[keyof typeof streamCallType] | '';
+    sessionId: string;
+    streamCallType: (typeof streamCallType)[keyof typeof streamCallType] | '';
     starts_at?: string;
     isScheduled?: boolean;
 }
@@ -110,17 +110,27 @@ const podSlice = createSlice({
         removeParticipant: (state, action: PayloadAction<string>) => {
             state.participants = state.participants.filter(p => p.userId !== action.payload);
         },
-        toggleLocalAudio: (state) => {
+        toggleLocalAudio: state => {
             state.localUser.isAudioEnabled = !state.localUser.isAudioEnabled;
         },
-        toggleLocalVideo: (state) => {
+        toggleLocalVideo: state => {
             state.localUser.isVideoEnabled = !state.localUser.isVideoEnabled;
         },
-        setLocalTracks: (state, action: PayloadAction<{ audioTrackId: string | null; videoTrackId: string | null }>) => {
+        setLocalTracks: (
+            state,
+            action: PayloadAction<{ audioTrackId: string | null; videoTrackId: string | null }>
+        ) => {
             state.localUser.audioTrackId = action.payload.audioTrackId;
             state.localUser.videoTrackId = action.payload.videoTrackId;
         },
-        updateParticipantTrack: (state, action: PayloadAction<{ userId: string; kind: 'audio' | 'video'; trackId: string | null }>) => {
+        updateParticipantTrack: (
+            state,
+            action: PayloadAction<{
+                userId: string;
+                kind: 'audio' | 'video';
+                trackId: string | null;
+            }>
+        ) => {
             const participant = state.participants.find(p => p.userId === action.payload.userId);
             if (participant) {
                 if (action.payload.kind === 'audio') {
@@ -139,64 +149,105 @@ const podSlice = createSlice({
         updatePodStats: (state, action: PayloadAction<Partial<PodState['stats']>>) => {
             state.stats = { ...state.stats, ...action.payload };
         },
-        updateParticipantAudioState: (state, action: PayloadAction<{ userId: string; isAudioEnabled: boolean }>) => {
+        updateParticipantAudioState: (
+            state,
+            action: PayloadAction<{ userId: string; isAudioEnabled: boolean }>
+        ) => {
             const participant = state.participants.find(p => p.userId === action.payload.userId);
             if (participant) {
                 participant.isAudioEnabled = action.payload.isAudioEnabled;
             }
         },
-        updateParticipantVideoState: (state, action: PayloadAction<{ userId: string; isVideoEnabled: boolean }>) => {
+        updateParticipantVideoState: (
+            state,
+            action: PayloadAction<{ userId: string; isVideoEnabled: boolean }>
+        ) => {
             const participant = state.participants.find(p => p.userId === action.payload.userId);
             if (participant) {
                 participant.isVideoEnabled = action.payload.isVideoEnabled;
             }
         },
-        updatePodContent: (state, action: PayloadAction<{ podId: string; newIpfsContentHash: string }>) => {
+        updatePodContent: (
+            state,
+            action: PayloadAction<{ podId: string; newIpfsContentHash: string }>
+        ) => {
             if (state.podId === action.payload.podId) {
                 state.ipfsContentHash = action.payload.newIpfsContentHash;
             }
         },
         addCoHostRequest: (state, action: PayloadAction<CoHostRequest>) => {
-            if (!state.coHostRequests.some(request => request.userId === action.payload.userId && request.podId === action.payload.podId)) {
+            if (
+                !state.coHostRequests.some(
+                    request =>
+                        request.userId === action.payload.userId &&
+                        request.podId === action.payload.podId
+                )
+            ) {
                 state.coHostRequests.push(action.payload);
                 state.stats.coHostRequestCount++;
             }
         },
         removeCoHostRequest: (state, action: PayloadAction<{ userId: string; podId: string }>) => {
             state.coHostRequests = state.coHostRequests.filter(
-                request => !(request.userId === action.payload.userId && request.podId === action.payload.podId)
+                request =>
+                    !(
+                        request.userId === action.payload.userId &&
+                        request.podId === action.payload.podId
+                    )
             );
             state.stats.coHostRequestCount = state.coHostRequests.length;
         },
         addJoinRequest: (state, action: PayloadAction<JoinRequest>) => {
-            if (!state.joinRequests.some(request => request.userId === action.payload.userId && request.podId === action.payload.podId)) {
+            if (
+                !state.joinRequests.some(
+                    request =>
+                        request.userId === action.payload.userId &&
+                        request.podId === action.payload.podId
+                )
+            ) {
                 state.joinRequests.push(action.payload);
                 state.stats.joinRequestCount++;
             }
         },
         removeJoinRequest: (state, action: PayloadAction<{ userId: string; podId: string }>) => {
             state.joinRequests = state.joinRequests.filter(
-                request => !(request.userId === action.payload.userId && request.podId === action.payload.podId)
+                request =>
+                    !(
+                        request.userId === action.payload.userId &&
+                        request.podId === action.payload.podId
+                    )
             );
             state.stats.joinRequestCount = state.joinRequests.length;
         },
         setError: (state, action: PayloadAction<Error>) => {
             state.errors.push(action.payload);
         },
-        clearErrors: (state) => {
+        clearErrors: state => {
             state.errors = [];
         },
         setPendingTipTransaction: (state, action: PayloadAction<string | null>) => {
             state.pendingTipTransaction = action.payload;
         },
-        setScreenSharing: (state, action: PayloadAction<{ isScreenSharing: boolean; userId: string | null }>) => {
+        setScreenSharing: (
+            state,
+            action: PayloadAction<{ isScreenSharing: boolean; userId: string | null }>
+        ) => {
             state.isScreenSharing = action.payload.isScreenSharing;
             state.screenSharingUserId = action.payload.userId;
         },
-        clearPodState: (state) => {
+        clearPodState: state => {
             Object.assign(state, initialState);
         },
-        setSessionInfo: (state, action: PayloadAction<{ title: string; type: sessionType; sessionId: string; starts_at?: string; isScheduled?: boolean }>) => {
+        setSessionInfo: (
+            state,
+            action: PayloadAction<{
+                title: string;
+                type: sessionType;
+                sessionId: string;
+                starts_at?: string;
+                isScheduled?: boolean;
+            }>
+        ) => {
             state.sessionTitle = action.payload.title;
             state.sessionType = action.payload.type;
             state.sessionId = action.payload.sessionId;
@@ -204,7 +255,7 @@ const podSlice = createSlice({
             state.starts_at = action.payload.starts_at;
             state.isScheduled = action.payload.isScheduled;
         },
-        clearSessionInfo: (state) => {
+        clearSessionInfo: state => {
             state.sessionTitle = '';
             state.sessionType = '';
             state.sessionId = '';
@@ -239,7 +290,7 @@ export const {
     setScreenSharing,
     clearPodState,
     setSessionInfo,
-    clearSessionInfo
+    clearSessionInfo,
 } = podSlice.actions;
 
 export default podSlice.reducer;

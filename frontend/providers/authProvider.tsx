@@ -1,15 +1,15 @@
-"use client";
-import { useEffect, useState, useCallback } from "react";
-import { usePrivy } from "@privy-io/react-auth";
-import { useAppSelector, useAppDispatch } from "@/store/hooks";
-import { setUser, setSignature, logOut } from "@/store/slices/userSlice";
-import { useRouter, usePathname } from "next/navigation";
-import { useFindOrCreateUserMutation, UserInfo } from "@/store/api/userApi";
-import { LoadingOverlay } from "@/components/ui/loading";
+'use client';
+import { useEffect, useState, useCallback } from 'react';
+import { usePrivy } from '@privy-io/react-auth';
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { setUser, setSignature, logOut } from '@/store/slices/userSlice';
+import { useRouter, usePathname } from 'next/navigation';
+import { useFindOrCreateUserMutation, UserInfo } from '@/store/api/userApi';
+import { LoadingOverlay } from '@/components/ui/loading';
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
     const { user: privyUser, authenticated, ready, logout } = usePrivy();
-    const { user: storeUser, isLoggedIn } = useAppSelector((state) => state.user);
+    const { user: storeUser, isLoggedIn } = useAppSelector(state => state.user);
     const dispatch = useAppDispatch();
     const router = useRouter();
     const pathname = usePathname();
@@ -18,12 +18,12 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
     // Memoized redirect function
     const redirectToPod = useCallback(() => {
-        const pendingSessionCode = localStorage.getItem("pendingSessionCode");
+        const pendingSessionCode = localStorage.getItem('pendingSessionCode');
         if (pendingSessionCode) {
-            localStorage.removeItem("pendingSessionCode");
+            localStorage.removeItem('pendingSessionCode');
             router.replace(`/pod/join/${pendingSessionCode}`);
-        } else if (!pathname?.startsWith("/pod")) {
-            router.replace("/pod");
+        } else if (!pathname?.startsWith('/pod')) {
+            router.replace('/pod');
         }
     }, [pathname, router]);
 
@@ -50,10 +50,10 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
             redirectToPod();
         } catch (error) {
-            console.error("Authentication error:", error);
+            console.error('Authentication error:', error);
             logout();
             dispatch(logOut());
-            router.replace("/");
+            router.replace('/');
         }
     }, [privyUser, findOrCreateUser, dispatch, logout, router, redirectToPod]);
 
@@ -69,7 +69,15 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         else if (authenticated && isLoggedIn) {
             redirectToPod();
         }
-    }, [ready, authenticated, privyUser, isLoggedIn, handleAuthentication, redirectToPod, isLoading]);
+    }, [
+        ready,
+        authenticated,
+        privyUser,
+        isLoggedIn,
+        handleAuthentication,
+        redirectToPod,
+        isLoading,
+    ]);
 
     // Only show loading overlay when necessary
     if (!ready) {

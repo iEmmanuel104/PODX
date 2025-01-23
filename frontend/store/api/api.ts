@@ -1,4 +1,10 @@
-import { createApi, fetchBaseQuery, BaseQueryFn, FetchBaseQueryError, FetchArgs } from '@reduxjs/toolkit/query/react';
+import {
+    createApi,
+    fetchBaseQuery,
+    BaseQueryFn,
+    FetchBaseQueryError,
+    FetchArgs,
+} from '@reduxjs/toolkit/query/react';
 import { ethers } from 'ethers';
 import { RootState } from '../index';
 import { logOut, setSignature, setUser } from '../slices/userSlice';
@@ -11,7 +17,11 @@ export interface ApiResponse<T> {
     error?: boolean;
 }
 
-const baseQuery: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (args, api, extraOptions) => {
+const baseQuery: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (
+    args,
+    api,
+    extraOptions
+) => {
     const result = await fetchBaseQuery({
         baseUrl: SERVER_URL,
         prepareHeaders: async (headers, { getState }) => {
@@ -26,7 +36,11 @@ const baseQuery: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> =
         },
     })(args, api, extraOptions);
 
-    if (result.error && result.error.status === 401 && (result.error.data as ApiResponse<unknown>).message === 'Token expired') {
+    if (
+        result.error &&
+        result.error.status === 401 &&
+        (result.error.data as ApiResponse<unknown>).message === 'Token expired'
+    ) {
         // Token has expired, request a new one
         const state = api.getState() as RootState;
         const { user } = state.user;
@@ -39,11 +53,15 @@ const baseQuery: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> =
 
                 const refreshResult = await fetchBaseQuery({
                     baseUrl: SERVER_URL,
-                })({
-                    url: '/user/validate',
-                    method: 'POST',
-                    body,
-                }, api, extraOptions);
+                })(
+                    {
+                        url: '/user/validate',
+                        method: 'POST',
+                        body,
+                    },
+                    api,
+                    extraOptions
+                );
 
                 if (refreshResult.data) {
                     const refreshData = refreshResult.data as ApiResponse<{ signature: string }>;
@@ -76,6 +94,15 @@ const baseQuery: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> =
 
 export const apiSlice = createApi({
     baseQuery: baseQuery,
-    tagTypes: ['User', 'Pod', 'ScheduledCalls', 'CallStats', 'DetailedCallStats', 'UserCalls', 'CallDetails', 'Leaderboard'],
+    tagTypes: [
+        'User',
+        'Pod',
+        'ScheduledCalls',
+        'CallStats',
+        'DetailedCallStats',
+        'UserCalls',
+        'CallDetails',
+        'Leaderboard',
+    ],
     endpoints: () => ({}),
 });

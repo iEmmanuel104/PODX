@@ -20,7 +20,7 @@ interface FindOrCreateUserArgs {
 type FindOrCreateUserResponse = ApiResponse<UserInfo & { signature?: string }>;
 
 export const userApiSlice = apiSlice.injectEndpoints({
-    endpoints: (builder) => ({
+    endpoints: builder => ({
         findOrCreateUser: builder.mutation<FindOrCreateUserResponse, FindOrCreateUserArgs>({
             query: ({ walletAddress, hash }) => ({
                 url: '/user/validate',
@@ -29,7 +29,10 @@ export const userApiSlice = apiSlice.injectEndpoints({
             }),
             invalidatesTags: ['User'],
         }),
-        updateUsername: builder.mutation<ApiResponse<UserInfo>, { userId: string; username: string }>({
+        updateUsername: builder.mutation<
+            ApiResponse<UserInfo>,
+            { userId: string; username: string }
+        >({
             query: ({ userId, username }) => ({
                 url: '/user/update',
                 method: 'PATCH',
@@ -38,7 +41,7 @@ export const userApiSlice = apiSlice.injectEndpoints({
             invalidatesTags: ['User'],
         }),
         getUser: builder.query<ApiResponse<UserInfo>, string>({
-            query: (id) => {
+            query: id => {
                 const params = new URLSearchParams();
                 params.append('id', id);
 
@@ -52,8 +55,5 @@ export const userApiSlice = apiSlice.injectEndpoints({
     }),
 });
 
-export const {
-    useFindOrCreateUserMutation,
-    useUpdateUsernameMutation,
-    useGetUserQuery,
-} = userApiSlice;
+export const { useFindOrCreateUserMutation, useUpdateUsernameMutation, useGetUserQuery } =
+    userApiSlice;

@@ -1,5 +1,9 @@
-import React from "react";
-import { SpeakerLayout, PaginatedGridLayout, StreamVideoParticipant } from "@stream-io/video-react-sdk";
+import React from 'react';
+import {
+    SpeakerLayout,
+    PaginatedGridLayout,
+    StreamVideoParticipant,
+} from '@stream-io/video-react-sdk';
 
 interface ResponsiveMeetingLayoutProps {
     hasOngoingScreenShare: boolean;
@@ -7,16 +11,20 @@ interface ResponsiveMeetingLayoutProps {
     participants: StreamVideoParticipant[];
 }
 
-const ResponsiveMeetingLayout: React.FC<ResponsiveMeetingLayoutProps> = ({ hasOngoingScreenShare, isSpeaker, participants }) => {
+const ResponsiveMeetingLayout: React.FC<ResponsiveMeetingLayoutProps> = ({
+    hasOngoingScreenShare,
+    isSpeaker,
+    participants,
+}) => {
     // Get breakpoints using window width
-    const isSmallScreen = window.matchMedia("(max-width: 640px)").matches;
-    const isMediumScreen = window.matchMedia("(min-width: 641px) and (max-width: 1024px)").matches;
+    const isSmallScreen = window.matchMedia('(max-width: 640px)').matches;
+    const isMediumScreen = window.matchMedia('(min-width: 641px) and (max-width: 1024px)').matches;
 
     if (hasOngoingScreenShare || isSpeaker) {
         return (
             <div className="w-full h-full">
                 <SpeakerLayout
-                    participantsBarPosition={isSmallScreen ? "bottom" : "right"}
+                    participantsBarPosition={isSmallScreen ? 'bottom' : 'right'}
                     mirrorLocalParticipantVideo={true}
                     pageArrowsVisible={participants.length > (isSmallScreen ? 3 : 4)}
                 />
@@ -27,7 +35,13 @@ const ResponsiveMeetingLayout: React.FC<ResponsiveMeetingLayoutProps> = ({ hasOn
     return (
         <div className="w-full h-full">
             <PaginatedGridLayout
-                
+                groupSize={
+                    isSmallScreen
+                        ? 4 // Mobile: 2x2 grid
+                        : isMediumScreen
+                          ? 6 // Tablet: 2x3 grid
+                          : 9 // Desktop: 3x3 grid
+                }
                 mirrorLocalParticipantVideo={true}
                 pageArrowsVisible={true}
             />

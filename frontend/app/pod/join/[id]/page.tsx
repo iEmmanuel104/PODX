@@ -1,7 +1,7 @@
-"use client";
-import React, { useState, useCallback, useEffect, useMemo, Suspense, useRef } from "react";
-import { useRouter } from "next/navigation";
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
+'use client';
+import React, { useState, useCallback, useEffect, useMemo, Suspense, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
     useCall,
     useCallStateHooks,
@@ -9,15 +9,15 @@ import {
     type CallParticipantResponse,
     type ErrorFromResponse,
     type GetCallResponse,
-} from "@stream-io/video-react-sdk";
-import { useChatContext } from "stream-chat-react";
-import { useStreamTokenProvider } from "@/hooks/useStreamTokenProvider";
-import Image from "next/image";
-import toast from "react-hot-toast";
-import { useContext } from "react";
-import { AppContext } from "@/providers/appProvider";
-import { setSessionInfo } from "@/store/slices/podSlice";
-import { useScheduledCalls } from "@/hooks/useScheduledCalls";
+} from '@stream-io/video-react-sdk';
+import { useChatContext } from 'stream-chat-react';
+import { useStreamTokenProvider } from '@/hooks/useStreamTokenProvider';
+import Image from 'next/image';
+import toast from 'react-hot-toast';
+import { useContext } from 'react';
+import { AppContext } from '@/providers/appProvider';
+import { setSessionInfo } from '@/store/slices/podSlice';
+import { useScheduledCalls } from '@/hooks/useScheduledCalls';
 
 // Types
 interface JoinSessionProps {
@@ -54,51 +54,68 @@ const SimpleLoader = () => (
 
 // Lazy load components with reduced bundle size
 const WaitingScreen = React.lazy(() =>
-    import("@/components/join/waiting-screen").then((mod) => ({
+    import('@/components/join/waiting-screen').then(mod => ({
         default: mod.default,
     }))
 );
 
 const Logo = React.lazy(() =>
-    import("@/components/ui/logo").then((mod) => ({
+    import('@/components/ui/logo').then(mod => ({
         default: mod.default,
     }))
 );
 
 const MeetingPreview = React.lazy(() =>
-    import("@/components/meeting/meetingPreview").then((mod) => ({
+    import('@/components/meeting/meetingPreview').then(mod => ({
         default: mod.default,
     }))
 );
 
 const CallParticipants = React.lazy(() =>
-    import("@/components/meeting/callParticipants").then((mod) => ({
+    import('@/components/meeting/callParticipants').then(mod => ({
         default: mod.default,
     }))
 );
 
 const ScheduledMeetDialog = React.lazy(() =>
-    import("@/components/join/scheduledMeetDialog").then((mod) => ({
+    import('@/components/join/scheduledMeetDialog').then(mod => ({
         default: mod.default,
     }))
 );
 
 // Separate component for the join button to prevent unnecessary re-renders
-const JoinButton = React.memo(({ onJoin, isJoining, isDisabled }: { onJoin: () => void; isJoining: boolean; isDisabled: boolean }) => (
-    <button
-        onClick={onJoin}
-        className="mt-4 w-full max-w-sm sm:max-w-md bg-[#6032F6] text-white px-4 sm:px-8 py-2.5 sm:py-3 
+const JoinButton = React.memo(
+    ({
+        onJoin,
+        isJoining,
+        isDisabled,
+    }: {
+        onJoin: () => void;
+        isJoining: boolean;
+        isDisabled: boolean;
+    }) => (
+        <button
+            onClick={onJoin}
+            className="mt-4 w-full max-w-sm sm:max-w-md bg-[#6032F6] text-white px-4 sm:px-8 py-2.5 sm:py-3 
                    rounded-[10px] hover:bg-[#4C28C4] transition-all duration-300 ease-in-out 
                    text-sm sm:text-base font-medium flex items-center justify-center
                    disabled:opacity-50 disabled:cursor-not-allowed"
-        disabled={isJoining || isDisabled}
-    >
-        <Image src="/images/join.svg" alt="Join" width={20} height={20} className="mr-2 w-5 h-5 sm:w-6 sm:h-6" priority />
-        {isJoining ? "Joining..." : "Join session"}
-    </button>
-));
+            disabled={isJoining || isDisabled}
+        >
+            <Image
+                src="/images/join.svg"
+                alt="Join"
+                width={20}
+                height={20}
+                className="mr-2 w-5 h-5 sm:w-6 sm:h-6"
+                priority
+            />
+            {isJoining ? 'Joining...' : 'Join session'}
+        </button>
+    )
+);
 
-JoinButton.displayName = "JoinButton";
+JoinButton.displayName = 'JoinButton';
 
 // Main Component
 const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
@@ -110,7 +127,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
 
     // State
     const [state, setState] = useState<JoinSessionState>({
-        name: "",
+        name: '',
         joining: false,
         loading: true,
         showScheduledDialog: false,
@@ -119,8 +136,10 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
     const [participants, setParticipants] = useState<CallParticipantResponse[]>([]);
 
     // Selectors and Context
-    const { sessionTitle, sessionType, isScheduled, starts_at } = useAppSelector((state) => state.pod);
-    const { isLoggedIn, user } = useAppSelector((state) => state.user);
+    const { sessionTitle, sessionType, isScheduled, starts_at } = useAppSelector(
+        state => state.pod
+    );
+    const { isLoggedIn, user } = useAppSelector(state => state.user);
     const { newMeeting, setNewMeeting } = useContext(AppContext);
     const { client: chatClient } = useChatContext();
 
@@ -142,11 +161,11 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
             if (newMeeting) {
                 await call?.getOrCreate({
                     data: {
-                        members: [{ user_id: user.id, role: "host" }],
+                        members: [{ user_id: user.id, role: 'host' }],
                         custom: {
                             sessionId: code,
-                            title: sessionTitle || "New Call",
-                            type: sessionType || "Video Session",
+                            title: sessionTitle || 'New Call',
+                            type: sessionType || 'Video Session',
                         },
                         settings_override: {
                             limits: {
@@ -157,7 +176,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                         ...(isScheduled && { starts_at }),
                     },
                     members_limit: 20,
-                    ...(sessionType === "Audio Session" && { video: false }),
+                    ...(sessionType === 'Audio Session' && { video: false }),
                 });
             } else {
                 const callData = await call?.get();
@@ -175,12 +194,25 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
         } catch (error) {
             const err = error as ErrorFromResponse<GetCallResponse>;
             console.error(err.message);
-            router.push("/pod");
-            toast.error("Error fetching meeting");
+            router.push('/pod');
+            toast.error('Error fetching meeting');
         } finally {
-            setState((prev) => ({ ...prev, loading: false }));
+            setState(prev => ({ ...prev, loading: false }));
         }
-    }, [call, callingState, code, dispatch, isScheduled, newMeeting, router, sessionTitle, sessionType, starts_at, state.joining, user]);
+    }, [
+        call,
+        callingState,
+        code,
+        dispatch,
+        isScheduled,
+        newMeeting,
+        router,
+        sessionTitle,
+        sessionType,
+        starts_at,
+        state.joining,
+        user,
+    ]);
 
     // Check scheduled meeting
     const checkScheduledMeeting = useCallback(async () => {
@@ -188,9 +220,9 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
         hasCheckedSchedule.current = true;
 
         const response = await getScheduledCall(code);
-        if (response.status === "success" && response.data?.call) {
+        if (response.status === 'success' && response.data?.call) {
             const { call } = response.data;
-            setState((prev) => ({
+            setState(prev => ({
                 ...prev,
                 loading: false,
                 showScheduledDialog: true,
@@ -200,8 +232,11 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                     creator: call.created_by
                         ? {
                               id: call.created_by.id,
-                              name: call.created_by.name || "Unknown",
-                              username: call.created_by.custom?.username || call.created_by.name || "Unknown",
+                              name: call.created_by.name || 'Unknown',
+                              username:
+                                  call.created_by.custom?.username ||
+                                  call.created_by.name ||
+                                  'Unknown',
                           }
                         : undefined,
                     type: call.custom.type,
@@ -218,9 +253,9 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
     // Effects
     useEffect(() => {
         if (isLoggedIn && user) {
-            setState((prev) => ({
+            setState(prev => ({
                 ...prev,
-                name: user.username || "",
+                name: user.username || '',
             }));
         }
     }, [isLoggedIn, user]);
@@ -241,7 +276,9 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
         if (isLoggedIn && user) {
             try {
                 await chatClient.disconnectUser();
-                await chatClient.connectUser({ id: user.id, name: user.username }, () => tokenProvider(user.walletAddress));
+                await chatClient.connectUser({ id: user.id, name: user.username }, () =>
+                    tokenProvider(user.walletAddress)
+                );
             } catch (error) {
                 console.error(error);
             }
@@ -251,7 +288,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
     const handleJoinSession = useCallback(async () => {
         if (!code) return;
 
-        setState((prev) => ({ ...prev, joining: true }));
+        setState(prev => ({ ...prev, joining: true }));
 
         try {
             if (isLoggedIn && user) {
@@ -261,24 +298,24 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
             if (callingState !== CallingState.JOINED) {
                 await call?.join({
                     data: {
-                        members: [{ user_id: user?.id!, role: "guest" }],
+                        members: [{ user_id: user?.id!, role: 'guest' }],
                     },
-                    ...(sessionType === "Audio Session" && { video: false }),
+                    ...(sessionType === 'Audio Session' && { video: false }),
                 });
             }
 
             router.push(`/pod/${code}`);
         } catch (error) {
             console.error(error);
-            toast.error("Failed to join session, please check your connection and try again");
-            setState((prev) => ({ ...prev, joining: false }));
+            toast.error('Failed to join session, please check your connection and try again');
+            setState(prev => ({ ...prev, joining: false }));
         }
     }, [code, isLoggedIn, user, call, callingState, router, updateGuestName, sessionType]);
 
     // Memoized UI elements
     const participantsUI = useMemo(() => {
         if (state.joining) return "You'll join the call in just a moment";
-        if (participants.length === 0) return "No one else is here";
+        if (participants.length === 0) return 'No one else is here';
         return (
             <Suspense fallback={<SimpleLoader />}>
                 <CallParticipants participants={participants} />
@@ -293,7 +330,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                 <Suspense fallback={<SimpleLoader />}>
                     <ScheduledMeetDialog
                         isOpen={true}
-                        onClose={() => router.push("/pod")}
+                        onClose={() => router.push('/pod')}
                         sessionTitle={state.scheduledMeetData.title}
                         startTime={state.scheduledMeetData.startTime}
                         creator={state.scheduledMeetData.creator}
@@ -327,8 +364,10 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                     <div className="mb-6 sm:mb-8 text-center space-y-2">
                         <p className="text-gray-400 text-sm sm:text-base">You are about to join</p>
                         <p className="text-white text-base sm:text-lg md:text-xl font-medium">
-                            {sessionTitle || "Base Live Build Session"}
-                            <span className="text-gray-400">({sessionType || "Video Session"})</span>
+                            {sessionTitle || 'Base Live Build Session'}
+                            <span className="text-gray-400">
+                                ({sessionType || 'Video Session'})
+                            </span>
                         </p>
                     </div>
 
@@ -341,9 +380,17 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                             </div>
 
                             <div className="w-full flex flex-col items-center lg:items-start justify-center space-y-4 sm:space-y-6">
-                                <h2 className="text-xl sm:text-2xl font-semibold text-center lg:text-left">Ready to join?</h2>
-                                <div className="w-full text-center lg:text-left text-sm sm:text-base">{participantsUI}</div>
-                                <JoinButton onJoin={handleJoinSession} isJoining={state.joining} isDisabled={!state.name} />
+                                <h2 className="text-xl sm:text-2xl font-semibold text-center lg:text-left">
+                                    Ready to join?
+                                </h2>
+                                <div className="w-full text-center lg:text-left text-sm sm:text-base">
+                                    {participantsUI}
+                                </div>
+                                <JoinButton
+                                    onJoin={handleJoinSession}
+                                    isJoining={state.joining}
+                                    isDisabled={!state.name}
+                                />
                             </div>
                         </div>
                     </div>

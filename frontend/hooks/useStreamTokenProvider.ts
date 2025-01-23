@@ -1,13 +1,13 @@
 'use client';
 import { useCallback, useRef } from 'react';
-import { useFindOrCreateUserMutation, UserInfo } from "@/store/api/userApi";
+import { useFindOrCreateUserMutation, UserInfo } from '@/store/api/userApi';
 
 export const useStreamTokenProvider = () => {
     const [findOrCreateUser] = useFindOrCreateUserMutation();
     const tokenCache = useRef<{ [key: string]: string }>({});
 
     const tokenProvider = useCallback(
-        async (walletAddress: string = "") => {
+        async (walletAddress: string = '') => {
             if (tokenCache.current[walletAddress]) {
                 return tokenCache.current[walletAddress];
             }
@@ -18,7 +18,7 @@ export const useStreamTokenProvider = () => {
                 tokenCache.current[walletAddress] = userData.streamToken;
                 return userData.streamToken;
             } catch (error) {
-                console.error("Error fetching token:", error);
+                console.error('Error fetching token:', error);
                 throw error;
             }
         },
