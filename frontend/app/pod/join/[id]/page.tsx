@@ -199,10 +199,10 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                     startTime: call.starts_at,
                     creator: call.created_by
                         ? {
-                                id: call.created_by.id,
-                                name: call.created_by.name || "Unknown",
-                                username: call.created_by.custom?.username || call.created_by.name || "Unknown",
-                            }
+                              id: call.created_by.id,
+                              name: call.created_by.name || "Unknown",
+                              username: call.created_by.custom?.username || call.created_by.name || "Unknown",
+                          }
                         : undefined,
                     type: call.custom.type,
                     sessionId: call.custom.sessionId,
@@ -213,7 +213,6 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
             // No scheduled call found, proceed with normal call initialization
             await initializeCall();
         }
-
     }, [code, user, getScheduledCall, router, initializeCall]);
 
     // Effects

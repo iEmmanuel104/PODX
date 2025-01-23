@@ -1,5 +1,5 @@
-import Telegram from "@/assets/icons/socials/Telegram";
-import X from "@/assets/icons/socials/X";
+import Telegram from "@/public/images/icons/socials/Telegram";
+import X from "@/public/images/icons/socials/X";
 
 const Footer = () => {
   return (
@@ -14,16 +14,17 @@ const Footer = () => {
                 <a
                   href="https://t.me/podx_fun"
                   target="_blank"
+                  rel="noopener noreferrer"
+                  title="Join us on Telegram"
                   className="social-icon h-[24px] w-[24px]"
                 >
                   <Telegram />
                 </a>
-                {/* <a href="#!" target="_blank" className="social-icon h-[24px] w-[24px]">
-              <Facebook />
-            </a> */}
                 <a
                   href="https://x.com/podx_fun"
                   target="_blank"
+                  rel="noopener noreferrer"
+                  title="Follow us on X"
                   className="social-icon h-[24px] w-[24px]"
                 >
                   <X />

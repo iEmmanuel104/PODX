@@ -9,6 +9,7 @@ export interface UserInfo {
     displayImage?: string;
     walletType?: string;
     signature?: string;
+    firstTimeUser: boolean;
 }
 
 interface FindOrCreateUserArgs {

@@ -11,7 +11,7 @@ import dynamic from "next/dynamic";
 import { UserDetailsProps, UserState } from "./userDetailsProps";
 import { useAppDispatch } from "@/store/hooks";
 import { updateUser } from "@/store/slices/userSlice";
-import Logo from "@/assets/icons/Logo";
+import Logo from "@/public/images/icons/Logo";
 
 // Dynamic import for wallet operations
 const WalletOperations = dynamic(() => import("./walletOperations"), {
@@ -102,29 +102,29 @@ const UserDetails = memo<UserDetailsProps>(({ user }) => {
                             className="h-8 w-40 bg-[#444444] border-none text-white font-medium"
                             autoFocus
                         />
-                        <button
+                        <Button
                             onClick={handleSaveUsername}
                             className="p-1 hover:bg-[#444444] rounded-full"
                         >
                             <Check className="h-4 w-4 text-green-500" />
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             onClick={handleCancelEdit}
                             className="p-1 hover:bg-[#444444] rounded-full"
                         >
                             <X className="h-4 w-4 text-red-500" />
-                        </button>
+                        </Button>
                     </div>
                 ) : (
                     <div className="flex items-center space-x-2">
                         <span className="font-medium">{userInfo.displayName}</span>
                         
-                        <button
+                        <Button
                             onClick={handleEditClick}
                             className="p-1 hover:bg-[#444444] rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                             <Edit2 className="h-4 w-4 text-[#A3A3A3]" />
-                        </button>
+                        </Button>
                     </div>
                 )}
             </div>

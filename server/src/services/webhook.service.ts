@@ -2,7 +2,7 @@
 import { UserStreak, ICallActivity } from '../models/Mongodb/userStreak.model';
 import { webhookConfig } from '../clients/webhook.config';
 import StreamIOConfig from '../clients/streamio.config';
-import { Call } from 'models/Mongodb/call.model';
+import { Call } from '../models/Mongodb/call.model';
 
 interface UserResponse {
     id: string;
