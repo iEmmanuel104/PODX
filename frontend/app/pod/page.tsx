@@ -14,16 +14,6 @@ import { sessionType } from '@/constants';
 import { updateUser } from '@/store/slices/userSlice';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from '@/components/ui/dialog';
-import Fire from '@/public/icons/Fire';
-import Info from '@/public/icons/Info';
 import { useScheduledCalls } from '@/hooks/useScheduledCalls';
 import { addScheduledSession } from '@/store/slices/scheduledSessionSlice';
 import { StreamCallData } from '@/components/pod/streamCallData';
