@@ -32,6 +32,7 @@ import Telegram from '@/public/icons/socials/Telegram';
 import X from '@/public/icons/socials/X';
 import Farcaster from '@/public/icons/socials/Farcaster';
 import Link from 'next/link';
+import { StreakDialog } from '@/components/pod/streaks';
 
 // Dynamic imports
 const CreateSessionModal = dynamic(() => import('@/components/pod/createSessionModal'), {
@@ -372,58 +373,7 @@ export default function PodPage() {
                 </div>
 
                 {/* Session streak dialog */}
-                <Dialog
-                    open={state.isOpenDialogue}
-                    onOpenChange={open => setState(prev => ({ ...prev, isOpenDialogue: open }))}
-                >
-                    <DialogTrigger className="max-w-[275px] mx-auto" asChild>
-                        <div className="flex justify-center items-center">
-                            <div className="rounded-full bg-gradient-to-r from-[#552FC9]  to-[#D7B35D] p-[1px]">
-                                <Button
-                                    variant="ghost"
-                                    className="flex justify-between items-center rounded-full bg-[#212121] text-white text-xs tracking-wider py-[4px] px-[16px]"
-                                >
-                                    <div className="h-[14px] w-[14px]">
-                                        <Fire />
-                                    </div>
-                                    <span>You have no session streak</span>
-                                    <div className="icon-container h-[14px] w-[14px]">
-                                        <Info />
-                                    </div>
-                                </Button>
-                            </div>
-                        </div>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px] bg-[#1E1E1E] text-white border border-[#2E2E2E] p-0 rounded-[10px]">
-                        <div className="p-6 flex flex-col items-center gap-4">
-                            <div className="h-[14px] w-[14px]">
-                                <Fire />
-                            </div>
-                            <DialogTitle className="text-4xl text-center font-bold mb-1">
-                                0 day
-                            </DialogTitle>
-                            <div className="flex flex-col items-center gap-2 mt-4">
-                                <DialogHeader>
-                                    <DialogDescription className="text-[#A3A3A3] text-lg">
-                                        Session Streak
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <DialogDescription className="text-center text-[#A3A3A3] mb-6">
-                                    Session streaks are consecutive daily sessions that are either
-                                    created or attended.
-                                </DialogDescription>
-                            </div>
-                            <Button
-                                className="w-full bg-[#6032F6] hover:bg-[#4C28C4] text-white rounded-[10px] py-2 px-4"
-                                onClick={() =>
-                                    setState(prev => ({ ...prev, isOpenDialogue: false }))
-                                }
-                            >
-                                I understand.
-                            </Button>
-                        </div>
-                    </DialogContent>
-                </Dialog>
+                <StreakDialog streak={3} />
             </div>
 
             {/* Scheduled sessions */}
