@@ -1,22 +1,31 @@
-"use client";
-import React, { useState, useCallback } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { Mic, Video, CalendarIcon, Clock, Sparkles } from "lucide-react";
-import { format, addDays, isBefore, startOfDay } from "date-fns";
-import { sessionType } from "@/constants";
-import SimpleTimePicker from "./simpleTimePicker";
-import DotPattern from "../ui/dot-pattern";
-import { cn } from "@/lib/utils";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
-import Retry from "@/public/images/icons/Retry";
-import Twinkle from "@/public/images/icons/Twinkle";
-import { MultiSelect } from "../ui/multi-select";
+'use client';
+import React, { useState, useCallback } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Video, CalendarIcon, Clock, Sparkles } from 'lucide-react';
+import { format, addDays, isBefore, startOfDay } from 'date-fns';
+import { sessionType } from '@/constants';
+import SimpleTimePicker from './simpleTimePicker';
+import DotPattern from '../ui/dot-pattern';
+import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import Retry from '@/public/images/icons/Retry';
+import Twinkle from '@/public/images/icons/Twinkle';
+import { MultiSelect } from '../ui/multi-select';
+import Microphone from '@/public/icons/Microphone';
+import VideoIcon from '@/public/icons/VideoIcon';
+import TokenGatingSwitch from './tokenGatingSwitch';
 
 interface CreateSessionModalProps {
     isOpen: boolean;
@@ -46,6 +55,7 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
         date: undefined,
         time: undefined,
     });
+    const [tokenGatingSwitch, setTokenGatingSwitch] = useState<boolean>(false);
     const [isCreating, setIsCreating] = useState(false);
     const [customTime, setCustomTime] = useState('');
     const [timeError, setTimeError] = useState('');
@@ -55,6 +65,10 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
         () => Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`),
         []
     );
+
+    const toggleTokengatingSwitch = () => { 
+        setTokenGatingSwitch(!tokenGatingSwitch);
+    };
 
     const validateTime = (time: string): boolean => {
         const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
@@ -200,23 +214,58 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                         >
                             <SelectTrigger className="w-full bg-[#2C2C2C] rounded-[10px] px-4 py-2 border-[#3c3c3c]">
                                 <SelectValue>
-                                    {formState.type === sessionType.AUDIO && (
-                                        <Mic className="h4 w-6 text-[#6032F6] inline-flex mr-2" />
+                                   <div className='flex items-center gap-[8px]'>
+                                   {formState.type === sessionType.AUDIO && (
+                                        <div className="flex justify-center items-center w-[20px] h-[20px] bg-[#6032F6] rounded-full">
+                                            <div className="icon-container w-[12px] h-[12px]">
+                                                <Microphone />
+                                            </div>
+                                        </div>
                                     )}
                                     {formState.type === sessionType.POD && (
-                                        <Video className="h4 w-6 text-[#6032F6] inline-flex mr-2" />
+                                        <div className="flex justify-center items-center w-[20px] h-[20px] bg-[#6032F6] rounded-full">
+                                            <div className="icon-container w-[12px] h-[12px]">
+                                                <VideoIcon />
+                                            </div>
+                                        </div>
                                     )}
-                                    {formState.type}
+                                    <span>{formState.type}</span>
+                                    {formState.type === sessionType.AUDIO && (
+                                        <div>
+                                        <span className="bg-[#DDB958] px-[6px] py-[4px] rounded-3xl text-[10px] text-[#51431D] font-medium">
+                                            Coming soon
+                                        </span>
+                                    </div>
+                                    )}
+                                   
+                                   </div>
                                 </SelectValue>
                             </SelectTrigger>
                             <SelectContent className="bg-[#2C2C2C] text-white">
                                 <SelectItem value={sessionType.AUDIO}>
-                                    <Mic className="h4 w-6 text-[#6032F6] inline-flex mr-2" />
-                                    Audio Session
+                                    <div className="flex items-center gap-[8px]">
+                                        <div className="flex justify-center items-center w-[20px] h-[20px] bg-[#6032F6] rounded-full">
+                                            <div className="icon-container w-[12px] h-[12px]">
+                                                <Microphone />
+                                            </div>
+                                        </div>
+                                        <span> Audio Session</span>
+                                        <div>
+                                            <span className="bg-[#DDB958] px-[6px] py-[4px] rounded-3xl text-[10px] text-[#51431D] font-medium">
+                                                Coming soon
+                                            </span>
+                                        </div>
+                                    </div>
                                 </SelectItem>
                                 <SelectItem value={sessionType.POD}>
-                                    <Video className="h4 w-6 text-[#6032F6] inline-flex mr-2" />
-                                    Pod Session
+                                    <div className="flex items-center gap-[8px]">
+                                        <div className="flex justify-center items-center w-[20px] h-[20px] bg-[#6032F6] rounded-full">
+                                            <div className="icon-container w-[12px] h-[12px]">
+                                                <VideoIcon />
+                                            </div>
+                                        </div>
+                                        <span>Pod Session</span>
+                                    </div>
                                 </SelectItem>
                             </SelectContent>
                         </Select>
@@ -297,15 +346,21 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                                                     AI Assisted
                                                 </span>
                                             </div>
-                                            <button type="button" className="text-sm flex items-center gap-2 hover:cursor-pointer bg-[#444343] px-2 py-1 rounded-full">
+                                            <button
+                                                type="button"
+                                                className="text-sm flex items-center gap-2 hover:cursor-pointer bg-[#444343] px-2 py-1 rounded-full"
+                                            >
                                                 <Retry />
                                                 Reexplain
                                             </button>
                                         </div>
                                         <div className="p-4">
-                                            <p className="text-base font-medium text-white mb-2">What is Token Gating</p>
+                                            <p className="text-base font-medium text-white mb-2">
+                                                What is Token Gating
+                                            </p>
                                             <p className="text-sm text-white/70 max-w-sm">
-                                                PodX uses Proof of Attendance NFTs to restrict access. Attendees earn these onchain NFTs, which can
+                                                PodX uses Proof of Attendance NFTs to restrict
+                                                access. Attendees earn these onchain NFTs, which can
                                                 grant entry to future exclusive events
                                             </p>
                                         </div>
@@ -313,14 +368,7 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                                 </Tooltip>
                             </TooltipProvider>
                         </div>
-
-                        <Switch
-                            className="relative bg-transparent border-2 border-transparent py-2.5 
-                   data-[state=checked]:bg-transparent data-[state=unchecked]:bg-transparent
-                   before:absolute before:inset-0 before:rounded-full
-                   before:bg-gradient-to-r before:from-blue-500 before:to-purple-500
-                   before:-z-10"
-                        />
+                        <TokenGatingSwitch onClick={toggleTokengatingSwitch} switchState={tokenGatingSwitch}/>
                     </div>
 
                     <MultiSelect />
