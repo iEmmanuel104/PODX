@@ -75,7 +75,7 @@ export const FileUpload = ({
             Drag & drop your files to upload
           </p>
           <p className="relative z-20 font-sans font-medium text-neutral-400 dark:text-neutral-400 text-[10px]">
-            <span>.cvs</span> <span>or</span><span>.txt</span>
+            <span className="text-[#DDB958]">.cvs</span> <span className="text-[#6E6E6E]">or</span> <span className="text-[#DDB958]">.txt</span>
           </p>
          </div>
           <div className="relative w-full max-w-xl mx-auto">
@@ -131,16 +131,16 @@ export const FileUpload = ({
               ))}
             {!files.length && (
             <div className="flex items-center justify-center">
-               <button className="py-1 px-2 rounded-[5px] border-[.7px] border-[#4f4f4f] bg-[#3d3d3d] text-[10px] font-medium"> <span className="text-[#d4d4d4]">Select files</span> <span className="text-[#7a7a7a]">⌘U</span></button>
+               <button className="py-1 px-2 rounded-[5px] border-[.7px] border-[#4f4f4f] bg-[#3d3d3d] text-[10px] font-medium flex items-center gap-[2px]"> <span className="text-[#d4d4d4]">Select files</span> <span className="text-[#7a7a7a]">⌘U</span></button>
             </div>
             )}
 
-            {!files.length && (
+            {/* {!files.length && (
               <motion.div
                 variants={secondaryVariant}
                 className="absolute opacity-0 border border-dashed border-sky-400 inset-0 z-30 bg-transparent flex items-center justify-center h-8 w-full max-w-[8rem] mx-auto rounded-md"
               ></motion.div>
-            )}
+            )} */}
           </div>
         </div>
       </motion.div>

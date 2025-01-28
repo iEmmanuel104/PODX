@@ -90,26 +90,30 @@ export function MultiSelect() {
                     onValueChange={setActiveTab}
                     className="w-full flex flex-col gap-3"
                 >
-                    <TabsList className="w-full bg-[#3D3D3D] border-b border-[#4C4C4C] h-[26px] p-[4px] flex justify-start items-center max-w-[109px] rounded-3xl">
-                        <TabsTrigger
-                            value="internal"
-                            className={`${activeTab === 'internal' ? 'rounded-3xl text-[#151515] bg-[#D5B255] py-[2px] px-[6px]' : 'text-[#909090]'} text-[10px] font-bold`}
-                        >
-                            Internal
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="external"
-                            className={`${activeTab === 'external' ? 'rounded-3xl text-[#151515] bg-[#D5B255] py-[2px] px-[6px]' : 'text-[#909090]'} text-[10px] font-bold`}
-                        >
-                            External
-                        </TabsTrigger>
+                    <TabsList className="w-full bg-[#3D3D3D] border-b border-[#4C4C4C] flex items-center max-w-[109px] rounded-3xl">
+                        <div className="flex justify-between items-center gap-2">
+                            <TabsTrigger
+                                value="internal"
+                                className={`${activeTab === 'internal' ? 'rounded-3xl text-[#151515] bg-[#D5B255]' : 'text-[#909090]'} text-[10px] font-bold py-[2px] px-[6px]`}
+                            >
+                                Internal
+                            </TabsTrigger>
+                            <TabsTrigger
+                                value="external"
+                                className={`${activeTab === 'external' ? 'rounded-3xl text-[#151515] bg-[#D5B255]' : 'text-[#909090]'} text-[10px] font-bold py-[2px] px-[6px]`}
+                            >
+                                External
+                            </TabsTrigger>
+                        </div>
                     </TabsList>
                     <Command className="bg-transparent">
                         {activeTab === 'external' && (
-                                <div className="flex flex-col gap-2">
-                                    <p className="text-[#8f8f8f] text-xs font-medium">Upload wallet adresses you want to whitelist</p>
-                                    <FileUpload />
-                                </div>
+                            <div className="flex flex-col gap-2">
+                                <p className="text-[#8f8f8f] text-xs font-medium">
+                                    Upload wallet adresses you want to whitelist
+                                </p>
+                                <FileUpload />
+                            </div>
                         )}
                         {activeTab === 'internal' && (
                             <CommandList>
