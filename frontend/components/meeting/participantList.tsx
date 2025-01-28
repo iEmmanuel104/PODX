@@ -337,11 +337,7 @@ const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
             }, [participants, currentUser]);
 
         return (
-            <div className="flex flex-col h-full bg-[#1F1F1F] py-[22px] px-[16px] rounded-[20px]">
-                <div>
-                <h3 className="text-base font-medium">Participants</h3>
-                <span></span>
-                </div>
+            <div className="flex flex-col h-full bg-[#1F1F1F]">
                 {/* Participants List */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
                     {pendingParticipants.length > 0 && (
