@@ -15,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
+import { FileUpload } from '@/components/ui/file-upload';
 import AddIcon from '@/public/icons/AddIcon';
 
 interface Session {
@@ -89,7 +90,7 @@ export function MultiSelect() {
                     onValueChange={setActiveTab}
                     className="w-full flex flex-col gap-3"
                 >
-                    <TabsList className="w-full bg-[#3D3D3D] border-b border-[#4C4C4C] h-[26px] p-[4px] flex justify-start max-w-[109px] rounded-3xl">
+                    <TabsList className="w-full bg-[#3D3D3D] border-b border-[#4C4C4C] h-[26px] p-[4px] flex justify-start items-center max-w-[109px] rounded-3xl">
                         <TabsTrigger
                             value="internal"
                             className={`${activeTab === 'internal' ? 'rounded-3xl text-[#151515] bg-[#D5B255] py-[2px] px-[6px]' : 'text-[#909090]'} text-[10px] font-bold`}
@@ -104,71 +105,66 @@ export function MultiSelect() {
                         </TabsTrigger>
                     </TabsList>
                     <Command className="bg-transparent">
-                        <CommandInput
-                            value={searchValue}
-                            onValueChange={setSearchValue}
-                            placeholder="Search for sessions"
-                            className="border border-transparent focus:border-[#8b5cf6] bg-[#252525] my-2"
-                        />
-
                         {activeTab === 'external' && (
-                            <CommandList>
-                                <div className="flex flex-col items-center gap-4">
-                                    <CommandIcon className="w-8 h-8 text-gray-500" />
-                                    <span className="text-gray-400">No available session</span>
-                                    <Button
-                                        variant="outline"
-                                        className="bg-[#252525] text-gray-300 border-gray-700"
-                                    >
-                                        Upload files ⌘U
-                                    </Button>
+                                <div className="flex flex-col gap-2">
+                                    <p className="text-[#8f8f8f] text-xs font-medium">Upload wallet adresses you want to whitelist</p>
+                                    <FileUpload />
                                 </div>
-                            </CommandList>
                         )}
                         {activeTab === 'internal' && (
                             <CommandList>
                                 {filteredSessions.length === 0 ? (
                                     <CommandEmpty className="py-6 text-center text-sm"></CommandEmpty>
                                 ) : (
-                                    <CommandGroup className="p-2">
-                                        {filteredSessions.length > 0 &&
-                                            selectedSessions.length < sessions.length && (
-                                                <div className="flex items-center gap-2 p-2">
-                                                    <div>
-                                                        <button
-                                                            onClick={whitelistAll}
-                                                            className="flex items-center gap-1 rounded-3xl text-[10px] font-bold text-gray-400 hover:text-gray-300 bg-[#3C3C3C] p-[6px]"
-                                                        >
-                                                            <div className="w-2 h-2">
-                                                                <AddIcon />
-                                                            </div>
-                                                            <span> Whitelist all</span>
-                                                        </button>
+                                    <>
+                                        <CommandInput
+                                            value={searchValue}
+                                            onValueChange={setSearchValue}
+                                            placeholder="Search for sessions"
+                                            className="border border-transparent focus:border-[#8b5cf6] bg-[#252525] my-2"
+                                        />
+                                        <CommandGroup className="p-2">
+                                            {filteredSessions.length > 0 &&
+                                                selectedSessions.length < sessions.length && (
+                                                    <div className="flex items-center gap-2 p-2">
+                                                        <div>
+                                                            <button
+                                                                onClick={whitelistAll}
+                                                                className="flex items-center gap-1 rounded-3xl text-[10px] font-bold text-gray-400 hover:text-gray-300 bg-[#3C3C3C] p-[6px]"
+                                                            >
+                                                                <div className="w-2 h-2">
+                                                                    <AddIcon />
+                                                                </div>
+                                                                <span> Whitelist all</span>
+                                                            </button>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            )}
-                                        {filteredSessions.map(session => {
-                                            const isSelected = selectedSessions.some(
-                                                s => s.id === session.id
-                                            );
-                                            return (
-                                                <CommandItem
-                                                    key={session.id}
-                                                    onSelect={() => toggleSession(session)}
-                                                    className="flex items-center justify-between p-2 cursor-pointer"
-                                                >
-                                                    <span className="text-gray-300 text-xs font-medium">
-                                                        {session.name}
-                                                    </span>
-                                                    <Badge
-                                                        className={`${isSelected ? 'bg-[#6032F6] text-white' : 'bg-[#D4D4D4] text-[#121212] hover:bg-[#303030]'} rounded-3xl px-2 py-1 text-[10px]`}
+                                                )}
+                                            {filteredSessions.map(session => {
+                                                const isSelected = selectedSessions.some(
+                                                    s => s.id === session.id
+                                                );
+                                                return (
+                                                    <CommandItem
+                                                        key={session.id}
+                                                        onSelect={() => toggleSession(session)}
+                                                        className="flex items-center justify-between p-2 cursor-pointer"
                                                     >
-                                                        {isSelected ? 'Whitelisted' : 'Whitelist'}
-                                                    </Badge>
-                                                </CommandItem>
-                                            );
-                                        })}
-                                    </CommandGroup>
+                                                        <span className="text-gray-300 text-xs font-medium">
+                                                            {session.name}
+                                                        </span>
+                                                        <Badge
+                                                            className={`${isSelected ? 'bg-[#6032F6] text-white' : 'bg-[#D4D4D4] text-[#121212] hover:bg-[#303030]'} rounded-3xl px-2 py-1 text-[10px]`}
+                                                        >
+                                                            {isSelected
+                                                                ? 'Whitelisted'
+                                                                : 'Whitelist'}
+                                                        </Badge>
+                                                    </CommandItem>
+                                                );
+                                            })}
+                                        </CommandGroup>
+                                    </>
                                 )}
                             </CommandList>
                         )}
