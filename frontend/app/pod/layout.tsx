@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { LoadingOverlay } from '@/components/ui/loading';
 import { ErrorBoundary } from '@/components/pod/errorBoundary';
 import nextDynamic from 'next/dynamic';
+import { useAppSelector } from '@/store/hooks';
 
 // Types
 type LayoutProps = {
@@ -30,10 +31,14 @@ const LayoutContent = memo<LayoutProps>(({ children, params }) => {
     const router = useRouter();
     const pathname = usePathname();
     const [isMounted, setIsMounted] = useState(false);
+    const { isLoggedIn } = useAppSelector(state => state.user);
 
     useEffect(() => {
         setIsMounted(true);
     }, []);
+
+    // If not logged in, let AuthProvider handle the redirect
+    if (!isLoggedIn) return null;
 
     const meetingId = id as string | undefined;
 
@@ -42,7 +47,7 @@ const LayoutContent = memo<LayoutProps>(({ children, params }) => {
 
         if (pathname !== '/pod' && !pathname.startsWith('/pod/join') && !isValidMeetingId) {
             console.log('Invalid meeting ID and not on join page. Redirecting to /pod');
-            router.push('/pod');
+            router.replace('/pod');
             return null;
         }
     }

@@ -1,6 +1,6 @@
-// app/pod/index.tsx
+// app/pod/page.tsx
 'use client';
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
@@ -15,7 +15,6 @@ import { updateUser } from '@/store/slices/userSlice';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useScheduledCalls } from '@/hooks/useScheduledCalls';
-import { addScheduledSession } from '@/store/slices/scheduledSessionSlice';
 import { StreamCallData } from '@/components/pod/streamCallData';
 import { useStreamTokenProvider } from '@/hooks/useStreamTokenProvider';
 import Telegram from '@/public/icons/socials/Telegram';
@@ -34,7 +33,7 @@ const CreatedSessionModal = dynamic(() => import('@/components/pod/createdSessio
 const UserOnboardingFlow = dynamic(() => import('@/components/user/userOnboardingFlow'), {
     ssr: false,
 });
-const Logo = dynamic(() => import('@/components/ui/logo'), { ssr: false });
+
 const UserDetails = dynamic(() => import('@/components/user/userDetails'), {
     ssr: false,
     loading: () => <div className="w-full max-w-2xl h-16 bg-[#1E1E1E] rounded-lg animate-pulse" />,
@@ -108,24 +107,6 @@ export default function PodPage() {
                 );
                 router.push(`/pod/join/${state.meetingCode}`);
             }
-        },
-        [dispatch, router, state.meetingCode]
-    );
-
-    const handleScheduledCall = useCallback(
-        (call: StreamCallData) => {
-            if (!call?.custom) return;
-
-            dispatch(addScheduledSession(call));
-            dispatch(
-                setSessionInfo({
-                    title: call.custom.title,
-                    type: call.custom.type as sessionType,
-                    sessionId: state.meetingCode,
-                    starts_at: call.starts_at,
-                })
-            );
-            router.push(`/pod/join/${state.meetingCode}`);
         },
         [dispatch, router, state.meetingCode]
     );
@@ -290,7 +271,7 @@ export default function PodPage() {
         <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4 relative">
             <div className="w-full max-w-2xl flex flex-col items-center">
                 {/* User details section */}
-                <React.Suspense fallback={<div className="h-12" />}>
+                <React.Suspense fallback={<div className="h-12 mb-24" />}>
                     <UserDetails user={user} />
                 </React.Suspense>
 
