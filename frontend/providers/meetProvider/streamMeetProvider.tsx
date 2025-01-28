@@ -1,6 +1,5 @@
 'use client';
 import React, { useEffect, useState, useRef, useCallback, memo } from 'react';
-import { nanoid } from 'nanoid';
 import { useRouter } from 'next/navigation';
 import { useAppSelector } from '@/store/hooks';
 import { STREAM_API_KEY } from '@/constants';
@@ -12,9 +11,6 @@ import { StreamMeetProviderProps } from './types';
 import { DynamicChat, DynamicStreamVideo, DynamicStreamCall } from './components';
 import { ErrorBoundary } from '@/components/pod/errorBoundary';
 import { StreamConnectionPool } from '../streamConnectionPool';
-export const CALL_TYPE = 'default';
-export const API_KEY = STREAM_API_KEY as string;
-export const GUEST_ID = `guest_${nanoid(15)}`;
 
 const connectionPool = new StreamConnectionPool();
 

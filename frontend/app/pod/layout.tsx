@@ -3,7 +3,6 @@ import React, { useEffect, useState, memo } from 'react';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { LoadingOverlay } from '@/components/ui/loading';
-import { ErrorBoundary } from '@/components/pod/errorBoundary';
 import nextDynamic from 'next/dynamic';
 import { useAppSelector } from '@/store/hooks';
 
@@ -24,6 +23,13 @@ const DynamicMeetProvider = nextDynamic(() => import('@/providers/meetProvider/i
         </div>
     ),
 });
+
+const ErrorBoundary = nextDynamic(
+    () => import('@/components/pod/errorBoundary').then(mod => mod.ErrorBoundary),
+    {
+        ssr: false,
+    }
+);
 
 // Memoized layout content component
 const LayoutContent = memo<LayoutProps>(({ children, params }) => {

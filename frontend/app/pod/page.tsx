@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { StreamVideoClient, GetCallResponse } from '@stream-io/video-react-sdk';
-import { API_KEY } from '@/providers/meetProvider/streamMeetProvider';
+import { STREAM_API_KEY } from '@/constants';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { customAlphabet } from 'nanoid';
 import { AppContext } from '@/providers/appProvider';
@@ -183,7 +183,7 @@ export default function PodPage() {
 
             // First try Stream.io
             const client = new StreamVideoClient({
-                apiKey: API_KEY,
+                apiKey: STREAM_API_KEY,
                 user: {
                     id: user.id,
                     name: user.username,
