@@ -1,5 +1,6 @@
 'use client';
-import React, { useEffect, useState, useRef, useCallback, memo } from 'react';
+import dynamic from 'next/dynamic';
+import React, { useEffect, useState, useRef, useCallback, memo, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppSelector } from '@/store/hooks';
 import { STREAM_API_KEY } from '@/constants';
@@ -7,10 +8,27 @@ import { LoadingOverlay } from '@/components/ui/loading';
 import { useStreamTokenProvider } from '@/hooks/useStreamTokenProvider';
 import type { StreamChat } from 'stream-chat';
 import type { Call, StreamVideoClient } from '@stream-io/video-react-sdk';
-import { StreamMeetProviderProps } from './types';
-import { DynamicChat, DynamicStreamVideo, DynamicStreamCall } from './components';
 import { ErrorBoundary } from '@/components/pod/errorBoundary';
-import { StreamConnectionPool } from '../streamConnectionPool';
+import { StreamConnectionPool } from './streamConnectionPool';
+const DynamicStreamVideo = dynamic(
+    () => import('@stream-io/video-react-sdk').then(mod => mod.StreamVideo),
+    { ssr: false }
+);
+
+const DynamicStreamCall = dynamic(
+    () => import('@stream-io/video-react-sdk').then(mod => mod.StreamCall),
+    { ssr: false }
+);
+
+const DynamicChat = dynamic(() => import('stream-chat-react').then(mod => mod.Chat), {
+    ssr: false,
+});
+
+type StreamMeetProviderProps = {
+    meetingId: string;
+    children: ReactNode;
+    language: string;
+};
 
 const connectionPool = new StreamConnectionPool();
 
