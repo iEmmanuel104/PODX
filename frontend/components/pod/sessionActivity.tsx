@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Select,
@@ -86,7 +86,7 @@ const sessions: Session[] = [
 export function SessionActivity({ user }: { user: UserInfo | null }) {
     const [activeTab, setActiveTab] = useState<TabType>('tips');
     const [isBalanceHidden, setIsBalanceHidden] = useState(false);
-
+    
     return (
         <div className="min-h-screen bg-[#151515] text-white p-8">
             <div className="max-w-[800px] mx-auto">
@@ -164,33 +164,30 @@ export function SessionActivity({ user }: { user: UserInfo | null }) {
                         <div className="flex gap-2">
                             <Button
                                 variant="ghost"
-                                className={`rounded-full px-4 ${
-                                    activeTab === 'history'
-                                        ? 'bg-[#DDB958] text-black'
-                                        : 'text-white/60 hover:text-white hover:bg-white/5'
-                                }`}
+                                className={`rounded-full px-4 ${activeTab === 'history'
+                                    ? 'bg-[#DDB958] text-black'
+                                    : 'text-white/60 hover:text-white hover:bg-white/5'
+                                    }`}
                                 onClick={() => setActiveTab('history')}
                             >
                                 Session history
                             </Button>
                             <Button
                                 variant="ghost"
-                                className={`rounded-full px-4 ${
-                                    activeTab === 'attendance'
-                                        ? 'bg-[#DDB958] text-black'
-                                        : 'text-white/60 hover:text-white hover:bg-white/5'
-                                }`}
+                                className={`rounded-full px-4 ${activeTab === 'attendance'
+                                    ? 'bg-[#DDB958] text-black'
+                                    : 'text-white/60 hover:text-white hover:bg-white/5'
+                                    }`}
                                 onClick={() => setActiveTab('attendance')}
                             >
                                 Proof of attendance
                             </Button>
                             <Button
                                 variant="ghost"
-                                className={`rounded-full px-4 ${
-                                    activeTab === 'tips'
-                                        ? 'bg-[#DDB958] text-black'
-                                        : 'text-white/60 hover:text-white hover:bg-white/5'
-                                }`}
+                                className={`rounded-full px-4 ${activeTab === 'tips'
+                                    ? 'bg-[#DDB958] text-black'
+                                    : 'text-white/60 hover:text-white hover:bg-white/5'
+                                    }`}
                                 onClick={() => setActiveTab('tips')}
                             >
                                 Tip history
