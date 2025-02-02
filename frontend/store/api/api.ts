@@ -97,6 +97,7 @@ export const apiSlice = createApi({
     tagTypes: [
         'User',
         'Pod',
+        'Calls',
         'ScheduledCalls',
         'CallStats',
         'DetailedCallStats',

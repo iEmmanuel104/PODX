@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { StreamClient, CallSettings } from '@stream-io/node-sdk';
+import { StreamClient, CallSettings, CallResponse } from '@stream-io/node-sdk';
 import { STREAM_API_KEY, STREAM_API_SECRET } from '../utils/constants';
 import { IUser } from '../models/Mongodb/user.model';
 import { redisClient } from '../utils/redis';
@@ -572,13 +572,15 @@ export default class StreamIOConfig {
         }
     }
 
-    static async getCallDetails(callId: string): Promise<{ call: any; error?: Error }> {
+    static async getCallDetails(callId: string): Promise<{ call: CallResponse | null; error?: Error }> {
         try {
             this.initialize();
             const { calls } = await this.client.video.queryCalls({
                 filter_conditions: { id: callId },
             });
-            return { call: calls[0] };
+
+            console.log('Call details from stream io:', calls);
+            return { call: calls[0].call };
         } catch (error) {
             console.error('Error fetching call details:', error);
             return { call: null, error: error as Error };

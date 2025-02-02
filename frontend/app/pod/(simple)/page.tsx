@@ -4,8 +4,6 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
-import { StreamVideoClient, GetCallResponse } from '@stream-io/video-react-sdk';
-import { STREAM_API_KEY } from '@/constants';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { customAlphabet } from 'nanoid';
 import { AppContext } from '@/providers/appProvider';
@@ -16,7 +14,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useScheduledCalls } from '@/hooks/useScheduledCalls';
 import { StreamCallData } from '@/components/pod/streamCallData';
-import { useStreamTokenProvider } from '@/hooks/useStreamTokenProvider';
 import Telegram from '@/public/icons/socials/Telegram';
 import X from '@/public/icons/socials/X';
 import Farcaster from '@/public/icons/socials/Farcaster';
@@ -71,8 +68,7 @@ export default function PodPage() {
     const { setNewMeeting } = React.useContext(AppContext);
     const { isLoggedIn, user } = useAppSelector(state => state.user);
     const sessionInfo = useAppSelector(state => state.pod);
-    const { scheduledSessions, scheduleCall, getScheduledCall, isLoading } = useScheduledCalls();
-    const tokenProvider = useStreamTokenProvider();
+    const { scheduledSessions, scheduleCall, getCall, isLoading } = useScheduledCalls();
 
     const [state, setState] = useState({
         meetingCode: '',
@@ -95,14 +91,14 @@ export default function PodPage() {
     }, [isLoggedIn, user]);
 
     const handleStreamCall = useCallback(
-        (response: GetCallResponse) => {
-            if (response.call && state.meetingCode === response.call.custom.sessionId) {
+        (response: StreamCallData) => {
+            if (response.id && state.meetingCode === response.custom.sessionId) {
                 dispatch(
                     setSessionInfo({
-                        title: response.call.custom.title,
-                        type: response.call.custom.type,
+                        title: response.custom.title,
+                        type: response.custom.type as sessionType,
                         sessionId: state.meetingCode,
-                        starts_at: response.call.starts_at,
+                        starts_at: response.starts_at,
                     })
                 );
                 router.push(`/pod/join/${state.meetingCode}`);
@@ -179,45 +175,15 @@ export default function PodPage() {
         dispatch(clearSessionInfo());
 
         try {
-            const token = await tokenProvider(user.walletAddress);
+            const { data } = await getCall(state.meetingCode);
 
-            // First try Stream.io
-            const client = new StreamVideoClient({
-                apiKey: STREAM_API_KEY,
-                user: {
-                    id: user.id,
-                    name: user.username,
-                },
-                tokenProvider: async () => token,
-            });
-
-            try {
-                console.log('Checking Stream.io for call');
-                const { calls } = await client.queryCalls({
-                    filter_conditions: { id: state.meetingCode },
-                });
-
-                if (calls.length > 0 && calls[0].id === state.meetingCode) {
-                    console.log('Call found in Stream.io');
-                    const response: GetCallResponse = await calls[0].get();
-                    handleStreamCall(response);
-                    return;
-                }
-            } catch (streamError) {
-                console.log('Stream.io call not found, checking scheduled calls...');
-            }
-
-            // Then check Redis scheduled calls
-            try {
-                console.log('checking server for scheduled call');
-                const { data } = await getScheduledCall(state.meetingCode);
-
-                if (data?.call) {
+            if (data?.call) {
+                if (data.source === 'stream') {
+                    handleStreamCall(data.call);
+                } else {
                     setState(prev => ({ ...prev, foundSession: data.call }));
-                    return;
                 }
-            } catch (redisError) {
-                console.log('Scheduled call not found in Server');
+                return;
             }
 
             setState(prev => ({
@@ -233,7 +199,7 @@ export default function PodPage() {
         } finally {
             setState(prev => ({ ...prev, isJoining: false }));
         }
-    }, [state.meetingCode, user, dispatch, tokenProvider, handleStreamCall, getScheduledCall]);
+    }, [state.meetingCode, user, dispatch, getCall, handleStreamCall]);
 
     const handleJoinCreatedSession = useCallback(async () => {
         setState(prev => ({ ...prev, isJoiningCreated: true }));

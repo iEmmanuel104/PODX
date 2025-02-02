@@ -8,6 +8,8 @@ import { CallSettings } from '@stream-io/node-sdk';
 import { WebhookService } from '../services/webhook.service';
 
 export default class CallsController {
+
+    // all call controllers
     static async scheduleCall(req: AuthenticatedRequest, res: Response) { 
         const { title, type, sessionId, starts_at } = req.body;
 
@@ -56,17 +58,43 @@ export default class CallsController {
         });
     }
 
-    static async getScheduledCall(req: AuthenticatedRequest, res: Response) {
+    static async getCall(req: AuthenticatedRequest, res: Response) {
         const { sessionId } = req.params;
-        const callKey = `scheduled_call:${sessionId}`;
 
+        console.log('Getting call::::::::', sessionId);
+
+        // First check Stream.io for active call
+        const { call: streamCall, error: streamError } = await StreamIOConfig.getCallDetails(sessionId);
+
+        console.log('Stream call::::::::', streamCall);
+
+        if (streamCall) {
+            res.status(200).json({
+                status: 'success',
+                message: 'Call retrieved successfully',
+                data: {
+                    call: streamCall,
+                    source: 'stream',
+                    hasJoined: false, // Stream.io manages this separately
+                    participants: streamCall.session?.participants?.length || 0,
+                },
+            });
+            return;
+        }
+
+        if (streamError) {
+            console.warn('Stream.io error:', streamError);
+            // Continue to check Redis even if Stream.io throws an error
+        }
+
+        // If not found in Stream.io, check Redis for scheduled call
+        const callKey = `scheduled_call:${sessionId}`;
         const callData = await redisClient.get(callKey);
 
-        // If no call data found, return success with null data
         if (!callData) {
             res.status(200).json({
                 status: 'success',
-                message: 'No scheduled call found',
+                message: 'No call found',
                 data: null,
             });
             return;
@@ -79,15 +107,36 @@ export default class CallsController {
         const participants = await redisClient.smembers(userJoinedKey);
         const hasJoined = participants.includes(req.user.id);
 
+        // Check if the scheduled call has expired
+        const startTime = new Date(parsedCallData.starts_at);
+        const expiryTime = new Date(startTime.getTime() + 5 * 60 * 1000); // 5 minutes after start time
+        const now = new Date();
+
+        if (now > expiryTime) {
+            // Remove expired call data
+            await redisClient.del(callKey);
+            await redisClient.srem('all_scheduled_sessions', sessionId);
+            await redisClient.srem(`user_scheduled_calls:${parsedCallData.created_by.id}`, sessionId);
+
+            res.status(200).json({
+                status: 'success',
+                message: 'Call has expired',
+                data: null,
+            });
+            return;
+        }
+
         res.status(200).json({
             status: 'success',
             message: 'Scheduled call retrieved successfully',
             data: {
                 call: parsedCallData,
+                source: 'scheduled',
                 hasJoined,
                 participants: participants.length,
             },
         });
+
     }
 
     static async getUserScheduledCalls(req: AuthenticatedRequest, res: Response) {
@@ -114,6 +163,7 @@ export default class CallsController {
         });
     }
 
+    //  StreamIOConfigs
     static async createCall(req: AuthenticatedRequest, res: Response) {
         const { callType, callId, members, settings, ring = false } = req.body;
 
@@ -216,6 +266,7 @@ export default class CallsController {
         });
     }
 
+    // call information
     static async getCallStats(req: AuthenticatedRequest, res: Response) {
         const { startDate, endDate, page = '1', size = '100', next } = req.query;
 

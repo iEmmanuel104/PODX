@@ -9,14 +9,15 @@ export interface ScheduleCallArgs {
     starts_at: string;
 }
 
-export interface GetScheduledCallResponse {
-    call: StreamCallData;
-    hasJoined: boolean;
-    participants: number;
-}
-
 export interface GetUserScheduledCallsResponse {
     calls: StreamCallData[];
+}
+
+export interface GetCallResponse {
+    call: StreamCallData;
+    source: 'stream' | 'scheduled';
+    hasJoined: boolean;
+    participants: number;
 }
 
 export const scheduledCallsApiSlice = apiSlice.injectEndpoints({
@@ -29,12 +30,12 @@ export const scheduledCallsApiSlice = apiSlice.injectEndpoints({
             }),
             invalidatesTags: ['ScheduledCalls'],
         }),
-        getScheduledCall: builder.query<ApiResponse<GetScheduledCallResponse | null>, string>({
+        getCall: builder.query<ApiResponse<GetCallResponse | null>, string>({
             query: sessionId => ({
-                url: `/calls/scheduled/${sessionId}`,
+                url: `/calls/${sessionId}`,
                 method: 'GET',
             }),
-            providesTags: (result, error, sessionId) => [{ type: 'ScheduledCalls', id: sessionId }],
+            providesTags: (result, error, sessionId) => [{ type: 'Calls', id: sessionId }],
         }),
         getUserScheduledCalls: builder.query<ApiResponse<GetUserScheduledCallsResponse>, void>({
             query: () => ({
@@ -46,5 +47,5 @@ export const scheduledCallsApiSlice = apiSlice.injectEndpoints({
     }),
 });
 
-export const { useScheduleCallMutation, useGetScheduledCallQuery, useGetUserScheduledCallsQuery } =
+export const { useScheduleCallMutation, useGetCallQuery, useGetUserScheduledCallsQuery } =
     scheduledCallsApiSlice;

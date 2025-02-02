@@ -4,11 +4,11 @@ import { AuthenticatedController, basicAuth } from '../middlewares/authMiddlewar
 
 const router: Router = express.Router();
 
-// Scheduled calls routes
+// all calls routes
 router
     .post('/schedule', basicAuth(), AuthenticatedController(CallsController.scheduleCall))
     .get('/scheduled', basicAuth(), AuthenticatedController(CallsController.getUserScheduledCalls))
-    .get('/scheduled/:sessionId', basicAuth(), AuthenticatedController(CallsController.getScheduledCall));
+    .get('/:sessionId', basicAuth(), AuthenticatedController(CallsController.getCall));
 
 // Stream call management routes
 router

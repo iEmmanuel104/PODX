@@ -9,13 +9,13 @@ import {
 import { setScheduledSessions, clearScheduledSessions } from '@/store/slices/scheduledSessionSlice';
 import type { StreamCallData } from '@/components/pod/streamCallData';
 import type { ApiResponse } from '@/store/api/api';
-import type { ScheduleCallArgs, GetScheduledCallResponse } from '@/store/api/scheduledCallsApi';
+import type { ScheduleCallArgs, GetCallResponse } from '@/store/api/scheduledCallsApi';
 
 interface UseScheduledCallsReturn {
     scheduledSessions: StreamCallData[];
     scheduleCall: (args: ScheduleCallArgs) => Promise<{ data: ApiResponse<StreamCallData> }>;
     isLoading: boolean;
-    getScheduledCall: (sessionId: string) => Promise<ApiResponse<GetScheduledCallResponse | null>>;
+    getCall: (sessionId: string) => Promise<ApiResponse<GetCallResponse | null>>;
 }
 
 export const useScheduledCalls = (): UseScheduledCallsReturn => {
@@ -40,22 +40,22 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
         };
     }, [dispatch]);
 
-    // Get a single scheduled call using RTK Query
-    const getScheduledCall = async (
+    // Get a call using RTK Query (checks both stream and scheduled calls)
+    const getCall = async (
         sessionId: string
-    ): Promise<ApiResponse<GetScheduledCallResponse | null>> => {
+    ): Promise<ApiResponse<GetCallResponse | null>> => {
         try {
             const result = await dispatch(
-                scheduledCallsApiSlice.endpoints.getScheduledCall.initiate(sessionId)
+                scheduledCallsApiSlice.endpoints.getCall.initiate(sessionId)
             );
 
             if ('error' in result) {
-                throw new Error('Failed to fetch scheduled call');
+                throw new Error('Failed to fetch call');
             }
 
-            return result.data as ApiResponse<GetScheduledCallResponse | null>;
+            return result.data as ApiResponse<GetCallResponse | null>;
         } catch (error) {
-            console.error('Failed to get scheduled call:', error);
+            console.error('Failed to get call:', error);
             throw error;
         }
     };
@@ -70,6 +70,6 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
             return { data: result.data as ApiResponse<StreamCallData> };
         },
         isLoading: isLoadingCalls || isScheduling,
-        getScheduledCall,
+        getCall,
     };
 };
