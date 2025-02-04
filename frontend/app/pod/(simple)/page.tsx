@@ -268,7 +268,7 @@ export default function PodPage() {
     }
 
     return (
-        <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4 relative">
+        <div className="min-h-screen bg-[#151515] text-white flex flex-col items-center justify-center p-4 relative">
             <div className="w-full max-w-2xl flex flex-col items-center">
                 {/* User details section */}
                 <React.Suspense fallback={<div className="h-12 mb-24" />}>

@@ -6,6 +6,7 @@ import { useAppDispatch, useAppSelector } from "@/store/hooks"
 import { updateUser } from "@/store/slices/userSlice"
 import { UsernameModal } from "./username-modal"
 import { getBasename, getBasenameAvatar } from "@/app/apis/basenames"
+import Link from "next/link"
 
 interface UserProfileProps {
     user: {
@@ -104,11 +105,18 @@ const UserProfile = memo<UserProfileProps>(({ user }) => {
                             <span>Edit name</span>
                         </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem className="flex cursor-pointer items-center justify-between rounded-md px-3 py-2">
-                        <span className="bg-gradient-to-br from-[#552FC9] to-[#D7B35D] bg-clip-text text-transparent">
-                            {userBaseName.basename ? 'Manage basename' : 'Buy basename'}
-                        </span>
-                        <ArrowUpRight className="h-4 w-4 text-zinc-400" />
+                    <DropdownMenuItem asChild>
+                        <Link
+                            href="https://www.base.org/names"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex cursor-pointer items-center justify-between rounded-md px-3 py-2"
+                        >
+                            <span className="bg-gradient-to-br from-[#552FC9] to-[#D7B35D] bg-clip-text text-transparent">
+                                {userBaseName.basename ? 'Manage basename' : 'Buy basename'}
+                            </span>
+                            <ArrowUpRight className="h-4 w-4 text-zinc-400" />
+                        </Link>
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>

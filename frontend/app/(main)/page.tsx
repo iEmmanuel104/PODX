@@ -40,7 +40,7 @@ export default function LandingPage() {
 
     return (
         <main
-            className={`bg-[#212121] min-h-screen text-white flex flex-col items-center ${balige.variable}`}
+            className={`bg-[#151515] min-h-screen text-white flex flex-col items-center ${balige.variable}`}
         >
             <div
                 className="container relative z-10 mx-auto px-4 flex flex-col items-center justify-center"
@@ -54,7 +54,7 @@ export default function LandingPage() {
                         <div className="flex flex-col items-center gap-6">
                             <div className="flex justify-center items-center">
                                 <div className="rounded-full bg-gradient-to-r from-[#552FC9] to-[#D7B35D] p-[1px]">
-                                    <div className="rounded-full bg-[#212121] px-6 py-2">
+                                    <div className="rounded-full bg-[#151515] px-6 py-2">
                                         <span className="text-xs uppercase tracking-[0.2em] text-white">
                                             A creator's workspace
                                         </span>

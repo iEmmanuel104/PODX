@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function ErrorPage() {
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white p-4">
+        <div className="flex flex-col items-center justify-center min-h-screen bg-[#151515] text-white p-4">
             <div className="w-full max-w-md">
                 <div className="flex justify-center mb-12">
                     <Image
