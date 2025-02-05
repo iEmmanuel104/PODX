@@ -326,22 +326,6 @@ export default class CallsController {
         }
     }
 
-    static async getCallDetails(req: Request, res: Response) {
-        const { callId } = req.params;
-
-        const { call, error } = await StreamIOConfig.getCallDetails(callId);
-
-        if (error) {
-            throw new BadRequestError(error.message);
-        }
-
-        res.status(200).json({
-            status: 'success',
-            message: 'Call details retrieved successfully',
-            data: { call },
-        });
-    }
-
     static async getDetailedCallStats(req: Request, res: Response) {
         const { startDate, endDate, size = '100', next } = req.query;
 
