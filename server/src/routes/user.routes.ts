@@ -12,7 +12,7 @@ router
     .get('/', AuthenticatedController(UserController.getAllUsers))
     .get('/info', basicAuth(), AuthenticatedController(UserController.getUser))
     .get('/streak-stats', basicAuth(), AuthenticatedController(UserController.getUserStreakStats))
-    .post('/validate', UserController.findOrCreateUser)
+    .post('/validate', UserController.validateUser)
     .get('/calls', basicAuth(), AuthenticatedController(UserController.getUserCalls))
     .patch('/update', basicAuth(), upload, AuthenticatedController(UserController.updateUser));
 
