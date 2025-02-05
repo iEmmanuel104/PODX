@@ -55,6 +55,7 @@ export interface PodState {
     streamCallType: (typeof streamCallType)[keyof typeof streamCallType] | '';
     starts_at?: string;
     isScheduled?: boolean;
+    isNewMeeting: boolean;
 }
 
 const initialState: PodState = {
@@ -87,6 +88,7 @@ const initialState: PodState = {
     streamCallType: '',
     starts_at: undefined,
     isScheduled: false,
+    isNewMeeting: false,
 };
 
 const podSlice = createSlice({
@@ -263,6 +265,12 @@ const podSlice = createSlice({
             state.starts_at = undefined;
             state.isScheduled = false;
         },
+        setIsNewMeeting: (state, action: PayloadAction<boolean>) => {
+            state.isNewMeeting = action.payload;
+        },
+        resetMeetingState: (state) => {
+            state.isNewMeeting = false;
+        },
     },
 });
 
@@ -291,6 +299,7 @@ export const {
     clearPodState,
     setSessionInfo,
     clearSessionInfo,
+    setIsNewMeeting, resetMeetingState
 } = podSlice.actions;
 
 export default podSlice.reducer;

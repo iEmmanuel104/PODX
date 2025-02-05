@@ -6,8 +6,7 @@ import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { customAlphabet } from 'nanoid';
-import { AppContext } from '@/providers/appProvider';
-import { clearSessionInfo, setSessionInfo } from '@/store/slices/podSlice';
+import { clearSessionInfo, resetMeetingState, setIsNewMeeting, setSessionInfo } from '@/store/slices/podSlice';
 import { sessionType } from '@/constants';
 import { updateUser } from '@/store/slices/userSlice';
 import { Button } from '@/components/ui/button';
@@ -57,7 +56,6 @@ interface SessionData {
 export default function PodPage() {
     const router = useRouter();
     const dispatch = useAppDispatch();
-    const { setNewMeeting } = React.useContext(AppContext);
     const { isLoggedIn, user } = useAppSelector(state => state.user);
     const sessionInfo = useAppSelector(state => state.pod);
     const { scheduledSessions, scheduleCall, getCall, isLoading } = useScheduledCalls();
@@ -102,7 +100,7 @@ export default function PodPage() {
     const handleCreateSession = useCallback(
         async (title: string, type: sessionType, scheduledDate?: Date) => {
             dispatch(clearSessionInfo());
-            setNewMeeting(true);
+            dispatch(setIsNewMeeting(true));
             const newSessionCode = getMeetingId();
 
             const sessionData: SessionData = {
@@ -157,7 +155,7 @@ export default function PodPage() {
 
             dispatch(setSessionInfo(sessionData));
         },
-        [dispatch, setNewMeeting, scheduleCall]
+        [dispatch, scheduleCall]
     );
 
     const handleJoinSession = useCallback(async () => {
@@ -219,6 +217,12 @@ export default function PodPage() {
     const handleClearFoundSession = useCallback(() => {
         setState(prev => ({ ...prev, foundSession: undefined }));
     }, []);
+
+    useEffect(() => {
+        return () => {
+            dispatch(resetMeetingState());
+        };
+    }, [dispatch]);
 
     if (!isLoggedIn || !user) {
         router.push('/');

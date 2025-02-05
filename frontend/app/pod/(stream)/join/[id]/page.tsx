@@ -14,9 +14,7 @@ import {
 // import { useStreamTokenProvider } from '@/hooks/useStreamTokenProvider';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
-import { useContext } from 'react';
-import { AppContext } from '@/providers/appProvider';
-import { setSessionInfo } from '@/store/slices/podSlice';
+import { resetMeetingState, setSessionInfo } from '@/store/slices/podSlice';
 import { useScheduledCalls } from '@/hooks/useScheduledCalls';
 
 // Types
@@ -140,7 +138,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
         state => state.pod
     );
     const { isLoggedIn, user } = useAppSelector(state => state.user);
-    const { newMeeting, setNewMeeting } = useContext(AppContext);
+    const isNewMeeting = useAppSelector(state => state.pod.isNewMeeting);
     // const { client: chatClient } = useChatContext();
 
     // Stream Video Hooks
@@ -158,7 +156,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                 await call?.leave();
             }
 
-            if (newMeeting) {
+            if (isNewMeeting) {
                 await call?.getOrCreate({
                     data: {
                         members: [{ user_id: user.id, role: 'host' }],
@@ -205,7 +203,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
         code,
         dispatch,
         isScheduled,
-        newMeeting,
+        isNewMeeting, // Updated dependency
         router,
         sessionTitle,
         sessionType,
@@ -268,12 +266,13 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
         checkScheduledMeeting();
     }, [checkScheduledMeeting]);
 
+    // In JoinSession component
     useEffect(() => {
-        setNewMeeting(newMeeting);
+        // Cleanup function
         return () => {
-            setNewMeeting(false);
+            dispatch(resetMeetingState());
         };
-    }, [newMeeting, setNewMeeting]);
+    }, [dispatch]);
 
     // Handlers
     // const updateGuestName = useCallback(async () => {
@@ -306,7 +305,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                     },
                     ...(sessionType === 'Audio Session' && { video: false }),
                 });
-                await call?.updateCallMembers({ update_members: [{ user_id: user?.id! }]});
+                await call?.updateCallMembers({ update_members: [{ user_id: user?.id! }] });
             }
 
             router.push(`/pod/${code}`);
