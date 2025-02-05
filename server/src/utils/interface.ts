@@ -61,3 +61,91 @@ export interface AWSKeyData {
     fileName: string,
     type: AWSUploadType,
 }
+export interface UserResponse {
+    id: string;
+    name?: string;
+    image?: string;
+    banned: boolean;
+    online: boolean;
+    role: string;
+    language: string;
+    teams: string[];
+    blocked_user_ids: string[];
+    created_at: number;
+    updated_at: number;
+    last_active?: number;
+    deactivated_at?: number;
+    deleted_at?: number;
+    revoke_tokens_issued_before?: number;
+    custom: Record<string, unknown>;
+}
+
+export interface CallParticipant {
+    user: UserResponse;
+    role: string;
+    user_session_id: string;
+    joined_at: number;
+}
+
+export interface CallCreatedEvent {
+    call: CallResponse;
+    call_cid: string;
+    created_at: number;
+    members: MemberResponse[];
+    type: string;
+}
+
+export interface CallResponse {
+    id: string;
+    type: string;
+    created_at: number;
+    created_by: UserResponse;
+    current_session_id?: string;
+    ended_at?: number;
+    custom?: Record<string, unknown>;
+    cid: string;
+}
+
+export interface MemberResponse {
+    user: UserResponse;
+    user_id: string;
+    role?: string;
+    created_at: number;
+    custom?: Record<string, unknown>;
+}
+
+export interface CallSessionPayload {
+    call: {
+        type: string;
+        id: string;
+        current_session_id?: string;
+        session?: {
+            participants: CallParticipant[];
+        };
+    };
+    session_id: string;
+    participant: CallParticipant;
+    created_at: string;
+}
+
+export interface CallSessionEndPayload {
+    call_cid: string;
+    participant: CallParticipant;
+    duration_seconds: number;
+    created_at: string;
+}
+
+export interface ProcessingError {
+    userId?: string;
+    callId?: string;
+    error: string;
+    timestamp: Date;
+}
+
+export interface ProcessingSummary {
+    totalUsersProcessed: number;
+    totalCallsProcessed: number;
+    totalStreakUpdates: number;
+    errors: ProcessingError[];
+    processingTime: number;
+}
