@@ -226,84 +226,107 @@ export default function PodPage() {
     }
 
     return (
-        <>
-            {/* Main grid container */}
-            <div className="w-full flex flex-col md:flex-row gap-6 mb-8">
-                {/* Join Session Card */}
-                <div className="w-full md:max-w-[370px] rounded-[10px] p-6 bg-[#1E1E1E] flex flex-col justify-between min-h-[200px]">
-                    <div>
-                        <h2 className="text-[32px] font-semibold text-white">Join Session</h2>
-                        <p className="text-[#A3A3A3] text-sm">
-                            Join a meeting instantly and collaborate!
-                        </p>
-                    </div>
-                    <div className="flex flex-col gap-4 mt-4">
-                        <div className="flex flex-col sm:flex-row gap-4">
-                            <Input
-                                type="text"
-                                placeholder="Enter meeting code"
-                                value={state.meetingCode}
-                                onChange={e =>
-                                    setState(prev => ({ ...prev, meetingCode: e.target.value }))
-                                }
-                                className="flex-1 bg-[#2C2C2C] rounded-[10px] px-4 py-2 text-sm border-[#3c3c3c] focus-within:border-[#3c3c3c] focus:border-[#3c3c3c] focus:ring-[#3c3c3c] text-white placeholder-[#6C6C6C]"
-                            />
-                            <Button
-                                onClick={handleJoinSession}
-                                disabled={!state.meetingCode || state.isJoining}
-                                className="bg-[#6032F6] text-white px-8 py-2 rounded-[10px] hover:bg-[#4C28C4] transition-all duration-300 ease-in-out text-sm font-medium disabled:bg-gray-500 disabled:cursor-not-allowed"
-                            >
-                                {state.isJoining ? 'Joining...' : 'Join'}
-                            </Button>
+        <div className="flex flex-col justify-center items-center min-h-[calc(100vh-180px)] py-6 sm:py-8">
+            {/* Main Content Container */}
+            <div className="w-full max-w-[720px] mx-auto flex flex-col gap-8">
+                {/* Main Cards Section */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                    {/* Join Session Card */}
+                    <div
+                        className="w-full rounded-[10px] p-4 sm:p-6 bg-[#1E1E1E] flex flex-col justify-between 
+                                  transition-all duration-200 h-full"
+                    >
+                        <div>
+                            <h2 className="text-2xl sm:text-[32px] font-semibold text-white mb-2">
+                                Join Session
+                            </h2>
+                            <p className="text-[#A3A3A3] text-sm">
+                                Join a meeting instantly and collaborate!
+                            </p>
                         </div>
-                        <ErrorMessage
-                            message={state.error}
-                            onClear={() => setState(prev => ({ ...prev, error: '' }))}
-                        />
+                        <div className="flex flex-col gap-4 mt-4">
+                            <div className="flex flex-col sm:flex-row gap-3">
+                                <Input
+                                    type="text"
+                                    placeholder="Enter meeting code"
+                                    value={state.meetingCode}
+                                    onChange={e =>
+                                        setState(prev => ({ ...prev, meetingCode: e.target.value }))
+                                    }
+                                    className="flex-1 bg-[#2C2C2C] rounded-[10px] px-4 py-2 text-sm border-[#3c3c3c] 
+                                             focus-within:border-[#3c3c3c] focus:border-[#3c3c3c] focus:ring-[#3c3c3c] 
+                                             text-white placeholder-[#6C6C6C] transition-all duration-200"
+                                />
+                                <Button
+                                    onClick={handleJoinSession}
+                                    disabled={!state.meetingCode || state.isJoining}
+                                    className="w-full sm:w-auto bg-[#6032F6] text-white px-8 py-2 rounded-[10px] 
+                                             hover:bg-[#4C28C4] transition-all duration-200 text-sm font-medium 
+                                             disabled:bg-gray-500 disabled:cursor-not-allowed"
+                                >
+                                    {state.isJoining ? 'Joining...' : 'Join'}
+                                </Button>
+                            </div>
+                            <ErrorMessage
+                                message={state.error}
+                                onClear={() => setState(prev => ({ ...prev, error: '' }))}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Create Session Card */}
+                    <div
+                        className="w-full rounded-[10px] p-4 sm:p-6 bg-gradient-to-br from-[#6032F6] to-[#381D90] 
+                                  flex flex-col justify-between transition-all duration-200 h-full"
+                    >
+                        <div>
+                            <Image
+                                src="/images/play-add.svg"
+                                alt="Create Session"
+                                width={32}
+                                height={32}
+                                className="mb-4"
+                                priority
+                            />
+                            <h2 className="text-2xl sm:text-[32px] font-semibold text-white">
+                                Create{' '}
+                                <span className="hidden sm:inline">
+                                    <br />
+                                </span>
+                                Session
+                            </h2>
+                            <p className="text-[#E9D5FF] text-sm mt-2">
+                                Start a meeting or podcast session in seconds - collaborate, share,
+                                and record with ease!
+                            </p>
+                        </div>
+                        <Button
+                            onClick={() => setState(prev => ({ ...prev, isCreateModalOpen: true }))}
+                            className="w-full bg-[#DDB958] hover:bg-[#DDB958] text-black font-semibold 
+                                     py-2 px-4 rounded-[10px] transition-all duration-200 mt-4"
+                        >
+                            Create Session
+                        </Button>
                     </div>
                 </div>
 
-                {/* Create Session Card */}
-                <div className="w-full md:max-w-[333px] rounded-[10px] p-6 bg-gradient-to-br from-[#6032F6] to-[#381D90] flex flex-col justify-between min-h-[200px]">
-                    <div>
-                        <Image
-                            src="/images/play-add.svg"
-                            alt="Create Session"
-                            width={32}
-                            height={32}
-                            className="mb-4"
-                            priority
-                        />
-                        <h2 className="text-[32px] font-semibold text-white">
-                            Create <br />
-                            Session
-                        </h2>
-                        <p className="text-[#E9D5FF] text-sm mb-4">
-                            Start a meeting or podcast session in seconds - collaborate, share, and
-                            record with ease!
-                        </p>
-                    </div>
-                    <Button
-                        onClick={() => setState(prev => ({ ...prev, isCreateModalOpen: true }))}
-                        className="w-full bg-[#DDB958] hover:bg-[#DDB958] text-black font-semibold py-2 px-4 rounded-[10px] transition-colors duration-300"
-                    >
-                        Create Session
-                    </Button>
+                {/* Session streak dialog */}
+                <div className="w-full">
+                    <StreakDialog user={user} />
+                </div>
+
+                {/* Scheduled sessions */}
+                <div className="w-full mb-12 sm:mb-16">
+                    <ScheduledPods
+                        sessions={scheduledSessions}
+                        foundSession={state.foundSession}
+                        onJoinSession={sessionId => router.push(`/pod/join/${sessionId}`)}
+                        currentUserId={user?.id}
+                        isLoading={isLoading}
+                        onClearFoundSession={handleClearFoundSession}
+                    />
                 </div>
             </div>
-
-            {/* Session streak dialog */}
-            <StreakDialog streak={3} />
-
-            {/* Scheduled sessions */}
-            <ScheduledPods
-                sessions={scheduledSessions}
-                foundSession={state.foundSession}
-                onJoinSession={sessionId => router.push(`/pod/join/${sessionId}`)}
-                currentUserId={user?.id}
-                isLoading={isLoading}
-                onClearFoundSession={handleClearFoundSession}
-            />
 
             {/* Modals */}
             <React.Suspense fallback={null}>
@@ -337,6 +360,6 @@ export default function PodPage() {
                     />
                 )}
             </React.Suspense>
-        </>
+        </div>
     );
 }
