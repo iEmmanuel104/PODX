@@ -28,7 +28,7 @@ export const metadata: Metadata = {
 export default function MainLayout({ children }: { children: React.ReactNode }) {
     return (
         <div
-            className={`${clashGroteskRegular.variable} ${clashgroteskMedium.variable} antialiased bg-[#151515] min-h-screen flex justify-center items-center relative`}
+            className={`${clashGroteskRegular.variable} ${clashgroteskMedium.variable} antialiased bg-[#151515] min-h-screen w-full`}
         >
             <Suspense fallback={<div className="animate-pulse">Loading...</div>}>
                 <AuthProvider>{children}</AuthProvider>
