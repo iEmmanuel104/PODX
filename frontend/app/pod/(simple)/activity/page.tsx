@@ -18,11 +18,6 @@ import {
     LinkIcon,
     Wallet,
 } from 'lucide-react';
-import Telegram from '@/public/icons/socials/Telegram';
-import Link from 'next/link';
-import Farcaster from '@/public/icons/socials/Farcaster';
-import X from '@/public/icons/socials/X';
-import { useAppSelector } from '@/store/hooks';
 
 type TabType = 'history' | 'attendance' | 'tips';
 
@@ -42,29 +37,20 @@ const session = {
 const sessions = Array(4).fill(session);
 
 export default function Page() {
-    const { isLoggedIn, user } = useAppSelector(state => state.user);
     const [activeTab, setActiveTab] = useState<TabType>('tips');
     const [isBalanceHidden, setIsBalanceHidden] = useState(false);
 
-    if (!isLoggedIn) {
-        return (
-            <div className="min-h-screen bg-[#151515] text-white p-8 flex items-center justify-center">
-                Please log in to view session activity
-            </div>
-        );
-    }
-
     return (
-        <>
-            {/* Wallet Info */}
-            <div className="flex flex-col items-center gap-4 mb-16">
+        <div className="w-full flex flex-col gap-8 transition-all duration-200">
+            {/* Wallet Info Section */}
+            <div className="w-full flex flex-col items-center gap-4 p-4 sm:p-6 bg-[#1E1E1E] rounded-xl">
                 <div className="flex items-center gap-2">
-                    <span className="text-5xl font-bold bg-gradient-to-r from-[#552FC9] to-[#D7B35D] bg-clip-text text-transparent">
+                    <span className="text-3xl sm:text-5xl font-bold bg-gradient-to-r from-[#552FC9] to-[#D7B35D] bg-clip-text text-transparent transition-all duration-200">
                         {isBalanceHidden ? '******' : '0 USDC'}
                     </span>
                     <Button
                         variant="ghost"
-                        className="p-1 h-auto hover:bg-white/5"
+                        className="p-1 h-auto hover:bg-white/5 transition-all duration-200"
                         onClick={() => setIsBalanceHidden(!isBalanceHidden)}
                     >
                         {isBalanceHidden ? (
@@ -77,14 +63,14 @@ export default function Page() {
                 <div className="text-sm text-white/60">
                     {isBalanceHidden ? '****' : '~USD 50.01'}
                 </div>
-                <div className="flex gap-4 mt-2">
-                    <Button className="bg-[#6032F6] hover:bg-[#6032F6]/90 py-5">
+                <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-3 sm:gap-4 mt-2">
+                    <Button className="bg-[#6032F6] hover:bg-[#6032F6]/90 py-3 sm:py-5 w-full sm:w-auto transition-all duration-200">
                         <Wallet className="h-4 w-4 mr-2" />
                         Load Wallet
                     </Button>
                     <Button
                         variant="outline"
-                        className="border-white/10 bg-transparent text-white hover:text-white hover:bg-white/5 py-5"
+                        className="border-white/10 bg-transparent text-white hover:text-white hover:bg-white/5 py-3 sm:py-5 w-full sm:w-auto transition-all duration-200"
                     >
                         <ArrowUpRight className="h-4 w-4 mr-2" />
                         Withdraw
@@ -92,18 +78,19 @@ export default function Page() {
                 </div>
             </div>
 
-            {/* Session Activity */}
-            <div>
-                <h2 className="text-xl mb-6">Session Activity</h2>
+            {/* Session Activity Section */}
+            <div className="w-full bg-[#1E1E1E] rounded-xl p-4 sm:p-6">
+                <h2 className="text-xl sm:text-2xl font-semibold mb-6">Session Activity</h2>
 
-                {/* Tabs */}
-                <div className="flex justify-between items-center mb-6">
-                    <div className="flex gap-2">
+                {/* Tabs and Sort Section */}
+                <div className="flex flex-col sm:flex-row justify-between gap-4 sm:items-center mb-6">
+                    {/* Tabs */}
+                    <div className="flex flex-wrap gap-2">
                         {(['history', 'attendance', 'tips'] as TabType[]).map(tab => (
                             <Button
                                 key={tab}
                                 variant="ghost"
-                                className={`rounded-full px-4 ${
+                                className={`rounded-full px-3 sm:px-4 py-2 text-sm transition-all duration-200 ${
                                     activeTab === tab
                                         ? 'bg-[#DDB958] text-black'
                                         : 'text-white/60 hover:text-white hover:bg-white/5'
@@ -119,11 +106,12 @@ export default function Page() {
                         ))}
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm text-white/60">Sort by:</span>
+                    {/* Sort Dropdown */}
+                    <div className="flex items-center gap-2 self-end sm:self-auto">
+                        <span className="text-sm text-white/60 hidden sm:inline">Sort by:</span>
                         <div className="bg-white/5 rounded-lg px-3 py-1.5">
                             <Select defaultValue="newest">
-                                <SelectTrigger className="w-[160px] bg-transparent border-0 p-0 h-auto focus:ring-0">
+                                <SelectTrigger className="w-[140px] sm:w-[160px] bg-transparent border-0 p-0 h-auto focus:ring-0">
                                     <SelectValue placeholder="Sort by" />
                                 </SelectTrigger>
                                 <SelectContent className="bg-[#1E1E1E] border-white/10">
@@ -135,9 +123,9 @@ export default function Page() {
                     </div>
                 </div>
 
-                {/* Table */}
-                <div className="rounded-lg border border-white/10 overflow-hidden">
-                    <table className="w-full">
+                {/* Table Section */}
+                <div className="rounded-lg border border-white/10 overflow-x-auto">
+                    <table className="w-full whitespace-nowrap">
                         <thead className="bg-white/5">
                             <tr className="text-left text-sm text-white/60">
                                 {activeTab === 'history' && (
@@ -171,7 +159,10 @@ export default function Page() {
                         </thead>
                         <tbody className="divide-y divide-white/10">
                             {sessions.map((session, index) => (
-                                <tr key={index} className="text-sm">
+                                <tr
+                                    key={index}
+                                    className="text-sm hover:bg-white/5 transition-colors duration-200"
+                                >
                                     {activeTab === 'history' && (
                                         <>
                                             <td className="p-4">
@@ -252,38 +243,11 @@ export default function Page() {
                         </tbody>
                     </table>
                 </div>
-            </div>
-
-            {/* footer section */}
-            <div className="w-full flex justify-between items-center mx-auto mt-10">
-                <span className="bg-gradient-to-r from-[#D7B35D] to-[#552FC9] text-transparent bg-clip-text font-medium text-sm">
-                    Podx @ {new Date().getFullYear()}
-                </span>
-
-                <div className="socials flex gap-[8px]">
-                    <a
-                        href="https://t.me/podx_fun"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title="Join us on Telegram"
-                        className="social-icon h-[24px] w-[24px]"
-                    >
-                        <Telegram />
-                    </a>
-                    <Link href="#" className="text-zinc-400 hover:text-zinc-100 transition-colors">
-                        <Farcaster />
-                    </Link>
-                    <a
-                        href="https://x.com/podx_fun"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title="Follow us on X"
-                        className="social-icon h-[24px] w-[24px]"
-                    >
-                        <X />
-                    </a>
+                {/* Mobile-optimized view for very small screens */}
+                <div className="sm:hidden mt-4">
+                    <p className="text-sm text-white/60">↔️ Scroll horizontally to view all data</p>
                 </div>
             </div>
-        </>
+        </div>
     );
 }
