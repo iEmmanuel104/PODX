@@ -1,3 +1,5 @@
+//components/common/Footer/index.ts
+
 import Telegram from '@/public/images/icons/socials/Telegram';
 import X from '@/public/images/icons/socials/X';
 
