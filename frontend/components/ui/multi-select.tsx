@@ -90,7 +90,7 @@ export function MultiSelect() {
                     onValueChange={setActiveTab}
                     className="w-full flex flex-col gap-3"
                 >
-                    <TabsList className="w-full bg-[#3D3D3D] border-b border-[#4C4C4C] flex items-center max-w-[109px] rounded-3xl">
+                    <TabsList className="w-full bg-[#3D3D3D] border-b border-[#4C4C4C] flex items-center max-w-[120px] rounded-3xl">
                         <div className="flex justify-between items-center gap-2">
                             <TabsTrigger
                                 value="internal"
