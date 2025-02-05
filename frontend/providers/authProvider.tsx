@@ -4,7 +4,7 @@ import { usePrivy } from '@privy-io/react-auth';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { setUser, setSignature, logOut } from '@/store/slices/userSlice';
 import { useRouter, usePathname } from 'next/navigation';
-import { useFindOrCreateUserMutation, UserInfo } from '@/store/api/userApi';
+import { useValidateUserMutation, UserInfo } from '@/store/api/userApi';
 import { LoadingOverlay } from '@/components/ui/loading';
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -13,7 +13,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     const dispatch = useAppDispatch();
     const router = useRouter();
     const pathname = usePathname();
-    const [findOrCreateUser] = useFindOrCreateUserMutation();
+    const [validateUser] = useValidateUserMutation();
     const [isLoading, setIsLoading] = useState(false);
     const [isRedirecting, setIsRedirecting] = useState(false);
 
@@ -44,7 +44,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         if (!privyUser?.wallet?.address) return;
 
         try {
-            const result = await findOrCreateUser({
+            const result = await validateUser({
                 walletAddress: privyUser.wallet.address,
                 hash: true,
             }).unwrap();
@@ -69,7 +69,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
             router.replace('/');
             return false;
         }
-    }, [privyUser, findOrCreateUser, dispatch, logout, router]);
+    }, [privyUser, validateUser, dispatch, logout, router]);
 
     useEffect(() => {
         if (!ready || isLoading || isRedirecting) return;
