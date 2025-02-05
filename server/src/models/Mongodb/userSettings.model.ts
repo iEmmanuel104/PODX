@@ -1,31 +1,25 @@
 import { Schema, model, Document, Types } from 'mongoose';
-import { z } from 'zod';
 
-// Zod schema for validation
-const BlockUnblockEntrySchema = z.record(z.string());
+export interface IBlockHistoryEntry {
+    [key: string]: string;
+}
 
-const BlockMetaSchema = z.object({
-    blockHistory: z.array(BlockUnblockEntrySchema),
-    unblockHistory: z.array(BlockUnblockEntrySchema),
-});
+export interface IBlockMeta {
+    blockHistory: IBlockHistoryEntry[];
+    unblockHistory: IBlockHistoryEntry[];
+}
 
-const UserSettingsSchema = z.object({
-    _id: z.instanceof(Types.ObjectId),
-    userId: z.instanceof(Types.ObjectId),
-    joinDate: z.string(),
-    lastLogin: z.date().optional(),
-    isBlocked: z.boolean(),
-    isDeactivated: z.boolean(),
-    meta: BlockMetaSchema.optional(),
-});
+export interface IUserSettings extends Document {
+    userId: Types.ObjectId;
+    joinDate: string;
+    lastLogin?: Date;
+    isBlocked: boolean;
+    isDeactivated: boolean;
+    meta?: IBlockMeta;
+    createdAt?: Date;
+    updatedAt?: Date;
+}
 
-export type UserSettingsType = z.infer<typeof UserSettingsSchema>;
-export type IBlockMeta = z.infer<typeof BlockMetaSchema>;
-
-// Extend UserSettingsType with Mongoose's Document properties
-interface IUserSettings extends Omit<UserSettingsType, '_id'>, Document { }
-
-// Mongoose schema
 const mongooseUserSettingsSchema = new Schema<IUserSettings>({
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
     joinDate: { type: String, required: true },
@@ -43,7 +37,6 @@ const mongooseUserSettingsSchema = new Schema<IUserSettings>({
     timestamps: false,
 });
 
-// Ensure virtuals are included when converting to JSON
 mongooseUserSettingsSchema.set('toJSON', {
     virtuals: true,
     transform: (_, ret) => {
@@ -55,6 +48,3 @@ mongooseUserSettingsSchema.set('toJSON', {
 });
 
 export const UserSettings = model<IUserSettings>('UserSettings', mongooseUserSettingsSchema);
-
-// Export the interface for use in other parts of the application
-export { IUserSettings };
