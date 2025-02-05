@@ -23,7 +23,6 @@ router
     .get('/stats', CallsController.getCallStats)
     .get('/detailed-stats', CallsController.getDetailedCallStats)
     .get('/:callId', CallsController.getCallDetails)
-    .post('/members', CallsController.queryCallMembers)
-    .get('/leaderboard/rankings', CallsController.getLeaderboard);
+    .post('/members', CallsController.queryCallMembers);
 
 export default router;
