@@ -30,7 +30,7 @@ export interface ITransformedUserResponse {
         currentStreak: number;
         longestStreak: number;
         totalPoints: number;
-        stats: IStreakStats;
+        stats?: IStreakStats;
         recentActivities?: ICallActivity[];
         streakHistory?: Array<{ date: Date; streak: number }>;
     } | null;
@@ -184,7 +184,39 @@ export default class UserService {
         };
     }
 
-    static async viewSingleUserByWalletAddress(walletAddress: string): Promise<IUser | null> {
+    static async viewSingleUserByWalletAddress(walletAddress: string): Promise<ITransformedUserResponse | null> {
+        const user = await User.findOne({ walletAddress })
+            // .populate('settings')
+            .populate({
+                path: 'streak',
+                select: 'currentStreak longestStreak totalPoints',
+                // select: 'currentStreak longestStreak totalPoints stats',
+            })
+            .lean()
+            .exec();
+
+        if (!user) {
+            return null;
+        }
+
+        return {
+            id: user._id.toString(),
+            username: user.username,
+            walletAddress: user.walletAddress,
+            displayImage: user.displayImage,
+            // settings: user.settings,
+            streak: user.streak ? {
+                currentStreak: user.streak.currentStreak,
+                longestStreak: user.streak.longestStreak,
+                totalPoints: user.streak.totalPoints,
+                // stats: user.streak.stats,
+            } : null,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt,
+        };
+    }
+
+    static async viewSingleUserByWalletAddressWithoutStreak(walletAddress: string): Promise<IUser | null> {
         return User.findOne({ walletAddress });
     }
 
