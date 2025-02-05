@@ -5,12 +5,11 @@ import { BadRequestError } from '../utils/customErrors';
 import { AuthenticatedRequest } from 'middlewares/authMiddleware';
 import StreamIOConfig from '../clients/streamio.config';
 import { CallSettings } from '@stream-io/node-sdk';
-import { WebhookService } from '../services/webhook.service';
 
 export default class CallsController {
 
     // all call controllers
-    static async scheduleCall(req: AuthenticatedRequest, res: Response) { 
+    static async scheduleCall(req: AuthenticatedRequest, res: Response) {
         const { title, type, sessionId, starts_at } = req.body;
 
         const startTime = new Date(starts_at);
@@ -473,35 +472,6 @@ export default class CallsController {
             }
             console.error('Error querying call members:', error);
             throw new BadRequestError('Failed to query call members');
-        }
-    }
-
-    static async getLeaderboard(req: Request, res: Response): Promise<void> {
-        try {
-            const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
-
-            if (isNaN(limit) || limit < 1) {
-                throw new BadRequestError('Invalid limit parameter');
-            }
-
-            const leaderboard = await WebhookService.getLeaderboard(limit);
-            res.status(200).json({
-                status: 'success',
-                data: leaderboard,
-            });
-        } catch (error) {
-            console.error('Error fetching leaderboard:', error);
-            if (error instanceof BadRequestError) {
-                res.status(400).json({
-                    status: 'error',
-                    message: error.message,
-                });
-            } else {
-                res.status(500).json({
-                    status: 'error',
-                    message: 'Error fetching leaderboard',
-                });
-            }
         }
     }
 }
