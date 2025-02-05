@@ -14,10 +14,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useScheduledCalls } from '@/hooks/useScheduledCalls';
 import { StreamCallData } from '@/components/pod/streamCallData';
-import Telegram from '@/public/icons/socials/Telegram';
-import X from '@/public/icons/socials/X';
-import Farcaster from '@/public/icons/socials/Farcaster';
-import Link from 'next/link';
 import { StreakDialog } from '@/components/pod/streaks';
 
 // Dynamic imports
@@ -31,10 +27,6 @@ const UserOnboardingFlow = dynamic(() => import('@/components/user/userOnboardin
     ssr: false,
 });
 
-const UserDetails = dynamic(() => import('@/components/user/userDetails'), {
-    ssr: false,
-    loading: () => <div className="w-full max-w-2xl h-16 bg-[#1E1E1E] rounded-lg animate-pulse" />,
-});
 const ScheduledPods = dynamic(() => import('@/components/pod/scheduledPods'), { ssr: false });
 
 // Error Message Component
@@ -234,78 +226,74 @@ export default function PodPage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#151515] text-white flex flex-col items-center justify-center p-4 relative">
-            <div className="w-full max-w-2xl flex flex-col items-center">
-                {/* User details section */}
-                <React.Suspense fallback={<div className="h-12 mb-24" />}>
-                    <UserDetails user={user} />
-                </React.Suspense>
-
-                {/* Main grid container */}
-                <div className="w-full flex flex-col md:flex-row gap-6 mb-8 sm:mb-16">
-                    {/* Join Session Card */}
-                    <div className="w-full md:max-w-[370px] rounded-[10px] p-6 bg-[#1E1E1E] flex flex-col justify-between min-h-[200px]">
-                        <div>
-                            <h2 className="text-[32px] font-semibold text-white">Join Session</h2>
-                            <p className="text-[#A3A3A3] text-sm">
-                                Join a meeting instantly and collaborate!
-                            </p>
-                        </div>
-                        <div className="flex flex-col gap-4 mt-4">
-                            <div className="flex flex-col sm:flex-row gap-4">
-                                <Input
-                                    type="text"
-                                    placeholder="Enter meeting code"
-                                    value={state.meetingCode}
-                                    onChange={e =>
-                                        setState(prev => ({ ...prev, meetingCode: e.target.value }))
-                                    }
-                                    className="flex-1 bg-[#2C2C2C] rounded-[10px] px-4 py-2 text-sm border-[#3c3c3c] focus-within:border-[#3c3c3c] focus:border-[#3c3c3c] focus:ring-[#3c3c3c] text-white placeholder-[#6C6C6C]"
-                                />
-                                <Button
-                                    onClick={handleJoinSession}
-                                    disabled={!state.meetingCode || state.isJoining}
-                                    className="bg-[#6032F6] text-white px-8 py-2 rounded-[10px] hover:bg-[#4C28C4] transition-all duration-300 ease-in-out text-sm font-medium disabled:bg-gray-500 disabled:cursor-not-allowed"
-                                >
-                                    {state.isJoining ? 'Joining...' : 'Join'}
-                                </Button>
-                            </div>
-                            <ErrorMessage
-                                message={state.error}
-                                onClear={() => setState(prev => ({ ...prev, error: '' }))}
-                            />
-                        </div>
+        <>
+            {/* Main grid container */}
+            <div className="w-full flex flex-col md:flex-row gap-6 mb-8">
+                {/* Join Session Card */}
+                <div className="w-full md:max-w-[370px] rounded-[10px] p-6 bg-[#1E1E1E] flex flex-col justify-between min-h-[200px]">
+                    <div>
+                        <h2 className="text-[32px] font-semibold text-white">Join Session</h2>
+                        <p className="text-[#A3A3A3] text-sm">
+                            Join a meeting instantly and collaborate!
+                        </p>
                     </div>
-
-                    {/* Create Session Card */}
-                    <div className="w-full md:max-w-[333px] rounded-[10px] p-6 bg-gradient-to-br from-[#6032F6] to-[#381D90] flex flex-col justify-between min-h-[200px]">
-                        <div>
-                            <Image
-                                src="/images/play-add.svg"
-                                alt="Create Session"
-                                width={32}
-                                height={32}
-                                className="mb-4"
-                                priority
+                    <div className="flex flex-col gap-4 mt-4">
+                        <div className="flex flex-col sm:flex-row gap-4">
+                            <Input
+                                type="text"
+                                placeholder="Enter meeting code"
+                                value={state.meetingCode}
+                                onChange={e =>
+                                    setState(prev => ({ ...prev, meetingCode: e.target.value }))
+                                }
+                                className="flex-1 bg-[#2C2C2C] rounded-[10px] px-4 py-2 text-sm border-[#3c3c3c] focus-within:border-[#3c3c3c] focus:border-[#3c3c3c] focus:ring-[#3c3c3c] text-white placeholder-[#6C6C6C]"
                             />
-                            <h2 className="text-[32px] font-semibold text-white">Create <br />Session</h2>
-                            <p className="text-[#E9D5FF] text-sm mb-4">
-                                Start a meeting or podcast session in seconds - collaborate, share,
-                                and record with ease!
-                            </p>
+                            <Button
+                                onClick={handleJoinSession}
+                                disabled={!state.meetingCode || state.isJoining}
+                                className="bg-[#6032F6] text-white px-8 py-2 rounded-[10px] hover:bg-[#4C28C4] transition-all duration-300 ease-in-out text-sm font-medium disabled:bg-gray-500 disabled:cursor-not-allowed"
+                            >
+                                {state.isJoining ? 'Joining...' : 'Join'}
+                            </Button>
                         </div>
-                        <Button
-                            onClick={() => setState(prev => ({ ...prev, isCreateModalOpen: true }))}
-                            className="w-full bg-[#DDB958] hover:bg-[#DDB958] text-black font-semibold py-2 px-4 rounded-[10px] transition-colors duration-300"
-                        >
-                            Create Session
-                        </Button>
+                        <ErrorMessage
+                            message={state.error}
+                            onClear={() => setState(prev => ({ ...prev, error: '' }))}
+                        />
                     </div>
                 </div>
 
-                {/* Session streak dialog */}
-                <StreakDialog streak={3} />
+                {/* Create Session Card */}
+                <div className="w-full md:max-w-[333px] rounded-[10px] p-6 bg-gradient-to-br from-[#6032F6] to-[#381D90] flex flex-col justify-between min-h-[200px]">
+                    <div>
+                        <Image
+                            src="/images/play-add.svg"
+                            alt="Create Session"
+                            width={32}
+                            height={32}
+                            className="mb-4"
+                            priority
+                        />
+                        <h2 className="text-[32px] font-semibold text-white">
+                            Create <br />
+                            Session
+                        </h2>
+                        <p className="text-[#E9D5FF] text-sm mb-4">
+                            Start a meeting or podcast session in seconds - collaborate, share, and
+                            record with ease!
+                        </p>
+                    </div>
+                    <Button
+                        onClick={() => setState(prev => ({ ...prev, isCreateModalOpen: true }))}
+                        className="w-full bg-[#DDB958] hover:bg-[#DDB958] text-black font-semibold py-2 px-4 rounded-[10px] transition-colors duration-300"
+                    >
+                        Create Session
+                    </Button>
+                </div>
             </div>
+
+            {/* Session streak dialog */}
+            <StreakDialog streak={3} />
 
             {/* Scheduled sessions */}
             <ScheduledPods
@@ -316,35 +304,6 @@ export default function PodPage() {
                 isLoading={isLoading}
                 onClearFoundSession={handleClearFoundSession}
             />
-            <div className="w-full max-w-2xl flex justify-between items-center">
-                <span className="bg-gradient-to-r from-[#D7B35D] to-[#552FC9] text-transparent bg-clip-text font-medium text-sm">
-                    Podx @ {new Date().getFullYear()}
-                </span>
-
-                <div className="socials flex gap-[8px]">
-                    <a
-                        href="https://t.me/podx_fun"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title="Join us on Telegram"
-                        className="social-icon h-[24px] w-[24px]"
-                    >
-                        <Telegram />
-                    </a>
-                    <Link href="#" className="text-zinc-400 hover:text-zinc-100 transition-colors">
-                        <Farcaster />
-                    </Link>
-                    <a
-                        href="https://x.com/podx_fun"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title="Follow us on X"
-                        className="social-icon h-[24px] w-[24px]"
-                    >
-                        <X />
-                    </a>
-                </div>
-            </div>
 
             {/* Modals */}
             <React.Suspense fallback={null}>
@@ -374,10 +333,10 @@ export default function PodPage() {
                         onClose={() => setState(prev => ({ ...prev, showUsernameModal: false }))}
                         initialUsername={user.username}
                         onUpdate={handleUpdateUsername}
-                        firstTimeUser={user.firstTimeUser} // Make sure this property exists in your user state
+                        firstTimeUser={user.firstTimeUser}
                     />
                 )}
             </React.Suspense>
-        </div>
+        </>
     );
 }
