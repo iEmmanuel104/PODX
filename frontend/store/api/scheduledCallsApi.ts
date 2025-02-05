@@ -32,7 +32,7 @@ export const scheduledCallsApiSlice = apiSlice.injectEndpoints({
         }),
         getCall: builder.query<ApiResponse<GetCallResponse | null>, string>({
             query: sessionId => ({
-                url: `/calls/${sessionId}`,
+                url: `/calls/info/${sessionId}`,
                 method: 'GET',
             }),
             providesTags: (result, error, sessionId) => [{ type: 'Calls', id: sessionId }],
