@@ -412,6 +412,7 @@ export class StreakService {
         currentStreak: number;
         longestStreak: number;
         engagementScore: number;
+        stats: IStreakStats;
     }>> {
         const streaks = await UserStreak.find()
             .sort({ totalPoints: -1 })
@@ -420,18 +421,34 @@ export class StreakService {
             .select('userId totalPoints currentStreak longestStreak stats')
             .lean();
 
-        return streaks.map(streak => ({
-            userId: (streak.userId as any)?._id?.toString() || '',
-            username: (streak.userId as any)?.username || 'Unknown User',
-            displayImage: (streak.userId as any)?.displayImage,
-            totalPoints: streak.totalPoints,
-            currentStreak: streak.currentStreak,
-            longestStreak: streak.longestStreak,
-            engagementScore: (
-                (streak.currentStreak * 10) +
-                (streak.stats.totalCalls * 5) +
-                (streak.totalPoints * 0.1)
-            ),
-        }));
+        return streaks.map(streak => {
+            const stats = streak.stats || {
+                createdCalls: 0,
+                participatedCalls: 0,
+                totalCalls: 0,
+                averageCallDuration: 0,
+                totalCallDuration: 0,
+                longestCallDuration: 0,
+            };
+
+            // Calculate engagement score with safe access
+            const engagementScore = Math.round(
+                ((streak.currentStreak || 0) * 10) +
+                    ((stats.totalCalls || 0) * 5) +
+                    ((streak.totalPoints || 0) * 0.1)
+            );
+
+            return {
+                userId: (streak.userId as any)?._id?.toString() || '',
+                username: (streak.userId as any)?.username || 'Unknown User',
+                displayImage: (streak.userId as any)?.displayImage,
+                totalPoints: streak.totalPoints || 0,
+                currentStreak: streak.currentStreak || 0,
+                longestStreak: streak.longestStreak || 0,
+                stats,
+                engagementScore,
+            };
+        }).filter(streak => streak.userId); // Filter out any invalid entries
+
     }
 }
