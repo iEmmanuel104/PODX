@@ -1,25 +1,19 @@
 import { Schema, model, Document, Types } from 'mongoose';
-import { z } from 'zod';
 import { IUserSettings } from './userSettings.model';
+import { IUserStreak } from './userStreak.model';
 
-// Zod schema for validation
-const UserSchema = z.object({
-    _id: z.instanceof(Types.ObjectId),
-    walletAddress: z.string().toLowerCase(),
-    username: z.string().toLowerCase(),
-    displayImage: z.string().optional(),
-    ownedPods: z.array(z.instanceof(Types.ObjectId)),
-    memberPods: z.array(z.instanceof(Types.ObjectId)),
-});
-
-type UserType = z.infer<typeof UserSchema>;
-
-// Extend UserType with Mongoose's Document properties
-interface IUser extends Omit<UserType, '_id'>, Document {
-    settings?: IUserSettings; // Add this line
+export interface IUser extends Document {
+    walletAddress: string;
+    username: string;
+    displayImage?: string;
+    ownedPods: Types.ObjectId[];
+    memberPods: Types.ObjectId[];
+    settings?: IUserSettings;
+    streak?: IUserStreak;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
-// Mongoose schema
 const mongooseUserSchema = new Schema<IUser>({
     walletAddress: { type: String, required: true, unique: true, lowercase: true },
     username: { type: String, required: true, lowercase: true },
@@ -32,7 +26,6 @@ const mongooseUserSchema = new Schema<IUser>({
     toObject: { virtuals: true },
 });
 
-// Ensure virtuals are included when converting to JSON
 mongooseUserSchema.set('toJSON', {
     virtuals: true,
     transform: (_, ret) => {
@@ -43,7 +36,18 @@ mongooseUserSchema.set('toJSON', {
     },
 });
 
-export const User = model<IUser>('User', mongooseUserSchema);
+mongooseUserSchema.virtual('settings', {
+    ref: 'UserSettings',
+    localField: '_id',
+    foreignField: 'userId',
+    justOne: true,
+});
 
-// Export the interface for use in other parts of the application
-export { IUser };
+mongooseUserSchema.virtual('streak', {
+    ref: 'UserStreak',
+    localField: '_id',
+    foreignField: 'userId',
+    justOne: true,
+});
+
+export const User = model<IUser>('User', mongooseUserSchema);
