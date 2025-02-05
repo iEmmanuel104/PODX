@@ -6,22 +6,27 @@ export interface UserInfo {
     walletAddress: string;
     username: string;
     streamToken: string;
+    streak: {
+        currentStreak: number;
+        longestStreak: number;
+        totalPoints: number;
+    };
     displayImage?: string;
     walletType?: string;
     signature?: string;
     firstTimeUser: boolean;
 }
 
-interface FindOrCreateUserArgs {
+interface ValidateUserArgs {
     walletAddress: string;
     hash?: boolean;
 }
 
-type FindOrCreateUserResponse = ApiResponse<UserInfo & { signature?: string }>;
+type ValidateUserResponse = ApiResponse<UserInfo & { signature?: string }>;
 
 export const userApiSlice = apiSlice.injectEndpoints({
     endpoints: builder => ({
-        findOrCreateUser: builder.mutation<FindOrCreateUserResponse, FindOrCreateUserArgs>({
+        validateUser: builder.mutation<ValidateUserResponse, ValidateUserArgs>({
             query: ({ walletAddress, hash }) => ({
                 url: '/user/validate',
                 method: 'POST',
@@ -55,5 +60,5 @@ export const userApiSlice = apiSlice.injectEndpoints({
     }),
 });
 
-export const { useFindOrCreateUserMutation, useUpdateUsernameMutation, useGetUserQuery } =
+export const { useValidateUserMutation, useUpdateUsernameMutation, useGetUserQuery } =
     userApiSlice;
