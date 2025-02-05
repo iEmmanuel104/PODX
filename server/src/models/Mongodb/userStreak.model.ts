@@ -82,9 +82,12 @@ const UserStreakSchema = new Schema({
 
 // Compound index for efficient queries
 UserStreakSchema.index({ userId: 1, lastActivityDate: 1 });
-UserStreakSchema.index({ totalPoints: -1 }); // For leaderboard queries
+UserStreakSchema.index({
+    totalPoints: -1,
+    currentStreak: -1,
+    'stats.totalCalls': -1,
+}); // Compound index for leaderboard sorting
 
-// Virtual for weekly activity count
 UserStreakSchema.virtual('weeklyActivity').get(function() {
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
