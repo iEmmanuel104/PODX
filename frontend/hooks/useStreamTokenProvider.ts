@@ -1,9 +1,9 @@
 'use client';
 import { useCallback, useRef } from 'react';
-import { useFindOrCreateUserMutation, UserInfo } from '@/store/api/userApi';
+import { useValidateUserMutation, UserInfo } from '@/store/api/userApi';
 
 export const useStreamTokenProvider = () => {
-    const [findOrCreateUser] = useFindOrCreateUserMutation();
+    const [validateUser] = useValidateUserMutation();
     const tokenCache = useRef<{ [key: string]: string }>({});
 
     const tokenProvider = useCallback(
@@ -13,7 +13,7 @@ export const useStreamTokenProvider = () => {
             }
 
             try {
-                const response = await findOrCreateUser({ walletAddress }).unwrap();
+                const response = await validateUser({ walletAddress }).unwrap();
                 const userData = response.data as UserInfo;
                 tokenCache.current[walletAddress] = userData.streamToken;
                 return userData.streamToken;
@@ -22,7 +22,7 @@ export const useStreamTokenProvider = () => {
                 throw error;
             }
         },
-        [findOrCreateUser]
+        [validateUser]
     );
 
     return tokenProvider;
