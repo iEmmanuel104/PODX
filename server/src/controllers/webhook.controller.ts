@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { WebhookService } from '../services/webhook.service';
+import { CallService } from '../services/call.service';
 import { verifyWebhookSignature, isRelevantEvent } from '../clients/webhook.config';
 import { BadRequestError } from '../utils/customErrors';
 
@@ -32,7 +32,7 @@ export default class WebhookController {
             console.log(`Received webhook ${webhookId} of type ${type}`);
 
             // Process webhook asynchronously
-            WebhookService.processWebhook(type, payload)
+            CallService.processWebhook(type, payload)
                 .catch(error => {
                     console.error(`Error processing webhook ${webhookId}:`, error);
                 });
