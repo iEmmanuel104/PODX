@@ -234,7 +234,7 @@ export default function PodPage() {
     }
 
     return (
-        <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4 relative">
+        <div className="min-h-screen bg-[#151515] text-white flex flex-col items-center justify-center p-4 relative">
             <div className="w-full max-w-2xl flex flex-col items-center">
                 {/* User details section */}
                 <React.Suspense fallback={<div className="h-12 mb-24" />}>
@@ -244,10 +244,7 @@ export default function PodPage() {
                 {/* Main grid container */}
                 <div className="w-full flex flex-col md:flex-row gap-6 mb-8 sm:mb-16">
                     {/* Join Session Card */}
-                    <div
-                        className="flex-1 rounded-[10px] p-6 bg-[#1E1E1E] flex flex-col justify-between"
-                        style={{ minHeight: '200px' }}
-                    >
+                    <div className="w-full md:max-w-[370px] rounded-[10px] p-6 bg-[#1E1E1E] flex flex-col justify-between min-h-[200px]">
                         <div>
                             <h2 className="text-[32px] font-semibold text-white">Join Session</h2>
                             <p className="text-[#A3A3A3] text-sm">
@@ -281,10 +278,7 @@ export default function PodPage() {
                     </div>
 
                     {/* Create Session Card */}
-                    <div
-                        className="w-full md:w-[42%] rounded-[10px] p-6 bg-gradient-to-br from-[#6032F6] to-[#381D90] flex flex-col justify-between"
-                        style={{ minHeight: '200px' }}
-                    >
+                    <div className="w-full md:max-w-[333px] rounded-[10px] p-6 bg-gradient-to-br from-[#6032F6] to-[#381D90] flex flex-col justify-between min-h-[200px]">
                         <div>
                             <Image
                                 src="/images/play-add.svg"
@@ -294,7 +288,7 @@ export default function PodPage() {
                                 className="mb-4"
                                 priority
                             />
-                            <h2 className="text-[32px] font-semibold text-white">Create Session</h2>
+                            <h2 className="text-[32px] font-semibold text-white">Create <br />Session</h2>
                             <p className="text-[#E9D5FF] text-sm mb-4">
                                 Start a meeting or podcast session in seconds - collaborate, share,
                                 and record with ease!
