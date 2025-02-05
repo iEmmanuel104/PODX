@@ -1,4 +1,3 @@
-// UserDetails.tsx
 'use client';
 
 import React, { useState, useCallback, memo } from 'react';
@@ -13,9 +12,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { usePrivy } from '@privy-io/react-auth';
 import dynamic from 'next/dynamic';
-import { UserDetailsProps, UserState } from './userDetailsProps';
 import Logo from '@/public/images/icons/Logo';
 import UserProfile from '../pod/userProfile';
+import Image from 'next/image';
+import { useBalance } from 'wagmi';
+import { UserDetailsProps, UserState } from '@/types';
 
 const WalletOperations = dynamic(() => import('./walletOperations'), {
     ssr: false,
@@ -55,59 +56,61 @@ const UserDetails = memo<UserDetailsProps>(({ user }) => {
         }));
     }, []);
 
-    const isPrivyWallet = user?.walletClientType === 'privy';
+    const isPrivyWallet = user?.walletType === 'privy';
 
     return (
-        <div className="w-full flex items-center justify-between p-4 text-white mb-24">
-            <UserProfile user={user} />
+        <div className="w-full flex flex-col gap-14 mb-24">
+            <div className="w-full flex items-center justify-between p-4 text-white">
+                <UserProfile user={user} />
 
-            <div className="w-[180px] h-[43px]">
-                <Logo />
-            </div>
+                <div className="w-[180px] h-[43px]">
+                    <Logo />
+                </div>
 
-            <DropdownMenu
-                open={state.isOpen}
-                onOpenChange={open => setState(prev => ({ ...prev, isOpen: open }))}
-            >
-                <DropdownMenuTrigger asChild>
-                    <Button
-                        variant="ghost"
-                        className="text-[#A3A3A3] hover:text-white hover:bg-transparent focus:bg-transparent"
-                    >
-                        <Settings className="h-5 w-5 mr-2" /> Settings
-                    </Button>
-                </DropdownMenuTrigger>
-
-                <DropdownMenuContent
-                    className="w-56 bg-[#1E1E1E] border-[#2E2E2E] text-white rounded-[10px] shadow-lg"
-                    align="end"
-                    side="bottom"
-                    sideOffset={5}
+                <DropdownMenu
+                    open={state.isOpen}
+                    onOpenChange={open => setState(prev => ({ ...prev, isOpen: open }))}
                 >
-                    {isPrivyWallet && (
-                        <WalletOperations
-                            state={state}
-                            setState={setState}
-                            user={user}
-                            onWithdrawClick={handleWithdrawClick}
-                            onWarningConfirm={handleWarningConfirm}
-                        />
-                    )}
+                    <DropdownMenuTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            className="text-[#A3A3A3] hover:text-white hover:bg-transparent focus:bg-transparent"
+                        >
+                            <Settings className="h-5 w-5 mr-2" /> Settings
+                        </Button>
+                    </DropdownMenuTrigger>
 
-                    <DropdownMenuItem className="flex items-center px-3 py-2 cursor-pointer">
-                        <Clock className="mr-2 h-4 w-4" />
-                        <span>Session history</span>
-                    </DropdownMenuItem>
-
-                    <DropdownMenuItem
-                        className="flex items-center px-3 py-2 cursor-pointer text-red-500"
-                        onSelect={handleLogout}
+                    <DropdownMenuContent
+                        className="w-56 bg-[#1E1E1E] border-[#2E2E2E] text-white rounded-[10px] shadow-lg"
+                        align="end"
+                        side="bottom"
+                        sideOffset={5}
                     >
-                        <LogOut className="mr-2 h-4 w-4" />
-                        <span>Log out</span>
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
+                        {isPrivyWallet && (
+                            <WalletOperations
+                                state={state}
+                                setState={setState}
+                                user={user}
+                                onWithdrawClick={handleWithdrawClick}
+                                onWarningConfirm={handleWarningConfirm}
+                            />
+                        )}
+
+                        <DropdownMenuItem className="flex items-center px-3 py-2 cursor-pointer">
+                            <Clock className="mr-2 h-4 w-4" />
+                            <span>Session history</span>
+                        </DropdownMenuItem>
+
+                        <DropdownMenuItem
+                            className="flex items-center px-3 py-2 cursor-pointer text-red-500"
+                            onSelect={handleLogout}
+                        >
+                            <LogOut className="mr-2 h-4 w-4" />
+                            <span>Log out</span>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
         </div>
     );
 });
