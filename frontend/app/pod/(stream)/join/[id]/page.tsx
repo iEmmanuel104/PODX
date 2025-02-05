@@ -357,7 +357,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
     }
 
     return (
-        <div className="min-h-screen bg-[#121212] text-white">
+        <div className="min-h-screen bg-[#151515] text-white">
             <div className="container mx-auto px-4 py-6 sm:py-8 md:py-12 flex flex-col min-h-screen">
                 <div className="flex-grow flex flex-col items-center justify-center">
                     <Suspense fallback={<SimpleLoader />}>

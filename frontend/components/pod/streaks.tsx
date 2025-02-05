@@ -41,7 +41,7 @@ export function StreakDialog({ streak = 3 }: StreakDialogProps) {
                     <div className="rounded-full bg-gradient-to-r from-[#552FC9]  to-[#D7B35D] p-[1px]">
                         <Button
                             variant="ghost"
-                            className="flex justify-between items-center rounded-full bg-[#212121] text-white text-xs tracking-wider py-[4px] px-[16px]"
+                            className="flex justify-between items-center rounded-full bg-[#151515] text-white text-xs tracking-wider py-[4px] px-[16px]"
                         >
                             <div className="h-[14px] w-[14px]">
                                 <Fire />
