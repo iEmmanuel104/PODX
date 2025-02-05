@@ -6,8 +6,8 @@ const router: Router = express.Router();
 
 router
     .get('/leaderboard', StreakController.getLeaderboard)
-    .post('/recalculate', basicAuth(), AuthenticatedController(StreakController.recalculateUserStreak))
-    .post('/recalculate-all', StreakController.recalculateAllStreaks)
+    .post('/sync-user', basicAuth(), AuthenticatedController(StreakController.recalculateUserStreak))
+    .post('/sync-local', StreakController.recalculateAllStreaks)
     .post('/sync-streamio', StreakController.syncStreaksWithStreamIO);
 
 export default router;
