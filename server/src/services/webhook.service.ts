@@ -79,7 +79,7 @@ interface CallSessionEndPayload {
 }
 
 export class WebhookService {
-    private static async calculatePoints(duration: number, isCreator: boolean): Promise<number> {
+    static async calculatePoints(duration: number, isCreator: boolean): Promise<number> {
         const { POINTS_CONFIG } = webhookConfig;
         let points = Math.floor(duration / 60) * POINTS_CONFIG.POINTS_PER_MINUTE;
 
@@ -98,7 +98,7 @@ export class WebhookService {
         return points;
     }
 
-    private static async updateStreak(userId: string, activityDate: Date): Promise<void> {
+    static async updateStreak(userId: string, activityDate: Date): Promise<void> {
         let userStreak = await UserStreak.findOne({ userId });
 
         if (!userStreak) {

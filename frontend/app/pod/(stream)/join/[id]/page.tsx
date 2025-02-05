@@ -302,10 +302,11 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
             if (callingState !== CallingState.JOINED) {
                 await call?.join({
                     data: {
-                        members: [{ user_id: user?.id!, role: 'guest' }],
+                        members: [{ user_id: user?.id! }],
                     },
                     ...(sessionType === 'Audio Session' && { video: false }),
                 });
+                await call?.updateCallMembers({ update_members: [{ user_id: user?.id! }]});
             }
 
             router.push(`/pod/${code}`);

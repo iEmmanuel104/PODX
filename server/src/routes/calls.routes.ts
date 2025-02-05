@@ -20,10 +20,10 @@ router
 
 // Call information routes
 router
-    .get('/stats', AuthenticatedController(CallsController.getCallStats))
-    .get('/detailed-stats', AuthenticatedController(CallsController.getDetailedCallStats))
-    .get('/user-calls', AuthenticatedController(CallsController.getUserCalls))
-    .get('/:callId', AuthenticatedController(CallsController.getCallDetails))
-    .get('/leaderboard', AuthenticatedController(CallsController.getLeaderboard));
+    .get('/stats', CallsController.getCallStats)
+    .get('/detailed-stats', CallsController.getDetailedCallStats)
+    .get('/:callId', CallsController.getCallDetails)
+    .post('/members', CallsController.queryCallMembers)
+    .get('/leaderboard/rankings', CallsController.getLeaderboard);
 
 export default router;

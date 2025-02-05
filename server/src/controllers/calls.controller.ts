@@ -1,5 +1,5 @@
 // controllers/calls.controller.ts
-import { Response } from 'express';
+import { Response, Request } from 'express';
 import { redisClient } from '../utils/redis';
 import { BadRequestError } from '../utils/customErrors';
 import { AuthenticatedRequest } from 'middlewares/authMiddleware';
@@ -61,12 +61,8 @@ export default class CallsController {
     static async getCall(req: AuthenticatedRequest, res: Response) {
         const { sessionId } = req.params;
 
-        console.log('Getting call::::::::', sessionId);
-
         // First check Stream.io for active call
         const { call: streamCall, error: streamError } = await StreamIOConfig.getCallDetails(sessionId);
-
-        console.log('Stream call::::::::', streamCall);
 
         if (streamCall) {
             res.status(200).json({
@@ -267,7 +263,7 @@ export default class CallsController {
     }
 
     // call information
-    static async getCallStats(req: AuthenticatedRequest, res: Response) {
+    static async getCallStats(req: Request, res: Response) {
         const { startDate, endDate, page = '1', size = '100', next } = req.query;
 
         try {
@@ -331,21 +327,7 @@ export default class CallsController {
         }
     }
 
-    static async getUserCalls(req: AuthenticatedRequest, res: Response) {
-        const { calls, error } = await StreamIOConfig.getCallsByUser(req.user.id);
-
-        if (error) {
-            throw new BadRequestError(error.message);
-        }
-
-        res.status(200).json({
-            status: 'success',
-            message: 'User calls retrieved successfully',
-            data: { calls },
-        });
-    }
-
-    static async getCallDetails(req: AuthenticatedRequest, res: Response) {
+    static async getCallDetails(req: Request, res: Response) {
         const { callId } = req.params;
 
         const { call, error } = await StreamIOConfig.getCallDetails(callId);
@@ -361,7 +343,7 @@ export default class CallsController {
         });
     }
 
-    static async getDetailedCallStats(req: AuthenticatedRequest, res: Response) {
+    static async getDetailedCallStats(req: Request, res: Response) {
         const { startDate, endDate, size = '100', next } = req.query;
 
         try {
@@ -419,7 +401,82 @@ export default class CallsController {
         }
     }
 
-    static async getLeaderboard(req: AuthenticatedRequest, res: Response): Promise<void> {
+    static async queryCallMembers(req: Request, res: Response) {
+        const { callType, callId } = req.body;
+        const { filter, sort, limit, next } = req.query;
+
+        try {
+            // Validate required parameters
+            if (!callType || !callId) {
+                throw new BadRequestError('Call type and ID are required');
+            }
+
+            // Validate and parse limit if provided
+            let parsedLimit: number | undefined;
+            if (limit) {
+                parsedLimit = parseInt(limit as string, 10);
+                if (isNaN(parsedLimit) || parsedLimit < 1) {
+                    throw new BadRequestError('Invalid limit parameter');
+                }
+            }
+
+            // Parse and validate sort parameter if provided
+            let parsedSort: Array<{ field: string; direction: 1 | -1 }> | undefined;
+            if (sort) {
+                try {
+                    const sortArray = Array.isArray(sort) ? sort : [sort];
+                    parsedSort = sortArray.map(item => {
+                        const parsed = typeof item === 'string' ? JSON.parse(item) : item;
+                        if (!parsed.field || !parsed.direction || ![1, -1].includes(parsed.direction)) {
+                            throw new Error('Invalid sort format');
+                        }
+                        return { field: parsed.field, direction: parsed.direction as 1 | -1 };
+                    });
+                } catch (err) {
+                    console.log(err);
+                    throw new BadRequestError('Sort must be an array of { field, direction } objects');
+                }
+            }
+
+            const parsedFilter = filter ? JSON.parse(filter as string) : undefined;
+            const options = {
+                filter_conditions: parsedFilter,
+                sort: parsedSort,
+                limit: parsedLimit,
+                next: next as string,
+            };
+
+            const { members, next: nextToken, error } = await StreamIOConfig.queryCallMembers(
+                callType,
+                callId,
+                options
+            );
+
+            if (error) {
+                throw new BadRequestError(error.message);
+            }
+
+            res.status(200).json({
+                status: 'success',
+                message: 'Call members retrieved successfully',
+                data: {
+                    members,
+                    pagination: {
+                        next: nextToken,
+                        hasMore: Boolean(nextToken),
+                    },
+                },
+            });
+        } catch (error) {
+            if (error instanceof BadRequestError) {
+                throw error;
+            }
+            console.error('Error querying call members:', error);
+            throw new BadRequestError('Failed to query call members');
+        }
+    }
+
+    static async getLeaderboard(req: Request, res: Response): Promise<void> {
         try {
             const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
 

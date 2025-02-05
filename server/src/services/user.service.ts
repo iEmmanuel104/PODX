@@ -199,7 +199,7 @@ export default class UserService {
             streak: number;
         }>;
     }> {
-        const userStreak = await UserStreak.findOne({ userId });
+        const userStreak = await UserStreak.findOne({ userId: new Types.ObjectId(userId) });
         if (!userStreak) {
             return {
                 currentStreak: 0,
