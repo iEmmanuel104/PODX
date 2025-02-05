@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useWalletOperations } from '@/hooks/useWalletOps';
-import { Wallet, RefreshCcw, Download, AlertTriangle } from 'lucide-react';
+import { Wallet, RefreshCcw, Download, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import {
     Dialog,
@@ -12,15 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import toast from 'react-hot-toast';
 import { useBalance } from 'wagmi';
-import { UserState, User } from './userDetailsProps';
-
-interface WalletOperationsProps {
-    state: UserState;
-    setState: React.Dispatch<React.SetStateAction<UserState>>;
-    user: User;
-    onWithdrawClick: () => void;
-    onWarningConfirm: () => void;
-}
+import { WalletOperationsProps } from '@/types';
 
 const formatAddress = (addr: string): string =>
     addr.length < 10 ? addr : `${addr.slice(0, 6)}...${addr.slice(-4)}`;
@@ -32,6 +24,7 @@ const WalletOperations: React.FC<WalletOperationsProps> = ({
     onWithdrawClick,
     onWarningConfirm,
 }) => {
+    const [isBalanceHidden, setIsBalanceHidden] = useState(false);
     const { handleWithdraw, handleExportWallet, getActiveWalletAddress } = useWalletOperations();
     const activeWalletAddress = getActiveWalletAddress();
     const { data: balance } = useBalance({
@@ -86,14 +79,27 @@ const WalletOperations: React.FC<WalletOperationsProps> = ({
                     <div className="w-8 h-8 rounded-full bg-[#DDB958] flex items-center justify-center">
                         <Wallet className="h-4 w-4 text-white" />
                     </div>
-                    <div>
-                        <p className="text-xs text-[#A3A3A3] truncate w-36">
-                            {formatAddress(user.walletAddress)}
-                        </p>
+                    <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                            <p className="text-xs text-[#A3A3A3] truncate w-36">
+                                {formatAddress(user.walletAddress)}
+                            </p>
+                            <Button
+                                variant="ghost"
+                                className="p-1 h-auto hover:bg-white/5"
+                                onClick={() => setIsBalanceHidden(!isBalanceHidden)}
+                            >
+                                {isBalanceHidden ? (
+                                    <EyeOff className="h-3 w-3 text-white/60" />
+                                ) : (
+                                    <Eye className="h-3 w-3 text-white/60" />
+                                )}
+                            </Button>
+                        </div>
                         <div className="flex items-center">
                             <p className="text-sm font-medium mr-1">Balance</p>
                             <div className="bg-[#6032F6] rounded-full px-2 py-0.5 text-xs">
-                                {displayBalance} ETH
+                                {isBalanceHidden ? '****' : `${displayBalance} ETH`}
                             </div>
                         </div>
                     </div>
