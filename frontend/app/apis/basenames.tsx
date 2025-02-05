@@ -132,5 +132,7 @@ export async function getBasename(address: Address) {
         if (basename) {
             return basename as Basename;
         }
-    } catch (error) {}
+    } catch (error) {
+        console.error('Error resolving Basename:', error);
+    }
 }

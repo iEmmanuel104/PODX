@@ -10,8 +10,8 @@ import {
     type ErrorFromResponse,
     type GetCallResponse,
 } from '@stream-io/video-react-sdk';
-import { useChatContext } from 'stream-chat-react';
-import { useStreamTokenProvider } from '@/hooks/useStreamTokenProvider';
+// import { useChatContext } from 'stream-chat-react';
+// import { useStreamTokenProvider } from '@/hooks/useStreamTokenProvider';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
 import { useContext } from 'react';
@@ -122,7 +122,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
     const router = useRouter();
     const code = params.id;
     const dispatch = useAppDispatch();
-    const { getScheduledCall } = useScheduledCalls();
+    const { getCall } = useScheduledCalls();
     const hasCheckedSchedule = useRef(false);
 
     // State
@@ -141,13 +141,13 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
     );
     const { isLoggedIn, user } = useAppSelector(state => state.user);
     const { newMeeting, setNewMeeting } = useContext(AppContext);
-    const { client: chatClient } = useChatContext();
+    // const { client: chatClient } = useChatContext();
 
     // Stream Video Hooks
     const call = useCall();
     const { useCallCallingState } = useCallStateHooks();
     const callingState = useCallCallingState();
-    const tokenProvider = useStreamTokenProvider();
+    // const tokenProvider = useStreamTokenProvider();
 
     // Initialize call function
     const initializeCall = useCallback(async () => {
@@ -219,8 +219,12 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
         if (!code || !user || hasCheckedSchedule.current) return;
         hasCheckedSchedule.current = true;
 
-        const response = await getScheduledCall(code);
-        if (response.status === 'success' && response.data?.call) {
+        const response = await getCall(code);
+        if (
+            response.status === 'success' &&
+            response.data?.call &&
+            response.data.source === 'scheduled'
+        ) {
             const { call } = response.data;
             setState(prev => ({
                 ...prev,
@@ -248,7 +252,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
             // No scheduled call found, proceed with normal call initialization
             await initializeCall();
         }
-    }, [code, user, getScheduledCall, router, initializeCall]);
+    }, [code, user, getCall, router, initializeCall]);
 
     // Effects
     useEffect(() => {
@@ -272,18 +276,18 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
     }, [newMeeting, setNewMeeting]);
 
     // Handlers
-    const updateGuestName = useCallback(async () => {
-        if (isLoggedIn && user) {
-            try {
-                await chatClient.disconnectUser();
-                await chatClient.connectUser({ id: user.id, name: user.username }, () =>
-                    tokenProvider(user.walletAddress)
-                );
-            } catch (error) {
-                console.error(error);
-            }
-        }
-    }, [isLoggedIn, user, chatClient, tokenProvider]);
+    // const updateGuestName = useCallback(async () => {
+    //     if (isLoggedIn && user) {
+    //         try {
+    //             await chatClient.disconnectUser();
+    //             await chatClient.connectUser({ id: user.id, name: user.username }, () =>
+    //                 tokenProvider(user.walletAddress)
+    //             );
+    //         } catch (error) {
+    //             console.error(error);
+    //         }
+    //     }
+    // }, [isLoggedIn, user, chatClient, tokenProvider]);
 
     const handleJoinSession = useCallback(async () => {
         if (!code) return;
@@ -291,9 +295,9 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
         setState(prev => ({ ...prev, joining: true }));
 
         try {
-            if (isLoggedIn && user) {
-                await updateGuestName();
-            }
+            // if (isLoggedIn && user) {
+            //     await updateGuestName();
+            // }
 
             if (callingState !== CallingState.JOINED) {
                 await call?.join({
@@ -310,7 +314,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
             toast.error('Failed to join session, please check your connection and try again');
             setState(prev => ({ ...prev, joining: false }));
         }
-    }, [code, isLoggedIn, user, call, callingState, router, updateGuestName, sessionType]);
+    }, [code, isLoggedIn, user, call, callingState, router, sessionType]);
 
     // Memoized UI elements
     const participantsUI = useMemo(() => {

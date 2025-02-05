@@ -1,11 +1,9 @@
-// app/pod/index.tsx
+// app/pod/page.tsx
 'use client';
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
-import { StreamVideoClient, GetCallResponse } from '@stream-io/video-react-sdk';
-import { API_KEY } from '@/providers/meetProvider/streamMeetProvider';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { customAlphabet } from 'nanoid';
 import { AppContext } from '@/providers/appProvider';
@@ -14,24 +12,13 @@ import { sessionType } from '@/constants';
 import { updateUser } from '@/store/slices/userSlice';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from '@/components/ui/dialog';
-import Fire from '@/public/icons/Fire';
-import Info from '@/public/icons/Info';
 import { useScheduledCalls } from '@/hooks/useScheduledCalls';
-import { addScheduledSession } from '@/store/slices/scheduledSessionSlice';
 import { StreamCallData } from '@/components/pod/streamCallData';
-import { useStreamTokenProvider } from '@/hooks/useStreamTokenProvider';
 import Telegram from '@/public/icons/socials/Telegram';
 import X from '@/public/icons/socials/X';
 import Farcaster from '@/public/icons/socials/Farcaster';
 import Link from 'next/link';
+import { StreakDialog } from '@/components/pod/streaks';
 
 // Dynamic imports
 const CreateSessionModal = dynamic(() => import('@/components/pod/createSessionModal'), {
@@ -43,7 +30,7 @@ const CreatedSessionModal = dynamic(() => import('@/components/pod/createdSessio
 const UserOnboardingFlow = dynamic(() => import('@/components/user/userOnboardingFlow'), {
     ssr: false,
 });
-const Logo = dynamic(() => import('@/components/ui/logo'), { ssr: false });
+
 const UserDetails = dynamic(() => import('@/components/user/userDetails'), {
     ssr: false,
     loading: () => <div className="w-full max-w-2xl h-16 bg-[#1E1E1E] rounded-lg animate-pulse" />,
@@ -81,8 +68,7 @@ export default function PodPage() {
     const { setNewMeeting } = React.useContext(AppContext);
     const { isLoggedIn, user } = useAppSelector(state => state.user);
     const sessionInfo = useAppSelector(state => state.pod);
-    const { scheduledSessions, scheduleCall, getScheduledCall, isLoading } = useScheduledCalls();
-    const tokenProvider = useStreamTokenProvider();
+    const { scheduledSessions, scheduleCall, getCall, isLoading } = useScheduledCalls();
 
     const [state, setState] = useState({
         meetingCode: '',
@@ -105,36 +91,18 @@ export default function PodPage() {
     }, [isLoggedIn, user]);
 
     const handleStreamCall = useCallback(
-        (response: GetCallResponse) => {
-            if (response.call && state.meetingCode === response.call.custom.sessionId) {
+        (response: StreamCallData) => {
+            if (response.id && state.meetingCode === response.custom.sessionId) {
                 dispatch(
                     setSessionInfo({
-                        title: response.call.custom.title,
-                        type: response.call.custom.type,
+                        title: response.custom.title,
+                        type: response.custom.type as sessionType,
                         sessionId: state.meetingCode,
-                        starts_at: response.call.starts_at,
+                        starts_at: response.starts_at,
                     })
                 );
                 router.push(`/pod/join/${state.meetingCode}`);
             }
-        },
-        [dispatch, router, state.meetingCode]
-    );
-
-    const handleScheduledCall = useCallback(
-        (call: StreamCallData) => {
-            if (!call?.custom) return;
-
-            dispatch(addScheduledSession(call));
-            dispatch(
-                setSessionInfo({
-                    title: call.custom.title,
-                    type: call.custom.type as sessionType,
-                    sessionId: state.meetingCode,
-                    starts_at: call.starts_at,
-                })
-            );
-            router.push(`/pod/join/${state.meetingCode}`);
         },
         [dispatch, router, state.meetingCode]
     );
@@ -207,45 +175,15 @@ export default function PodPage() {
         dispatch(clearSessionInfo());
 
         try {
-            const token = await tokenProvider(user.walletAddress);
+            const { data } = await getCall(state.meetingCode);
 
-            // First try Stream.io
-            const client = new StreamVideoClient({
-                apiKey: API_KEY,
-                user: {
-                    id: user.id,
-                    name: user.username,
-                },
-                tokenProvider: async () => token,
-            });
-
-            try {
-                console.log('Checking Stream.io for call');
-                const { calls } = await client.queryCalls({
-                    filter_conditions: { id: state.meetingCode },
-                });
-
-                if (calls.length > 0 && calls[0].id === state.meetingCode) {
-                    console.log('Call found in Stream.io');
-                    const response: GetCallResponse = await calls[0].get();
-                    handleStreamCall(response);
-                    return;
-                }
-            } catch (streamError) {
-                console.log('Stream.io call not found, checking scheduled calls...');
-            }
-
-            // Then check Redis scheduled calls
-            try {
-                console.log('checking server for scheduled call');
-                const { data } = await getScheduledCall(state.meetingCode);
-
-                if (data?.call) {
+            if (data?.call) {
+                if (data.source === 'stream') {
+                    handleStreamCall(data.call);
+                } else {
                     setState(prev => ({ ...prev, foundSession: data.call }));
-                    return;
                 }
-            } catch (redisError) {
-                console.log('Scheduled call not found in Server');
+                return;
             }
 
             setState(prev => ({
@@ -261,7 +199,7 @@ export default function PodPage() {
         } finally {
             setState(prev => ({ ...prev, isJoining: false }));
         }
-    }, [state.meetingCode, user, dispatch, tokenProvider, handleStreamCall, getScheduledCall]);
+    }, [state.meetingCode, user, dispatch, getCall, handleStreamCall]);
 
     const handleJoinCreatedSession = useCallback(async () => {
         setState(prev => ({ ...prev, isJoiningCreated: true }));
@@ -299,7 +237,7 @@ export default function PodPage() {
         <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4 relative">
             <div className="w-full max-w-2xl flex flex-col items-center">
                 {/* User details section */}
-                <React.Suspense fallback={<div className="h-12" />}>
+                <React.Suspense fallback={<div className="h-12 mb-24" />}>
                     <UserDetails user={user} />
                 </React.Suspense>
 
@@ -372,58 +310,7 @@ export default function PodPage() {
                 </div>
 
                 {/* Session streak dialog */}
-                <Dialog
-                    open={state.isOpenDialogue}
-                    onOpenChange={open => setState(prev => ({ ...prev, isOpenDialogue: open }))}
-                >
-                    <DialogTrigger className="max-w-[275px] mx-auto" asChild>
-                        <div className="flex justify-center items-center">
-                            <div className="rounded-full bg-gradient-to-r from-[#552FC9]  to-[#D7B35D] p-[1px]">
-                                <Button
-                                    variant="ghost"
-                                    className="flex justify-between items-center rounded-full bg-[#212121] text-white text-xs tracking-wider py-[4px] px-[16px]"
-                                >
-                                    <div className="h-[14px] w-[14px]">
-                                        <Fire />
-                                    </div>
-                                    <span>You have no session streak</span>
-                                    <div className="icon-container h-[14px] w-[14px]">
-                                        <Info />
-                                    </div>
-                                </Button>
-                            </div>
-                        </div>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px] bg-[#1E1E1E] text-white border border-[#2E2E2E] p-0 rounded-[10px]">
-                        <div className="p-6 flex flex-col items-center gap-4">
-                            <div className="h-[14px] w-[14px]">
-                                <Fire />
-                            </div>
-                            <DialogTitle className="text-4xl text-center font-bold mb-1">
-                                0 day
-                            </DialogTitle>
-                            <div className="flex flex-col items-center gap-2 mt-4">
-                                <DialogHeader>
-                                    <DialogDescription className="text-[#A3A3A3] text-lg">
-                                        Session Streak
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <DialogDescription className="text-center text-[#A3A3A3] mb-6">
-                                    Session streaks are consecutive daily sessions that are either
-                                    created or attended.
-                                </DialogDescription>
-                            </div>
-                            <Button
-                                className="w-full bg-[#6032F6] hover:bg-[#4C28C4] text-white rounded-[10px] py-2 px-4"
-                                onClick={() =>
-                                    setState(prev => ({ ...prev, isOpenDialogue: false }))
-                                }
-                            >
-                                I understand.
-                            </Button>
-                        </div>
-                    </DialogContent>
-                </Dialog>
+                <StreakDialog streak={3} />
             </div>
 
             {/* Scheduled sessions */}
