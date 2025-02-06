@@ -1,80 +1,114 @@
-import { useState, useMemo, useCallback, memo, useEffect } from "react"
-import { Edit3, ArrowUpRight } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { useAppDispatch, useAppSelector } from "@/store/hooks"
-import { updateUser } from "@/store/slices/userSlice"
-import { UsernameModal } from "./username-modal"
-import { getBasename, getBasenameAvatar } from "@/app/apis/basenames"
-import Link from "next/link"
+import { useState, useMemo, useCallback, memo, useEffect } from 'react';
+import { Edit3, ArrowUpRight } from 'lucide-react';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { updateUser } from '@/store/slices/userSlice';
+import { UsernameModal } from './username-modal';
+import { getBasename, getBasenameAvatar } from '@/app/apis/basenames';
+import Link from 'next/link';
+import { useUpdateUsernameMutation } from '@/store/api/userApi';
 
 interface UserProfileProps {
     user: {
-        username?: string
-        walletAddress: string
-        walletClientType?: string
-    }
+        id?: string;
+        username?: string;
+        walletAddress: string;
+        walletClientType?: string;
+    };
 }
 
 const formatAddress = (addr: string): string =>
-    addr ? (addr.length < 10 ? addr : `${addr.slice(0, 6)}...${addr.slice(-4)}`) : ""
+    addr ? (addr.length < 10 ? addr : `${addr.slice(0, 6)}...${addr.slice(-4)}`) : '';
 
 const UserProfile = memo<UserProfileProps>(({ user }) => {
-    const dispatch = useAppDispatch()
-    const [isEditingUsername, setIsEditingUsername] = useState(false)
-    const [userBaseName, setUserBaseName] = useState<{ basename: string | null, avatar: string | null }>({
+    const dispatch = useAppDispatch();
+    const [isEditingUsername, setIsEditingUsername] = useState(false);
+    const [userBaseName, setUserBaseName] = useState<{
+        basename: string | null;
+        avatar: string | null;
+    }>({
         avatar: null,
-        basename: null
-    })
+        basename: null,
+    });
+    const [updateUsername, { isLoading: isUpdating }] = useUpdateUsernameMutation();
 
     const fetchBasenameData = useCallback(async (address: `0x${string}`) => {
         try {
-            const basename = await getBasename(address)
-            console.log("basename", basename)
+            const basename = await getBasename(address);
+            console.log('basename', basename);
             if (basename) {
-                const avatar = await getBasenameAvatar(basename)
-                console.log("avatar", avatar)
-                setUserBaseName({ basename, avatar })
+                const avatar = await getBasenameAvatar(basename);
+                console.log('avatar', avatar);
+                setUserBaseName({ basename, avatar });
             }
         } catch (error) {
-            console.error('Error fetching basename:', error)
-            setUserBaseName({ basename: null, avatar: null })
+            console.error('Error fetching basename:', error);
+            setUserBaseName({ basename: null, avatar: null });
         }
-    }, [])
+    }, []);
 
     useEffect(() => {
         if (user?.walletAddress) {
-            fetchBasenameData(user.walletAddress as `0x${string}`)
+            fetchBasenameData(user.walletAddress as `0x${string}`);
         }
-    }, [user?.walletAddress, fetchBasenameData])
+    }, [user?.walletAddress, fetchBasenameData]);
 
     const userInfo = useMemo(
         () => ({
-            displayName: userBaseName.basename || user?.username || formatAddress(user?.walletAddress),
-            initials: (userBaseName.basename || user?.username || user?.walletAddress || "")
+            displayName:
+                userBaseName.basename || user?.username || formatAddress(user?.walletAddress),
+            initials: (userBaseName.basename || user?.username || user?.walletAddress || '')
                 .slice(0, 2)
                 .toUpperCase(),
         }),
-        [user, userBaseName],
-    )
+        [user, userBaseName]
+    );
 
     const handleEditClick = useCallback(() => {
-        setIsEditingUsername(true)
-    }, [])
+        setIsEditingUsername(true);
+    }, []);
 
     const handleUsernameChange = useCallback(
-        (newUsername: string) => {
-            if (newUsername.trim() && newUsername !== user?.username) {
-                dispatch(updateUser({ username: newUsername.trim() }))
+        async (newUsername: string) => {
+            if (!newUsername.trim() || newUsername === user?.username) {
+                setIsEditingUsername(false);
+                return;
             }
-            setIsEditingUsername(false)
+
+            try {
+                if (!user.id) {
+                    throw new Error('User ID is required');
+                }
+
+                // Update username on the server
+                const result = await updateUsername({
+                    userId: user.id,
+                    username: newUsername.trim(),
+                }).unwrap();
+
+                if (result.status === 'success') {
+                    // Update local state only after successful server update
+                    dispatch(updateUser({ username: newUsername.trim() }));
+                } else {
+                    throw new Error(result.message || 'Failed to update username');
+                }
+            } catch (error) {
+                // Re-throw the error to be handled by the modal
+                throw error;
+            }
         },
-        [user?.username, dispatch],
-    )
+        [user?.id, user?.username, dispatch, updateUsername]
+    );
 
     const handleCancelEdit = useCallback(() => {
-        setIsEditingUsername(false)
-    }, [])
+        setIsEditingUsername(false);
+    }, []);
 
     return (
         <>
@@ -92,13 +126,16 @@ const UserProfile = memo<UserProfileProps>(({ user }) => {
                         <span className="text-sm text-zinc-100">{userInfo.displayName}</span>
                     </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="min-w-[144px] bg-zinc-900 p-2 border-none">
+                <DropdownMenuContent
+                    align="end"
+                    className="min-w-[144px] bg-zinc-900 p-2 border-none"
+                >
                     {!userBaseName.basename && (
                         <DropdownMenuItem
                             className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-zinc-100"
-                            onSelect={(e) => {
-                                e.preventDefault()
-                                handleEditClick()
+                            onSelect={e => {
+                                e.preventDefault();
+                                handleEditClick();
                             }}
                         >
                             <Edit3 className="h-4 w-4" />
@@ -122,15 +159,16 @@ const UserProfile = memo<UserProfileProps>(({ user }) => {
             </DropdownMenu>
             {!userBaseName.basename && (
                 <UsernameModal
-                    initialUsername={user?.username || ""}
+                    initialUsername={user?.username || ''}
                     onSave={handleUsernameChange}
                     onCancel={handleCancelEdit}
                     isOpen={isEditingUsername}
+                    isLoading={isUpdating}
                 />
             )}
         </>
-    )
-})
+    );
+});
 
-UserProfile.displayName = "UserProfile"
-export default UserProfile
+UserProfile.displayName = 'UserProfile';
+export default UserProfile;
