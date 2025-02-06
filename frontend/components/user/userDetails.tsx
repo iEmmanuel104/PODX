@@ -1,7 +1,7 @@
 // components/user/userDetails.tsx
 'use client';
 
-import React, { useState, useCallback, memo } from 'react';
+import React, { useState, useCallback, memo, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Settings, LogOut, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -71,12 +71,13 @@ const UserDetails = memo<UserDetailsProps>(({ user }) => {
         [isPrivyWallet, state, user, handleWithdrawClick, handleWarningConfirm]
     );
 
+    // Memoize the UserProfile component
+    const userProfileComponent = useMemo(() => <UserProfile user={user} />, [user]);
+
     return (
         <div className="w-full flex flex-col sm:gap-8 gap-4 transition-all duration-200">
             <div className="w-full flex items-center justify-between text-white">
-                <div className="flex-shrink-0">
-                    <UserProfile user={user} />
-                </div>
+                <div className="flex-shrink-0">{userProfileComponent}</div>
 
                 <div className="flex-shrink-0 hidden sm:block w-[180px] h-[43px]">
                     <Logo />

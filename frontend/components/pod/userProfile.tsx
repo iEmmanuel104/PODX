@@ -7,7 +7,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { useAppDispatch } from '@/store/hooks';
 import { updateUser } from '@/store/slices/userSlice';
 import { UsernameModal } from './username-modal';
 import { getBasename, getBasenameAvatar } from '@/app/apis/basenames';
@@ -28,7 +28,10 @@ const formatAddress = (addr: string): string =>
 
 const UserProfile = memo<UserProfileProps>(({ user }) => {
     const dispatch = useAppDispatch();
-    const [isEditingUsername, setIsEditingUsername] = useState(false);
+    const [modalState, setModalState] = useState({
+        isOpen: false,
+        isLoading: false,
+    });
     const [userBaseName, setUserBaseName] = useState<{
         basename: string | null;
         avatar: string | null;
@@ -36,48 +39,30 @@ const UserProfile = memo<UserProfileProps>(({ user }) => {
         avatar: null,
         basename: null,
     });
-    const [updateUsername, { isLoading: isUpdating }] = useUpdateUsernameMutation();
+    const [updateUsername] = useUpdateUsernameMutation();
 
     const fetchBasenameData = useCallback(async (address: `0x${string}`) => {
         try {
             const basename = await getBasename(address);
-            console.log('basename', basename);
             if (basename) {
                 const avatar = await getBasenameAvatar(basename);
-                console.log('avatar', avatar);
-                setUserBaseName({ basename, avatar });
+                return { basename, avatar };
             }
+            return { basename: null, avatar: null };
         } catch (error) {
             console.error('Error fetching basename:', error);
-            setUserBaseName({ basename: null, avatar: null });
+            return { basename: null, avatar: null };
         }
     }, []);
 
-    useEffect(() => {
-        if (user?.walletAddress) {
-            fetchBasenameData(user.walletAddress as `0x${string}`);
-        }
-    }, [user?.walletAddress, fetchBasenameData]);
-
-    const userInfo = useMemo(
-        () => ({
-            displayName:
-                userBaseName.basename || user?.username || formatAddress(user?.walletAddress),
-            initials: (userBaseName.basename || user?.username || user?.walletAddress || '')
-                .slice(0, 2)
-                .toUpperCase(),
-        }),
-        [user, userBaseName]
-    );
-
     const handleEditClick = useCallback(() => {
-        setIsEditingUsername(true);
+        setModalState(prev => ({ ...prev, isOpen: true }));
     }, []);
 
     const handleUsernameChange = useCallback(
         async (newUsername: string) => {
             if (!newUsername.trim() || newUsername === user?.username) {
-                setIsEditingUsername(false);
+                setModalState(prev => ({ ...prev, isOpen: false }));
                 return;
             }
 
@@ -86,35 +71,71 @@ const UserProfile = memo<UserProfileProps>(({ user }) => {
                     throw new Error('User ID is required');
                 }
 
-                // Update username on the server
+                setModalState(prev => ({ ...prev, isLoading: true }));
                 const result = await updateUsername({
                     userId: user.id,
                     username: newUsername.trim(),
                 }).unwrap();
 
                 if (result.status === 'success') {
-                    // Update local state only after successful server update
                     dispatch(updateUser({ username: newUsername.trim() }));
+                    setModalState(prev => ({ ...prev, isOpen: false }));
                 } else {
                     throw new Error(result.message || 'Failed to update username');
                 }
             } catch (error) {
-                // Re-throw the error to be handled by the modal
                 throw error;
+            } finally {
+                setModalState(prev => ({ ...prev, isLoading: false }));
             }
         },
         [user?.id, user?.username, dispatch, updateUsername]
     );
 
     const handleCancelEdit = useCallback(() => {
-        setIsEditingUsername(false);
+        setModalState(prev => ({ ...prev, isOpen: false }));
     }, []);
+
+    // Memoize user info to prevent unnecessary recalculations
+    const userInfo = useMemo(
+        () => ({
+            displayName:
+                userBaseName.basename || user?.username || formatAddress(user?.walletAddress),
+            initials: (userBaseName.basename || user?.username || user?.walletAddress || '')
+                .slice(0, 2)
+                .toUpperCase(),
+        }),
+        [user?.username, user?.walletAddress, userBaseName]
+    );
+
+    // Use a separate effect for basename fetching
+    useEffect(() => {
+        let mounted = true;
+
+        async function loadBasenameData() {
+            if (user?.walletAddress) {
+                const data = await fetchBasenameData(user.walletAddress as `0x${string}`);
+                if (mounted) {
+                    setUserBaseName(data);
+                }
+            }
+        }
+
+        loadBasenameData();
+
+        return () => {
+            mounted = false;
+        };
+    }, [user?.walletAddress, fetchBasenameData]);
 
     return (
         <>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <button className="group flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900 px-3 py-1.5 transition-colors hover:bg-zinc-800">
+                    <button
+                        className="group flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900 px-3 py-1.5 transition-colors hover:bg-zinc-800"
+                        disabled={modalState.isLoading}
+                    >
                         <Avatar className="h-6 w-6">
                             {userBaseName.avatar ? (
                                 <AvatarImage src={userBaseName.avatar} alt={userInfo.displayName} />
@@ -123,7 +144,9 @@ const UserProfile = memo<UserProfileProps>(({ user }) => {
                             )}
                         </Avatar>
                         <div className="h-1 w-1 rounded-full bg-green-500" />
-                        <span className="text-sm text-zinc-100">{userInfo.displayName}</span>
+                        <span className="text-sm text-zinc-100">
+                            {modalState.isLoading ? 'Updating...' : userInfo.displayName}
+                        </span>
                     </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
@@ -133,10 +156,8 @@ const UserProfile = memo<UserProfileProps>(({ user }) => {
                     {!userBaseName.basename && (
                         <DropdownMenuItem
                             className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-zinc-100"
-                            onSelect={e => {
-                                e.preventDefault();
-                                handleEditClick();
-                            }}
+                            onClick={handleEditClick}
+                            disabled={modalState.isLoading}
                         >
                             <Edit3 className="h-4 w-4" />
                             <span>Edit name</span>
@@ -162,8 +183,8 @@ const UserProfile = memo<UserProfileProps>(({ user }) => {
                     initialUsername={user?.username || ''}
                     onSave={handleUsernameChange}
                     onCancel={handleCancelEdit}
-                    isOpen={isEditingUsername}
-                    isLoading={isUpdating}
+                    isOpen={modalState.isOpen}
+                    isLoading={modalState.isLoading}
                 />
             )}
         </>
