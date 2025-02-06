@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Info } from 'lucide-react';
+import { Info, Sparkles, Trophy } from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -16,11 +16,60 @@ import { UserInfo } from '@/store/api/userApi';
 
 interface StreakDialogProps {
     user?: UserInfo;
+    onToggleCreateSession: () => void;
 }
 
-export function StreakDialog({ user }: StreakDialogProps) {
+
+export function StreakDialog({ user, onToggleCreateSession }: StreakDialogProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [animatedStreak, setAnimatedStreak] = useState(0);
+
+    // Calculate streak status and messages
+    const streakInfo = useMemo(() => {
+        const currentStreak = user?.streak?.currentStreak || 0;
+        const longestStreak = user?.streak?.longestStreak || 0;
+        const totalPoints = user?.streak?.totalPoints || 0;
+
+        // Different states and their messages
+        if (currentStreak === 0 && longestStreak === 0) {
+            return {
+                status: 'new',
+                buttonText: 'Begin your streak! 🚀',
+                message:
+                    "Ready to start your creator's journey? Host or join a session to kick off your streak!",
+                streakText: 'Start your first streak',
+                icon: <Sparkles className="w-5 h-5 text-[#DDB958]" />,
+            };
+        }
+
+        if (currentStreak === 0 && longestStreak > 0) {
+            return {
+                status: 'break',
+                buttonText: 'Restart your streak 🔥',
+                message: `You've achieved a ${longestStreak}-day streak before! Ready to break your record?`,
+                streakText: 'Time to rebuild! 🔄',
+                icon: <Trophy className="w-5 h-5 text-[#DDB958]" />,
+            };
+        }
+
+        if (currentStreak === longestStreak && currentStreak > 0) {
+            return {
+                status: 'peak',
+                buttonText: 'Keep it going! 🏆',
+                message: `You're on fire! This is your best streak ever. Can you push it further?`,
+                streakText: `${currentStreak} day peak streak! 🔥`,
+                icon: <Fire />,
+            };
+        }
+
+        return {
+            status: 'active',
+            buttonText: 'Continue streak 🎯',
+            message: `Keep the momentum going! You're building something special.`,
+            streakText: `${currentStreak} day streak! 🔥`,
+            icon: <Fire />,
+        };
+    }, [user?.streak]);
 
     useEffect(() => {
         if (isOpen && user?.streak?.currentStreak) {
@@ -44,8 +93,18 @@ export function StreakDialog({ user }: StreakDialogProps) {
     }, [isOpen, user?.streak?.currentStreak]);
 
     const handleShare = (platform: 'x' | 'warpcast') => {
-        const text = `I have a ${user?.streak?.currentStreak || 0} day streak on PodX with ${user?.streak?.totalPoints || 0} total points! 🔥`;
-        const url = 'https://podx.com';
+        const { status } = streakInfo;
+        let text = '';
+
+        if (status === 'peak') {
+            text = `🏆 Just hit my best streak ever on PodX - ${user?.streak?.currentStreak} days! Join me in building the future of web3 streaming.`;
+        } else if (status === 'active') {
+            text = `🔥 ${user?.streak?.currentStreak} days and counting on PodX! Total points: ${user?.streak?.totalPoints}. The web3 streaming revolution is here!`;
+        } else {
+            text = `🚀 Just discovered PodX - the future of web3 streaming and creator empowerment! Join me on this journey.`;
+        }
+
+        const url = 'https://podx.fun';
 
         if (platform === 'x') {
             window.open(
@@ -56,9 +115,10 @@ export function StreakDialog({ user }: StreakDialogProps) {
         }
     };
 
-    const streakText = user?.streak?.currentStreak
-        ? `${user.streak.currentStreak} day streak!`
-        : 'No session streak yet';
+    const handleAction = () => {
+        setIsOpen(false);
+        onToggleCreateSession();
+    };
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -75,12 +135,19 @@ export function StreakDialog({ user }: StreakDialogProps) {
                         >
                             <motion.div
                                 className="h-[16px] w-[16px] sm:h-[18px] sm:w-[18px]"
-                                animate={{ rotate: [0, 20, 0] }}
+                                animate={
+                                    streakInfo.status === 'active' || streakInfo.status === 'peak'
+                                        ? {
+                                              rotate: [0, 20, 0],
+                                              scale: [1, 1.2, 1],
+                                          }
+                                        : {}
+                                }
                                 transition={{ duration: 2, repeat: Infinity }}
                             >
-                                <Fire />
+                                {streakInfo.icon}
                             </motion.div>
-                            <span className="mx-2">{streakText}</span>
+                            <span className="mx-2">{streakInfo.streakText}</span>
                             <div className="h-[16px] w-[16px] sm:h-[18px] sm:w-[18px]">
                                 <Info />
                             </div>
@@ -100,17 +167,23 @@ export function StreakDialog({ user }: StreakDialogProps) {
                         >
                             <motion.div
                                 className="h-[52px] w-[52px]"
-                                animate={{
-                                    scale: [1, 1.2, 1],
-                                    rotate: [0, 10, -10, 0],
-                                }}
+                                animate={
+                                    streakInfo.status === 'active' || streakInfo.status === 'peak'
+                                        ? {
+                                              scale: [1, 1.2, 1],
+                                              rotate: [0, 10, -10, 0],
+                                          }
+                                        : {
+                                              scale: [1, 1.1, 1],
+                                          }
+                                }
                                 transition={{
                                     duration: 2,
                                     repeat: Infinity,
                                     repeatType: 'reverse',
                                 }}
                             >
-                                <Fire />
+                                {streakInfo.icon}
                             </motion.div>
 
                             <motion.div
@@ -123,7 +196,7 @@ export function StreakDialog({ user }: StreakDialogProps) {
                                     {animatedStreak} {animatedStreak === 1 ? 'day' : 'days'}
                                 </DialogTitle>
                                 <div className="text-white text-base sm:text-lg">
-                                    Session Streak
+                                    Creator Streak
                                 </div>
                             </motion.div>
 
@@ -134,17 +207,19 @@ export function StreakDialog({ user }: StreakDialogProps) {
                                 className="flex flex-col items-center gap-3 mt-2 w-full"
                             >
                                 <div className="text-center space-y-3 w-full">
-                                    <div className="text-[#DDB958] font-semibold text-base sm:text-lg">
-                                        Longest Streak: {user?.streak?.longestStreak || 0} days
-                                    </div>
+                                    {user?.streak?.longestStreak &&
+                                        user.streak.longestStreak > 0 && (
+                                            <div className="text-[#DDB958] font-semibold text-base sm:text-lg">
+                                                Best Streak: {user.streak.longestStreak} days 🏆
+                                            </div>
+                                        )}
                                     <div className="text-[#A3A3A3] text-base">
-                                        Total Points: {user?.streak?.totalPoints || 0}
+                                        Total Creator Points: {user?.streak?.totalPoints || 0} ⭐️
                                     </div>
                                 </div>
 
                                 <div className="text-center text-[#A3A3A3] mt-4 mb-6 max-w-[280px] mx-auto text-sm sm:text-base">
-                                    Session streaks are consecutive daily sessions that are either
-                                    created or attended.
+                                    {streakInfo.message}
                                 </div>
                             </motion.div>
 
@@ -156,9 +231,9 @@ export function StreakDialog({ user }: StreakDialogProps) {
                             >
                                 <Button
                                     className="flex-1 bg-[#DDB958] hover:bg-[#DDB958]/90 text-black rounded-[10px] py-2.5 sm:py-3 px-4 sm:px-5 w-1/2 transition-all duration-300 text-sm sm:text-base font-medium"
-                                    onClick={() => setIsOpen(false)}
+                                    onClick={handleAction}
                                 >
-                                    Create session
+                                    {streakInfo.buttonText}
                                 </Button>
 
                                 <DropdownMenu>

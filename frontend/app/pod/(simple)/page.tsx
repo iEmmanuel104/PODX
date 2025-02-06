@@ -316,7 +316,15 @@ export default function PodPage() {
 
                 {/* Session streak dialog */}
                 <div className="w-full">
-                    <StreakDialog user={user} />
+                    <StreakDialog
+                        user={user}
+                        onToggleCreateSession={() =>
+                            setState(prev => ({
+                                ...prev,
+                                isCreateModalOpen: true,
+                            }))
+                        }
+                    />
                 </div>
 
                 {/* Scheduled sessions */}
