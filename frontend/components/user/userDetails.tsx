@@ -11,16 +11,11 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import dynamic from 'next/dynamic';
 import Logo from '@/public/images/icons/Logo';
 import UserProfile from '../pod/userProfile';
 import { UserDetailsProps, UserState } from '@/types';
 import { useAuth } from '@/hooks/useAuth';
-
-const WalletOperations = dynamic(() => import('./walletOperations'), {
-    ssr: false,
-    loading: () => null,
-});
+import WalletOperations from './walletOperations';
 
 const UserDetails = memo<UserDetailsProps>(({ user }) => {
     const router = useRouter();
@@ -58,7 +53,23 @@ const UserDetails = memo<UserDetailsProps>(({ user }) => {
         }));
     }, []);
 
+    // Determine if it's a Privy wallet
     const isPrivyWallet = user?.walletType === 'privy';
+
+    // Memoize the wallet operations component
+    const walletOperationsComponent = React.useMemo(
+        () =>
+            isPrivyWallet ? (
+                <WalletOperations
+                    state={state}
+                    setState={setState}
+                    user={user}
+                    onWithdrawClick={handleWithdrawClick}
+                    onWarningConfirm={handleWarningConfirm}
+                />
+            ) : null,
+        [isPrivyWallet, state, user, handleWithdrawClick, handleWarningConfirm]
+    );
 
     return (
         <div className="w-full flex flex-col sm:gap-8 gap-4 transition-all duration-200">
@@ -92,15 +103,7 @@ const UserDetails = memo<UserDetailsProps>(({ user }) => {
                             side="bottom"
                             sideOffset={5}
                         >
-                            {isPrivyWallet && (
-                                <WalletOperations
-                                    state={state}
-                                    setState={setState}
-                                    user={user}
-                                    onWithdrawClick={handleWithdrawClick}
-                                    onWarningConfirm={handleWarningConfirm}
-                                />
-                            )}
+                            {walletOperationsComponent}
 
                             <DropdownMenuItem
                                 className="flex items-center px-3 py-2 cursor-pointer"
