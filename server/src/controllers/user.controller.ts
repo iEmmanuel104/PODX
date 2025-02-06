@@ -183,7 +183,7 @@ export default class UserController {
     }
 
     static async getUserCalls(req: AuthenticatedRequest, res: Response) {
-        const { calls, error } = await StreamIOConfig.getCallsByUser('6715e4e75dcaacba9b74d1f0');
+        const { calls, error } = await StreamIOConfig.getCallsByUser(req.user.id);
 
         if (error) {
             throw new BadRequestError(error.message);
