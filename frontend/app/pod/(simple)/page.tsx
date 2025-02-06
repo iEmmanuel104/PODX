@@ -6,7 +6,8 @@ import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { customAlphabet } from 'nanoid';
-import { clearSessionInfo, resetMeetingState, setIsNewMeeting, setSessionInfo } from '@/store/slices/podSlice';
+// import { AppContext } from '@/providers/appProvider';
+import { clearSessionInfo, setSessionInfo, setIsNewMeeting } from '@/store/slices/podSlice';
 import { sessionType } from '@/constants';
 import { updateUser } from '@/store/slices/userSlice';
 import { Button } from '@/components/ui/button';
@@ -100,7 +101,7 @@ export default function PodPage() {
     const handleCreateSession = useCallback(
         async (title: string, type: sessionType, scheduledDate?: Date) => {
             dispatch(clearSessionInfo());
-            dispatch(setIsNewMeeting(true));
+            dispatch(setIsNewMeeting(true)); // Set new meeting flag
             const newSessionCode = getMeetingId();
 
             const sessionData: SessionData = {
@@ -131,8 +132,6 @@ export default function PodPage() {
                         ...prev,
                         isCreateModalOpen: false,
                     }));
-
-                    // Don't redirect for scheduled sessions
                     return;
                 } catch (error) {
                     console.error('Failed to schedule call:', error);
@@ -144,7 +143,6 @@ export default function PodPage() {
                 }
             }
 
-            // Only set invite link and show created modal for instant sessions
             setState(prev => ({
                 ...prev,
                 inviteLink: `https://www.podx.fun/pod/join/${newSessionCode}`,
@@ -217,12 +215,6 @@ export default function PodPage() {
     const handleClearFoundSession = useCallback(() => {
         setState(prev => ({ ...prev, foundSession: undefined }));
     }, []);
-
-    useEffect(() => {
-        return () => {
-            dispatch(resetMeetingState());
-        };
-    }, [dispatch]);
 
     if (!isLoggedIn || !user) {
         router.push('/');

@@ -14,8 +14,11 @@ import {
 // import { useStreamTokenProvider } from '@/hooks/useStreamTokenProvider';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
-import { resetMeetingState, setSessionInfo } from '@/store/slices/podSlice';
+// import { useContext } from 'react';
+// import { AppContext } from '@/providers/appProvider';
+import { setSessionInfo, resetMeetingState } from '@/store/slices/podSlice';
 import { useScheduledCalls } from '@/hooks/useScheduledCalls';
+import { sessionType } from '@/constants';
 
 // Types
 interface JoinSessionProps {
@@ -133,124 +136,131 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
     });
     const [participants, setParticipants] = useState<CallParticipantResponse[]>([]);
 
-    // Selectors and Context
+    // Selectors
     const { sessionTitle, sessionType, isScheduled, starts_at } = useAppSelector(
         state => state.pod
     );
-    const { isLoggedIn, user } = useAppSelector(state => state.user);
     const isNewMeeting = useAppSelector(state => state.pod.isNewMeeting);
-    // const { client: chatClient } = useChatContext();
+    const { isLoggedIn, user } = useAppSelector(state => state.user);
 
     // Stream Video Hooks
     const call = useCall();
     const { useCallCallingState } = useCallStateHooks();
     const callingState = useCallCallingState();
-    // const tokenProvider = useStreamTokenProvider();
-
-    // Initialize call function
-    const initializeCall = useCallback(async () => {
-        if (state.joining || !code || !user) return;
-
-        try {
-            if (callingState === CallingState.JOINED) {
-                await call?.leave();
-            }
-
-            if (isNewMeeting) {
-                await call?.getOrCreate({
-                    data: {
-                        members: [{ user_id: user.id, role: 'host' }],
-                        custom: {
-                            sessionId: code,
-                            title: sessionTitle || 'New Call',
-                            type: sessionType || 'Video Session',
-                        },
-                        settings_override: {
-                            limits: {
-                                max_participants: 20,
-                                max_duration_seconds: 3600,
-                            },
-                        },
-                        ...(isScheduled && { starts_at }),
-                    },
-                    members_limit: 20,
-                    ...(sessionType === 'Audio Session' && { video: false }),
-                });
-            } else {
-                const callData = await call?.get();
-                if (callData?.call) {
-                    setParticipants(callData.call.session?.participants || []);
-                    dispatch(
-                        setSessionInfo({
-                            title: callData.call.custom.title,
-                            type: callData.call.custom.type,
-                            sessionId: code,
-                        })
-                    );
-                }
-            }
-        } catch (error) {
-            const err = error as ErrorFromResponse<GetCallResponse>;
-            console.error(err.message);
-            router.push('/pod');
-            toast.error('Error fetching meeting');
-        } finally {
-            setState(prev => ({ ...prev, loading: false }));
-        }
-    }, [
-        call,
-        callingState,
-        code,
-        dispatch,
-        isScheduled,
-        isNewMeeting, // Updated dependency
-        router,
-        sessionTitle,
-        sessionType,
-        starts_at,
-        state.joining,
-        user,
-    ]);
 
     // Check scheduled meeting
     const checkScheduledMeeting = useCallback(async () => {
         if (!code || !user || hasCheckedSchedule.current) return;
         hasCheckedSchedule.current = true;
 
-        const response = await getCall(code);
-        if (
-            response.status === 'success' &&
-            response.data?.call &&
-            response.data.source === 'scheduled'
-        ) {
-            const { call } = response.data;
-            setState(prev => ({
-                ...prev,
-                loading: false,
-                showScheduledDialog: true,
-                scheduledMeetData: {
-                    title: call.custom.title,
-                    startTime: call.starts_at,
-                    creator: call.created_by
-                        ? {
-                              id: call.created_by.id,
-                              name: call.created_by.name || 'Unknown',
-                              username:
-                                  call.created_by.custom?.username ||
-                                  call.created_by.name ||
-                                  'Unknown',
-                          }
-                        : undefined,
-                    type: call.custom.type,
-                    sessionId: call.custom.sessionId,
-                    createdAt: call.created_at,
-                },
-            }));
-        } else {
-            // No scheduled call found, proceed with normal call initialization
-            await initializeCall();
+        try {
+            const response = await getCall(code);
+
+            if (response.status === 'success' && response.data?.call) {
+                if (response.data.source === 'scheduled') {
+                    const { call } = response.data;
+                    setState(prev => ({
+                        ...prev,
+                        loading: false,
+                        showScheduledDialog: true,
+                        scheduledMeetData: {
+                            title: call.custom.title,
+                            startTime: call.starts_at,
+                            creator: call.created_by
+                                ? {
+                                      id: call.created_by.id,
+                                      name: call.created_by.name || 'Unknown',
+                                      username:
+                                          call.created_by.custom?.username ||
+                                          call.created_by.name ||
+                                          'Unknown',
+                                  }
+                                : undefined,
+                            type: call.custom.type,
+                            sessionId: call.custom.sessionId,
+                            createdAt: call.created_at,
+                        },
+                    }));
+                } else {
+                    // Set session info from existing call
+                    dispatch(
+                        setSessionInfo({
+                            title: response.data.call.custom.title,
+                            type: response.data.call.custom.type as sessionType,
+                            sessionId: code,
+                        })
+                    );
+                    setState(prev => ({ ...prev, loading: false }));
+                }
+            } else {
+                setState(prev => ({ ...prev, loading: false }));
+            }
+        } catch (error) {
+            console.error('Error checking scheduled meeting:', error);
+            setState(prev => ({ ...prev, loading: false }));
+            toast.error('Error checking meeting status');
         }
-    }, [code, user, getCall, router, initializeCall]);
+    }, [code, user, getCall, dispatch]);
+
+    // Initialize call effect
+    useEffect(() => {
+        if (!state.loading || state.showScheduledDialog) return;
+
+        const init = async () => {
+            try {
+                if (callingState === CallingState.JOINED) {
+                    await call?.leave();
+                }
+
+                if (!state.showScheduledDialog) {
+                    if (isNewMeeting) {
+                        await call?.getOrCreate({
+                            data: {
+                                members: [{ user_id: user?.id!, role: 'host' }],
+                                custom: {
+                                    sessionId: code,
+                                    title: sessionTitle || 'New Call',
+                                    type: sessionType || 'Video Session',
+                                },
+                                settings_override: {
+                                    limits: {
+                                        max_participants: 20,
+                                        max_duration_seconds: 3600,
+                                    },
+                                },
+                                ...(isScheduled && { starts_at }),
+                            },
+                            members_limit: 20,
+                            ...(sessionType === 'Audio Session' && { video: false }),
+                        });
+                    } else {
+                        const callData = await call?.get();
+                        if (callData?.call) {
+                            setParticipants(callData.call.session?.participants || []);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error initializing call:', error);
+                toast.error('Error initializing meeting');
+                router.push('/pod');
+            }
+        };
+
+        init();
+    }, [
+        state.loading,
+        state.showScheduledDialog,
+        call,
+        callingState,
+        code,
+        isNewMeeting,
+        sessionTitle,
+        sessionType,
+        isScheduled,
+        starts_at,
+        user,
+    ]);
 
     // Effects
     useEffect(() => {
@@ -262,42 +272,23 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
         }
     }, [isLoggedIn, user]);
 
+    // Main initialization and cleanup effect
     useEffect(() => {
         checkScheduledMeeting();
-    }, [checkScheduledMeeting]);
 
-    // In JoinSession component
-    useEffect(() => {
-        // Cleanup function
         return () => {
             dispatch(resetMeetingState());
+            hasCheckedSchedule.current = false;
         };
-    }, [dispatch]);
+    }, [dispatch, checkScheduledMeeting]);
 
-    // Handlers
-    // const updateGuestName = useCallback(async () => {
-    //     if (isLoggedIn && user) {
-    //         try {
-    //             await chatClient.disconnectUser();
-    //             await chatClient.connectUser({ id: user.id, name: user.username }, () =>
-    //                 tokenProvider(user.walletAddress)
-    //             );
-    //         } catch (error) {
-    //             console.error(error);
-    //         }
-    //     }
-    // }, [isLoggedIn, user, chatClient, tokenProvider]);
-
+    // Join session handler
     const handleJoinSession = useCallback(async () => {
         if (!code) return;
 
         setState(prev => ({ ...prev, joining: true }));
 
         try {
-            // if (isLoggedIn && user) {
-            //     await updateGuestName();
-            // }
-
             if (callingState !== CallingState.JOINED) {
                 await call?.join({
                     data: {
@@ -314,7 +305,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
             toast.error('Failed to join session, please check your connection and try again');
             setState(prev => ({ ...prev, joining: false }));
         }
-    }, [code, isLoggedIn, user, call, callingState, router, sessionType]);
+    }, [code, user, call, callingState, router, sessionType]);
 
     // Memoized UI elements
     const participantsUI = useMemo(() => {
