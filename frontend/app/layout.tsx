@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import localFont from 'next/font/local';
 import '@stream-io/video-react-sdk/dist/css/styles.css';
 import './globals.css';
 import StoreProvider from '@/providers/storeProvider';
@@ -11,17 +10,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import 'stream-chat-react/dist/css/v2/index.css';
 import { Toaster } from 'react-hot-toast';
 import { AlertCircle, CheckCircle2, DollarSign } from 'lucide-react';
-
-const clashGroteskRegular = localFont({
-    src: './fonts/ClashGrotesk-Regular.woff',
-    variable: '--font-clashgrotesk-sans',
-    weight: '100 900',
-});
-const clashgroteskMedium = localFont({
-    src: './fonts/ClashGrotesk-Medium.woff',
-    variable: '--font-clashgrotesk-mono',
-    weight: '100 900',
-});
+import { clashGrotesk } from '@/constants';
 
 export const metadata: Metadata = {
     title: 'Pod X',
@@ -38,7 +27,7 @@ export default function RootLayout({
         <AppProvider>
             <html lang="en">
                 <body
-                    className={`${clashGroteskRegular.variable} ${clashgroteskMedium.variable} antialiased`}
+                    className={`${clashGrotesk.className} antialiased`}
                 >
                     <StoreProvider>
                         <PrivyProvider>
