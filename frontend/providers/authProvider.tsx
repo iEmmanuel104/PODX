@@ -14,34 +14,13 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     const router = useRouter();
     const pathname = usePathname();
     const [validateUser] = useValidateUserMutation();
+
+    // Simplified state management
     const [isLoading, setIsLoading] = useState(false);
-    const [isRedirecting, setIsRedirecting] = useState(false);
-
-    // Memoized redirect function with transition state
-    const redirectToPod = useCallback(async () => {
-        if (isRedirecting) return;
-        setIsRedirecting(true);
-
-        try {
-            const pendingSessionCode = localStorage.getItem('pendingSessionCode');
-            const targetPath = pendingSessionCode ? `/pod/join/${pendingSessionCode}` : '/pod';
-
-            // Only redirect if we're not already on the target path
-            if (pathname !== targetPath) {
-                // Use replace to prevent back button from returning to login
-                await router.replace(targetPath);
-                if (pendingSessionCode) {
-                    localStorage.removeItem('pendingSessionCode');
-                }
-            }
-        } finally {
-            setIsRedirecting(false);
-        }
-    }, [pathname, router, isRedirecting]);
 
     // Handle authentication
     const handleAuthentication = useCallback(async () => {
-        if (!privyUser?.wallet?.address) return;
+        if (!privyUser?.wallet?.address) return false;
 
         try {
             const result = await validateUser({
@@ -66,27 +45,38 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
             console.error('Authentication error:', error);
             logout();
             dispatch(logOut());
-            router.replace('/');
             return false;
         }
-    }, [privyUser, validateUser, dispatch, logout, router]);
+    }, [privyUser, validateUser, dispatch, logout]);
+
+    // Handle redirection
+    const redirectToPod = useCallback(async () => {
+        const pendingSessionCode = localStorage.getItem('pendingSessionCode');
+        const targetPath = pendingSessionCode ? `/pod/join/${pendingSessionCode}` : '/pod';
+
+        if (pathname !== targetPath) {
+            router.replace(targetPath);
+            if (pendingSessionCode) {
+                localStorage.removeItem('pendingSessionCode');
+            }
+        }
+    }, [pathname, router]);
 
     useEffect(() => {
-        if (!ready || isLoading || isRedirecting) return;
+        if (!ready || isLoading) return;
 
         const handleAuthFlow = async () => {
-            // If user is authenticated but not in store, authenticate them
-            if (authenticated && privyUser && !isLoggedIn) {
+            // Only handle auth flow for non-pod pages
+            if (pathname.startsWith('/pod')) return;
+
+            if (authenticated && !isLoggedIn) {
                 setIsLoading(true);
                 const success = await handleAuthentication();
-                setIsLoading(false);
-
                 if (success) {
                     await redirectToPod();
                 }
-            }
-            // If user is authenticated and in store, just redirect
-            else if (authenticated && isLoggedIn && pathname === '/') {
+                setIsLoading(false);
+            } else if (authenticated && isLoggedIn && pathname === '/') {
                 await redirectToPod();
             }
         };
@@ -95,23 +85,18 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     }, [
         ready,
         authenticated,
-        privyUser,
         isLoggedIn,
         handleAuthentication,
         redirectToPod,
         isLoading,
-        isRedirecting,
         pathname,
     ]);
 
-    // Show a minimal loading state
-    if (!ready) return null;
-
-    // Show loading overlay with transition
-    if (isLoading || isRedirecting) {
+    // Show loading overlay
+    if (isLoading) {
         return (
-            <div className="fixed inset-0 bg-[#121212] bg-opacity-50 backdrop-blur-sm transition-opacity duration-300">
-                <LoadingOverlay text={isRedirecting ? 'Redirecting...' : 'Connecting...'} />
+            <div className="fixed inset-0 bg-[#121212] bg-opacity-90 backdrop-blur-sm">
+                <LoadingOverlay text="Connecting..." />
             </div>
         );
     }
