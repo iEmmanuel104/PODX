@@ -11,11 +11,11 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { usePrivy } from '@privy-io/react-auth';
 import dynamic from 'next/dynamic';
 import Logo from '@/public/images/icons/Logo';
 import UserProfile from '../pod/userProfile';
 import { UserDetailsProps, UserState } from '@/types';
+import { useAuth } from '@/hooks/useAuth';
 
 const WalletOperations = dynamic(() => import('./walletOperations'), {
     ssr: false,
@@ -24,7 +24,7 @@ const WalletOperations = dynamic(() => import('./walletOperations'), {
 
 const UserDetails = memo<UserDetailsProps>(({ user }) => {
     const router = useRouter();
-    const { logout } = usePrivy();
+    const { logout } = useAuth();
     const [state, setState] = useState<UserState>({
         isOpen: false,
         isSettingsOpen: false,
@@ -34,10 +34,13 @@ const UserDetails = memo<UserDetailsProps>(({ user }) => {
         address: '',
     });
 
-    const handleLogout = useCallback(() => {
-        logout();
-        router.push('/');
-    }, [logout, router]);
+    const handleLogout = useCallback(async () => {
+        try {
+            await logout();
+        } catch (error) {
+            console.error('Logout failed:', error);
+        }
+    }, [logout]);
 
     const handleWithdrawClick = useCallback(() => {
         setState(prev => ({

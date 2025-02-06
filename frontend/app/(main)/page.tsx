@@ -1,12 +1,10 @@
 'use client';
 
 import { useCallback } from 'react';
-import { usePrivy } from '@privy-io/react-auth';
-import { useAppDispatch } from '@/store/hooks';
-import { logOut } from '@/store/slices/userSlice';
 import localFont from 'next/font/local';
 import dynamic from 'next/dynamic';
 import Logo from '@/public/images/icons/Logo';
+import { useAuth } from '@/hooks/useAuth';
 
 const Footer = dynamic(() => import('@/components/common/Footer'));
 const RetroGrid = dynamic(() => import('@/components/ui/retro-grid'));
@@ -19,18 +17,15 @@ const balige = localFont({
 });
 
 export default function LandingPage() {
-    const dispatch = useAppDispatch();
-    const { login, logout, ready } = usePrivy();
+    const { connect, ready } = useAuth();
 
     const handleConnect = useCallback(async () => {
         try {
-            await logout();
-            dispatch(logOut());
-            await login();
+            await connect();
         } catch (error) {
             console.error('Error connecting wallet:', error);
         }
-    }, [logout, dispatch, login]);
+    }, [connect]);
 
     if (!ready) return null;
 
