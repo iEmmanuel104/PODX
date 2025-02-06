@@ -36,6 +36,11 @@ export default function LandingPage() {
 
     return (
         <main className={`relative min-h-screen text-white ${balige.variable}`}>
+            {/* Background Grid - Moved to bottom of stack */}
+            <div className="absolute inset-0 w-full overflow-hidden pointer-events-none">
+                <RetroGrid />
+            </div>
+
             <div className="relative z-10 flex flex-col min-h-screen">
                 {/* Content Section */}
                 <div className="flex-grow flex items-center justify-center">
@@ -75,11 +80,11 @@ export default function LandingPage() {
                                     </h1>
                                 </div>
 
-                                {/* CTA Button */}
+                                {/* CTA Button - Added pointer-events-auto to ensure clickability */}
                                 <button
-                                    className="py-3 px-8 rounded-xl bg-[#6032F6] hover:bg-[#4C28C4] transition-all duration-300 
-                                             text-white font-medium text-base sm:text-lg hover:scale-105 hover:shadow-lg 
-                                             active:scale-95"
+                                    className="relative z-20 pointer-events-auto py-3 px-8 rounded-xl bg-[#6032F6] hover:bg-[#4C28C4] 
+                                             transition-all duration-200 text-white font-medium text-base sm:text-lg 
+                                             hover:scale-105 hover:shadow-lg active:scale-95"
                                     onClick={handleConnect}
                                 >
                                     Get started
@@ -92,11 +97,6 @@ export default function LandingPage() {
                 {/* Footer Section */}
                 <div className="container mx-auto px-4 py-6">
                     <Footer />
-                </div>
-
-                {/* Background Grid - Positioned absolutely to cover full width */}
-                <div className="absolute inset-0 w-full overflow-hidden">
-                    <RetroGrid />
                 </div>
             </div>
         </main>
