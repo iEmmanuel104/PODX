@@ -68,6 +68,16 @@ const UserProfile = memo<UserProfileProps>(({ user }) => {
         avatar: null as string | null,
     });
 
+    // Reset dialog state completely on close
+    const handleDialogClose = useCallback(() => {
+        setState(prev => ({
+            ...prev,
+            isDialogOpen: false,
+            notification: null,
+            username: user?.username || '',
+        }));
+    }, [user?.username]);
+
     const fetchBasenameData = useCallback(async (address: `0x${string}`) => {
         try {
             const basename = await getBasename(address);
@@ -82,7 +92,7 @@ const UserProfile = memo<UserProfileProps>(({ user }) => {
 
     const handleUsernameChange = useCallback(async () => {
         if (!state.username.trim() || state.username === user?.username) {
-            setState(prev => ({ ...prev, isDialogOpen: false }));
+            handleDialogClose();
             return;
         }
 
@@ -101,8 +111,9 @@ const UserProfile = memo<UserProfileProps>(({ user }) => {
                     ...prev,
                     notification: { type: 'success', message: 'Username updated successfully' },
                 }));
+                // Use setTimeout to ensure state updates are batched
                 setTimeout(() => {
-                    setState(prev => ({ ...prev, isDialogOpen: false, notification: null }));
+                    handleDialogClose();
                 }, 1500);
             } else {
                 throw new Error(result.message || 'Failed to update username');
@@ -118,7 +129,7 @@ const UserProfile = memo<UserProfileProps>(({ user }) => {
         } finally {
             setState(prev => ({ ...prev, isLoading: false }));
         }
-    }, [state.username, user?.id, user?.username, dispatch, updateUsername]);
+    }, [state.username, user?.id, user?.username, dispatch, updateUsername, handleDialogClose]);
 
     const userInfo = useMemo(
         () => ({
@@ -189,7 +200,13 @@ const UserProfile = memo<UserProfileProps>(({ user }) => {
 
             <Dialog
                 open={state.isDialogOpen}
-                onOpenChange={open => setState(prev => ({ ...prev, isDialogOpen: open }))}
+                onOpenChange={open => {
+                    if (!open) {
+                        handleDialogClose();
+                    } else {
+                        setState(prev => ({ ...prev, isDialogOpen: true }));
+                    }
+                }}
             >
                 <DialogContent className="sm:max-w-md bg-[#1d1d1d] border-0 rounded-lg">
                     <DialogHeader>
@@ -225,7 +242,7 @@ const UserProfile = memo<UserProfileProps>(({ user }) => {
                     <DialogFooter className="gap-2 sm:gap-2 mt-2">
                         <Button
                             variant="secondary"
-                            onClick={() => setState(prev => ({ ...prev, isDialogOpen: false }))}
+                            onClick={handleDialogClose}
                             className="bg-[#3c3c3c] hover:bg-[#3c3c3c]/90 text-white border-0"
                             disabled={state.isLoading}
                         >
