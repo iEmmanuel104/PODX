@@ -1,5 +1,6 @@
+// UserProfile.tsx
 import { useState, useMemo, useCallback, memo, useEffect } from 'react';
-import { Edit3, ArrowUpRight } from 'lucide-react';
+import { Edit3, ArrowUpRight, AlertCircle, CheckCircle2 } from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -7,9 +8,17 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { useAppDispatch } from '@/store/hooks';
 import { updateUser } from '@/store/slices/userSlice';
-import { UsernameModal } from './username-modal';
 import { getBasename, getBasenameAvatar } from '@/app/apis/basenames';
 import Link from 'next/link';
 import { useUpdateUsernameMutation } from '@/store/api/userApi';
@@ -23,109 +32,108 @@ interface UserProfileProps {
     };
 }
 
+interface NotificationProps {
+    message: string;
+    type: 'error' | 'success';
+}
+
+const Notification = memo(({ message, type }: NotificationProps) => (
+    <div
+        className={`flex items-center gap-2 text-sm ${type === 'error' ? 'text-red-500' : 'text-green-500'}`}
+    >
+        {type === 'error' ? (
+            <AlertCircle className="h-4 w-4" />
+        ) : (
+            <CheckCircle2 className="h-4 w-4" />
+        )}
+        <span>{message}</span>
+    </div>
+));
+
+Notification.displayName = 'Notification';
+
 const formatAddress = (addr: string): string =>
     addr ? (addr.length < 10 ? addr : `${addr.slice(0, 6)}...${addr.slice(-4)}`) : '';
 
 const UserProfile = memo<UserProfileProps>(({ user }) => {
     const dispatch = useAppDispatch();
-    const [modalState, setModalState] = useState({
-        isOpen: false,
-        isLoading: false,
-    });
-    const [userBaseName, setUserBaseName] = useState<{
-        basename: string | null;
-        avatar: string | null;
-    }>({
-        avatar: null,
-        basename: null,
-    });
     const [updateUsername] = useUpdateUsernameMutation();
+
+    const [state, setState] = useState({
+        isDialogOpen: false,
+        isLoading: false,
+        username: user?.username || '',
+        notification: null as NotificationProps | null,
+        basename: null as string | null,
+        avatar: null as string | null,
+    });
 
     const fetchBasenameData = useCallback(async (address: `0x${string}`) => {
         try {
             const basename = await getBasename(address);
             if (basename) {
                 const avatar = await getBasenameAvatar(basename);
-                return { basename, avatar };
+                setState(prev => ({ ...prev, basename, avatar }));
             }
-            return { basename: null, avatar: null };
         } catch (error) {
             console.error('Error fetching basename:', error);
-            return { basename: null, avatar: null };
         }
     }, []);
 
-    const handleEditClick = useCallback(() => {
-        setModalState(prev => ({ ...prev, isOpen: true }));
-    }, []);
+    const handleUsernameChange = useCallback(async () => {
+        if (!state.username.trim() || state.username === user?.username) {
+            setState(prev => ({ ...prev, isDialogOpen: false }));
+            return;
+        }
 
-    const handleUsernameChange = useCallback(
-        async (newUsername: string) => {
-            if (!newUsername.trim() || newUsername === user?.username) {
-                setModalState(prev => ({ ...prev, isOpen: false }));
-                return;
+        try {
+            if (!user.id) throw new Error('User ID is required');
+
+            setState(prev => ({ ...prev, isLoading: true }));
+            const result = await updateUsername({
+                userId: user.id,
+                username: state.username.trim(),
+            }).unwrap();
+
+            if (result.status === 'success') {
+                dispatch(updateUser({ username: state.username.trim() }));
+                setState(prev => ({
+                    ...prev,
+                    notification: { type: 'success', message: 'Username updated successfully' },
+                }));
+                setTimeout(() => {
+                    setState(prev => ({ ...prev, isDialogOpen: false, notification: null }));
+                }, 1500);
+            } else {
+                throw new Error(result.message || 'Failed to update username');
             }
+        } catch (error) {
+            setState(prev => ({
+                ...prev,
+                notification: {
+                    type: 'error',
+                    message: error instanceof Error ? error.message : 'Failed to update username',
+                },
+            }));
+        } finally {
+            setState(prev => ({ ...prev, isLoading: false }));
+        }
+    }, [state.username, user?.id, user?.username, dispatch, updateUsername]);
 
-            try {
-                if (!user.id) {
-                    throw new Error('User ID is required');
-                }
-
-                setModalState(prev => ({ ...prev, isLoading: true }));
-                const result = await updateUsername({
-                    userId: user.id,
-                    username: newUsername.trim(),
-                }).unwrap();
-
-                if (result.status === 'success') {
-                    dispatch(updateUser({ username: newUsername.trim() }));
-                    setModalState(prev => ({ ...prev, isOpen: false }));
-                } else {
-                    throw new Error(result.message || 'Failed to update username');
-                }
-            } catch (error) {
-                throw error;
-            } finally {
-                setModalState(prev => ({ ...prev, isLoading: false }));
-            }
-        },
-        [user?.id, user?.username, dispatch, updateUsername]
-    );
-
-    const handleCancelEdit = useCallback(() => {
-        setModalState(prev => ({ ...prev, isOpen: false }));
-    }, []);
-
-    // Memoize user info to prevent unnecessary recalculations
     const userInfo = useMemo(
         () => ({
-            displayName:
-                userBaseName.basename || user?.username || formatAddress(user?.walletAddress),
-            initials: (userBaseName.basename || user?.username || user?.walletAddress || '')
+            displayName: state.basename || user?.username || formatAddress(user?.walletAddress),
+            initials: (state.basename || user?.username || user?.walletAddress || '')
                 .slice(0, 2)
                 .toUpperCase(),
         }),
-        [user?.username, user?.walletAddress, userBaseName]
+        [state.basename, user?.username, user?.walletAddress]
     );
 
-    // Use a separate effect for basename fetching
     useEffect(() => {
-        let mounted = true;
-
-        async function loadBasenameData() {
-            if (user?.walletAddress) {
-                const data = await fetchBasenameData(user.walletAddress as `0x${string}`);
-                if (mounted) {
-                    setUserBaseName(data);
-                }
-            }
+        if (user?.walletAddress) {
+            fetchBasenameData(user.walletAddress as `0x${string}`);
         }
-
-        loadBasenameData();
-
-        return () => {
-            mounted = false;
-        };
     }, [user?.walletAddress, fetchBasenameData]);
 
     return (
@@ -134,18 +142,18 @@ const UserProfile = memo<UserProfileProps>(({ user }) => {
                 <DropdownMenuTrigger asChild>
                     <button
                         className="group flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900 px-3 py-1.5 transition-colors hover:bg-zinc-800"
-                        disabled={modalState.isLoading}
+                        disabled={state.isLoading}
                     >
                         <Avatar className="h-6 w-6">
-                            {userBaseName.avatar ? (
-                                <AvatarImage src={userBaseName.avatar} alt={userInfo.displayName} />
+                            {state.avatar ? (
+                                <AvatarImage src={state.avatar} alt={userInfo.displayName} />
                             ) : (
                                 <AvatarFallback>{userInfo.initials}</AvatarFallback>
                             )}
                         </Avatar>
                         <div className="h-1 w-1 rounded-full bg-green-500" />
                         <span className="text-sm text-zinc-100">
-                            {modalState.isLoading ? 'Updating...' : userInfo.displayName}
+                            {state.isLoading ? 'Updating...' : userInfo.displayName}
                         </span>
                     </button>
                 </DropdownMenuTrigger>
@@ -153,11 +161,11 @@ const UserProfile = memo<UserProfileProps>(({ user }) => {
                     align="end"
                     className="min-w-[144px] bg-zinc-900 p-2 border-none"
                 >
-                    {!userBaseName.basename && (
+                    {!state.basename && (
                         <DropdownMenuItem
                             className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-zinc-100"
-                            onClick={handleEditClick}
-                            disabled={modalState.isLoading}
+                            onClick={() => setState(prev => ({ ...prev, isDialogOpen: true }))}
+                            disabled={state.isLoading}
                         >
                             <Edit3 className="h-4 w-4" />
                             <span>Edit name</span>
@@ -171,22 +179,72 @@ const UserProfile = memo<UserProfileProps>(({ user }) => {
                             className="flex cursor-pointer items-center justify-between rounded-md px-3 py-2"
                         >
                             <span className="bg-gradient-to-br from-[#552FC9] to-[#D7B35D] bg-clip-text text-transparent">
-                                {userBaseName.basename ? 'Manage basename' : 'Buy basename'}
+                                {state.basename ? 'Manage basename' : 'Buy basename'}
                             </span>
                             <ArrowUpRight className="h-4 w-4 text-zinc-400" />
                         </Link>
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
-            {!userBaseName.basename && (
-                <UsernameModal
-                    initialUsername={user?.username || ''}
-                    onSave={handleUsernameChange}
-                    onCancel={handleCancelEdit}
-                    isOpen={modalState.isOpen}
-                    isLoading={modalState.isLoading}
-                />
-            )}
+
+            <Dialog
+                open={state.isDialogOpen}
+                onOpenChange={open => setState(prev => ({ ...prev, isDialogOpen: open }))}
+            >
+                <DialogContent className="sm:max-w-md bg-[#1d1d1d] border-0 rounded-lg">
+                    <DialogHeader>
+                        <DialogTitle className="text-[20px] text-white">
+                            Set your username
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-6">
+                        <p className="text-[#7b7b7b] text-[14px]">Pick a unique username</p>
+                        <div className="space-y-2">
+                            <div className="relative">
+                                <Input
+                                    value={state.username}
+                                    onChange={e =>
+                                        setState(prev => ({ ...prev, username: e.target.value }))
+                                    }
+                                    className="bg-[#292929] border-0 text-white px-4 py-2.5 rounded-[10px]"
+                                    placeholder="Enter username"
+                                    disabled={state.isLoading}
+                                />
+                            </div>
+                            <div className="text-right">
+                                <button
+                                    className="text-[#d5b255] hover:text-[#d5b255]/80 text-sm underline"
+                                    disabled={state.isLoading}
+                                >
+                                    Ask AI to suggest
+                                </button>
+                            </div>
+                        </div>
+                        {state.notification && <Notification {...state.notification} />}
+                    </div>
+                    <DialogFooter className="gap-2 sm:gap-2 mt-2">
+                        <Button
+                            variant="secondary"
+                            onClick={() => setState(prev => ({ ...prev, isDialogOpen: false }))}
+                            className="bg-[#3c3c3c] hover:bg-[#3c3c3c]/90 text-white border-0"
+                            disabled={state.isLoading}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleUsernameChange}
+                            className="bg-[#6032f6] hover:bg-[#6032f6]/90 text-white"
+                            disabled={
+                                state.isLoading ||
+                                !state.username.trim() ||
+                                state.username === user?.username
+                            }
+                        >
+                            {state.isLoading ? 'Saving...' : 'Save'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </>
     );
 });
