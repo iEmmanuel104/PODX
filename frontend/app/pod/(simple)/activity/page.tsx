@@ -46,7 +46,7 @@ export default function Page() {
             <div className="w-full flex flex-col items-center gap-4 p-4 sm:p-6 bg-[#1E1E1E] rounded-xl">
                 <div className="flex items-center gap-2">
                     <span className="text-3xl sm:text-5xl font-bold bg-gradient-to-r from-[#552FC9] to-[#D7B35D] bg-clip-text text-transparent transition-all duration-200">
-                        {isBalanceHidden ? '******' : '0 USDC'}
+                        {isBalanceHidden ? '****' : '0 USDC'}
                     </span>
                     <Button
                         variant="ghost"
