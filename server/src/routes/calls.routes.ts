@@ -8,22 +8,20 @@ const router: Router = express.Router();
 router
     .post('/schedule', basicAuth(), AuthenticatedController(CallsController.scheduleCall))
     .get('/scheduled', basicAuth(), AuthenticatedController(CallsController.getUserScheduledCalls))
-    .get('/:sessionId', basicAuth(), AuthenticatedController(CallsController.getCall));
+    .get('/info/:sessionId', basicAuth(), AuthenticatedController(CallsController.getCall))
 
 // Stream call management routes
-router
+
     .post('/create', basicAuth(), AuthenticatedController(CallsController.createCall))
     .post('/get-or-create', basicAuth(), AuthenticatedController(CallsController.getOrCreateCall))
     .patch('/settings', basicAuth(), AuthenticatedController(CallsController.updateCallSettings))
     .patch('/members', basicAuth(), AuthenticatedController(CallsController.updateCallMembers))
-    .post('/end', basicAuth(), AuthenticatedController(CallsController.endCall));
+    .post('/end', basicAuth(), AuthenticatedController(CallsController.endCall))
 
 // Call information routes
-router
-    .get('/stats', AuthenticatedController(CallsController.getCallStats))
-    .get('/detailed-stats', AuthenticatedController(CallsController.getDetailedCallStats))
-    .get('/user-calls', AuthenticatedController(CallsController.getUserCalls))
-    .get('/:callId', AuthenticatedController(CallsController.getCallDetails))
-    .get('/leaderboard', AuthenticatedController(CallsController.getLeaderboard));
+
+    .get('/stats', CallsController.getCallStats)
+    .get('/detailed-stats', CallsController.getDetailedCallStats)
+    .post('/members', CallsController.queryCallMembers);
 
 export default router;

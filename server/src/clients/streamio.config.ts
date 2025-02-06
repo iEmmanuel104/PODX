@@ -579,7 +579,6 @@ export default class StreamIOConfig {
                 filter_conditions: { id: callId },
             });
 
-            console.log('Call details from stream io:', calls);
             return { call: calls[0].call };
         } catch (error) {
             console.error('Error fetching call details:', error);

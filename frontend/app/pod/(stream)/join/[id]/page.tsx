@@ -18,6 +18,7 @@ import { useContext } from 'react';
 import { AppContext } from '@/providers/appProvider';
 import { setSessionInfo } from '@/store/slices/podSlice';
 import { useScheduledCalls } from '@/hooks/useScheduledCalls';
+import { sessionType } from '@/constants';
 
 // Types
 interface JoinSessionProps {
@@ -275,37 +276,21 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
         };
     }, [newMeeting, setNewMeeting]);
 
-    // Handlers
-    // const updateGuestName = useCallback(async () => {
-    //     if (isLoggedIn && user) {
-    //         try {
-    //             await chatClient.disconnectUser();
-    //             await chatClient.connectUser({ id: user.id, name: user.username }, () =>
-    //                 tokenProvider(user.walletAddress)
-    //             );
-    //         } catch (error) {
-    //             console.error(error);
-    //         }
-    //     }
-    // }, [isLoggedIn, user, chatClient, tokenProvider]);
-
+    // Join session handler
     const handleJoinSession = useCallback(async () => {
         if (!code) return;
 
         setState(prev => ({ ...prev, joining: true }));
 
         try {
-            // if (isLoggedIn && user) {
-            //     await updateGuestName();
-            // }
-
             if (callingState !== CallingState.JOINED) {
                 await call?.join({
                     data: {
-                        members: [{ user_id: user?.id!, role: 'guest' }],
+                        members: [{ user_id: user?.id! }],
                     },
                     ...(sessionType === 'Audio Session' && { video: false }),
                 });
+                await call?.updateCallMembers({ update_members: [{ user_id: user?.id! }] });
             }
 
             router.push(`/pod/${code}`);
@@ -314,7 +299,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
             toast.error('Failed to join session, please check your connection and try again');
             setState(prev => ({ ...prev, joining: false }));
         }
-    }, [code, isLoggedIn, user, call, callingState, router, sessionType]);
+    }, [code, user, call, callingState, router, sessionType]);
 
     // Memoized UI elements
     const participantsUI = useMemo(() => {
@@ -327,26 +312,6 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
         );
     }, [state.joining, participants]);
 
-    // Render conditions
-    if (state.showScheduledDialog && state.scheduledMeetData) {
-        return (
-            <div className="min-h-screen bg-[#121212] text-white flex items-center justify-center">
-                <Suspense fallback={<SimpleLoader />}>
-                    <ScheduledMeetDialog
-                        isOpen={true}
-                        onClose={() => router.push('/pod')}
-                        sessionTitle={state.scheduledMeetData.title}
-                        startTime={state.scheduledMeetData.startTime}
-                        creator={state.scheduledMeetData.creator}
-                        type={state.scheduledMeetData.type}
-                        sessionId={state.scheduledMeetData.sessionId}
-                        createdAt={state.scheduledMeetData.createdAt}
-                    />
-                </Suspense>
-            </div>
-        );
-    }
-
     if (state.loading) {
         return (
             <Suspense fallback={<SimpleLoader />}>
@@ -356,7 +321,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
     }
 
     return (
-        <div className="min-h-screen bg-[#121212] text-white">
+        <div className="min-h-screen bg-[#151515] text-white">
             <div className="container mx-auto px-4 py-6 sm:py-8 md:py-12 flex flex-col min-h-screen">
                 <div className="flex-grow flex flex-col items-center justify-center">
                     <Suspense fallback={<SimpleLoader />}>

@@ -16,5 +16,6 @@ module.exports = {
         'no-unused-vars': 'warn',
         'no-undef': 'error',
         'no-empty-function': 'error',
+        'no-unescaped-entities': 'off',
     },
 };

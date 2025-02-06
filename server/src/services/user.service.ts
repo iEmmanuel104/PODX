@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Types } from 'mongoose';
 import { User, IUser } from '../models/Mongodb/user.model';
 import { UserSettings, IUserSettings } from '../models/Mongodb/userSettings.model';
 import { NotFoundError, BadRequestError } from '../utils/customErrors';
 import Pagination, { IPaging } from '../utils/pagination';
-import { UserStreak } from '../models/Mongodb/userStreak.model';
+import { ICallActivity, IStreakStats, UserStreak } from '../models/Mongodb/userStreak.model';
 
 export interface IViewUsersQuery {
     page?: number;
@@ -17,6 +18,24 @@ export interface IDynamicQueryOptions {
     query: Record<string, string>;
     includes?: 'profile' | 'all';
     attributes?: string[];
+}
+
+export interface ITransformedUserResponse {
+    id: string;
+    username: string;
+    walletAddress: string;
+    displayImage?: string;
+    settings?: IUserSettings;
+    streak: {
+        currentStreak: number;
+        longestStreak: number;
+        totalPoints: number;
+        stats?: IStreakStats;
+        recentActivities?: ICallActivity[];
+        streakHistory?: Array<{ date: Date; streak: number }>;
+    } | null;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export default class UserService {
@@ -66,59 +85,138 @@ export default class UserService {
         return user;
     }
 
-    static async viewUsers(queryData?: IViewUsersQuery): Promise<{ users: IUser[], count: number, totalPages?: number }> {
+    static async viewUsers(queryData?: IViewUsersQuery): Promise<{
+        users: ITransformedUserResponse[],
+        count: number,
+        totalPages?: number
+    }> {
         const { page, size, q: query, isBlocked, isDeactivated } = queryData || {};
 
-        const filter: Record<string, string | unknown> = {};
-        const settingsFilter: Record<string, boolean> = {};
+        const filter: Record<string, any> = {};
 
         if (query) {
             filter.$or = [
                 { username: { $regex: query, $options: 'i' } },
+                { walletAddress: { $regex: query, $options: 'i' } },
             ];
         }
 
-        if (isBlocked !== undefined) {
-            settingsFilter.isBlocked = isBlocked;
+        if (isBlocked !== undefined || isDeactivated !== undefined) {
+            const settingsQuery = await UserSettings.find({
+                ...(isBlocked !== undefined && { isBlocked }),
+                ...(isDeactivated !== undefined && { isDeactivated }),
+            }).select('userId');
+
+            filter._id = { $in: settingsQuery.map(s => s.userId) };
         }
 
-        if (isDeactivated !== undefined) {
-            settingsFilter.isDeactivated = isDeactivated;
-        }
-
-        let userQuery = User.find(filter).populate({
-            path: 'settings',
-            match: settingsFilter,
-            select: 'joinDate isBlocked isDeactivated lastLogin meta',
-        });
+        let userQuery = User.find(filter)
+            .populate('settings')
+            .populate({
+                path: 'streak',
+                select: 'currentStreak longestStreak totalPoints stats weeklyActivity',
+            });
 
         if (page && size && page > 0 && size > 0) {
             const { limit, offset } = Pagination.getPagination({ page, size } as IPaging);
             userQuery = userQuery.skip(offset ?? 0).limit(limit ?? 0);
         }
 
-        const users = await userQuery.exec();
-        const count = await User.countDocuments(filter);
+        const [users, count] = await Promise.all([
+            userQuery.lean().exec(),
+            User.countDocuments(filter),
+        ]);
 
-        if (page && size && users.length > 0) {
+        const transformedUsers: ITransformedUserResponse[] = users.map(user => ({
+            id: user._id.toString(),
+            username: user.username,
+            walletAddress: user.walletAddress,
+            displayImage: user.displayImage,
+            settings: user.settings,
+            streak: user.streak ? {
+                currentStreak: user.streak.currentStreak,
+                longestStreak: user.streak.longestStreak,
+                totalPoints: user.streak.totalPoints,
+                stats: user.streak.stats,
+            } : null,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt,
+        }));
+
+        if (page && size) {
             const totalPages = Pagination.estimateTotalPage({ count, limit: size } as IPaging);
-            return { users, count, ...totalPages };
-        } else {
-            return { users, count };
+            return { users: transformedUsers, count, ...totalPages };
         }
+
+        return { users: transformedUsers, count };
     }
 
-    static async viewSingleUser(id: string): Promise<IUser> {
-        const user = await User.findById(id).populate<{ settings: IUserSettings }>('settings');
+    static async viewSingleUser(id: string): Promise<ITransformedUserResponse> {
+        const user = await User.findById(id)
+            .populate('settings')
+            .populate({
+                path: 'streak',
+                select: 'currentStreak longestStreak totalPoints stats streakHistory callActivities',
+            })
+            .lean()
+            .exec();
 
         if (!user) {
-            throw new NotFoundError('Oops User not found');
+            throw new NotFoundError('User not found');
         }
 
-        return user;
+        return {
+            id: user._id.toString(),
+            username: user.username,
+            walletAddress: user.walletAddress,
+            displayImage: user.displayImage,
+            settings: user.settings,
+            streak: user.streak ? {
+                currentStreak: user.streak.currentStreak,
+                longestStreak: user.streak.longestStreak,
+                totalPoints: user.streak.totalPoints,
+                stats: user.streak.stats,
+                recentActivities: user.streak.callActivities?.slice(-5),
+                streakHistory: user.streak.streakHistory?.slice(-30),
+            } : null,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt,
+        };
     }
 
-    static async viewSingleUserByWalletAddress(walletAddress: string): Promise<IUser | null> {
+    static async viewSingleUserByWalletAddress(walletAddress: string): Promise<ITransformedUserResponse | null> {
+        const user = await User.findOne({ walletAddress })
+            // .populate('settings')
+            .populate({
+                path: 'streak',
+                select: 'currentStreak longestStreak totalPoints',
+                // select: 'currentStreak longestStreak totalPoints stats',
+            })
+            .lean()
+            .exec();
+
+        if (!user) {
+            return null;
+        }
+
+        return {
+            id: user._id.toString(),
+            username: user.username,
+            walletAddress: user.walletAddress,
+            displayImage: user.displayImage,
+            // settings: user.settings,
+            streak: user.streak ? {
+                currentStreak: user.streak.currentStreak,
+                longestStreak: user.streak.longestStreak,
+                totalPoints: user.streak.totalPoints,
+                // stats: user.streak.stats,
+            } : null,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt,
+        };
+    }
+
+    static async viewSingleUserByWalletAddressWithoutStreak(walletAddress: string): Promise<IUser | null> {
         return User.findOne({ walletAddress });
     }
 
@@ -184,7 +282,6 @@ export default class UserService {
         await UserSettings.deleteOne({ userId: new Types.ObjectId(userId) });
     }
 
-
     static async getUserStreakStats(userId: string): Promise<{
         currentStreak: number;
         longestStreak: number;
@@ -199,7 +296,7 @@ export default class UserService {
             streak: number;
         }>;
     }> {
-        const userStreak = await UserStreak.findOne({ userId });
+        const userStreak = await UserStreak.findOne({ userId: new Types.ObjectId(userId) });
         if (!userStreak) {
             return {
                 currentStreak: 0,

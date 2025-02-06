@@ -32,15 +32,20 @@ export default class UserController {
         }
 
         const users = await UserService.viewUsers(queryParams);
+
         res.status(200).json({
             status: 'success',
             message: 'Users retrieved successfully',
-            data: { ...users },
+            data: users,
         });
     }
 
     static async getUser(req: AuthenticatedRequest, res: Response) {
         const { id } = req.query;
+
+        if (!id) {
+            throw new BadRequestError('User ID is required');
+        }
 
         const user = await UserService.viewSingleUser(id as string);
 
@@ -110,29 +115,29 @@ export default class UserController {
         });
     }
 
-    static async findOrCreateUser(req: Request, res: Response) {
+    static async validateUser(req: Request, res: Response) {
         const { walletAddress, hash } = req.body;
 
         if (!walletAddress) {
             throw new BadRequestError('Wallet address is required');
         }
 
-        let user = await UserService.viewSingleUserByWalletAddress(walletAddress);
+        let userData = await UserService.viewSingleUserByWalletAddress(walletAddress);
         let firstTimeUser = false;
-        if (!user) {
+
+        if (!userData) {
             // Create a new user
             const username = `guest-${walletAddress.slice(0, 8)}`;
-            user = await UserService.addUser({ walletAddress, username });
+            await UserService.addUser({ walletAddress, username });
+            // Fetch the complete user data after creation
+            userData = await UserService.viewSingleUserByWalletAddress(walletAddress);
+            if (!userData) {
+                throw new Error('Failed to retrieve user data after creation');
+            }
             firstTimeUser = true;
         }
 
-        const streamToken = await StreamIOConfig.generateToken(user.id);
-
-        // Convert Mongoose document to a plain JavaScript object
-        const userObject = user.toObject();
-
-        // Remove any fields you don't want to send to the client
-        delete userObject.__v;
+        const streamToken = await StreamIOConfig.generateToken(userData.id);
 
         let signature = undefined;
 
@@ -141,19 +146,19 @@ export default class UserController {
             signature = await AuthUtil.generateTokenWithHash({
                 type: 'access',
                 user: {
-                    id: user.id,
-                    walletAddress: user.walletAddress,
+                    id: userData.id,
+                    walletAddress: userData.walletAddress,
                 },
             });
         }
 
-        console.log('user data retrieved for: ', userObject.username);
+        console.log('user data retrieved for: ', userData.username);
 
         res.status(200).json({
             status: 'success',
-            message: userObject.username.startsWith('guest-') ? 'New user created' : 'Existing user found',
+            message: firstTimeUser ? 'New user created' : 'Existing user found',
             data: {
-                ...userObject,
+                ...userData,
                 streamToken,
                 signature,
                 firstTimeUser,
@@ -175,5 +180,19 @@ export default class UserController {
                 message: 'Error fetching user statistics',
             });
         }
+    }
+
+    static async getUserCalls(req: AuthenticatedRequest, res: Response) {
+        const { calls, error } = await StreamIOConfig.getCallsByUser(req.user.id);
+
+        if (error) {
+            throw new BadRequestError(error.message);
+        }
+
+        res.status(200).json({
+            status: 'success',
+            message: 'User calls retrieved successfully',
+            data: { calls },
+        });
     }
 }

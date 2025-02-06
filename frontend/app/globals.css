@@ -4,7 +4,7 @@
 
 body {
     @apply font-sans;
-    @apply bg-[#121212];
+    @apply bg-[#151515];
 }
 
 @layer utilities {
@@ -93,4 +93,37 @@ body {
     --str-video__overlay-color: rgba(39, 42, 48, 0.75);
     --str-video__livestream-overlay-color: rgba(39, 42, 48, 0.25);
     --str-video__livestream-overlay-color-hovered: rgba(37, 37, 37, 0.5);
+}
+
+
+/* Base animations */
+@keyframes fade-in {
+    from { 
+        opacity: 0; 
+    }
+    to { 
+        opacity: 1; 
+    }
+}
+
+@keyframes slide-up {
+    from { 
+        transform: translateY(20px); 
+        opacity: 0; 
+    }
+    to { 
+        transform: translateY(0); 
+        opacity: 1; 
+    }
+}
+
+/* Utility animation classes */
+@layer utilities {
+    .animate-fade-in {
+        animation: fade-in 0.6s ease-out forwards;
+    }
+
+    .animate-slide-up {
+        animation: slide-up 0.8s ease-out forwards;
+    }
 }
