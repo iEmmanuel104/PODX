@@ -5,24 +5,22 @@ import { PrivyProvider as Provider } from '@privy-io/react-auth';
 import { SmartWalletsProvider } from '@privy-io/react-auth/smart-wallets';
 import { base, baseGoerli, mainnet, sepolia, polygon, polygonMumbai } from 'viem/chains';
 import { PRIVY_APP_ID, PRIVY_CLIENT_ID } from '@/constants';
-import { useAppDispatch } from '@/store/hooks';
-import { setUser, setSignature } from '@/store/slices/userSlice';
+import { useAppDispatch, useTypedSelector } from '@/store/config/store';
+import { setUser, setSignature } from '@/store/auth/slice';
+
 // import { initializeSocketConnection } from "@/lib/connections/socket";
 
 export default function PrivyProvider({ children }: { children: React.ReactNode }) {
+    const { user: storedUser, signature: storedSignature } = useTypedSelector(state => state.auth);
     const dispatch = useAppDispatch();
 
     useEffect(() => {
-        const storedUser = localStorage.getItem('user');
-        const storedSignature = localStorage.getItem('signature');
-
         if (storedUser && storedSignature) {
-            const parsedUser = JSON.parse(storedUser);
-            dispatch(setUser(parsedUser));
+            dispatch(setUser(storedUser));
             dispatch(setSignature(storedSignature));
             // initializeSocketConnection(storedSignature);
         }
-    }, [dispatch]);
+    }, [dispatch, storedSignature, storedUser]);
 
     return (
         <Provider

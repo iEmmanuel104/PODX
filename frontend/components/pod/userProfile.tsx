@@ -17,11 +17,11 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useAppDispatch } from '@/store/hooks';
-import { updateUser } from '@/store/slices/userSlice';
 import { getBasename, getBasenameAvatar } from '@/app/apis/basenames';
 import Link from 'next/link';
-import { useUpdateUsernameMutation } from '@/store/api/userApi';
+import { useAppDispatch } from '@/store/config/store';
+import { useUpdateUsernameMutation } from '@/store/user/slice';
+import { updateUser } from '@/store/auth/slice';
 
 interface UserProfileProps {
     user: {

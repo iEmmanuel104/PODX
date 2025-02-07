@@ -1,7 +1,6 @@
 import { sessionType, streamCallType } from '@/constants';
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-interface Participant {
+export interface Participant {
     userId: string;
     socketId: string;
     isAudioEnabled: boolean;
@@ -10,17 +9,17 @@ interface Participant {
     videoTrackId: string | null;
 }
 
-interface CoHostRequest {
+export interface CoHostRequest {
     userId: string;
     podId: string;
 }
 
-interface JoinRequest {
+export interface JoinRequest {
     userId: string;
     podId: string;
 }
 
-interface Error {
+export interface Error {
     type: string;
     message: string;
 }
@@ -57,5 +56,3 @@ export interface PodState {
     isScheduled?: boolean;
     isNewMeeting: boolean;
 }
-
-

@@ -2,8 +2,8 @@
 import { useCallback } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { useRouter } from 'next/navigation';
-import { useAppDispatch } from '@/store/hooks';
-import { logOut } from '@/store/slices/userSlice';
+import { useAppDispatch } from '@/store/config/store';
+import { logOut } from '@/store/auth/slice';
 
 export const useAuth = () => {
     const { login: privyLogin, logout: privyLogout, ready, authenticated } = usePrivy();

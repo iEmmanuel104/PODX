@@ -4,17 +4,17 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
-import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { customAlphabet } from 'nanoid';
 import { AppContext } from '@/providers/appProvider';
-import { clearSessionInfo, setSessionInfo } from '@/store/slices/podSlice';
 import { sessionType } from '@/constants';
-import { updateUser } from '@/store/slices/userSlice';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useScheduledCalls } from '@/hooks/useScheduledCalls';
 import { StreamCallData } from '@/components/pod/streamCallData';
 import { StreakDialog } from '@/components/pod/streaks';
+import { setSessionInfo, clearSessionInfo } from '@/store/pod/slice';
+import { updateUser } from '@/store/auth/slice';
+import { useAppDispatch, useTypedSelector } from '@/store/config/store';
+import { useScheduledCalls } from '@/hooks/useScheduledCalls';
 
 // Dynamic imports
 const CreateSessionModal = dynamic(() => import('@/components/pod/createSessionModal'), {
@@ -58,8 +58,8 @@ export default function PodPage() {
     const router = useRouter();
     const dispatch = useAppDispatch();
     const { setNewMeeting } = React.useContext(AppContext);
-    const { isLoggedIn, user } = useAppSelector(state => state.user);
-    const sessionInfo = useAppSelector(state => state.pod);
+    const { isLoggedIn, user } = useTypedSelector(state => state.auth);
+    const sessionInfo = useTypedSelector(state => state.pod);
     const { scheduledSessions, scheduleCall, getCall, isLoading } = useScheduledCalls();
 
     const [state, setState] = useState({

@@ -1,6 +1,5 @@
 // hooks/useScheduledCalls.ts
 import { useEffect } from 'react';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
     useScheduleCallMutation,
     useGetUserScheduledCallsQuery,
@@ -10,6 +9,7 @@ import { setScheduledSessions, clearScheduledSessions } from '@/store/slices/sch
 import type { StreamCallData } from '@/components/pod/streamCallData';
 import type { ApiResponse } from '@/store/api/api';
 import type { ScheduleCallArgs, GetCallResponse } from '@/store/api/scheduledCallsApi';
+import { useAppDispatch, useTypedSelector } from '@/store/config/store';
 
 interface UseScheduledCallsReturn {
     scheduledSessions: StreamCallData[];
@@ -20,7 +20,7 @@ interface UseScheduledCallsReturn {
 
 export const useScheduledCalls = (): UseScheduledCallsReturn => {
     const dispatch = useAppDispatch();
-    const scheduledSessions = useAppSelector(state => state.scheduledSessions.sessions);
+    const scheduledSessions = useTypedSelector(state => state.scheduleSession.sessions);
 
     // RTK Query hooks
     const [scheduleCallMutation, { isLoading: isScheduling }] = useScheduleCallMutation();
