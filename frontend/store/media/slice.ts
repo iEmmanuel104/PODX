@@ -1,10 +1,5 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-
-export interface MediaState {
-    isAudioEnabled: boolean;
-    isVideoEnabled: boolean;
-    isSoundDetected: boolean;
-}
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { MediaState } from "./types";
 
 const initialState: MediaState = {
     isAudioEnabled: true,

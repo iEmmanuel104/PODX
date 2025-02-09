@@ -1,7 +1,6 @@
 'use client';
 import React, { useState, useCallback, useEffect, useMemo, Suspense, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
     useCall,
     useCallStateHooks,
@@ -10,15 +9,13 @@ import {
     type ErrorFromResponse,
     type GetCallResponse,
 } from '@stream-io/video-react-sdk';
-// import { useChatContext } from 'stream-chat-react';
-// import { useStreamTokenProvider } from '@/hooks/useStreamTokenProvider';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
 import { useContext } from 'react';
 import { AppContext } from '@/providers/appProvider';
-import { setSessionInfo } from '@/store/slices/podSlice';
 import { useScheduledCalls } from '@/hooks/useScheduledCalls';
-import { sessionType } from '@/constants';
+import { setSessionInfo } from '@/store/pod/slice';
+import { useAppDispatch, useTypedSelector } from '@/store/config/store';
 
 // Types
 interface JoinSessionProps {
@@ -123,7 +120,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
     const router = useRouter();
     const code = params.id;
     const dispatch = useAppDispatch();
-    const { getCall } = useScheduledCalls();
+    const { retrieveCall } = useScheduledCalls();
     const hasCheckedSchedule = useRef(false);
 
     // State
@@ -137,10 +134,10 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
     const [participants, setParticipants] = useState<CallParticipantResponse[]>([]);
 
     // Selectors and Context
-    const { sessionTitle, sessionType, isScheduled, starts_at } = useAppSelector(
+    const { sessionTitle, sessionType, isScheduled, starts_at } = useTypedSelector(
         state => state.pod
     );
-    const { isLoggedIn, user } = useAppSelector(state => state.user);
+    const { isLoggedIn, user } = useTypedSelector(state => state.auth);
     const { newMeeting, setNewMeeting } = useContext(AppContext);
     // const { client: chatClient } = useChatContext();
 
@@ -220,7 +217,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
         if (!code || !user || hasCheckedSchedule.current) return;
         hasCheckedSchedule.current = true;
 
-        const response = await getCall(code);
+        const response = await retrieveCall(code);
         if (
             response.status === 'success' &&
             response.data?.call &&
@@ -253,7 +250,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
             // No scheduled call found, proceed with normal call initialization
             await initializeCall();
         }
-    }, [code, user, getCall, router, initializeCall]);
+    }, [code, user, retrieveCall, router, initializeCall]);
 
     // Effects
     useEffect(() => {

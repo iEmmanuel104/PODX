@@ -1,4 +1,3 @@
-import { convertKeysCase } from "@/helpers/caseConverter";
 import { api } from "../config/base";
 import { USER_ENDPOINTS } from "./endpoint";
 import type { UpdateUsernameArgs, UpdateUsernameResponse, UserInfo, ValidateUserArgs, ValidateUserResponse } from "./types";
@@ -7,8 +6,8 @@ import { createTag } from "../config/tags";
 export const userSlice = api.injectEndpoints({
     endpoints: (builder) => ({
         validateUser: builder.mutation<ValidateUserResponse, ValidateUserArgs>({
-            query: (payload) => ({
-                body: payload,
+            query: ({walletAddress, hash}) => ({
+                body: {walletAddress, ...(hash ? { hash: 'true' } : {}) },
                 method: 'POST',
                 url: USER_ENDPOINTS.validateUser()
             }),

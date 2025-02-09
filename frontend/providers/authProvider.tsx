@@ -37,6 +37,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
             );
 
             if (result.data?.signature) {
+                console.log('Setting signature:', result.data);
+                
                 dispatch(setSignature(result.data.signature));
             }
 

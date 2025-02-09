@@ -5,7 +5,6 @@ import type { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import UserDetails from '@/components/user/userDetails';
 import Footer from '@/components/common/Footer';
-import { LoadingOverlay } from '@/components/ui/loading';
 import { useTypedSelector } from '@/store/config/store';
 
 function SimpleLayout({ children }: { children: ReactNode }) {
@@ -30,26 +29,11 @@ function SimpleLayout({ children }: { children: ReactNode }) {
             // Fade out before redirect
             setVisible(false);
             router.replace('/');
-            // const timer = setTimeout(() => {
-            // }, 150); // Match transition duration
-            // return () => clearTimeout(timer);
         }
     }, [isLoggedIn, router, mounted]);
 
     // Return null on server-side to prevent hydration issues
     if (!mounted) return null;
-
-    // Return null if not authenticated
-    // if (!isLoggedIn || !user) {
-    //     return (
-    //         <div
-    //             className="fixed inset-0 bg-[#151515] flex items-center justify-center transition-opacity duration-150"
-    //             style={{ opacity: visible ? 1 : 0 }}
-    //         >
-    //             <LoadingOverlay text="Loading..." />
-    //         </div>
-    //     );
-    // }
 
     return (
         <div

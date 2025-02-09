@@ -8,6 +8,9 @@ import { api } from "./base";
 import authReducer from "@/store/auth/slice";
 import podReducer from "@/store/pod/slice";
 import scheduleSessionReducer from "@/store/scheduleSession/slice";
+import callStatsReducer from "@/store/callStats/slice";
+import mediaReducer from "@/store/media/slice";
+import toastReducer from "@/store/toast/slice";
 
 const persistConfig = {
     key: 'root',
@@ -20,6 +23,9 @@ const rootReducer = combineReducers({
     auth: authReducer,
     pod: podReducer,
     scheduleSession: scheduleSessionReducer,
+    callStats: callStatsReducer,
+    media: mediaReducer,
+    toast: toastReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer)

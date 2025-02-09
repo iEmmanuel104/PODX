@@ -60,7 +60,7 @@ export default function PodPage() {
     const { setNewMeeting } = React.useContext(AppContext);
     const { isLoggedIn, user } = useTypedSelector(state => state.auth);
     const sessionInfo = useTypedSelector(state => state.pod);
-    const { scheduledSessions, scheduleCall, getCall, isLoading } = useScheduledCalls();
+    const { scheduledSessions, scheduleCall, retrieveCall, isLoading } = useScheduledCalls();
 
     const [state, setState] = useState({
         meetingCode: '',
@@ -167,7 +167,7 @@ export default function PodPage() {
         dispatch(clearSessionInfo());
 
         try {
-            const { data } = await getCall(state.meetingCode);
+            const { data } = await retrieveCall(state.meetingCode);
 
             if (data?.call) {
                 if (data.source === 'stream') {
@@ -191,7 +191,7 @@ export default function PodPage() {
         } finally {
             setState(prev => ({ ...prev, isJoining: false }));
         }
-    }, [state.meetingCode, user, dispatch, getCall, handleStreamCall]);
+    }, [state.meetingCode, user, dispatch, retrieveCall, handleStreamCall]);
 
     const handleJoinCreatedSession = useCallback(async () => {
         setState(prev => ({ ...prev, isJoiningCreated: true }));

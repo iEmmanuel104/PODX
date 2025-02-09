@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
     Bar,
     BarChart,
@@ -21,13 +21,12 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
 import { Download, Link, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import Logo from '@/components/ui/logo';
-import { useGetDetailedCallStatsQuery } from '@/store/api/callAnalyticsApi';
 import { format } from 'date-fns';
 import { exportMetricsToCSV } from '@/utils/exportMetrics';
+import { useListDetailedCallStatsQuery } from '@/store/callStats/callAnalyticsApi';
 
 // Pagination controls component
 const PaginationControls = ({
@@ -65,9 +64,9 @@ export default function AnalyticsDashboard() {
         data: statsData,
         isLoading,
         error,
-    } = useGetDetailedCallStatsQuery({
+    } = useListDetailedCallStatsQuery({
         size: pageSize,
-        next: nextToken,
+        next: nextToken ?? '',
     });
 
     // Handle pagination

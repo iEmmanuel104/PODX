@@ -1,21 +1,15 @@
-// hooks/useScheduledCalls.ts
 import { useEffect } from 'react';
-import {
-    useScheduleCallMutation,
-    useGetUserScheduledCallsQuery,
-    scheduledCallsApiSlice,
-} from '@/store/api/scheduledCallsApi';
-import { setScheduledSessions, clearScheduledSessions } from '@/store/slices/scheduledSessionSlice';
 import type { StreamCallData } from '@/components/pod/streamCallData';
-import type { ApiResponse } from '@/store/api/api';
-import type { ScheduleCallArgs, GetCallResponse } from '@/store/api/scheduledCallsApi';
 import { useAppDispatch, useTypedSelector } from '@/store/config/store';
+import { GetCallResponse, scheduledCallsApiSlice, useListUserScheduledCallsQuery, useScheduleCallMutation } from '@/store/callStats/scheduledCallsApiSlice';
+import { ApiResponse, ScheduleCallArgs } from '@/store/callStats/types';
+import { clearScheduledSessions, setScheduledSessions } from '@/store/scheduleSession/slice';
 
 interface UseScheduledCallsReturn {
     scheduledSessions: StreamCallData[];
     scheduleCall: (args: ScheduleCallArgs) => Promise<{ data: ApiResponse<StreamCallData> }>;
     isLoading: boolean;
-    getCall: (sessionId: string) => Promise<ApiResponse<GetCallResponse | null>>;
+    retrieveCall: (sessionId: string) => Promise<ApiResponse<GetCallResponse | null>>;
 }
 
 export const useScheduledCalls = (): UseScheduledCallsReturn => {
@@ -24,7 +18,7 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
 
     // RTK Query hooks
     const [scheduleCallMutation, { isLoading: isScheduling }] = useScheduleCallMutation();
-    const { data: userScheduledCalls, isLoading: isLoadingCalls } = useGetUserScheduledCallsQuery();
+    const { data: userScheduledCalls, isLoading: isLoadingCalls } = useListUserScheduledCallsQuery();
 
     // Update local state when user scheduled calls change
     useEffect(() => {
@@ -41,12 +35,12 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
     }, [dispatch]);
 
     // Get a call using RTK Query (checks both stream and scheduled calls)
-    const getCall = async (
+    const retrieveCall = async (
         sessionId: string
     ): Promise<ApiResponse<GetCallResponse | null>> => {
         try {
             const result = await dispatch(
-                scheduledCallsApiSlice.endpoints.getCall.initiate(sessionId)
+                scheduledCallsApiSlice.endpoints.retrieveCall.initiate(sessionId)
             );
 
             if ('error' in result) {
@@ -70,6 +64,6 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
             return { data: result.data as ApiResponse<StreamCallData> };
         },
         isLoading: isLoadingCalls || isScheduling,
-        getCall,
+        retrieveCall,
     };
 };
