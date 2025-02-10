@@ -3,13 +3,13 @@
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { LogOut } from "lucide-react"
-import { useAppSelector } from "@/store/hooks"
+import { useTypedSelector } from "@/store/config/store"
 import { useMemo } from "react"
 import Logo from "@/components/ui/logo"
 
 export default function NetworkError() {
     const router = useRouter()
-    const { isLoggedIn, user } = useAppSelector((state) => state.user)
+    const { isLoggedIn, user } = useTypedSelector(state => state.auth);
     const userInfo = useMemo(
         () => ({
             displayName: user?.username || `${user?.walletAddress.slice(0, 6)}...${user?.walletAddress.slice(-4)}`,
