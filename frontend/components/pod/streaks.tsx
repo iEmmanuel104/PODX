@@ -12,7 +12,7 @@ import {
 import Fire from '@/public/icons/Fire';
 import Farcaster from '@/public/icons/socials/Farcaster';
 import X from '@/public/icons/socials/X';
-import { UserInfo } from '@/store/api/userApi';
+import { UserInfo } from '@/store/user/types';
 
 interface StreakDialogProps {
     user?: UserInfo;

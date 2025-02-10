@@ -1,4 +1,4 @@
-import { UserInfo } from '@/store/api/userApi';
+import { UserInfo } from '@/store/user/types';
 import React from 'react';
 
 
