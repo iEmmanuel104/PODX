@@ -138,9 +138,9 @@ export function StreakDialog({ user, onToggleCreateSession }: StreakDialogProps)
                                 animate={
                                     streakInfo.status === 'active' || streakInfo.status === 'peak'
                                         ? {
-                                              rotate: [0, 20, 0],
-                                              scale: [1, 1.2, 1],
-                                          }
+                                            rotate: [0, 20, 0],
+                                            scale: [1, 1.2, 1],
+                                        }
                                         : {}
                                 }
                                 transition={{ duration: 2, repeat: Infinity }}
@@ -158,116 +158,127 @@ export function StreakDialog({ user, onToggleCreateSession }: StreakDialogProps)
 
             <AnimatePresence>
                 {isOpen && (
-                    <DialogContent className="fixed left-[50%] top-[50%] w-[90vw] max-w-[425px] translate-x-[-50%] translate-y-[-50%] bg-[#1E1E1E] text-white border border-[#2E2E2E] p-0 rounded-[10px] sm:mx-auto">
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 20 }}
-                            className="p-5 sm:p-6 flex flex-col items-center gap-4"
+                    <DialogContent className="fixed left-[50%] top-[50%] w-[90vw] max-w-[425px] translate-x-[-50%] translate-y-[-50%] bg-[#1E1E1E] text-white p-0 sm:mx-auto sm:rounded-[20px] overflow-hidden">
+                        {/* Gradient border wrapper */}
+                        <div
+                            className="p-[1px] rounded-[20px]"
+                            style={{
+                                background: 'linear-gradient(to right, #552FC9, #D7B35D)',
+                            }}
                         >
-                            <motion.div
-                                className="h-[52px] w-[52px]"
-                                animate={
-                                    streakInfo.status === 'active' || streakInfo.status === 'peak'
-                                        ? {
-                                              scale: [1, 1.2, 1],
-                                              rotate: [0, 10, -10, 0],
-                                          }
-                                        : {
-                                              scale: [1, 1.1, 1],
-                                          }
-                                }
-                                transition={{
-                                    duration: 2,
-                                    repeat: Infinity,
-                                    repeatType: 'reverse',
-                                }}
-                            >
-                                {streakInfo.icon}
-                            </motion.div>
-
-                            <motion.div
-                                initial={{ scale: 0.5, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                transition={{ delay: 0.2 }}
-                                className="text-center"
-                            >
-                                <DialogTitle className="text-4xl sm:text-6xl font-bold mb-3">
-                                    {animatedStreak} {animatedStreak === 1 ? 'day' : 'days'}
-                                </DialogTitle>
-                                <div className="text-white text-base sm:text-lg">
-                                    Creator Streak
-                                </div>
-                            </motion.div>
-
-                            <motion.div
-                                initial={{ y: 20, opacity: 0 }}
-                                animate={{ y: 0, opacity: 1 }}
-                                transition={{ delay: 0.4 }}
-                                className="flex flex-col items-center gap-3 mt-2 w-full"
-                            >
-                                <div className="text-center space-y-3 w-full">
-                                    {user?.streak?.longestStreak &&
-                                        user.streak.longestStreak > 0 && (
-                                            <div className="text-[#DDB958] font-semibold text-base sm:text-lg">
-                                                Best Streak: {user.streak.longestStreak} days 🏆
-                                            </div>
-                                        )}
-                                    <div className="text-[#A3A3A3] text-base">
-                                        Total Creator Points: {user?.streak?.totalPoints || 0} ⭐️
-                                    </div>
-                                </div>
-
-                                <div className="text-center text-[#A3A3A3] mt-4 mb-6 max-w-[280px] mx-auto text-sm sm:text-base">
-                                    {streakInfo.message}
-                                </div>
-                            </motion.div>
-
-                            <motion.div
-                                initial={{ y: 20, opacity: 0 }}
-                                animate={{ y: 0, opacity: 1 }}
-                                transition={{ delay: 0.6 }}
-                                className="flex gap-3 w-full"
-                            >
-                                <Button
-                                    className="flex-1 bg-[#DDB958] hover:bg-[#DDB958]/90 text-black rounded-[10px] py-2.5 sm:py-3 px-4 sm:px-5 w-1/2 transition-all duration-300 text-sm sm:text-base font-medium"
-                                    onClick={handleAction}
+                            {/* Inner content */}
+                            <div className="bg-[#1E1E1E] rounded-[20px]">
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 20 }}
+                                    className="p-5 sm:p-6 flex flex-col items-center gap-4"
                                 >
-                                    {streakInfo.buttonText}
-                                </Button>
-
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            className="bg-[#2E2E2E] border-[#2E2E2E] hover:bg-[#2E2E2E]/80 hover:border-[#2E2E2E] py-2.5 sm:py-3 px-4 sm:px-5 text-white hover:text-white rounded-[10px] w-1/2 transition-all duration-300 text-sm sm:text-base font-medium"
-                                        >
-                                            Share
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent
-                                        className="bg-[#1E1E1E] border-[#2E2E2E]"
-                                        align="end"
-                                        sideOffset={5}
+                                    <motion.div
+                                        className="h-[52px] w-[52px]"
+                                        animate={
+                                            streakInfo.status === 'active' || streakInfo.status === 'peak'
+                                                ? {
+                                                    scale: [1, 1.2, 1],
+                                                    rotate: [0, 10, -10, 0],
+                                                }
+                                                : {
+                                                    scale: [1, 1.1, 1],
+                                                }
+                                        }
+                                        transition={{
+                                            duration: 2,
+                                            repeat: Infinity,
+                                            repeatType: 'reverse',
+                                        }}
                                     >
-                                        <DropdownMenuItem
-                                            className="text-white hover:bg-[#2E2E2E] cursor-pointer gap-3 transition-colors duration-200 py-2.5"
-                                            onClick={() => handleShare('x')}
+                                        {streakInfo.icon}
+                                    </motion.div>
+
+                                    <motion.div
+                                        initial={{ scale: 0.5, opacity: 0 }}
+                                        animate={{ scale: 1, opacity: 1 }}
+                                        transition={{ delay: 0.2 }}
+                                        className="text-center"
+                                    >
+                                        <DialogTitle className="text-4xl sm:text-6xl font-bold mb-3">
+                                            {animatedStreak} {animatedStreak === 1 ? 'day' : 'days'}
+                                        </DialogTitle>
+                                        <div className="text-white text-base sm:text-lg">
+                                            Creator Streak
+                                        </div>
+                                    </motion.div>
+
+                                    <motion.div
+                                        initial={{ y: 20, opacity: 0 }}
+                                        animate={{ y: 0, opacity: 1 }}
+                                        transition={{ delay: 0.4 }}
+                                        className="flex flex-col items-center gap-3 mt-2 w-full"
+                                    >
+                                        <div className="text-center space-y-3 w-full">
+                                            {user?.streak?.longestStreak &&
+                                                user.streak.longestStreak > 0 && (
+                                                    <div className="text-[#DDB958] font-semibold text-base sm:text-lg">
+                                                        Best Streak: {user.streak.longestStreak} days 🏆
+                                                    </div>
+                                                )}
+                                            <div className="text-[#A3A3A3] text-base">
+                                                Total Creator Points: {user?.streak?.totalPoints || 0} ⭐️
+                                            </div>
+                                        </div>
+
+                                        <div className="text-center text-[#A3A3A3] mt-4 mb-6 max-w-[280px] mx-auto text-sm sm:text-base">
+                                            {streakInfo.message}
+                                        </div>
+                                    </motion.div>
+
+                                    <motion.div
+                                        initial={{ y: 20, opacity: 0 }}
+                                        animate={{ y: 0, opacity: 1 }}
+                                        transition={{ delay: 0.6 }}
+                                        className="flex gap-3 w-full"
+                                    >
+                                        <Button
+                                            className="flex-1 bg-[#DDB958] hover:bg-[#DDB958]/90 text-black rounded-[10px] py-2.5 sm:py-3 px-4 sm:px-5 w-1/2 transition-all duration-300 text-sm sm:text-base font-medium"
+                                            onClick={handleAction}
                                         >
-                                            <X />
-                                            <span>Share to X</span>
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                            className="text-white hover:bg-[#2E2E2E] cursor-pointer gap-3 transition-colors duration-200 py-2.5"
-                                            onClick={() => handleShare('warpcast')}
-                                        >
-                                            <Farcaster />
-                                            <span>Share to Warpcast</span>
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </motion.div>
-                        </motion.div>
+                                            {streakInfo.buttonText}
+                                        </Button>
+
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button
+                                                    variant="outline"
+                                                    className="bg-[#2E2E2E] border-[#2E2E2E] hover:bg-[#2E2E2E]/80 hover:border-[#2E2E2E] py-2.5 sm:py-3 px-4 sm:px-5 text-white hover:text-white rounded-[10px] w-1/2 transition-all duration-300 text-sm sm:text-base font-medium"
+                                                >
+                                                    Share
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent
+                                                className="bg-[#1E1E1E] border-[#2E2E2E]"
+                                                align="end"
+                                                sideOffset={5}
+                                            >
+                                                <DropdownMenuItem
+                                                    className="text-white hover:bg-[#2E2E2E] cursor-pointer gap-3 transition-colors duration-200 py-2.5"
+                                                    onClick={() => handleShare('x')}
+                                                >
+                                                    <X />
+                                                    <span>Share to X</span>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                    className="text-white hover:bg-[#2E2E2E] cursor-pointer gap-3 transition-colors duration-200 py-2.5"
+                                                    onClick={() => handleShare('warpcast')}
+                                                >
+                                                    <Farcaster />
+                                                    <span>Share to Warpcast</span>
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </motion.div>
+                                </motion.div>
+                            </div>
+                        </div>
                     </DialogContent>
                 )}
             </AnimatePresence>
