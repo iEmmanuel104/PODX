@@ -19,7 +19,7 @@ const SimpleTimePicker: React.FC<SimpleTimePickerProps> = ({ value, onChange, er
 
     return (
         <div className="relative">
-            <Popover open={isOpen} onOpenChange={setIsOpen}>
+            <Popover open={isOpen} onOpenChange={setIsOpen} modal>
                 <PopoverTrigger asChild>
                     <Button
                         variant="outline"

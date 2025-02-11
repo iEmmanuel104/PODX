@@ -84,7 +84,7 @@ const ShareDialog = memo(function ShareDialog({
     };
 
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
+        <Dialog open={isOpen} onOpenChange={onClose} modal>
             <DialogContent className="bg-[#1E1E1E] text-white rounded-[10px] p-6 w-full max-w-md">
                 <DialogHeader>
                     <DialogTitle className="text-xl font-semibold mb-4">Share Session</DialogTitle>

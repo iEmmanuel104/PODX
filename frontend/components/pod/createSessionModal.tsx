@@ -274,7 +274,7 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                         <div>
                             <label className="block text-[#A3A3A3] mb-2">Date and time</label>
                             <div className="grid grid-cols-2 gap-4">
-                                <Popover>
+                                <Popover modal>
                                     <PopoverTrigger asChild>
                                         <Button
                                             variant="outline"

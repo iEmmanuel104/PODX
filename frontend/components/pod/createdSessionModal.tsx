@@ -5,6 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Link, AlertCircle, Check, Loader2 } from 'lucide-react';
+import DotPattern from '../ui/dot-pattern';
+import { cn } from '@/lib/utils';
 
 interface CreatedSessionModalProps {
     isOpen: boolean;
@@ -74,6 +76,20 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="bg-[#1E1E1E] text-white rounded-[10px] p-6 w-full max-w-md">
+                {/* Background gradient - moved behind content */}
+                <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute inset-0 bg-gradient-to-bl from-white/[0.1] via-transparent to-transparent" />
+                </div>
+                <DotPattern
+                    width={20}
+                    height={20}
+                    cx={2}
+                    cy={2}
+                    cr={1}
+                    className={cn(
+                        '[mask-image:radial-gradient(to_bottom_right,white,transparent,transparent)] rounded-[20px] top-[6px] left-[5px] px-[10px] -z-10'
+                    )}
+                />
                 <DialogHeader className="flex flex-row justify-between items-center mb-6">
                     <DialogTitle className="text-2xl font-semibold">
                         Your session is created
@@ -107,8 +123,8 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({
                                 {isCopyingLink
                                     ? 'Copying...'
                                     : linkCopied
-                                      ? 'Copied!'
-                                      : 'Copy Link'}
+                                        ? 'Copied!'
+                                        : 'Copy Link'}
                             </Button>
                         </div>
                     </div>
@@ -142,7 +158,7 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({
                         onClick={handleJoinSession}
                         variant="default"
                         size="lg"
-                        className="w-full bg-[#DDB958] text-black hover:bg-[#DDB958] transition-all duration-300 ease-in-out mt-4"
+                        className="w-full bg-[#DDB958] text-black hover:bg-[#DDB958] transition-all duration-300 ease-in-out mt-4 rounded-[10px] py-3"
                         disabled={isJoiningInternal}
                     >
                         {isJoiningInternal ? (
