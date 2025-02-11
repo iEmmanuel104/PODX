@@ -39,7 +39,7 @@ const getSessionStatus = (startsAt: string) => {
     if (minutesUntilStart > 5) {
         return {
             text: `Starts in ${Math.floor(minutesUntilStart / 60)}h ${minutesUntilStart % 60}m`,
-            color: 'text-[#A3A3A3]',
+            color: 'text-[#DDB958]',
         };
     } else if (minutesUntilStart > -60) {
         return {
@@ -220,7 +220,7 @@ const SessionCard = memo(function SessionCard({
                         </p>
                         <div className="flex items-center gap-2">
                             <p className="text-xs text-[#A3A3A3]">
-                                Host:{' '}
+                                Hosted by:{' '}
                                 {session.created_by.custom?.username || session.created_by.name}
                             </p>
                             {status && (

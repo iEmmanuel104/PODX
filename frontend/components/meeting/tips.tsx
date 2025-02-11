@@ -7,8 +7,8 @@ interface ModalProps {
 }
 
 export const Modal: React.FC<ModalProps> = ({ children }) => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-        <div className="bg-[#1E1E1E] p-6 rounded-[10px] w-full md:max-w-[50%]">{children}</div>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center max-w-xl mx-auto px-6">
+        <div className="bg-[#1E1E1E] p-6 rounded-[10px]">{children}</div>
     </div>
 );
 

@@ -5,6 +5,7 @@ import { ChevronDown, Mic, MicOff, Video, VideoOff, DollarSign, UsersRound } fro
 import { StreamVideoParticipant, OwnUserResponse } from '@stream-io/video-react-sdk';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
+import toast from 'react-hot-toast';
 
 // Types
 interface ParticipantsSidebarProps {
@@ -222,15 +223,15 @@ const ParticipantItem = memo<{
             role: participant.roles.includes('host')
                 ? 'host'
                 : participant.roles.includes('cohost')
-                  ? 'cohost'
-                  : participant.roles.includes('user')
-                    ? 'user'
-                    : 'listener',
+                    ? 'cohost'
+                    : participant.roles.includes('user')
+                        ? 'user'
+                        : 'listener',
             currentUserRoles: !currentUser?.role
                 ? undefined
                 : Array.isArray(currentUser.role)
-                  ? currentUser.role
-                  : [currentUser.role],
+                    ? currentUser.role
+                    : [currentUser.role],
             displayName: formatName(participant.name || participant.userId),
         }),
         [participant, currentUser?.role]
@@ -302,6 +303,32 @@ const ParticipantItem = memo<{
                     )}
                 </div>
             )}
+            <div className="flex flex-wrap items-center gap-2 p-2 border-t border-[#383838]">
+                <Button
+                    onClick={() => onTip(participant)}
+                    className="flex items-center justify-center gap-1.5 bg-[#6032F6] hover:bg-[#4C28C4] text-white text-xs px-2 py-1 rounded-full"
+                >
+                    <Image
+                        src="/images/money-send.svg"
+                        alt="Send Tip"
+                        width={20}
+                        height={20}
+                        className="mb-0"
+                        priority
+                    />
+                    <p className="">Send Tip</p>
+                </Button>
+
+                {currentUserRoles?.includes('host') && !participant.roles.includes('host') && (
+                    <Button
+                        onClick={() => onUpdateRole(participant.userId, 'cohost')}
+                        className="flex items-center gap-1.5 bg-[#383838] hover:bg-[#424242] text-white text-xs px-3 py-1.5 rounded-full"
+                    >
+                        <UsersRound className="w-3 h-3 sm:w-4 sm:h-4 text-[#DDB958]" />
+                        <span className="hidden sm:inline">Make Co-host</span>
+                    </Button>
+                )}
+            </div>
         </div>
     );
 });
@@ -371,7 +398,10 @@ const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
                     </p>
                     <Button
                         className="w-full bg-[#6032F6] hover:bg-[#4C28C4] text-white px-4 py-2 rounded-lg"
-                        onClick={() => navigator.clipboard.writeText('Session Link')}
+                        onClick={() => {
+                            navigator.clipboard.writeText(window.location.href)
+                            toast.success('Link copied to clipboard');
+                        }}
                     >
                         Copy Link
                     </Button>

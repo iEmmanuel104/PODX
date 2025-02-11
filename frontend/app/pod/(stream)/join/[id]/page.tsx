@@ -97,7 +97,7 @@ const JoinButton = React.memo(
     }) => (
         <button
             onClick={onJoin}
-            className="mt-4 w-full max-w-sm sm:max-w-md bg-[#6032F6] text-white px-4 sm:px-8 py-2.5 sm:py-3 
+            className="mt-4 w-full max-w-sm sm:max-w-md bg-[#6032F6] text-white px-4 sm:px-8 py-2 sm:py-2.5 
                    rounded-[10px] hover:bg-[#4C28C4] transition-all duration-300 ease-in-out 
                    text-sm sm:text-base font-medium flex items-center justify-center
                    disabled:opacity-50 disabled:cursor-not-allowed"

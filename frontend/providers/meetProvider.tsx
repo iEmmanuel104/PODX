@@ -141,7 +141,7 @@ export const StreamMeetProvider = memo<StreamMeetProviderProps>(
         ) {
             return (
                 <div className="w-full h-full">
-                    <LoadingOverlay text="Preparing your meeting space..." />
+                    <LoadingOverlay text="We beseech thee to hold fast, for thy session is nigh prepared...." />
                 </div>
             );
         }
