@@ -302,8 +302,8 @@ export default function PodPage() {
                         </div>
                         <Button
                             onClick={() => setState(prev => ({ ...prev, isCreateModalOpen: true }))}
-                            className="w-full bg-[#DDB958] hover:bg-[#DDB958] text-black font-semibold 
-                                     py-2 px-4 rounded-[10px] transition-all duration-200 mt-4"
+                            className="bg-[#DDB958] hover:bg-[#DDB958] text-black font-semibold 
+                                     py-2.5 px-4 rounded-[10px] transition-all duration-200 mt-4 w-fit"
                         >
                             Create Session
                         </Button>
