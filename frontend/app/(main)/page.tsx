@@ -30,7 +30,7 @@ export default function LandingPage() {
     if (!ready) return null;
 
     return (
-        <main className={`relative min-h-screen text-white ${balige.variable}`}>
+        <main className={`relative min-h-screen text-white ${balige.variable} w-full`}>
             {/* Background Grid - Moved to bottom of stack */}
             <div className="absolute inset-0 w-full overflow-hidden pointer-events-none">
                 <RetroGrid />

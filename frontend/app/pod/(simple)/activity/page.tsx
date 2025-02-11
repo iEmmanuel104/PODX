@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import {
     Select,
@@ -32,6 +33,8 @@ const session = {
     tipReceived: '0 USDC',
     tipSent: '0 USDC',
 };
+
+const RetroGrid = dynamic(() => import('@/components/ui/retro-grid'));
 
 // Create an array of 4 identical sessions for demo purposes
 const sessions = Array(4).fill(session);
@@ -247,6 +250,11 @@ export default function Page() {
                 <div className="sm:hidden mt-4">
                     <p className="text-sm text-white/60">↔️ Scroll horizontally to view all data</p>
                 </div>
+            </div>
+
+            {/* Background Grid - Moved to bottom of stack */}
+            <div className="absolute inset-0 w-full overflow-hidden pointer-events-none">
+                <RetroGrid />
             </div>
         </div>
     );

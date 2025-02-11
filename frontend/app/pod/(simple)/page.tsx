@@ -27,6 +27,8 @@ const UserOnboardingFlow = dynamic(() => import('@/components/user/userOnboardin
     ssr: false,
 });
 
+const RetroGrid = dynamic(() => import('@/components/ui/retro-grid'));
+
 const ScheduledPods = dynamic(() => import('@/components/pod/scheduledPods'), { ssr: false });
 
 // Error Message Component
@@ -233,19 +235,23 @@ export default function PodPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     {/* Join Session Card */}
                     <div
-                        className="w-full rounded-[10px] p-4 sm:p-6 bg-[#1E1E1E] flex flex-col justify-between 
+                        className="w-full rounded-[20px] p-4 sm:p-6 bg-[#1E1E1E] flex flex-col justify-between 
                                   transition-all duration-200 h-full"
                     >
                         <div>
                             <h2 className="text-2xl sm:text-[32px] font-semibold text-white mb-2">
-                                Join Session
+                                Join
+                                <span className="hidden sm:inline">
+                                    <br />
+                                </span>
+                                Session
                             </h2>
                             <p className="text-[#A3A3A3] text-sm">
                                 Join a meeting instantly and collaborate!
                             </p>
                         </div>
                         <div className="flex flex-col gap-4 mt-4">
-                            <div className="flex flex-col sm:flex-row gap-3">
+                            <div className="flex flex-col sm:flex-row md:items-center gap-3">
                                 <Input
                                     type="text"
                                     placeholder="Enter meeting code"
@@ -260,7 +266,7 @@ export default function PodPage() {
                                 <Button
                                     onClick={handleJoinSession}
                                     disabled={!state.meetingCode || state.isJoining}
-                                    className="w-full sm:w-auto bg-[#6032F6] text-white px-8 py-2 rounded-[10px] 
+                                    className="w-fit sm:w-auto bg-[#6032F6] text-white px-8 py-2.5 rounded-[10px] 
                                              hover:bg-[#4C28C4] transition-all duration-200 text-sm font-medium 
                                              disabled:bg-gray-500 disabled:cursor-not-allowed"
                                 >
@@ -276,7 +282,7 @@ export default function PodPage() {
 
                     {/* Create Session Card */}
                     <div
-                        className="w-full rounded-[10px] p-4 sm:p-6 bg-gradient-to-br from-[#6032F6] to-[#381D90] 
+                        className="w-full rounded-[20px] p-4 sm:p-6 bg-gradient-to-br from-[#6032F6] to-[#381D90] 
                                   flex flex-col justify-between transition-all duration-200 h-full"
                     >
                         <div>
@@ -311,7 +317,7 @@ export default function PodPage() {
                 </div>
 
                 {/* Session streak dialog */}
-                <div className="w-full">
+                <div className="w-full mt-24">
                     <StreakDialog
                         user={user}
                         onToggleCreateSession={() =>
@@ -368,6 +374,11 @@ export default function PodPage() {
                     />
                 )}
             </React.Suspense>
+
+            {/* Background Grid - Moved to bottom of stack */}
+            <div className="absolute inset-0 w-full overflow-hidden pointer-events-none">
+                <RetroGrid />
+            </div>
         </div>
     );
 }
