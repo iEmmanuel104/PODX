@@ -43,7 +43,7 @@ export default function Page() {
     return (
         <div className="w-full flex flex-col gap-8 transition-all duration-200">
             {/* Wallet Info Section */}
-            <div className="w-full flex flex-col items-center gap-4 p-4 sm:p-6 bg-[#1E1E1E] rounded-xl">
+            <div className="w-full flex flex-col items-center gap-4 p-4 sm:p-6 rounded-xl">
                 <div className="flex items-center gap-2">
                     <span className="text-3xl sm:text-5xl font-bold bg-gradient-to-r from-[#552FC9] to-[#D7B35D] bg-clip-text text-transparent transition-all duration-200">
                         {isBalanceHidden ? '****' : '0 USDC'}
@@ -79,7 +79,7 @@ export default function Page() {
             </div>
 
             {/* Session Activity Section */}
-            <div className="w-full bg-[#1E1E1E] rounded-xl p-4 sm:p-6">
+            <div className="w-full rounded-xl p-4 sm:p-6">
                 <h2 className="text-xl sm:text-2xl font-semibold mb-6">Session Activity</h2>
 
                 {/* Tabs and Sort Section */}
