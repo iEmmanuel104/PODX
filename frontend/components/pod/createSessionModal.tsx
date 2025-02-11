@@ -66,7 +66,7 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
         []
     );
 
-    const toggleTokengatingSwitch = () => { 
+    const toggleTokengatingSwitch = () => {
         setTokenGatingSwitch(!tokenGatingSwitch);
     };
 
@@ -144,7 +144,7 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="bg-[#1d1d1d] text-white rounded-2xl p-8 w-full max-w-lg overflow-hidden border border-white/[0.1]">
+            <DialogContent className="bg-[#1d1d1d] text-white sm:rounded-[20px] p-8 w-full max-w-lg overflow-hidden border border-white/[0.1]">
                 {/* Background gradient - moved behind content */}
                 <div className="absolute inset-0 pointer-events-none">
                     <div className="absolute inset-0 bg-gradient-to-br from-white/[0.1] via-transparent to-transparent" />
@@ -157,7 +157,7 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                     cy={2}
                     cr={1}
                     className={cn(
-                        '[mask-image:radial-gradient(to_bottom_right,white,transparent,transparent)] rounded-[20px] top-[6px] left-[8px] px-[10px]'
+                        '[mask-image:radial-gradient(to_bottom_right,white,transparent,transparent)] rounded-[20px] top-[6px] left-[8px] px-[10px] -z-10'
                     )}
                 />
                 <DialogHeader className="flex flex-row justify-between items-center mb-6">
@@ -169,22 +169,20 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                 <div className="flex items-center gap-4 mb-6">
                     <Button
                         size="sm"
-                        className={`rounded-full ${
-                            !formState.isScheduled
+                        className={`rounded-full ${!formState.isScheduled
                                 ? 'bg-[#6032F6] hover:bg-[#6D28D9]'
                                 : 'bg-[#1e1e1e] border border-zinc-600'
-                        }`}
+                            }`}
                         onClick={() => updateFormState({ isScheduled: false })}
                     >
                         Instant session
                     </Button>
                     <Button
                         size="sm"
-                        className={`rounded-full ${
-                            formState.isScheduled
+                        className={`rounded-full ${formState.isScheduled
                                 ? 'bg-[#6032F6] hover:bg-[#6D28D9]'
                                 : 'bg-[#1e1e1e] border border-zinc-600'
-                        }`}
+                            }`}
                         onClick={() => updateFormState({ isScheduled: true })}
                     >
                         Schedule session{' '}
@@ -214,31 +212,31 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                         >
                             <SelectTrigger className="w-full bg-[#2C2C2C] rounded-[10px] px-4 py-2 border-[#3c3c3c]">
                                 <SelectValue>
-                                   <div className='flex items-center gap-[8px]'>
-                                   {formState.type === sessionType.AUDIO && (
-                                        <div className="flex justify-center items-center w-[20px] h-[20px] bg-[#6032F6] rounded-full">
-                                            <div className="icon-container w-[12px] h-[12px]">
-                                                <Microphone />
+                                    <div className='flex items-center gap-[8px]'>
+                                        {formState.type === sessionType.AUDIO && (
+                                            <div className="flex justify-center items-center w-[20px] h-[20px] bg-[#6032F6] rounded-full">
+                                                <div className="icon-container w-[12px] h-[12px]">
+                                                    <Microphone />
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
-                                    {formState.type === sessionType.POD && (
-                                        <div className="flex justify-center items-center w-[20px] h-[20px] bg-[#6032F6] rounded-full">
-                                            <div className="icon-container w-[12px] h-[12px]">
-                                                <VideoIcon />
+                                        )}
+                                        {formState.type === sessionType.POD && (
+                                            <div className="flex justify-center items-center w-[20px] h-[20px] bg-[#6032F6] rounded-full">
+                                                <div className="icon-container w-[12px] h-[12px]">
+                                                    <VideoIcon />
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
-                                    <span>{formState.type}</span>
-                                    {formState.type === sessionType.AUDIO && (
-                                        <div>
-                                        <span className="bg-[#DDB958] px-[6px] py-[4px] rounded-3xl text-[10px] text-[#51431D] font-medium">
-                                            Coming soon
-                                        </span>
+                                        )}
+                                        <span>{formState.type}</span>
+                                        {formState.type === sessionType.AUDIO && (
+                                            <div>
+                                                <span className="bg-[#DDB958] px-[6px] py-[4px] rounded-3xl text-[10px] text-[#51431D] font-medium">
+                                                    Coming soon
+                                                </span>
+                                            </div>
+                                        )}
+
                                     </div>
-                                    )}
-                                   
-                                   </div>
                                 </SelectValue>
                             </SelectTrigger>
                             <SelectContent className="bg-[#2C2C2C] text-white">
@@ -368,23 +366,24 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                                 </Tooltip>
                             </TooltipProvider>
                         </div>
-                        <TokenGatingSwitch onClick={toggleTokengatingSwitch} switchState={tokenGatingSwitch}/>
+                        <TokenGatingSwitch onClick={toggleTokengatingSwitch} switchState={tokenGatingSwitch} />
                     </div>
 
-                    <MultiSelect />
+                    {/* Conditionally render MultiSelect based on tokenGatingSwitch state */}
+                    {tokenGatingSwitch && <MultiSelect />}
 
                     {/* Action Buttons */}
-                    <div className="flex justify-between gap-6 pt-3">
+                    <div className="flex justify-between items-center gap-6 pt-3">
                         <Button
                             onClick={onClose}
-                            className="w-1/2 px-4 py-6 bg-[#2C2C2C] hover:bg-[#3C3C3C]"
+                            className="w-1/2 px-3 py-3 rounded-[10px] bg-[#2C2C2C] hover:bg-[#3C3C3C]"
                         >
                             Cancel
                         </Button>
                         <Button
                             onClick={handleCreateSession}
                             disabled={isSubmitDisabled}
-                            className="w-1/2 px-4 py-6 bg-[#6032F6] hover:bg-[#6D28D9] disabled:bg-gray-500"
+                            className="w-1/2 px-3 py-3 rounded-[10px] bg-[#6032F6] hover:bg-[#6D28D9] disabled:bg-gray-500"
                         >
                             {isCreating ? 'Creating...' : 'Create session'}
                         </Button>

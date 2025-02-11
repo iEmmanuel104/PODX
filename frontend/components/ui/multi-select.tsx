@@ -71,7 +71,7 @@ export function MultiSelect() {
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
-                    className="w-full justify-between bg-[#1c1c1c] border-gray-700 hover:bg-[#252525] text-gray-300"
+                    className="w-full justify-between bg-[#1c1c1c] border-gray-700 hover:bg-[#252525] text-gray-300 hover:text-gray-300"
                 >
                     <span className="truncate">
                         {selectedSessions.length === 0
@@ -154,7 +154,7 @@ export function MultiSelect() {
                                                         onSelect={() => toggleSession(session)}
                                                         className="flex items-center justify-between p-2 cursor-pointer"
                                                     >
-                                                        <span className="text-gray-300 text-xs font-medium">
+                                                        <span className="text-gray-300 hover:text-black text-xs font-medium">
                                                             {session.name}
                                                         </span>
                                                         <Badge
