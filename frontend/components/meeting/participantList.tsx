@@ -278,7 +278,10 @@ const ParticipantItem = memo<{
             {isExpanded && !isCurrentUser && (
                 <div className="flex flex-wrap items-center gap-2 p-2 border-t border-[#383838]">
                     <Button
-                        onClick={() => onTip(participant)}
+                        onClick={() => {
+                            console.log("participant to tip", { participant })
+                            onTip(participant)
+                        }}
                         className="flex items-center justify-center gap-1.5 bg-[#6032F6] hover:bg-[#4C28C4] text-white text-xs px-2 py-1 rounded-full"
                     >
                         <Image
@@ -289,7 +292,7 @@ const ParticipantItem = memo<{
                             className="mb-0"
                             priority
                         />
-                        <p className="">Send Tip</p>
+                        <p className="">Send Tip to {participant.name}</p>
                     </Button>
 
                     {currentUserRoles?.includes('host') && !participant.roles.includes('host') && (

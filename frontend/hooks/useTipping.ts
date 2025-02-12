@@ -114,6 +114,7 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
     );
 
     const handleTip = async () => {
+        console.log("state.selectedTipRecipient", state.selectedTipRecipient)
         if (state.selectedTipRecipient && state.tipAmount) {
             try {
                 const recipientAddress =
@@ -146,6 +147,7 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
     );
 
     const openTipModal = (participant: StreamVideoParticipant) => {
+        console.log("opening tip modal and setting recipient to", { participant })
         setState(prev => ({
             ...prev,
             selectedTipRecipient: participant,
