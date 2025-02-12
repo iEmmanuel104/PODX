@@ -1,19 +1,20 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
-import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { setUser, setSignature, logOut } from '@/store/slices/userSlice';
 import { useRouter, usePathname } from 'next/navigation';
-import { useValidateUserMutation, UserInfo } from '@/store/api/userApi';
 import { LoadingOverlay } from '@/components/ui/loading';
+import { useTypedSelector, useAppDispatch } from '@/store/config/store';
+import { setUser, setSignature,logOut } from '@/store/auth/slice';
+import { UserInfo } from '@/store/user/types';
+import { useValidateUserMutation } from '@/store/user/slice';
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
     const { user: privyUser, authenticated, ready, logout } = usePrivy();
-    const { user: storeUser, isLoggedIn } = useAppSelector(state => state.user);
+    const { isLoggedIn } = useTypedSelector(state => state.auth);
     const dispatch = useAppDispatch();
     const router = useRouter();
     const pathname = usePathname();
-    const [validateUser] = useValidateUserMutation();
+    const [validateUser, {isLoading: isValidating}] = useValidateUserMutation();
 
     // Simplified state management
     const [isLoading, setIsLoading] = useState(false);
@@ -36,6 +37,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
             );
 
             if (result.data?.signature) {
+                console.log('Setting signature:', result.data);
+                
                 dispatch(setSignature(result.data.signature));
             }
 
@@ -62,41 +65,37 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         }
     }, [pathname, router]);
 
-    useEffect(() => {
+    // Handle authentication and redirection without useEffect
+    const handleAuthFlow = useCallback(async () => {
         if (!ready || isLoading) return;
 
-        const handleAuthFlow = async () => {
-            // Only handle auth flow for non-pod pages
-            if (pathname.startsWith('/pod')) return;
+        // Only handle auth flow for non-pod pages
+        if (pathname.startsWith('/pod')) return;
 
-            if (authenticated && !isLoggedIn) {
-                setIsLoading(true);
-                const success = await handleAuthentication();
-                if (success) {
-                    await redirectToPod();
-                }
-                setIsLoading(false);
-            } else if (authenticated && isLoggedIn && pathname === '/') {
+        if (authenticated && !isLoggedIn) {
+            setIsLoading(true);
+            const success = await handleAuthentication();
+            if (success) {
                 await redirectToPod();
             }
-        };
+            setIsLoading(false);
+        } else if (authenticated && isLoggedIn && pathname === '/') {
+            await redirectToPod();
+        } else if (!authenticated && isLoggedIn) {
+            dispatch(logOut());
+        }
+    }, [ready, isLoading, pathname, authenticated, isLoggedIn, handleAuthentication, redirectToPod, dispatch]);
 
+    // Call handleAuthFlow when necessary
+    useEffect(() => {
         handleAuthFlow();
-    }, [
-        ready,
-        authenticated,
-        isLoggedIn,
-        handleAuthentication,
-        redirectToPod,
-        isLoading,
-        pathname,
-    ]);
+    }, [handleAuthFlow]);
 
     // Show loading overlay
-    if (isLoading) {
+    if (isLoading || isValidating) {
         return (
             <div className="fixed inset-0 bg-[#121212] bg-opacity-90 backdrop-blur-sm">
-                <LoadingOverlay text="Connecting..." />
+                <LoadingOverlay text={`${isLoading ? 'Connecting...' : 'Validating User...'}`} />
             </div>
         );
     }

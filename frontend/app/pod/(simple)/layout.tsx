@@ -2,15 +2,14 @@
 
 import React, { useLayoutEffect } from 'react';
 import type { ReactNode } from 'react';
-import { useAppSelector } from '@/store/hooks';
 import { useRouter } from 'next/navigation';
 import UserDetails from '@/components/user/userDetails';
 import Footer from '@/components/common/Footer';
-import { LoadingOverlay } from '@/components/ui/loading';
+import { useTypedSelector } from '@/store/config/store';
 
 function SimpleLayout({ children }: { children: ReactNode }) {
     const router = useRouter();
-    const { isLoggedIn, user } = useAppSelector(state => state.user);
+    const { isLoggedIn, user } = useTypedSelector(state => state.auth);
     const [mounted, setMounted] = React.useState(false);
     const [visible, setVisible] = React.useState(false);
 
@@ -29,27 +28,12 @@ function SimpleLayout({ children }: { children: ReactNode }) {
         if (mounted && !isLoggedIn) {
             // Fade out before redirect
             setVisible(false);
-            const timer = setTimeout(() => {
-                router.replace('/');
-            }, 150); // Match transition duration
-            return () => clearTimeout(timer);
+            router.replace('/');
         }
     }, [isLoggedIn, router, mounted]);
 
     // Return null on server-side to prevent hydration issues
     if (!mounted) return null;
-
-    // Return null if not authenticated
-    if (!isLoggedIn || !user) {
-        return (
-            <div
-                className="fixed inset-0 bg-[#151515] flex items-center justify-center transition-opacity duration-150"
-                style={{ opacity: visible ? 1 : 0 }}
-            >
-                <LoadingOverlay text="Loading..." />
-            </div>
-        );
-    }
 
     return (
         <div
@@ -63,7 +47,7 @@ function SimpleLayout({ children }: { children: ReactNode }) {
             {/* Fixed header with fade effect */}
             <header className="sticky top-0 pt-4 z-50 bg-[#151515]/95 backdrop-blur-md transition-all duration-200">
                 <div className="max-w-[800px] mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-4">
-                    <UserDetails user={user} />
+                   {user ? <UserDetails user={user} /> : null}
                 </div>
             </header>
 

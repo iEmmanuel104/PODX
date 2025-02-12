@@ -1,5 +1,5 @@
 // utils/exportMetrics.ts
-import { CallStatsReport } from '@/store/api/callAnalyticsApi';
+import { CallStatsReport } from '@/store/callStats/types';
 import { format } from 'date-fns';
 
 export const exportMetricsToCSV = (data: any) => {

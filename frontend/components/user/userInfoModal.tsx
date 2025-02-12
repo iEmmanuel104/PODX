@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useUpdateUsernameMutation } from '@/store/api/userApi';
-import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { updateUser } from '@/store/slices/userSlice';
 import toast from 'react-hot-toast';
 import { Loader2 } from 'lucide-react';
 import DotPattern from '../ui/dot-pattern';
 import { cn } from '@/lib/utils';
+import { useAppDispatch, useTypedSelector } from '@/store/config/store';
+import { useUpdateUsernameMutation } from '@/store/user/slice';
+import { updateUser } from '@/store/auth/slice';
 
 interface UsernameUpdateModalProps {
     isOpen: boolean;
@@ -27,7 +27,7 @@ export default function UserInfoModal({
 }: UsernameUpdateModalProps) {
     const [username, setUsername] = useState(initialUsername);
     const [updateUsername] = useUpdateUsernameMutation();
-    const userId = useAppSelector(state => state.user.user?.id);
+    const userId = useTypedSelector(state => state.auth.user?.id);
     const dispatch = useAppDispatch();
     const [isLoading, setIsLoading] = useState(false);
 

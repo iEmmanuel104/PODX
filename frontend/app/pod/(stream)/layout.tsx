@@ -4,8 +4,8 @@ import React, { useEffect, useState, memo } from 'react';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 import nextDynamic from 'next/dynamic';
-import { useAppSelector } from '@/store/hooks';
 import { LoadingOverlay } from '@/components/ui/loading';
+import { useTypedSelector } from '@/store/config/store';
 
 const StreamMeetProvider = nextDynamic(
     () => import('@/providers/meetProvider').then(mod => mod.StreamMeetProvider),
@@ -29,7 +29,7 @@ function StreamLayout({ children }: { children: ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
     const [isMounted, setIsMounted] = useState(false);
-    const { isLoggedIn } = useAppSelector(state => state.user);
+    const { isLoggedIn } = useTypedSelector(state => state.auth);
 
     useEffect(() => {
         setIsMounted(true);

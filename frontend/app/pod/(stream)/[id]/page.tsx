@@ -21,13 +21,13 @@ import {
 } from '@stream-io/video-react-sdk';
 import { useRouter } from 'next/navigation';
 import { useBalance } from 'wagmi';
-import { useAppSelector } from '@/store/hooks';
 import EndScreen from '@/components/meeting/end-screen';
 import Image from 'next/image';
 import { useTipping } from '@/hooks/useTipping';
 import SpeakerLayout from '@/components/pod/speakerLayout';
 import GridLayout from '@/components/pod/gridLayout';
 import MeetingFooter from '@/components/meeting/meetingFooter';
+import { useTypedSelector } from '@/store/config/store';
 
 interface MeetingProps {
     params: {
@@ -60,10 +60,10 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const [joinRequests, setJoinRequests] = useState<string[]>([]);
     const [speakRequests, setSpeakRequests] = useState<string[]>([]);
     const [showSidebar, setShowSidebar] = useState(false);
-    const { user } = useAppSelector(state => state.user);
+    const { user } = useTypedSelector(state => state.auth);
     const userAddress = user?.walletAddress as `0x${string}`;
     const [participantInSpotlight, _] = participants;
-    const walletClientType = useAppSelector(state => state.user.user?.walletType);
+    const walletClientType = useTypedSelector(state => state.auth.user?.walletType);
     const isEmbeddedWallet = walletClientType === 'privy';
     const isUnkownOrIdle =
         callingState === CallingState.UNKNOWN || callingState === CallingState.IDLE;

@@ -5,9 +5,6 @@ import {
     useConnectedUser,
     createSoundDetector,
 } from '@stream-io/video-react-sdk';
-import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { setAudioEnabled, setVideoEnabled, setSoundDetected } from '@/store/slices/mediaSlice';
-import { setToast } from '@/store/slices/toastSlice';
 import SpeechIndicator from './speechIndicator';
 import { Mic, MicOff, Video, VideoOff, MoreVertical, Sparkles, Volume2 } from 'lucide-react';
 import {
@@ -18,16 +15,19 @@ import {
 import DeviceSelectorPopover from '@/components/join/deviceSelectorPopover';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { setAudioEnabled, setSoundDetected, setVideoEnabled } from '@/store/media/slice';
+import { useAppDispatch, useTypedSelector } from '@/store/config/store';
+import { setToast } from '@/store/toast/slice';
 
 const MeetingPreview: React.FC = () => {
     const user = useConnectedUser();
     const dispatch = useAppDispatch();
-    const { isAudioEnabled, isVideoEnabled, isSoundDetected } = useAppSelector(
+    const { isAudioEnabled, isVideoEnabled, isSoundDetected } = useTypedSelector(
         state => state.media
     );
-    const { streamCallType } = useAppSelector(state => state.pod);
+    const { streamCallType } = useTypedSelector(state => state.pod);
     const isAudioSession = streamCallType === 'audio_room';
-    const toast = useAppSelector(state => state.toast);
+    const toast = useTypedSelector(state => state.toast);
     const [videoPreviewText, setVideoPreviewText] = useState('');
     const [isInitializing, setIsInitializing] = useState(true);
 

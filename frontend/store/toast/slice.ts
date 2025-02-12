@@ -1,9 +1,5 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-
-export interface toastState {
-    message: string | null;
-    isVisible: boolean;
-}
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { toastState } from "./types";
 
 const initialState: toastState = {
     message: null,
