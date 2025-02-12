@@ -52,23 +52,42 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
     const sendETHExternal = async (recipient: string, amount: string) => {
         const notification = toast.loading('Sending tip...');
         try {
-            if (!isAddress(recipient)) throw new Error('Invalid recipient address');
-            const parsedAmount = parseEther(amount);
-
-            if (sendTransactionWagmi) {
-                await sendTransactionWagmi({
-                    to: recipient as `0x${string}`,
-                    value: parsedAmount,
-                });
-                toast.success('tip successful', { id: notification });
-            } else {
-                throw new Error(
-                    "Transaction cannot be sent. Make sure you're connected to a wallet."
-                );
+            if (!isAddress(recipient)) {
+                toast.error('Invalid recipient address', { id: notification });
+                return;
             }
+
+            if (!sendTransactionWagmi) {
+                toast.error("Wallet not connected properly", { id: notification });
+                return;
+            }
+
+            const parsedAmount = parseEther(amount);
+            
+            // Send the transaction and wait for it to be mined
+            const hash = await sendTransactionWagmi({
+                to: recipient as `0x${string}`,
+                value: parsedAmount,
+            });
+
+            toast.success('Tip sent successfully!', { id: notification });
+            return hash;
+
         } catch (error) {
             console.error('Error sending ETH:', error);
-            toast.error('Failed to send tip. Please try again.', { id: notification });
+            let errorMessage = 'Failed to send tip. Please try again.';
+            
+            if (error instanceof Error) {
+                // Handle specific error cases
+                if (error.message.includes('insufficient funds')) {
+                    errorMessage = 'Insufficient funds to send tip';
+                } else if (error.message.includes('user rejected')) {
+                    errorMessage = 'Transaction was rejected';
+                }
+            }
+            
+            toast.error(errorMessage, { id: notification });
+            throw error; // Re-throw to be caught by handleTip
         }
     };
 
@@ -115,18 +134,46 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
 
     const handleTip = async () => {
         console.log("state.selectedTipRecipient", state.selectedTipRecipient)
-        if (state.selectedTipRecipient && state.tipAmount) {
-            try {
-                const recipientAddress =
-                    (state.selectedTipRecipient?.custom?.fields?.walletAddress?.kind as any)
-                        .stringValue || '0xaa';
-                await sendETH(recipientAddress, state.tipAmount);
-                await sendTipEvent(state.selectedTipRecipient.userId, state.tipAmount);
-                setState(prev => ({ ...prev, showTipModal: false }));
-            } catch (error) {
-                console.error('Error sending tip:', error);
-                toast.error('Failed to send tip. Please try again.');
+        if (!state.selectedTipRecipient) {
+            toast.error('No recipient selected');
+            return;
+        }
+
+        if (!state.tipAmount || isNaN(Number(state.tipAmount)) || Number(state.tipAmount) <= 0) {
+            toast.error('Please enter a valid tip amount');
+            return;
+        }
+
+        try {
+            // Safely access the wallet address with proper type checking
+            const recipientAddress = state.selectedTipRecipient?.custom?.fields?.walletAddress?.kind;
+            const walletAddress = typeof recipientAddress === 'object' && 
+                'stringValue' in recipientAddress ? 
+                recipientAddress.stringValue : null;
+
+            if (!walletAddress || !isAddress(walletAddress)) {
+                toast.error('Invalid recipient wallet address');
+                return;
             }
+
+            await sendETH(walletAddress, state.tipAmount);
+            await sendTipEvent(state.selectedTipRecipient.userId, state.tipAmount);
+            
+            // Show success state
+            setState(prev => ({ 
+                ...prev, 
+                showTipModal: false,
+                showTipSuccess: true 
+            }));
+
+            // Hide success message after 5 seconds
+            setTimeout(() => {
+                setState(prev => ({ ...prev, showTipSuccess: false }));
+            }, 5000);
+
+        } catch (error) {
+            console.error('Error sending tip:', error);
+            toast.error(error instanceof Error ? error.message : 'Failed to send tip. Please try again.');
         }
     };
 
