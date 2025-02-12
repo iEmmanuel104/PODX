@@ -5,6 +5,7 @@ import { ChevronDown, Mic, MicOff, Video, VideoOff, DollarSign, UsersRound } fro
 import { StreamVideoParticipant, OwnUserResponse } from '@stream-io/video-react-sdk';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
+import toast from 'react-hot-toast';
 
 // Types
 interface ParticipantsSidebarProps {
@@ -222,15 +223,15 @@ const ParticipantItem = memo<{
             role: participant.roles.includes('host')
                 ? 'host'
                 : participant.roles.includes('cohost')
-                  ? 'cohost'
-                  : participant.roles.includes('user')
-                    ? 'user'
-                    : 'listener',
+                    ? 'cohost'
+                    : participant.roles.includes('user')
+                        ? 'user'
+                        : 'listener',
             currentUserRoles: !currentUser?.role
                 ? undefined
                 : Array.isArray(currentUser.role)
-                  ? currentUser.role
-                  : [currentUser.role],
+                    ? currentUser.role
+                    : [currentUser.role],
             displayName: formatName(participant.name || participant.userId),
         }),
         [participant, currentUser?.role]
@@ -277,7 +278,10 @@ const ParticipantItem = memo<{
             {isExpanded && !isCurrentUser && (
                 <div className="flex flex-wrap items-center gap-2 p-2 border-t border-[#383838]">
                     <Button
-                        onClick={() => onTip(participant)}
+                        onClick={() => {
+                            console.log("participant to tip", { participant })
+                            onTip(participant)
+                        }}
                         className="flex items-center justify-center gap-1.5 bg-[#6032F6] hover:bg-[#4C28C4] text-white text-xs px-2 py-1 rounded-full"
                     >
                         <Image
@@ -288,7 +292,7 @@ const ParticipantItem = memo<{
                             className="mb-0"
                             priority
                         />
-                        <p className="">Send Tip</p>
+                        <p className="">Send Tip to {participant.name}</p>
                     </Button>
 
                     {currentUserRoles?.includes('host') && !participant.roles.includes('host') && (
@@ -371,7 +375,10 @@ const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
                     </p>
                     <Button
                         className="w-full bg-[#6032F6] hover:bg-[#4C28C4] text-white px-4 py-2 rounded-lg"
-                        onClick={() => navigator.clipboard.writeText('Session Link')}
+                        onClick={() => {
+                            navigator.clipboard.writeText(window.location.href)
+                            toast.success('Link copied to clipboard');
+                        }}
                     >
                         Copy Link
                     </Button>
