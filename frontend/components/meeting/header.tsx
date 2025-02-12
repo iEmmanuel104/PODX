@@ -10,7 +10,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { UserInfo } from '@/store/api/userApi';
+import { UserInfo } from '@/store/user/types';
 
 interface HeaderProps {
     userInfo: UserInfo | null;

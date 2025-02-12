@@ -1,62 +1,6 @@
-import { sessionType, streamCallType } from '@/constants';
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-
-interface Participant {
-    userId: string;
-    socketId: string;
-    isAudioEnabled: boolean;
-    isVideoEnabled: boolean;
-    audioTrackId: string | null;
-    videoTrackId: string | null;
-}
-
-interface CoHostRequest {
-    userId: string;
-    podId: string;
-}
-
-interface JoinRequest {
-    userId: string;
-    podId: string;
-}
-
-interface Error {
-    type: string;
-    message: string;
-}
-
-export interface PodState {
-    podId: string | null;
-    participants: Participant[];
-    localUser: {
-        isAudioEnabled: boolean;
-        isVideoEnabled: boolean;
-        audioTrackId: string | null;
-        videoTrackId: string | null;
-    };
-    messages: { userId: string; message: string }[];
-    podType: 'open' | 'trusted' | null;
-    stats: {
-        memberCount: number;
-        hostCount: number;
-        joinRequestCount: number;
-        coHostRequestCount: number;
-    };
-    ipfsContentHash: string | null;
-    coHostRequests: CoHostRequest[];
-    joinRequests: JoinRequest[];
-    errors: Error[];
-    pendingTipTransaction: string | null;
-    isScreenSharing: boolean;
-    screenSharingUserId: string | null;
-    sessionTitle: string;
-    sessionType: sessionType | '';
-    sessionId: string;
-    streamCallType: (typeof streamCallType)[keyof typeof streamCallType] | '';
-    starts_at?: string;
-    isScheduled?: boolean;
-    isNewMeeting: boolean;
-}
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { CoHostRequest, JoinRequest, PodState, Error } from "./types";
+import { sessionType, streamCallType } from "@/constants";
 
 const initialState: PodState = {
     podId: null,

@@ -1,17 +1,5 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { CallStats, CallStatsAnalytics, CallStatsReport } from '../api/callAnalyticsApi';
-
-export interface CallStatsState {
-    basicStats: CallStats | null;
-    detailedAnalytics: CallStatsAnalytics | null;
-    reports: CallStatsReport[];
-    timeRange: {
-        startDate: string | null;
-        endDate: string | null;
-    };
-    loading: boolean;
-    error: string | null;
-}
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { CallStats, CallStatsAnalytics, CallStatsReport, CallStatsState } from "./types";
 
 const initialState: CallStatsState = {
     basicStats: null,

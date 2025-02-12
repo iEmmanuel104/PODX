@@ -2,7 +2,6 @@
 import dynamic from 'next/dynamic';
 import React, { useEffect, useState, useRef, useCallback, memo, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAppSelector } from '@/store/hooks';
 import { STREAM_API_KEY } from '@/constants';
 import { LoadingOverlay } from '@/components/ui/loading';
 import { useStreamTokenProvider } from '@/hooks/useStreamTokenProvider';
@@ -10,6 +9,7 @@ import type { StreamChat } from 'stream-chat';
 import type { Call, StreamVideoClient } from '@stream-io/video-react-sdk';
 import { ErrorBoundary } from '@/components/pod/errorBoundary';
 import { StreamConnectionPool } from './streamConnectionPool';
+import { useTypedSelector } from '@/store/config/store';
 const DynamicStreamVideo = dynamic(
     () => import('@stream-io/video-react-sdk').then(mod => mod.StreamVideo),
     { ssr: false }
@@ -34,8 +34,8 @@ const connectionPool = new StreamConnectionPool();
 
 export const StreamMeetProvider = memo<StreamMeetProviderProps>(
     ({ meetingId, children, language }) => {
-        const { user, pod } = useAppSelector(state => state);
-        const { user: appUser, isLoggedIn } = user;
+        const { auth, pod } = useTypedSelector(state => state);
+        const { user, isLoggedIn } = auth;
         const { streamCallType } = pod;
         const [loading, setLoading] = useState(true);
         const [isMounted, setIsMounted] = useState(false);
@@ -60,30 +60,30 @@ export const StreamMeetProvider = memo<StreamMeetProviderProps>(
                     );
                 }
 
-                if (!chatClientRef.current.userID && appUser) {
+                if (!chatClientRef.current.userID && user) {
                     await chatClientRef.current.connectUser(
                         {
-                            id: appUser.id,
-                            username: appUser.username,
+                            id: user.id,
+                            username: user.username,
                         },
                         token
                     );
                 }
             },
-            [appUser]
+            [user]
         );
 
         const connectVideoClient = useCallback(
             async (token: string) => {
-                if (!videoClientRef.current && appUser) {
+                if (!videoClientRef.current && user) {
                     videoClientRef.current = await connectionPool.getVideoClient({
                         apiKey: STREAM_API_KEY as string,
                         user: {
-                            id: appUser.id,
-                            name: appUser.username,
-                            image: appUser.displayImage,
+                            id: user.id,
+                            name: user.username,
+                            image: user.displayImage,
                             custom: {
-                                walletAddress: appUser.walletAddress,
+                                walletAddress: user.walletAddress,
                             },
                         },
                         tokenProvider: async () => token,
@@ -96,16 +96,16 @@ export const StreamMeetProvider = memo<StreamMeetProviderProps>(
                     callRef.current = videoClientRef.current.call(callType, meetingId);
                 }
             },
-            [appUser, meetingId, streamCallType]
+            [user, meetingId, streamCallType]
         );
 
         useEffect(() => {
             if (!isMounted) return;
 
             const setupClients = async () => {
-                if (isLoggedIn && appUser) {
+                if (isLoggedIn && user) {
                     try {
-                        const token = await tokenProvider(appUser.walletAddress);
+                        const token = await tokenProvider(user.walletAddress);
                         await Promise.all([connectChatClient(token), connectVideoClient(token)]);
                         setLoading(false);
                     } catch (error) {
@@ -124,7 +124,7 @@ export const StreamMeetProvider = memo<StreamMeetProviderProps>(
         }, [
             isMounted,
             isLoggedIn,
-            appUser,
+            user,
             tokenProvider,
             connectChatClient,
             connectVideoClient,

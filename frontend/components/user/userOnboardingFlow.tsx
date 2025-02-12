@@ -1,8 +1,8 @@
 import React, { useReducer, useCallback, useTransition } from 'react';
-import { useAppDispatch } from '@/store/hooks';
-import { setFirstTimeUser, updateUser } from '@/store/slices/userSlice';
 import UserInfoModal from './userInfoModal';
 import OnboardingStep from './onboardingSteps';
+import { setFirstTimeUser, updateUser } from '@/store/auth/slice';
+import { useAppDispatch } from '@/store/config/store';
 
 interface UserOnboardingFlowProps {
     isOpen: boolean;

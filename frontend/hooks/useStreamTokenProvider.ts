@@ -1,6 +1,7 @@
 'use client';
+import { useValidateUserMutation } from '@/store/user/slice';
+import { UserInfo } from '@/store/user/types';
 import { useCallback, useRef } from 'react';
-import { useValidateUserMutation, UserInfo } from '@/store/api/userApi';
 
 export const useStreamTokenProvider = () => {
     const [validateUser] = useValidateUserMutation();

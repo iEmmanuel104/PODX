@@ -1,10 +1,6 @@
-// store/slices/scheduledSessionsSlice.ts
 import { StreamCallData } from '@/components/pod/streamCallData';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-
-export interface scheduledSessionsState {
-    sessions: StreamCallData[];
-}
+import { scheduledSessionsState } from './types';
 
 const initialState: scheduledSessionsState = {
     sessions: [],

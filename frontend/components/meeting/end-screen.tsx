@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
 import Logo from '../ui/logo';
 import { Modal } from './tips';
-import { UserInfo } from '@/store/api/userApi';
+import { UserInfo } from '@/store/user/types';
 
 interface EndScreenProps {
     onClose: () => void;
