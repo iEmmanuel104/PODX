@@ -159,7 +159,12 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="bg-[#1d1d1d] text-white sm:rounded-[20px] p-8 w-full max-w-lg overflow-hidden border border-white/[0.1]">
+            <DialogContent className={`
+                bg-[#1d1d1d] text-white sm:rounded-[20px] p-4 sm:p-8 
+                w-full max-w-[90%] sm:max-w-lg mx-auto 
+                overflow-y-auto max-h-[90vh] border border-white/[0.1]
+            `}
+            >
                 {/* Background gradient - moved behind content */}
                 <div className="absolute inset-0 pointer-events-none">
                     <div className="absolute inset-0 bg-gradient-to-br from-white/[0.1] via-transparent to-transparent" />
@@ -184,22 +189,20 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                 <div className="flex items-center gap-4 mb-6">
                     <Button
                         size="sm"
-                        className={`rounded-full ${
-                            !formState.isScheduled
-                                ? 'bg-[#6032F6] hover:bg-[#6D28D9]'
-                                : 'bg-[#1e1e1e] border border-zinc-600'
-                        }`}
+                        className={`rounded-full ${!formState.isScheduled
+                            ? 'bg-[#6032F6] hover:bg-[#6D28D9]'
+                            : 'bg-[#1e1e1e] border border-zinc-600'
+                            }`}
                         onClick={() => updateFormState({ isScheduled: false })}
                     >
                         Instant session
                     </Button>
                     <Button
                         size="sm"
-                        className={`rounded-full ${
-                            formState.isScheduled
-                                ? 'bg-[#6032F6] hover:bg-[#6D28D9]'
-                                : 'bg-[#1e1e1e] border border-zinc-600'
-                        }`}
+                        className={`rounded-full ${formState.isScheduled
+                            ? 'bg-[#6032F6] hover:bg-[#6D28D9]'
+                            : 'bg-[#1e1e1e] border border-zinc-600'
+                            }`}
                         onClick={() => updateFormState({ isScheduled: true })}
                     >
                         Schedule session{' '}

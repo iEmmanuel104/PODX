@@ -75,7 +75,7 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="bg-[#1E1E1E] text-white rounded-[10px] p-6 w-full max-w-md">
+            <DialogContent className="bg-[#1E1E1E] text-white rounded-[10px] p-6 w-full max-w-[90%] sm:max-w-md mx-auto ">
                 {/* Background gradient - moved behind content */}
                 <div className="absolute inset-0 pointer-events-none">
                     <div className="absolute inset-0 bg-gradient-to-bl from-white/[0.1] via-transparent to-transparent" />
