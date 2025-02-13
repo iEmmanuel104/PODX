@@ -1,19 +1,16 @@
 'use client';
 
 import * as React from 'react';
-import { X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { X, Users, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileUpload } from '@/components/ui/file-upload';
 import AddIcon from '@/public/icons/AddIcon';
 import { Input } from '@/components/ui/input';
-
-interface Session {
-    id: string;
-    name: string;
-    whitelisted: boolean;
-}
+import VideoIcon from '@/public/icons/VideoIcon';
+import Microphone from '@/public/icons/Microphone';
+import { sessionType } from '@/constants';
+import { Session } from '@/types';
 
 interface MultiSelectProps {
     sessions?: Session[];
@@ -59,9 +56,16 @@ export function MultiSelect({
         onSelectionChange?.(newSessions);
     };
 
-    React.useEffect(() => {
-        setSelectedSessions([]);
-    }, [sessions]);
+    const formatDate = (dateString?: string) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+    };
 
     return (
         <div className="w-full space-y-4">
@@ -92,29 +96,25 @@ export function MultiSelect({
                 <TabsList className="w-full bg-[#3D3D3D] p-1 rounded-full max-w-[160px]">
                     <TabsTrigger
                         value="internal"
-                        className={`
-                            px-4 py-1 text-xs font-medium rounded-full
+                        className={`px-4 py-1 text-xs font-medium rounded-full
                             ${
                                 activeTab === 'internal'
                                     ? 'bg-[#6032F6] text-white'
                                     : 'text-gray-400 hover:text-gray-300'
                             }
-                            transition-colors duration-200
-                        `}
+                            transition-colors duration-200`}
                     >
                         Internal
                     </TabsTrigger>
                     <TabsTrigger
                         value="external"
-                        className={`
-                            px-4 py-1 text-xs font-medium rounded-full
+                        className={`px-4 py-1 text-xs font-medium rounded-full
                             ${
                                 activeTab === 'external'
                                     ? 'bg-[#6032F6] text-white'
                                     : 'text-gray-400 hover:text-gray-300'
                             }
-                            transition-colors duration-200
-                        `}
+                            transition-colors duration-200`}
                     >
                         External
                     </TabsTrigger>
@@ -155,47 +155,69 @@ export function MultiSelect({
                                         return (
                                             <div
                                                 key={session.id}
-                                                className={`
-                                                    flex items-center justify-between p-3 
-                                                    rounded-lg cursor-pointer
+                                                className={`flex flex-col p-3 rounded-lg cursor-pointer
                                                     ${
                                                         isSelected
                                                             ? 'bg-[#6032F6]/10'
                                                             : 'hover:bg-[#3c3c3c]'
                                                     }
-                                                    transition-colors duration-200
-                                                `}
+                                                    transition-colors duration-200`}
                                                 onClick={() => toggleSession(session)}
                                                 role="button"
                                                 tabIndex={0}
-                                                onKeyDown={e => {
-                                                    if (e.key === 'Enter' || e.key === ' ') {
-                                                        toggleSession(session);
-                                                    }
-                                                }}
                                             >
-                                                <span
-                                                    className={`text-sm font-medium ${
-                                                        isSelected
-                                                            ? 'text-[#6032F6]'
-                                                            : 'text-gray-300'
-                                                    }`}
-                                                >
-                                                    {session.name}
-                                                </span>
-                                                <Badge
-                                                    className={`
-                                                        ${
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-3">
+                                                        {/* Session Type Icon */}
+                                                        <div className="flex justify-center items-center w-8 h-8 bg-[#6032F6] rounded-full">
+                                                            {session.type === sessionType.AUDIO ? (
+                                                                <Microphone />
+                                                            ) : (
+                                                                <VideoIcon />
+                                                            )}
+                                                        </div>
+
+                                                        {/* Session Name and Details */}
+                                                        <div className="flex flex-col">
+                                                            <span
+                                                                className={`text-sm font-medium 
+                                                                ${isSelected ? 'text-[#6032F6]' : 'text-gray-300'}`}
+                                                            >
+                                                                {session.name}
+                                                            </span>
+                                                            <div className="flex items-center gap-3 mt-1">
+                                                                <div className="flex items-center gap-1 text-gray-400">
+                                                                    <Users className="w-3 h-3" />
+                                                                    <span className="text-xs">
+                                                                        {session.membersCount}
+                                                                    </span>
+                                                                </div>
+                                                                {session.startTime && (
+                                                                    <div className="flex items-center gap-1 text-gray-400">
+                                                                        <Clock className="w-3 h-3" />
+                                                                        <span className="text-xs">
+                                                                            {formatDate(
+                                                                                session.startTime
+                                                                            )}
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <Badge
+                                                        className={`${
                                                             isSelected
                                                                 ? 'bg-[#6032F6] text-white hover:bg-[#4D28C4]'
                                                                 : 'bg-[#3c3c3c] text-gray-300 hover:bg-[#4c4c4c]'
                                                         }
-                                                        transition-colors duration-200
-                                                        rounded-full px-3 py-1 text-xs font-medium
-                                                    `}
-                                                >
-                                                    {isSelected ? 'Whitelisted' : 'Whitelist'}
-                                                </Badge>
+                                                            transition-colors duration-200
+                                                            rounded-full px-3 py-1 text-xs font-medium`}
+                                                    >
+                                                        {isSelected ? 'Whitelisted' : 'Whitelist'}
+                                                    </Badge>
+                                                </div>
                                             </div>
                                         );
                                     })
@@ -215,9 +237,16 @@ export function MultiSelect({
                             className="bg-[#6032F6]/10 text-[#6032F6] px-3 py-1.5 
                                      flex items-center gap-2 text-xs font-medium rounded-full"
                         >
-                            {session.name.length > 20
-                                ? `${session.name.substring(0, 20)}...`
-                                : session.name}
+                            <div className="flex items-center gap-2">
+                                {session.type === sessionType.AUDIO ? (
+                                    <Microphone />
+                                ) : (
+                                    <VideoIcon />
+                                )}
+                                {session.name.length > 20
+                                    ? `${session.name.substring(0, 20)}...`
+                                    : session.name}
+                            </div>
                             <button
                                 onClick={e => {
                                     e.preventDefault();

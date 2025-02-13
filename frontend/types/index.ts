@@ -1,3 +1,4 @@
+import { sessionType } from '@/constants';
 import { UserInfo } from '@/store/user/types';
 import React from 'react';
 
@@ -20,5 +21,22 @@ export interface UserDetailsProps {
     onWithdrawClick: () => void;
     onWarningConfirm: () => void;
     isBalanceHidden?: boolean;
+}
+
+export interface SessionFormState {
+    title: string;
+    type: sessionType;
+    isScheduled: boolean;
+    date?: Date;
+    time?: string;
+}
+
+export interface Session {
+    id: string;
+    name: string;
+    type: string;
+    membersCount: number;
+    startTime?: string;
+    whitelisted: boolean;
 }
 

@@ -27,6 +27,7 @@ import TickCircle from '@/public/icons/TickCircle';
 import Microphone from '@/public/icons/Microphone';
 import VideoIcon from '@/public/icons/VideoIcon';
 import { useGetUserCallsQuery } from '@/store/user/slice';
+import { SessionFormState, Session } from '@/types';
 
 interface CreateSessionModalProps {
     isOpen: boolean;
@@ -34,27 +35,7 @@ interface CreateSessionModalProps {
     onCreateSession: (title: string, type: sessionType, scheduledDate?: Date) => void;
 }
 
-interface SessionFormState {
-    title: string;
-    type: sessionType;
-    isScheduled: boolean;
-    date?: Date;
-    time?: string;
-}
-
-interface Session {
-    id: string;
-    name: string;
-    whitelisted: boolean;
-}
-
-interface CreateSessionModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    onCreateSession: (title: string, type: sessionType, scheduledDate?: Date) => void;
-}
-
-const DEFAULT_SESSION_TITLE = 'Demo Session';
+export const DEFAULT_SESSION_TITLE = 'Demo Session';
 
 const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
     isOpen,
@@ -70,21 +51,14 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
     });
     const [tokenGatingSwitch, setTokenGatingSwitch] = useState<boolean>(false);
     const [isCreating, setIsCreating] = useState(false);
-    const [customTime, setCustomTime] = useState('');
     const [timeError, setTimeError] = useState('');
     const [isSelectingSession, setIsSelectingSession] = useState(false);
 
     const { data: userCallsData, isLoading: isLoadingCalls } = useGetUserCallsQuery(
-        undefined, // or { filter: 'creator' } if you only want created calls
+        { filter: 'creator' }, // or { filter: 'creator' } if you only want created calls
         {
             skip: !tokenGatingSwitch, // Only fetch when token gating is enabled
         }
-    );
-
-    // Memoized time slots for dropdown
-    const timeSlots = React.useMemo(
-        () => Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`),
-        []
     );
 
     const transformedSessions: Session[] = React.useMemo(() => {
@@ -93,6 +67,9 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
         return userCallsData.data.calls.map(call => ({
             id: call.callId,
             name: (call.custom?.title as string) || `Session ${call.callId}`,
+            type: (call.custom?.type as string) || sessionType.POD,
+            membersCount: call.members ? call.members.length : 0,
+            startTime: call.startTime,
             whitelisted: false,
         }));
     }, [userCallsData]);
@@ -101,47 +78,12 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
         setTokenGatingSwitch(!tokenGatingSwitch);
     };
 
-    const validateTime = (time: string): boolean => {
-        const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
-        return timeRegex.test(time);
-    };
-
     const isDateTimeInPast = (date: Date, timeStr?: string): boolean => {
         if (!timeStr) return false;
         const [hours, minutes] = timeStr.split(':').map(Number);
         const dateWithTime = new Date(date);
         dateWithTime.setHours(hours, minutes, 0, 0);
         return isBefore(dateWithTime, new Date());
-    };
-
-    const handleTimeChange = (value: string) => {
-        setCustomTime(value);
-        setTimeError('');
-
-        if (value === '') {
-            updateFormState({ time: undefined });
-            return;
-        }
-
-        if (validateTime(value)) {
-            if (formState.date && isDateTimeInPast(formState.date, value)) {
-                setTimeError('Cannot schedule for a past time');
-                return;
-            }
-            updateFormState({ time: value });
-        } else {
-            setTimeError('Please enter time in HH:mm format');
-        }
-    };
-
-    const handleTimeSelect = (value: string) => {
-        if (formState.date && isDateTimeInPast(formState.date, value)) {
-            setTimeError('Cannot schedule for a past time');
-            return;
-        }
-        setCustomTime(value);
-        updateFormState({ time: value });
-        setTimeError('');
     };
 
     const handleCreateSession = useCallback(async () => {
@@ -168,17 +110,6 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
     const updateFormState = useCallback((updates: Partial<SessionFormState>) => {
         setFormState(prev => ({ ...prev, ...updates }));
     }, []);
-
-    const handleTokenGatingClick = () => {
-        if (!tokenGatingSwitch) {
-            setTokenGatingSwitch(true);
-            // Don't show session selector immediately when enabling token gating
-            setIsSelectingSession(false);
-        } else {
-            setTokenGatingSwitch(false);
-            setIsSelectingSession(false);
-        }
-    };
 
     const isSubmitDisabled = formState.isScheduled
         ? !formState.title.trim() || !formState.date || !formState.time || isCreating || !!timeError
