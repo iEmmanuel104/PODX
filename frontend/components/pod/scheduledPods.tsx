@@ -39,7 +39,7 @@ const getSessionStatus = (startsAt: string) => {
     if (minutesUntilStart > 5) {
         return {
             text: `Starts in ${Math.floor(minutesUntilStart / 60)}h ${minutesUntilStart % 60}m`,
-            color: 'text-[#A3A3A3]',
+            color: 'text-[#DDB958]',
         };
     } else if (minutesUntilStart > -60) {
         return {
@@ -84,7 +84,7 @@ const ShareDialog = memo(function ShareDialog({
     };
 
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
+        <Dialog open={isOpen} onOpenChange={onClose} modal>
             <DialogContent className="bg-[#1E1E1E] text-white rounded-[10px] p-6 w-full max-w-md">
                 <DialogHeader>
                     <DialogTitle className="text-xl font-semibold mb-4">Share Session</DialogTitle>
@@ -220,7 +220,7 @@ const SessionCard = memo(function SessionCard({
                         </p>
                         <div className="flex items-center gap-2">
                             <p className="text-xs text-[#A3A3A3]">
-                                Host:{' '}
+                                Hosted by:{' '}
                                 {session.created_by.custom?.username || session.created_by.name}
                             </p>
                             {status && (
