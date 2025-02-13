@@ -1,9 +1,9 @@
 import { useState, useCallback } from 'react';
 import {
     StreamVideoParticipant,
-    useCall,
-    useConnectedUser,
     CustomVideoEvent,
+    OwnUserResponse,
+    Call,
 } from '@stream-io/video-react-sdk';
 import { useSendTransaction } from '@privy-io/react-auth';
 import { useSendTransaction as useSendTransactionWagmi } from 'wagmi';
@@ -18,7 +18,7 @@ interface TippingState {
     receivedTips: Array<{ from: string; amount: string }>;
 }
 
-export const useTipping = (isEmbeddedWallet: boolean) => {
+export const useTipping = (isEmbeddedWallet: boolean, connectedUser: OwnUserResponse | undefined, call: Call | undefined  ) => {
     const [state, setState] = useState<TippingState>({
         showTipModal: false,
         tipAmount: '',
@@ -26,9 +26,6 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
         selectedTipRecipient: null,
         receivedTips: [],
     });
-
-    const call = useCall();
-    const connectedUser = useConnectedUser();
 
     // Embedded wallet transaction handling
     const { sendTransaction: sendTransactionEmbedded } = useSendTransaction({

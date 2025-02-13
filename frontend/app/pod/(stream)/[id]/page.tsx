@@ -78,7 +78,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
         handleCancelTip,
         setTipAmount,
         handleTipEvent,
-    } = useTipping(isEmbeddedWallet);
+    } = useTipping(isEmbeddedWallet, connectedUser, call);
 
     const {
         data: balance,

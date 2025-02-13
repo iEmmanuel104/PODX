@@ -314,6 +314,8 @@ const ParticipantItem = memo<{
 const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
     ({ participants, currentUser, openTipModal, updateParticipantRole, handleJoinRequest }) => {
         const [expandedParticipant, setExpandedParticipant] = useState<string | null>(null);
+        const participoantsObj = JSON.parse(JSON.stringify(participants));
+        console.log({participoantsObj});
 
         const { sortedParticipants, pendingParticipants, activeParticipants, isCurrentUserHost } =
             useMemo(() => {
