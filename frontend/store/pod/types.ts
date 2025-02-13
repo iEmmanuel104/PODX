@@ -55,4 +55,5 @@ export interface PodState {
     starts_at?: string;
     isScheduled?: boolean;
     isNewMeeting: boolean;
+    tokenGate?: string[];
 }

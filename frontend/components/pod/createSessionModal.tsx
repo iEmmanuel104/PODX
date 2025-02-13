@@ -28,11 +28,17 @@ import Microphone from '@/public/icons/Microphone';
 import VideoIcon from '@/public/icons/VideoIcon';
 import { useGetUserCallsQuery } from '@/store/user/slice';
 import { SessionFormState, Session } from '@/types';
+import { CallMember } from '@/store/user/types';
 
 interface CreateSessionModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onCreateSession: (title: string, type: sessionType, scheduledDate?: Date) => void;
+    onCreateSession: (
+        title: string,
+        type: sessionType,
+        scheduledDate?: Date,
+        tokenGatedSessions?: string[]
+    ) => void;
 }
 
 export const DEFAULT_SESSION_TITLE = 'Demo Session';
@@ -50,16 +56,37 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
         time: undefined,
     });
     const [tokenGatingSwitch, setTokenGatingSwitch] = useState<boolean>(false);
+    const [whitelistedAddresses, setWhitelistedAddresses] = useState<string[]>([]);
     const [isCreating, setIsCreating] = useState(false);
     const [timeError, setTimeError] = useState('');
     const [isSelectingSession, setIsSelectingSession] = useState(false);
 
     const { data: userCallsData, isLoading: isLoadingCalls } = useGetUserCallsQuery(
-        { filter: 'creator' }, // or { filter: 'creator' } if you only want created calls
+        { filter: 'tokengate' }, // or { filter: 'creator' } if you only want created calls
         {
             skip: !tokenGatingSwitch, // Only fetch when token gating is enabled
         }
     );
+
+    const handleSessionSelectionChange = (sessions: Session[]) => {
+        if (!userCallsData?.data?.calls) return;
+
+        // Get the selected call data from userCallsData
+        const selectedCallsData = userCallsData.data.calls.filter(call =>
+            sessions.some(session => session.id === call.callId)
+        );
+
+        // Extract unique wallet addresses from all members of selected calls
+        const allMemberAddresses = selectedCallsData.flatMap(call =>
+            (call.members as CallMember[]).map(member => member.userId.walletAddress.toLowerCase())
+        );
+
+        // Create a unique list of wallet addresses
+        const uniqueAddresses = Array.from(new Set(allMemberAddresses));
+
+        // Update state with unique addresses
+        setWhitelistedAddresses(uniqueAddresses);
+    };
 
     const transformedSessions: Session[] = React.useMemo(() => {
         if (!userCallsData?.data?.calls) return [];
@@ -100,12 +127,15 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                 scheduledDate.setHours(hours, minutes, 0, 0);
             }
 
-            await onCreateSession(formState.title, formState.type, scheduledDate);
+            // Pass the whitelisted addresses only if token gating is enabled
+            const addresses = tokenGatingSwitch ? whitelistedAddresses : undefined;
+
+            await onCreateSession(formState.title, formState.type, scheduledDate, addresses);
             onClose();
         } finally {
             setIsCreating(false);
         }
-    }, [formState, onCreateSession, onClose, timeError]);
+    }, [formState, onCreateSession, onClose, timeError, tokenGatingSwitch, whitelistedAddresses]);
 
     const updateFormState = useCallback((updates: Partial<SessionFormState>) => {
         setFormState(prev => ({ ...prev, ...updates }));
@@ -114,6 +144,18 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
     const isSubmitDisabled = formState.isScheduled
         ? !formState.title.trim() || !formState.date || !formState.time || isCreating || !!timeError
         : !formState.title.trim() || isCreating;
+
+    const getWhitelistSummary = () => {
+        if (!tokenGatingSwitch) return null;
+        if (whitelistedAddresses.length === 0) return null;
+
+        return (
+            <div className="text-sm text-white/70 px-4">
+                {whitelistedAddresses.length} unique{' '}
+                {whitelistedAddresses.length === 1 ? 'address' : 'addresses'} will be whitelisted
+            </div>
+        );
+    };
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -367,6 +409,8 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                         </Button>
                     </div>
 
+                    {getWhitelistSummary()}
+
                     {/* Conditionally render MultiSelect based on tokenGatingSwitch state */}
                     {tokenGatingSwitch &&
                         (isLoadingCalls ? (
@@ -377,6 +421,7 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                             <MultiSelect
                                 sessions={transformedSessions}
                                 isLoading={isLoadingCalls}
+                                onSelectionChange={handleSessionSelectionChange}
                             />
                         ))}
 
@@ -421,6 +466,7 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                             <MultiSelect
                                 sessions={transformedSessions}
                                 isLoading={isLoadingCalls}
+                                onSelectionChange={handleSessionSelectionChange}
                             />
                         )}
                     </div>

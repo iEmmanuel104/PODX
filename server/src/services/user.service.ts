@@ -323,7 +323,10 @@ export default class UserService {
         };
     }
 
-    static async getUserCallsFromDb(walletAddress: string, filter?: 'creator' | 'member'): Promise<ICall[]> {
+    static async getUserCallsFromDb(
+        walletAddress: string,
+        filter?: 'creator' | 'member' | 'tokengate'
+    ): Promise<ICall[]> {
         try {
             // First, get the user's ID from their wallet address
             const user = await User.findOne({ walletAddress: walletAddress.toLowerCase() });
@@ -341,6 +344,15 @@ export default class UserService {
                 query = {
                     'members.userId': user._id,
                     createdById: { $ne: user._id }, // Exclude calls where user is creator
+                };
+                break;
+            case 'tokengate':
+                query = {
+                    createdById: user._id,
+                    // Check if members array has more than 1 member
+                    $expr: {
+                        $gt: [{ $size: '$members' }, 1],
+                    },
                 };
                 break;
             default:

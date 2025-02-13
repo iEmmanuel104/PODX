@@ -201,13 +201,13 @@ export default class UserController {
             const { filter } = req.query;
 
             // Validate filter if provided
-            if (filter && !['creator', 'member'].includes(filter as string)) {
+            if (filter && !['creator', 'member', 'tokengate'].includes(filter as string)) {
                 throw new BadRequestError('Invalid filter value. Must be either "creator" or "member"');
             }
 
             const calls = await UserService.getUserCallsFromDb(
                 req.user.walletAddress,
-                filter as 'creator' | 'member' | undefined
+                filter as 'creator' | 'member' | 'tokengate' | undefined
             );
 
             res.status(200).json({

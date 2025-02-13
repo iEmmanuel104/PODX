@@ -10,7 +10,7 @@ export default class CallsController {
 
     // all call controllers
     static async scheduleCall(req: AuthenticatedRequest, res: Response) {
-        const { title, type, sessionId, starts_at } = req.body;
+        const { title, type, sessionId, starts_at, tokenGate } = req.body;
 
         const startTime = new Date(starts_at);
         const expiryTime = new Date(startTime.getTime() + 5 * 60 * 1000);
@@ -36,6 +36,7 @@ export default class CallsController {
                 },
             },
             created_at: now.toISOString(),
+            tokenGate,
         };
 
         // Store in global sessions set for searching

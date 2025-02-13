@@ -1,3 +1,5 @@
+import { string } from "@/types";
+
 export interface CallStats {
     totalCalls: number;
     ongoingCalls: number;
@@ -79,6 +81,7 @@ export interface ScheduleCallArgs {
     type: string;
     sessionId: string;
     starts_at: string;
+    tokenGate?: string[];
 }
 
 export interface QueryParams {

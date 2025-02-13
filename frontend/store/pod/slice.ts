@@ -33,6 +33,7 @@ const initialState: PodState = {
     starts_at: undefined,
     isScheduled: false,
     isNewMeeting: false,
+    tokenGate: [],
 };
 
 const podSlice = createSlice({
@@ -192,6 +193,7 @@ const podSlice = createSlice({
                 sessionId: string;
                 starts_at?: string;
                 isScheduled?: boolean;
+                tokenGate?: string[];
             }>
         ) => {
             state.sessionTitle = action.payload.title;
@@ -200,6 +202,7 @@ const podSlice = createSlice({
             state.streamCallType = streamCallType[action.payload.type];
             state.starts_at = action.payload.starts_at;
             state.isScheduled = action.payload.isScheduled;
+            state.tokenGate = action.payload.tokenGate;
         },
         clearSessionInfo: state => {
             state.sessionTitle = '';

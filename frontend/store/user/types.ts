@@ -78,5 +78,5 @@ export interface GetUserCallsResponse {
 }
 
 export interface GetUserCallsArgs {
-    filter?: 'creator' | 'member';
+    filter?: 'creator' | 'member' | 'tokengate';
 }

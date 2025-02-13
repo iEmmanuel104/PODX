@@ -39,4 +39,3 @@ export interface Session {
     startTime?: string;
     whitelisted: boolean;
 }
-

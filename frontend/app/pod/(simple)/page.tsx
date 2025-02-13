@@ -54,6 +54,7 @@ interface SessionData {
     sessionId: string;
     starts_at?: string;
     isScheduled?: boolean;
+    tokenGate?: string[];
 }
 
 export default function PodPage() {
@@ -102,7 +103,7 @@ export default function PodPage() {
     );
 
     const handleCreateSession = useCallback(
-        async (title: string, type: sessionType, scheduledDate?: Date) => {
+        async (title: string, type: sessionType, scheduledDate?: Date, tokenGate?: string[]) => {
             dispatch(clearSessionInfo());
             setNewMeeting(true);
             const newSessionCode = getMeetingId();
@@ -112,6 +113,7 @@ export default function PodPage() {
                 type,
                 sessionId: newSessionCode,
                 isScheduled: !!scheduledDate,
+                tokenGate,
             };
 
             if (scheduledDate) {
@@ -124,6 +126,7 @@ export default function PodPage() {
                         type,
                         sessionId: newSessionCode,
                         starts_at: startDate.toISOString(),
+                        tokenGate,
                     });
 
                     if (!result.data) {
