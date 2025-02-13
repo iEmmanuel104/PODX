@@ -195,4 +195,36 @@ export default class UserController {
             data: { calls },
         });
     }
+
+    static async getUserCallsLocal(req: AuthenticatedRequest, res: Response) {
+        try {
+            const { filter } = req.query;
+
+            // Validate filter if provided
+            if (filter && !['creator', 'member'].includes(filter as string)) {
+                throw new BadRequestError('Invalid filter value. Must be either "creator" or "member"');
+            }
+
+            const calls = await UserService.getUserCallsFromDb(
+                req.user.walletAddress,
+                filter as 'creator' | 'member' | undefined
+            );
+
+            res.status(200).json({
+                status: 'success',
+                message: 'User calls retrieved successfully',
+                data: {
+                    calls,
+                    total: calls.length,
+                    filter: filter || 'all',
+                },
+            });
+        } catch (error) {
+            if (error instanceof BadRequestError) {
+                throw error;
+            }
+            console.error('Error retrieving user calls:', error);
+            throw new BadRequestError('Failed to retrieve user calls');
+        }
+    }
 }

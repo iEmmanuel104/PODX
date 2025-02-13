@@ -3,7 +3,6 @@ import React, { useState, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
 import {
     Select,
     SelectContent,
@@ -13,7 +12,7 @@ import {
 } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { Video, CalendarIcon, Clock, Sparkles } from 'lucide-react';
+import { CalendarIcon, ChevronLeft } from 'lucide-react';
 import { format, addDays, isBefore, startOfDay } from 'date-fns';
 import { sessionType } from '@/constants';
 import SimpleTimePicker from './simpleTimePicker';
@@ -23,9 +22,11 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/
 import Retry from '@/public/images/icons/Retry';
 import Twinkle from '@/public/images/icons/Twinkle';
 import { MultiSelect } from '../ui/multi-select';
+import CloseCircle from '@/public/icons/CloseCircle';
+import TickCircle from '@/public/icons/TickCircle';
 import Microphone from '@/public/icons/Microphone';
 import VideoIcon from '@/public/icons/VideoIcon';
-import TokenGatingSwitch from './tokenGatingSwitch';
+import { useGetUserCallsQuery } from '@/store/user/slice';
 
 interface CreateSessionModalProps {
     isOpen: boolean;
@@ -39,6 +40,18 @@ interface SessionFormState {
     isScheduled: boolean;
     date?: Date;
     time?: string;
+}
+
+interface Session {
+    id: string;
+    name: string;
+    whitelisted: boolean;
+}
+
+interface CreateSessionModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onCreateSession: (title: string, type: sessionType, scheduledDate?: Date) => void;
 }
 
 const DEFAULT_SESSION_TITLE = 'Demo Session';
@@ -59,12 +72,30 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
     const [isCreating, setIsCreating] = useState(false);
     const [customTime, setCustomTime] = useState('');
     const [timeError, setTimeError] = useState('');
+    const [isSelectingSession, setIsSelectingSession] = useState(false);
+
+    const { data: userCallsData, isLoading: isLoadingCalls } = useGetUserCallsQuery(
+        undefined, // or { filter: 'creator' } if you only want created calls
+        {
+            skip: !tokenGatingSwitch, // Only fetch when token gating is enabled
+        }
+    );
 
     // Memoized time slots for dropdown
     const timeSlots = React.useMemo(
         () => Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`),
         []
     );
+
+    const transformedSessions: Session[] = React.useMemo(() => {
+        if (!userCallsData?.data?.calls) return [];
+
+        return userCallsData.data.calls.map(call => ({
+            id: call.callId,
+            name: (call.custom?.title as string) || `Session ${call.callId}`,
+            whitelisted: false,
+        }));
+    }, [userCallsData]);
 
     const toggleTokengatingSwitch = () => {
         setTokenGatingSwitch(!tokenGatingSwitch);
@@ -138,6 +169,17 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
         setFormState(prev => ({ ...prev, ...updates }));
     }, []);
 
+    const handleTokenGatingClick = () => {
+        if (!tokenGatingSwitch) {
+            setTokenGatingSwitch(true);
+            // Don't show session selector immediately when enabling token gating
+            setIsSelectingSession(false);
+        } else {
+            setTokenGatingSwitch(false);
+            setIsSelectingSession(false);
+        }
+    };
+
     const isSubmitDisabled = formState.isScheduled
         ? !formState.title.trim() || !formState.date || !formState.time || isCreating || !!timeError
         : !formState.title.trim() || isCreating;
@@ -169,20 +211,22 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                 <div className="flex items-center gap-4 mb-6">
                     <Button
                         size="sm"
-                        className={`rounded-full ${!formState.isScheduled
+                        className={`rounded-full ${
+                            !formState.isScheduled
                                 ? 'bg-[#6032F6] hover:bg-[#6D28D9]'
                                 : 'bg-[#1e1e1e] border border-zinc-600'
-                            }`}
+                        }`}
                         onClick={() => updateFormState({ isScheduled: false })}
                     >
                         Instant session
                     </Button>
                     <Button
                         size="sm"
-                        className={`rounded-full ${formState.isScheduled
+                        className={`rounded-full ${
+                            formState.isScheduled
                                 ? 'bg-[#6032F6] hover:bg-[#6D28D9]'
                                 : 'bg-[#1e1e1e] border border-zinc-600'
-                            }`}
+                        }`}
                         onClick={() => updateFormState({ isScheduled: true })}
                     >
                         Schedule session{' '}
@@ -212,7 +256,7 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                         >
                             <SelectTrigger className="w-full bg-[#2C2C2C] rounded-[10px] px-4 py-2 border-[#3c3c3c]">
                                 <SelectValue>
-                                    <div className='flex items-center gap-[8px]'>
+                                    <div className="flex items-center gap-[8px]">
                                         {formState.type === sessionType.AUDIO && (
                                             <div className="flex justify-center items-center w-[20px] h-[20px] bg-[#6032F6] rounded-full">
                                                 <div className="icon-container w-[12px] h-[12px]">
@@ -235,7 +279,6 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                                                 </span>
                                             </div>
                                         )}
-
                                     </div>
                                 </SelectValue>
                             </SelectTrigger>
@@ -366,11 +409,45 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                                 </Tooltip>
                             </TooltipProvider>
                         </div>
-                        <TokenGatingSwitch onClick={toggleTokengatingSwitch} switchState={tokenGatingSwitch} />
+                        <Button
+                            className="flex bg-[#2B2B2B] p-[2px] rounded-3xl"
+                            onClick={toggleTokengatingSwitch}
+                        >
+                            <div className="flex items-center gap-[8px]">
+                                <span
+                                    className={`${!tokenGatingSwitch ? 'bg-[#3c3c3c] w-[20px] h-[20px] rounded-full flex items-center justify-center' : 'p-[4px]'} `}
+                                >
+                                    <div className="w-[12px] h-[12px] rounded-full">
+                                        <CloseCircle
+                                            color={`${!tokenGatingSwitch ? 'stroke-[#ADADAD]' : 'stroke-[#515151]'}`}
+                                        />
+                                    </div>
+                                </span>
+                                <span
+                                    className={`${tokenGatingSwitch ? 'bg-gradient-to-t from-[#6A42E2] to-[#D7B260]' : ''}  w-[20px] h-[20px] rounded-full flex items-center justify-center`}
+                                >
+                                    <div className="w-[12px] h-[12px] rounded-full">
+                                        <TickCircle
+                                            color={`${tokenGatingSwitch ? 'stroke-white' : 'stroke-[#515151]'}`}
+                                        />
+                                    </div>
+                                </span>
+                            </div>
+                        </Button>
                     </div>
 
                     {/* Conditionally render MultiSelect based on tokenGatingSwitch state */}
-                    {tokenGatingSwitch && <MultiSelect />}
+                    {tokenGatingSwitch &&
+                        (isLoadingCalls ? (
+                            <div className="flex justify-center items-center p-4">
+                                <span className="text-white/70">Loading previous sessions...</span>
+                            </div>
+                        ) : (
+                            <MultiSelect
+                                sessions={transformedSessions}
+                                isLoading={isLoadingCalls}
+                            />
+                        ))}
 
                     {/* Action Buttons */}
                     <div className="flex justify-between items-center gap-6 pt-3">
@@ -389,6 +466,34 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                         </Button>
                     </div>
                 </div>
+
+                {/* Session Selection View */}
+                {tokenGatingSwitch && isSelectingSession && (
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between mb-6">
+                            <Button
+                                onClick={() => setIsSelectingSession(false)}
+                                className="text-gray-400 hover:text-white flex items-center gap-2"
+                                variant="ghost"
+                            >
+                                <ChevronLeft className="h-4 w-4" />
+                                Back
+                            </Button>
+                            <h3 className="text-lg font-medium text-white">Select Sessions</h3>
+                        </div>
+
+                        {isLoadingCalls ? (
+                            <div className="flex justify-center items-center p-4">
+                                <span className="text-white/70">Loading previous sessions...</span>
+                            </div>
+                        ) : (
+                            <MultiSelect
+                                sessions={transformedSessions}
+                                isLoading={isLoadingCalls}
+                            />
+                        )}
+                    </div>
+                )}
             </DialogContent>
         </Dialog>
     );

@@ -5,6 +5,7 @@ import { UserSettings, IUserSettings } from '../models/Mongodb/userSettings.mode
 import { NotFoundError, BadRequestError } from '../utils/customErrors';
 import Pagination, { IPaging } from '../utils/pagination';
 import { ICallActivity, IStreakStats, UserStreak } from '../models/Mongodb/userStreak.model';
+import { Call, ICall } from '../models/Mongodb/call.model';
 
 export interface IViewUsersQuery {
     page?: number;
@@ -320,5 +321,47 @@ export default class UserService {
                 })),
             streakHistory: userStreak.streakHistory.slice(-30), // Last 30 days
         };
+    }
+
+    static async getUserCallsFromDb(walletAddress: string, filter?: 'creator' | 'member'): Promise<ICall[]> {
+        try {
+            // First, get the user's ID from their wallet address
+            const user = await User.findOne({ walletAddress: walletAddress.toLowerCase() });
+            if (!user) {
+                throw new Error('User not found');
+            }
+
+            let query: any = {};
+
+            switch (filter) {
+            case 'creator':
+                query = { createdById: user._id };
+                break;
+            case 'member':
+                query = {
+                    'members.userId': user._id,
+                    createdById: { $ne: user._id }, // Exclude calls where user is creator
+                };
+                break;
+            default:
+                // If no filter, get both created and member calls
+                query = {
+                    $or: [
+                        { createdById: user._id },
+                        { 'members.userId': user._id },
+                    ],
+                };
+            }
+
+            const calls = await Call.find(query)
+                .populate('createdById', 'walletAddress username displayImage')
+                .populate('members.userId', 'walletAddress username displayImage')
+                .sort({ createdAt: -1 }); // Most recent first
+
+            return calls;
+        } catch (error) {
+            console.error('Error getting user calls:', error);
+            throw error;
+        }
     }
 }

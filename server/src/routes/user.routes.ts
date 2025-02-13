@@ -14,6 +14,7 @@ router
     .get('/streak-stats', basicAuth(), AuthenticatedController(UserController.getUserStreakStats))
     .post('/validate', UserController.validateUser)
     .get('/calls', basicAuth(), AuthenticatedController(UserController.getUserCalls))
+    .get('/calls/local', basicAuth(), AuthenticatedController(UserController.getUserCallsLocal))
     .patch('/update', basicAuth(), upload, AuthenticatedController(UserController.updateUser));
 
 export default router;

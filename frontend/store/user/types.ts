@@ -36,4 +36,47 @@ export interface UpdateUsernameArgs {
 
 export interface QueryParams {
     [key: string]: number | string;
-  }
+}
+
+
+export interface CallMember {
+    userId: {
+        walletAddress: string;
+        username: string;
+        displayImage?: string;
+    };
+    role?: string;
+}
+
+export interface Call {
+    callId: string;
+    type: string;
+    status: 'created' | 'live' | 'ended';
+    createdById: {
+        walletAddress: string;
+        username: string;
+        displayImage?: string;
+    };
+    members: CallMember[];
+    sessionId?: string;
+    startTime?: string;
+    endTime?: string;
+    duration?: number;
+    custom?: Record<string, unknown>;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface GetUserCallsResponse {
+    status: string;
+    message: string;
+    data: {
+        calls: Call[];
+        total: number;
+        filter: 'all' | 'creator' | 'member';
+    };
+}
+
+export interface GetUserCallsArgs {
+    filter?: 'creator' | 'member';
+}
