@@ -18,6 +18,7 @@ interface OnboardingStepProps {
     activeStep: number;
     stepsLength: number;
     showOnboarding: boolean;
+    direction: 'forward' | 'backward';
 }
 
 const steps = [
@@ -60,11 +61,12 @@ const OnboardingStep: FC<OnboardingStepProps> & { steps: typeof steps } = ({
     skipFunc,
     stepsLength,
     showOnboarding,
+    direction,
 }) => {
     return (
         <Dialog open={showOnboarding}>
             <DialogContent
-                key={title}
+                key={activeStep}
                 className="text-white rounded-[20px] p-[32px] w-full max-w-[500px] flex flex-col gap-[8px] bg-[#1d1d1d] overflow-hidden"
             >
                 <DotPattern
@@ -80,16 +82,35 @@ const OnboardingStep: FC<OnboardingStepProps> & { steps: typeof steps } = ({
                 <DialogTitle className="text-[8px] text-[#ddb958] font-medium">
                     GET STARTED ON PODX
                 </DialogTitle>
-                <DialogHeader className="text-xl font-medium transition-all duration-300">
+                <DialogHeader
+                    className={cn(
+                        'text-xl font-medium transition-all duration-300',
+                        direction === 'forward' ? 'animate-slideInRight' : 'animate-slideInLeft'
+                    )}
+                >
                     {title}
                 </DialogHeader>
-                <div className="flex flex-col gap-[32px]">
+                <div className="flex flex-col gap-[32px] overflow-hidden">
                     <div className="flex flex-col gap-[32px]">
-                        <p className="text-sm font-medium text-[#8c8c8c] transition-all duration-300 ease-in-out">
+                        <p
+                            className={cn(
+                                'text-sm font-medium text-[#8c8c8c] transition-all duration-300',
+                                direction === 'forward'
+                                    ? 'animate-slideInRight'
+                                    : 'animate-slideInLeft'
+                            )}
+                        >
                             {description}
                         </p>
                         <div className="relative img-container max-w-[436px] h-[115px] rounded-lg overflow-hidden">
-                            <div className="transition-all duration-300 ease-in-out transform">
+                            <div
+                                className={cn(
+                                    'transition-all duration-300 ease-in-out transform',
+                                    direction === 'forward'
+                                        ? 'animate-slideInRight'
+                                        : 'animate-slideInLeft'
+                                )}
+                            >
                                 <Image
                                     src={img}
                                     alt={`${title} step image`}
@@ -97,7 +118,7 @@ const OnboardingStep: FC<OnboardingStepProps> & { steps: typeof steps } = ({
                                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                     priority
                                     placeholder="blur"
-                                    className="absolute rounded-lg w-full h-full object-contain transition-opacity duration-300"
+                                    className="absolute rounded-lg w-full h-full object-contain"
                                 />
                             </div>
                         </div>
@@ -111,13 +132,13 @@ const OnboardingStep: FC<OnboardingStepProps> & { steps: typeof steps } = ({
                         <div className="flex gap-[16px]">
                             <Button
                                 onClick={skipFunc}
-                                className="rounded-[10px] px-[16px] py-[12px] text-[#d4d4d4] font-medium bg-[#292929] transition-colors"
+                                className="rounded-[10px] px-[16px] py-[12px] text-[#d4d4d4] font-medium bg-[#292929] transition-colors hover:bg-[#333333]"
                             >
                                 Skip
                             </Button>
                             <Button
                                 onClick={nextFunc}
-                                className="rounded-[10px] px-[16px] py-[12px] text-[#d4d4d4] font-medium bg-[#6032F6] transition-colors"
+                                className="rounded-[10px] px-[16px] py-[12px] text-[#d4d4d4] font-medium bg-[#6032F6] transition-colors hover:bg-[#4C28C4]"
                             >
                                 {activeStep === stepsLength ? 'Finish' : 'Continue'}
                             </Button>

@@ -1,4 +1,4 @@
-import React, { useReducer, useCallback, useTransition } from 'react';
+import React, { useReducer, useCallback, useState } from 'react';
 import UserInfoModal from './userInfoModal';
 import OnboardingStep from './onboardingSteps';
 import { setFirstTimeUser, updateUser } from '@/store/auth/slice';
@@ -71,28 +71,21 @@ const UserOnboardingFlow: React.FC<UserOnboardingFlowProps> = ({
     firstTimeUser,
 }) => {
     const dispatch = useAppDispatch();
-    const [isPending, startTransition] = useTransition();
+    const [direction, setDirection] = useState<'forward' | 'backward'>('forward');
     const [state, dispatchFlow] = useReducer(flowReducer, firstTimeUser, initialState);
 
     const handleOnboardingComplete = useCallback(() => {
-        startTransition(() => {
-            dispatchFlow({ type: 'COMPLETE_ONBOARDING' });
-            dispatch(setFirstTimeUser(false));
-            dispatch(updateUser({ firstTimeUser: false }));
-        });
+        dispatchFlow({ type: 'COMPLETE_ONBOARDING' });
+        dispatch(setFirstTimeUser(false));
+        dispatch(updateUser({ firstTimeUser: false }));
     }, [dispatch]);
 
     const handleNextStep = useCallback(() => {
         if (state.activeStep === OnboardingStep.steps.length) {
             handleOnboardingComplete();
         } else {
-            startTransition(() => {
-                dispatchFlow({ type: 'NEXT_STEP' });
-                // Reset transition state after animation
-                setTimeout(() => {
-                    dispatchFlow({ type: 'RESET' });
-                }, 300);
-            });
+            setDirection('forward');
+            dispatchFlow({ type: 'NEXT_STEP' });
         }
     }, [state.activeStep, handleOnboardingComplete]);
 
@@ -102,26 +95,22 @@ const UserOnboardingFlow: React.FC<UserOnboardingFlowProps> = ({
 
     const handleUsernameUpdate = useCallback(
         (newUsername: string) => {
-            startTransition(() => {
-                onUpdate(newUsername);
-                dispatch(setFirstTimeUser(false));
-                dispatch(
-                    updateUser({
-                        username: newUsername,
-                        firstTimeUser: false,
-                    })
-                );
-                onClose();
-            });
+            onUpdate(newUsername);
+            dispatch(setFirstTimeUser(false));
+            dispatch(
+                updateUser({
+                    username: newUsername,
+                    firstTimeUser: false,
+                })
+            );
+            onClose();
         },
         [onUpdate, onClose, dispatch]
     );
 
     React.useEffect(() => {
         if (isOpen && !firstTimeUser) {
-            startTransition(() => {
-                dispatchFlow({ type: 'SHOW_USERNAME_MODAL' });
-            });
+            dispatchFlow({ type: 'SHOW_USERNAME_MODAL' });
         }
     }, [isOpen, firstTimeUser]);
 
@@ -131,6 +120,7 @@ const UserOnboardingFlow: React.FC<UserOnboardingFlowProps> = ({
         <>
             {state.showOnboarding && currentStep && (
                 <OnboardingStep
+                    key={state.activeStep}
                     title={currentStep.title}
                     description={currentStep.description}
                     img={currentStep.img}
@@ -139,6 +129,7 @@ const UserOnboardingFlow: React.FC<UserOnboardingFlowProps> = ({
                     nextFunc={handleNextStep}
                     skipFunc={handleSkipOnboarding}
                     showOnboarding={state.showOnboarding}
+                    direction={direction}
                 />
             )}
 
