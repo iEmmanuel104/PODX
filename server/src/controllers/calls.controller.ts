@@ -74,7 +74,7 @@ export default class CallsController {
                 const isWhitelisted = whitelistedUsers.includes(req.user.id);
 
                 if (!isWhitelisted) {
-                    return res.status(403).json({
+                    res.status(403).json({
                         status: 'error',
                         message: 'You are not whitelisted to join this call',
                     });
@@ -120,10 +120,11 @@ export default class CallsController {
             const isWhitelisted = whitelistedUsers.includes(req.user.id);
 
             if (!isWhitelisted) {
-                return res.status(403).json({
+                res.status(403).json({
                     status: 'error',
                     message: 'You are not whitelisted to join this scheduled call',
                 });
+                return;
             }
         }
 
