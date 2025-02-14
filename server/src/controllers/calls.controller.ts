@@ -26,6 +26,7 @@ export default class CallsController {
                 title,
                 type,
                 sessionId,
+                whitelistedUsers: tokenGate || null,
             },
             starts_at,
             created_by: {
@@ -36,7 +37,6 @@ export default class CallsController {
                 },
             },
             created_at: now.toISOString(),
-            tokenGate,
         };
 
         // Store in global sessions set for searching
@@ -65,13 +65,27 @@ export default class CallsController {
         const { call: streamCall, error: streamError } = await StreamIOConfig.getCallDetails(sessionId);
 
         if (streamCall) {
+            // Check whitelist for stream call
+            const whitelistedUsers = streamCall.custom?.whitelistedUsers;
+
+            if (whitelistedUsers && Array.isArray(whitelistedUsers)) {
+                const isWhitelisted = whitelistedUsers.includes(req.user.id);
+
+                if (!isWhitelisted) {
+                    return res.status(403).json({
+                        status: 'error',
+                        message: 'You are not whitelisted to join this call',
+                    });
+                }
+            }
+
             res.status(200).json({
                 status: 'success',
                 message: 'Call retrieved successfully',
                 data: {
                     call: streamCall,
                     source: 'stream',
-                    hasJoined: false, // Stream.io manages this separately
+                    hasJoined: false,
                     participants: streamCall.session?.participants?.length || 0,
                 },
             });
@@ -80,10 +94,9 @@ export default class CallsController {
 
         if (streamError) {
             console.warn('Stream.io error:', streamError);
-            // Continue to check Redis even if Stream.io throws an error
         }
 
-        // If not found in Stream.io, check Redis for scheduled call
+        // Check Redis for scheduled call
         const callKey = `scheduled_call:${sessionId}`;
         const callData = await redisClient.get(callKey);
 
@@ -97,6 +110,20 @@ export default class CallsController {
         }
 
         const parsedCallData = JSON.parse(callData);
+
+        // Check whitelist for scheduled call
+        const whitelistedUsers = parsedCallData.custom?.whitelistedUsers;
+
+        if (whitelistedUsers && Array.isArray(whitelistedUsers)) {
+            const isWhitelisted = whitelistedUsers.includes(req.user.id);
+
+            if (!isWhitelisted) {
+                return res.status(403).json({
+                    status: 'error',
+                    message: 'You are not whitelisted to join this scheduled call',
+                });
+            }
+        }
 
         // Check if the current user has joined this session
         const userJoinedKey = `session_participants:${sessionId}`;
@@ -132,7 +159,6 @@ export default class CallsController {
                 participants: participants.length,
             },
         });
-
     }
 
     static async getUserScheduledCalls(req: AuthenticatedRequest, res: Response) {

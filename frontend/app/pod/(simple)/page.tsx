@@ -94,6 +94,7 @@ export default function PodPage() {
                         type: response.custom.type as sessionType,
                         sessionId: state.meetingCode,
                         starts_at: response.starts_at,
+                        tokenGate: response.custom.whitelistedUsers ?? undefined,
                     })
                 );
                 router.push(`/pod/join/${state.meetingCode}`);
@@ -337,7 +338,9 @@ export default function PodPage() {
                     <ScheduledPods
                         sessions={scheduledSessions}
                         foundSession={state.foundSession}
-                        onJoinSession={sessionId => router.push(`/pod/join/${sessionId}`)}
+                        onJoinSession={session => {
+                            handleStreamCall(session);
+                        }}
                         currentUserId={user?.id}
                         isLoading={isLoading}
                         onClearFoundSession={handleClearFoundSession}

@@ -6,6 +6,7 @@ export interface StreamCallData extends CallResponse {
         title: string;
         type: string;
         sessionId: string;
+        whitelistedUsers: string[] | null;
     };
     created_by: UserResponse & {
         custom?: {

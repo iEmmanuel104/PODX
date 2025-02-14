@@ -8,7 +8,7 @@ import { StreamCallData } from './streamCallData';
 
 interface ScheduledPodsProps {
     sessions: StreamCallData[];
-    onJoinSession: (sessionId: string) => void;
+    onJoinSession: (session: StreamCallData) => void;
     currentUserId: string;
     isLoading?: boolean;
     foundSession?: StreamCallData;
@@ -165,7 +165,7 @@ const SessionCard = memo(function SessionCard({
 }: {
     session: StreamCallData;
     currentUserId: string;
-    onJoinSession: (id: string) => void;
+    onJoinSession: (session: StreamCallData) => void;
     onShareSession: (data: ShareSessionState) => void;
     showFoundBadge?: boolean;
     onClose?: () => void;
@@ -185,7 +185,7 @@ const SessionCard = memo(function SessionCard({
             return; // Button will be disabled
         }
 
-        onJoinSession(session.id);
+        onJoinSession(session);
     };
 
     return (

@@ -229,8 +229,9 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
     const checkScheduledMeeting = useCallback(async () => {
         if (!code || !user || hasCheckedSchedule.current) return;
         hasCheckedSchedule.current = true;
-
+        
         const response = await retrieveCall(code);
+        console.log('querying for call response:', response);
         if (
             response.status === 'success' &&
             response.data?.call &&
@@ -263,7 +264,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
             // No scheduled call found, proceed with normal call initialization
             await initializeCall();
         }
-    }, [code, user, retrieveCall, router, initializeCall]);
+    }, [code, user, retrieveCall, initializeCall]);
 
     // Effects
     useEffect(() => {
@@ -300,7 +301,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                     },
                     ...(sessionType === 'Audio Session' && { video: false }),
                 });
-                await call?.updateCallMembers({ update_members: [{ user_id: user?.id! }] });
+                // await call?.updateCallMembers({ update_members: [{ user_id: user?.id! }] });
             }
 
             router.push(`/pod/${code}`);
