@@ -78,7 +78,7 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
 
         // Extract unique wallet addresses from all members of selected calls
         const allMemberAddresses = selectedCallsData.flatMap(call =>
-            (call.members as CallMember[]).map(member => member.userId.walletAddress.toLowerCase())
+            (call.members as CallMember[]).map(member => member.userId.id.toLowerCase())
         );
 
         // Create a unique list of wallet addresses

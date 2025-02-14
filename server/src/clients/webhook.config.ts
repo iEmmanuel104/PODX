@@ -37,7 +37,7 @@ export const webhookConfig: WebhookConfig = {
     },
     STREAK_CONFIG: {
         BREAK_AFTER_DAYS: 1,
-        MIN_CALL_DURATION: 60,
+        MIN_CALL_DURATION: 60, // 1 minute
         BONUS_MULTIPLIERS: [
             { days: 7, multiplier: 1.5 },   // Week streak
             { days: 30, multiplier: 2.0 },  // Month streak

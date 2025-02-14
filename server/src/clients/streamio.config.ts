@@ -579,6 +579,11 @@ export default class StreamIOConfig {
                 filter_conditions: { id: callId },
             });
 
+            // Return null if no calls are found
+            if (!calls.length) {
+                return { call: null };
+            }
+
             return { call: calls[0].call };
         } catch (error) {
             console.error('Error fetching call details:', error);

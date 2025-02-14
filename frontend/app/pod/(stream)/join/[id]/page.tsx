@@ -134,7 +134,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
     const [participants, setParticipants] = useState<CallParticipantResponse[]>([]);
 
     // Selectors and Context
-    const { sessionTitle, sessionType, isScheduled, starts_at } = useTypedSelector(
+    const { sessionTitle, sessionType, isScheduled, starts_at, tokenGate } = useTypedSelector(
         state => state.pod
     );
     const { isLoggedIn, user } = useTypedSelector(state => state.auth);
@@ -157,13 +157,24 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
             }
 
             if (newMeeting) {
+                const members = [{ user_id: user.id, role: 'host' }];
+                if (tokenGate && tokenGate.length > 0) {
+                    tokenGate.forEach(userId => {
+                        if (userId !== user.id) {
+                            members.push({ user_id: userId, role: 'user' });
+                        }
+                    });
+                }
+
                 await call?.getOrCreate({
                     data: {
-                        members: [{ user_id: user.id, role: 'host' }],
+                        members,
                         custom: {
                             sessionId: code,
                             title: sessionTitle || 'New Call',
                             type: sessionType || 'Video Session',
+                            isTokenGated: tokenGate && tokenGate.length > 0,
+                            whitelistedUsers: tokenGate || [],
                         },
                         settings_override: {
                             limits: {
@@ -185,6 +196,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                             title: callData.call.custom.title,
                             type: callData.call.custom.type,
                             sessionId: code,
+                            tokenGate: callData.call.custom.whitelistedUsers || [],
                         })
                     );
                 }
@@ -209,6 +221,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
         sessionType,
         starts_at,
         state.joining,
+        tokenGate,
         user,
     ]);
 

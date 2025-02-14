@@ -6,14 +6,20 @@ import { CallSessionPayload, CallSessionEndPayload, CallCreatedEvent } from '../
 
 export class CallService {
     static async handleCallSessionStart(payload: CallSessionPayload): Promise<void> {
-        const { call, session_id, participant } = payload;
-
-        StreamIOConfig.initialize();
+        const { call_cid, session_id, participant } = payload;
+        console.log({ sessionCreatedPayload: payload });
 
         try {
+            if (!call_cid) {
+                throw new Error('call_cid is required');
+            }
+            // Split the call_cid to get type and id
+            const [type, id] = call_cid.split(':');
+
+            // First update StreamIO
             await StreamIOConfig.updateCallMembers(
-                call.type,
-                call.id,
+                type,
+                id,
                 [{
                     user_id: participant.user.id,
                     custom: {
@@ -22,6 +28,31 @@ export class CallService {
                     },
                 }]
             );
+
+            // Then update local database
+            await Call.findOneAndUpdate(
+                {
+                    callId: id,
+                    // Check if this user is not already in the members array
+                    'members.userId': { $ne: participant.user.id },
+                },
+                {
+                    // Only add to members array if user doesn't exist
+                    $addToSet: {
+                        members: {
+                            userId: participant.user.id,
+                            role: participant.role,
+                        },
+                    },
+                    // Update session ID and status
+                    $set: {
+                        sessionId: session_id,
+                        status: 'live',
+                    },
+                },
+                { new: true }
+            );
+
         } catch (error) {
             console.error('Error updating call members:', error);
             throw error;
@@ -30,6 +61,8 @@ export class CallService {
 
     static async handleCallSessionEnd(payload: CallSessionEndPayload): Promise<void> {
         const { call_cid, participant, duration_seconds } = payload;
+
+        console.log({ sessionEndPayload: payload });
 
         if (duration_seconds < webhookConfig.STREAK_CONFIG.MIN_CALL_DURATION) {
             return;
@@ -50,6 +83,8 @@ export class CallService {
 
     static async handleCallCreated(payload: CallCreatedEvent): Promise<void> {
         const { call, members, created_at } = payload;
+
+        console.log({ sessionCreatedPayload: payload });
 
         try {
             await Call.create({
@@ -78,10 +113,12 @@ export class CallService {
         created_at: string;
     }): Promise<void> {
         const { call, created_at } = payload;
-        if (!call.current_session_id) return;
+
+        console.log({ handleEndedPayload: payload });
+        if (!call?.current_session_id) return;
 
         await Call.findOneAndUpdate(
-            { callId: call.id },
+            { callId: call?.id },
             {
                 status: 'ended',
                 endTime: new Date(created_at),
@@ -90,13 +127,13 @@ export class CallService {
         );
 
         // Update streaks for all participants
-        const participants = call.session?.participants || [];
+        const participants = call?.session?.participants || [];
         for (const participant of participants) {
             const duration = participant.joined_at ?
                 Math.floor((new Date(created_at).getTime() - participant.joined_at) / 1000) : 0;
 
             await this.handleCallSessionEnd({
-                call_cid: `${call.type}:${call.id}`,
+                call_cid: `${call?.type}:${call?.id}`,
                 participant,
                 duration_seconds: duration,
                 created_at,

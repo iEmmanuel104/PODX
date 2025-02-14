@@ -115,7 +115,7 @@ export interface MemberResponse {
 }
 
 export interface CallSessionPayload {
-    call: {
+    call?: {
         type: string;
         id: string;
         current_session_id?: string;
@@ -123,6 +123,7 @@ export interface CallSessionPayload {
             participants: CallParticipant[];
         };
     };
+    call_cid?: string;
     session_id: string;
     participant: CallParticipant;
     created_at: string;

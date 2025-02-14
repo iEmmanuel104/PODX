@@ -41,6 +41,7 @@ export interface QueryParams {
 
 export interface CallMember {
     userId: {
+        id: string;
         walletAddress: string;
         username: string;
         displayImage?: string;
@@ -73,7 +74,7 @@ export interface GetUserCallsResponse {
     data: {
         calls: Call[];
         total: number;
-        filter: 'all' | 'creator' | 'member';
+        filter: 'all' | 'creator' | 'member' | 'tokengate';
     };
 }
 
