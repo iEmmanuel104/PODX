@@ -67,6 +67,8 @@ export default class CallsController {
         if (streamCall) {
             // Check whitelist for stream call
             const whitelistedUsers = streamCall.custom?.whitelistedUsers;
+            console.log({ whitelistedUsers, streamCall });
+
 
             if (whitelistedUsers && Array.isArray(whitelistedUsers)) {
                 const isWhitelisted = whitelistedUsers.includes(req.user.id);

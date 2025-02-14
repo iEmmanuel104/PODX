@@ -41,6 +41,13 @@ interface JoinSessionState {
         sessionId: string;
         createdAt: string;
     } | null;
+    isWhitelisted: boolean;
+    callInfo: {
+        title: string;
+        creator: {
+            username: string | null;
+        };
+    } | null;
 }
 
 // Components
@@ -53,6 +60,12 @@ const SimpleLoader = () => (
 // Lazy load components with reduced bundle size
 const WaitingScreen = React.lazy(() =>
     import('@/components/join/waiting-screen').then(mod => ({
+        default: mod.default,
+    }))
+);
+
+const NotWhitelistedScreen = React.lazy(() =>
+    import('@/components/join/not-whitelisted-screen').then(mod => ({
         default: mod.default,
     }))
 );
@@ -71,12 +84,6 @@ const MeetingPreview = React.lazy(() =>
 
 const CallParticipants = React.lazy(() =>
     import('@/components/meeting/callParticipants').then(mod => ({
-        default: mod.default,
-    }))
-);
-
-const ScheduledMeetDialog = React.lazy(() =>
-    import('@/components/join/scheduledMeetDialog').then(mod => ({
         default: mod.default,
     }))
 );
@@ -130,6 +137,8 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
         loading: true,
         showScheduledDialog: false,
         scheduledMeetData: null,
+        isWhitelisted: true,
+        callInfo: null,
     });
     const [participants, setParticipants] = useState<CallParticipantResponse[]>([]);
 
@@ -189,7 +198,27 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                 });
             } else {
                 const callData = await call?.get();
+
                 if (callData?.call) {
+                    // Check if user is not the creator
+                    if (callData.call.created_by.id !== user.id) {
+                        const whitelistedUsers = callData.call.custom?.whitelistedUsers;
+
+                        if (
+                            whitelistedUsers &&
+                            Array.isArray(whitelistedUsers) &&
+                            whitelistedUsers.length > 0
+                        ) {
+                            const isWhitelisted = whitelistedUsers.includes(user.id);
+
+                            if (!isWhitelisted) {
+                                toast.error('You are not whitelisted to join this call');
+                                router.push('/pod');
+                                return;
+                            }
+                        }
+                    }
+
                     setParticipants(callData.call.session?.participants || []);
                     dispatch(
                         setSessionInfo({
@@ -229,7 +258,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
     const checkScheduledMeeting = useCallback(async () => {
         if (!code || !user || hasCheckedSchedule.current) return;
         hasCheckedSchedule.current = true;
-        
+
         const response = await retrieveCall(code);
         console.log('querying for call response:', response);
         if (
@@ -261,6 +290,44 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                 },
             }));
         } else {
+            if (
+                response.status === 'success' &&
+                response.data?.call &&
+                response.data.source === 'stream'
+            ) {
+                const { call } = response.data;
+
+                // Check if user is not the creator
+                if (call.created_by.id !== user.id) {
+                    const whitelistedUsers = call.custom?.whitelistedUsers;
+
+                    if (
+                        whitelistedUsers &&
+                        Array.isArray(whitelistedUsers) &&
+                        whitelistedUsers.length > 0
+                    ) {
+                        const isWhitelisted = whitelistedUsers.includes(user.id);
+
+                        if (!isWhitelisted) {
+                            setState(prev => ({
+                                ...prev,
+                                loading: false,
+                                isWhitelisted: false,
+                                callInfo: {
+                                    title: call.custom.title,
+                                    creator: {
+                                        username:
+                                            call.created_by.custom?.username ||
+                                            call.created_by.name ||
+                                            null,
+                                    },
+                                },
+                            }));
+                            return;
+                        }
+                    }
+                }
+            }
             // No scheduled call found, proceed with normal call initialization
             await initializeCall();
         }
@@ -322,6 +389,17 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
             </Suspense>
         );
     }, [state.joining, participants]);
+
+    if (!state.isWhitelisted) {
+        return (
+            <Suspense fallback={<SimpleLoader />}>
+                <NotWhitelistedScreen
+                    title={state.callInfo?.title || 'Unknown Session'}
+                    creator={state.callInfo?.creator}
+                />
+            </Suspense>
+        );
+    }
 
     if (state.loading) {
         return (
