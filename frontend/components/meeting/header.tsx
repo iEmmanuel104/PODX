@@ -246,12 +246,9 @@ const Header = memo<HeaderProps>(
                 <div className="flex items-center space-x-1 sm:space-x-2">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <div className="flex items-center space-x-2 bg-[#333333] rounded-full h-8 px-2 hover:cursor-pointer">
-                                <UserAvatar
-                                    username={userInfo?.username}
-                                    basenameData={basenameData}
-                                />
-                                <ChevronDown className="w-4 h-4" />
+                            <div className="flex items-center gap-1 bg-[#333333] rounded-full h-8 pl-1 pr-2 hover:cursor-pointer hover:bg-[#3d3d3d] transition-colors">
+                                <UserAvatar username={userInfo?.username} basenameData={basenameData} />
+                                <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
                             </div>
                         </DropdownMenuTrigger>
                         <UserDropdownContent
