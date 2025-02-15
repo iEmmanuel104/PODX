@@ -443,10 +443,16 @@ export default function Page() {
                             </div>
                         </div>
                         {/* Mobile View - Card Layout */}
-                        <div className="md:hidden">
-                            {sessions.map(session => (
-                                <SessionCard key={session._id} session={session} type={activeTab} />
-                            ))}
+                        <div className="md:hidden max-h-[460px] overflow-y-auto">
+                            <div className="p-4 space-y-4">
+                                {sessions.map(session => (
+                                    <SessionCard
+                                        key={session._id}
+                                        session={session}
+                                        type={activeTab}
+                                    />
+                                ))}
+                            </div>
                         </div>
                     </>
                 )}
