@@ -314,33 +314,17 @@ const ParticipantItem = memo<{
 const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
     ({ participants, currentUser, openTipModal, updateParticipantRole, handleJoinRequest }) => {
         const [expandedParticipant, setExpandedParticipant] = useState<string | null>(null);
-        const participoantsObj = JSON.parse(JSON.stringify(participants));
-        console.log({participoantsObj});
 
-        const { sortedParticipants, pendingParticipants, activeParticipants, isCurrentUserHost } =
-            useMemo(() => {
-                const sorted = [...participants].sort((a, b) => {
-                    const getRoleWeight = (roles: string[]) => {
-                        if (roles.includes('host')) return 3;
-                        if (roles.includes('cohost')) return 2;
-                        if (roles.includes('user')) return 1;
-                        return 0;
-                    };
-                    return getRoleWeight(b.roles) - getRoleWeight(a.roles);
-                });
-
-                const isCurrentUserHost =
+        const { pendingParticipants, activeParticipants, isCurrentUserHost } = useMemo(() => {
+            return {
+                pendingParticipants: participants.filter(p => p.roles.includes('pending')),
+                activeParticipants: participants.filter(p => !p.roles.includes('pending')),
+                isCurrentUserHost:
                     currentUser?.role?.includes('host') ||
                     currentUser?.role?.includes('cohost') ||
-                    false;
-
-                return {
-                    sortedParticipants: sorted,
-                    pendingParticipants: sorted.filter(p => p.roles.includes('pending')),
-                    activeParticipants: sorted.filter(p => !p.roles.includes('pending')),
-                    isCurrentUserHost,
-                };
-            }, [participants, currentUser]);
+                    false,
+            };
+        }, [participants, currentUser]);
 
         return (
             <div className="flex flex-col h-full bg-[#1F1F1F]">
@@ -352,7 +336,8 @@ const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
                             onJoinRequest={handleJoinRequest}
                         />
                     )}
-                    {sortedParticipants.map(participant => (
+                    {/* Use activeParticipants instead of sortedParticipants */}
+                    {activeParticipants.map(participant => (
                         <ParticipantItem
                             key={participant.userId}
                             participant={participant}
@@ -378,7 +363,7 @@ const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
                     <Button
                         className="w-full bg-[#6032F6] hover:bg-[#4C28C4] text-white px-4 py-2 rounded-lg"
                         onClick={() => {
-                            navigator.clipboard.writeText(window.location.href)
+                            navigator.clipboard.writeText(window.location.href);
                             toast.success('Link copied to clipboard');
                         }}
                     >
