@@ -18,30 +18,100 @@ import {
     EyeOff,
     LinkIcon,
     Wallet,
+    Image as ImageIcon,
+    ExternalLink,
+    Loader2,
 } from 'lucide-react';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
+import { useGetUserCallsQuery } from '@/store/user/slice';
 
-type TabType = 'history' | 'attendance' | 'tips';
-
-// Simplified session data
-const session = {
-    date: '2024-09-21',
-    sessionName: 'PodX Session',
-    sessionId: 'rhy-loph-hew',
-    sessionType: 'Attendee',
-    duration: '23:09:23',
-    poaStatus: 'Received',
-    tipReceived: '0 USDC',
-    tipSent: '0 USDC',
-};
+type TabType = 'history' | 'tips';
 
 const RetroGrid = dynamic(() => import('@/components/ui/retro-grid'));
 
-// Create an array of 4 identical sessions for demo purposes
-const sessions = Array(4).fill(session);
+const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return {
+        date: date.toLocaleDateString(),
+        time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+};
+
+const formatDuration = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = seconds % 60;
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+};
+
+interface POA {
+    image: string;
+    transaction: string;
+}
+
+const POADialog = ({ poa }: { poa: POA }) => (
+    <Dialog>
+        <DialogTrigger asChild>
+            <Button variant="link" className="text-[#69CB58] p-0 h-auto">
+                Received POA
+            </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-md bg-[#1E1E1E] border-white/10">
+            <DialogHeader>
+                <DialogTitle>Proof of Attendance</DialogTitle>
+            </DialogHeader>
+            <div className="flex flex-col gap-4">
+                <div className="relative aspect-square w-full rounded-lg overflow-hidden border border-white/10">
+                    <img src={poa.image} alt="POA NFT" className="object-cover" />
+                </div>
+                <div className="flex gap-3">
+                    <Button
+                        className="flex-1 bg-[#6032F6] hover:bg-[#6032F6]/90"
+                        onClick={() => {
+                            const link = document.createElement('a');
+                            link.href = poa.image;
+                            link.download = 'poa-nft.png';
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                        }}
+                    >
+                        <ImageIcon className="h-4 w-4 mr-2" />
+                        Download Image
+                    </Button>
+                    <Button
+                        variant="outline"
+                        className="flex-1 border-white/10 hover:bg-white/5"
+                        onClick={() => window.open(poa.transaction, '_blank')}
+                    >
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        View Transaction
+                    </Button>
+                </div>
+            </div>
+        </DialogContent>
+    </Dialog>
+);
 
 export default function Page() {
-    const [activeTab, setActiveTab] = useState<TabType>('tips');
+    const [activeTab, setActiveTab] = useState<TabType>('history');
     const [isBalanceHidden, setIsBalanceHidden] = useState(false);
+    const [tokenGatingSwitch] = useState(true); // You might want to get this from your app state
+
+    const { data: userCallsData, isLoading: isLoadingCalls } = useGetUserCallsQuery(
+        { filter: undefined },
+        {
+            skip: !tokenGatingSwitch,
+        }
+    );
+
+    const sessions = userCallsData?.data?.calls || [];
 
     return (
         <div className="w-full flex flex-col gap-8 transition-all duration-200">
@@ -87,9 +157,8 @@ export default function Page() {
 
                 {/* Tabs and Sort Section */}
                 <div className="flex flex-col sm:flex-row justify-between gap-4 sm:items-center mb-6">
-                    {/* Tabs */}
                     <div className="flex flex-wrap gap-2">
-                        {(['history', 'attendance', 'tips'] as TabType[]).map(tab => (
+                        {(['history', 'tips'] as TabType[]).map(tab => (
                             <Button
                                 key={tab}
                                 variant="ghost"
@@ -100,16 +169,11 @@ export default function Page() {
                                 }`}
                                 onClick={() => setActiveTab(tab)}
                             >
-                                {tab === 'history'
-                                    ? 'Session history'
-                                    : tab === 'attendance'
-                                      ? 'Proof of attendance'
-                                      : 'Tip history'}
+                                {tab === 'history' ? 'Session history' : 'Tip history'}
                             </Button>
                         ))}
                     </div>
 
-                    {/* Sort Dropdown */}
                     <div className="flex items-center gap-2 self-end sm:self-auto">
                         <span className="text-sm text-white/60 hidden sm:inline">Sort by:</span>
                         <div className="bg-white/5 rounded-lg px-3 py-1.5">
@@ -128,131 +192,110 @@ export default function Page() {
 
                 {/* Table Section */}
                 <div className="rounded-lg border border-white/10 overflow-x-auto">
-                    <table className="w-full whitespace-nowrap">
-                        <thead className="bg-white/5">
-                            <tr className="text-left text-sm text-white/60">
-                                {activeTab === 'history' && (
-                                    <>
-                                        <th className="p-4">Date</th>
-                                        <th className="p-4">Session name</th>
-                                        <th className="p-4">Session type</th>
-                                        <th className="p-4">Session Duration</th>
-                                        <th className="p-4">Proof of Attendance</th>
-                                    </>
-                                )}
-                                {activeTab === 'attendance' && (
-                                    <>
-                                        <th className="p-4">Session name</th>
-                                        <th className="p-4">Session ID</th>
-                                        <th className="p-4">POA status</th>
-                                        <th className="p-4">Session type</th>
-                                        <th className="p-4">Proof of Attendance</th>
-                                    </>
-                                )}
-                                {activeTab === 'tips' && (
-                                    <>
-                                        <th className="p-4">Date</th>
-                                        <th className="p-4">Session ID</th>
-                                        <th className="p-4">Tip received</th>
-                                        <th className="p-4">Tip sent</th>
-                                        <th className="p-4">Transaction</th>
-                                    </>
-                                )}
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-white/10">
-                            {sessions.map((session, index) => (
-                                <tr
-                                    key={index}
-                                    className="text-sm hover:bg-white/5 transition-colors duration-200"
-                                >
+                    {isLoadingCalls ? (
+                        <div className="flex items-center justify-center p-8">
+                            <Loader2 className="h-6 w-6 animate-spin text-white/60" />
+                        </div>
+                    ) : (
+                        <table className="w-full whitespace-nowrap">
+                            <thead className="bg-white/5">
+                                <tr className="text-left text-sm text-white/60">
                                     {activeTab === 'history' && (
                                         <>
-                                            <td className="p-4">
-                                                <div>{session.date}</div>
-                                                <div className="text-white/60">9:00PM</div>
-                                            </td>
-                                            <td className="p-4">
-                                                <div>{session.sessionName}</div>
-                                                <div className="text-white/60 flex items-center gap-1">
-                                                    <LinkIcon className="h-3 w-3" />
-                                                    {session.sessionId}
-                                                </div>
-                                            </td>
-                                            <td className="p-4">
-                                                <span className="px-2 py-1 rounded-full bg-white/10">
-                                                    {session.sessionType}
-                                                </span>
-                                            </td>
-                                            <td className="p-4">{session.duration}</td>
-                                            <td className="p-4 text-[#69CB58]">Received POA</td>
-                                        </>
-                                    )}
-                                    {activeTab === 'attendance' && (
-                                        <>
-                                            <td className="p-4">
-                                                <div>{session.sessionName}</div>
-                                                <div className="text-white/60 flex items-center gap-1">
-                                                    <LinkIcon className="h-3 w-3" />
-                                                    {session.sessionId}
-                                                </div>
-                                            </td>
-                                            <td className="p-4">{session.sessionId}</td>
-                                            <td className="p-4 text-[#69CB58]">
-                                                {session.poaStatus}
-                                            </td>
-                                            <td className="p-4">
-                                                <span className="px-2 py-1 rounded-full bg-white/10">
-                                                    {session.sessionType}
-                                                </span>
-                                            </td>
-                                            <td className="p-4">
-                                                <Button
-                                                    variant="link"
-                                                    className="text-[#6032F6] p-0 h-auto"
-                                                >
-                                                    View transaction
-                                                </Button>
-                                            </td>
+                                            <th className="p-4">Date</th>
+                                            <th className="p-4">Session name</th>
+                                            <th className="p-4">Session type</th>
+                                            <th className="p-4">Session Duration</th>
+                                            <th className="p-4">POA Status</th>
                                         </>
                                     )}
                                     {activeTab === 'tips' && (
                                         <>
-                                            <td className="p-4">
-                                                <div>{session.date}</div>
-                                                <div className="text-white/60">9:00PM</div>
-                                            </td>
-                                            <td className="p-4">
-                                                <div>{session.sessionName}</div>
-                                                <div className="text-white/60 flex items-center gap-1">
-                                                    <ArrowUturnLeft className="h-3 w-3" />
-                                                    {session.sessionId}
-                                                </div>
-                                            </td>
-                                            <td className="p-4">{session.tipReceived}</td>
-                                            <td className="p-4">{session.tipSent}</td>
-                                            <td className="p-4">
-                                                <a
-                                                    href="#"
-                                                    className="text-white underline hover:text-white/90"
-                                                >
-                                                    View transaction
-                                                </a>
-                                            </td>
+                                            <th className="p-4">Date</th>
+                                            <th className="p-4">Session ID</th>
+                                            <th className="p-4">Tip received</th>
+                                            <th className="p-4">Tip sent</th>
+                                            <th className="p-4">Transaction</th>
                                         </>
                                     )}
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody className="divide-y divide-white/10">
+                                {sessions.map(session => {
+                                    const { date, time } = formatDate(session.startTime ?? '');
+                                    return (
+                                        <tr
+                                            key={session._id}
+                                            className="text-sm hover:bg-white/5 transition-colors duration-200"
+                                        >
+                                            {activeTab === 'history' && (
+                                                <>
+                                                    <td className="p-4">
+                                                        <div>{date}</div>
+                                                        <div className="text-white/60">{time}</div>
+                                                    </td>
+                                                    <td className="p-4">
+                                                        <div>{session.custom?.title as string}</div>
+                                                        <div className="text-white/60 flex items-center gap-1">
+                                                            <LinkIcon className="h-3 w-3" />
+                                                            {session.callId}
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-4">
+                                                        <span className="px-2 py-1 rounded-full bg-white/10">
+                                                            {(session.custom?.type as string) ||
+                                                                '-'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="p-4">
+                                                        {formatDuration(session.duration ?? 0)}
+                                                    </td>
+                                                    <td className="p-4">
+                                                        {session.poa ? (
+                                                            <POADialog poa={session.poa} />
+                                                        ) : (
+                                                            <span className="text-white/60">-</span>
+                                                        )}
+                                                    </td>
+                                                </>
+                                            )}
+                                            {activeTab === 'tips' && (
+                                                <>
+                                                    <td className="p-4">
+                                                        <div>{date}</div>
+                                                        <div className="text-white/60">{time}</div>
+                                                    </td>
+                                                    <td className="p-4">
+                                                        <div>{session.custom?.title as string}</div>
+                                                        <div className="text-white/60 flex items-center gap-1">
+                                                            <ArrowUturnLeft className="h-3 w-3" />
+                                                            {session.callId}
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-4">0 USDC</td>
+                                                    <td className="p-4">0 USDC</td>
+                                                    <td className="p-4">
+                                                        <Button
+                                                            variant="link"
+                                                            className="text-white underline hover:text-white/90 p-0 h-auto"
+                                                        >
+                                                            View transaction
+                                                        </Button>
+                                                    </td>
+                                                </>
+                                            )}
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    )}
                 </div>
-                {/* Mobile-optimized view for very small screens */}
                 <div className="sm:hidden mt-4">
                     <p className="text-sm text-white/60">↔️ Scroll horizontally to view all data</p>
                 </div>
             </div>
 
-            {/* Background Grid - Moved to bottom of stack */}
             <div className="absolute inset-0 w-full overflow-hidden pointer-events-none">
                 <RetroGrid />
             </div>

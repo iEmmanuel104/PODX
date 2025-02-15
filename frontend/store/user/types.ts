@@ -50,6 +50,11 @@ export interface CallMember {
 }
 
 export interface Call {
+    _id: string;
+    poa?: {
+        image: string;
+        transaction: string;
+    };
     callId: string;
     type: string;
     status: 'created' | 'live' | 'ended';
