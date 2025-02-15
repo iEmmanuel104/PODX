@@ -4,9 +4,9 @@ import React, { memo } from 'react';
 import ToggleAudioButton from '@/components/pod/toggleAudioButton';
 import ToggleVideoButton from '@/components/pod/toggleVideoButton';
 import CallControlButton from '@/components/pod/callControlButton';
-import PresentToAll from '@/components/icons/PresentToAll';
-import CallEndFilled from '@/components/icons/CallEndFilled';
-import ReactionButton from '@/components/pod/reactionButton';
+import ShareScreen from '@/public/images/icons/ShareScreen';
+import EndCallIcon from '@/public/images/icons/EndCallIcon';
+import ReactionIcon from '@/public/images/icons/ReactionIcon';
 
 interface MeetingFooterProps {
     leaveCall: () => void;
@@ -28,14 +28,14 @@ const MeetingFooter = memo<MeetingFooterProps>(({ leaveCall, toggleScreenShare, 
                     {!isAudioSession && <ToggleVideoButton />}
 
                     {/* Replace Mood button with ReactionButton */}
-                    <div className="hidden sm:block">
-                        <ReactionButton />
+                    <div className="hidden sm:flex bg-[#6032F6] hover:[#6032F6] h-14 w-14 rounded-full items-center justify-center hover:cursor-pointer">
+                        <ReactionIcon />
                     </div>
 
                     {/* Screen Share */}
                     <CallControlButton
                         onClick={toggleScreenShare}
-                        icon={<PresentToAll className="w-5 h-5 sm:w-6 sm:h-6" />}
+                        icon={<ShareScreen />}
                         title="Present now"
                         className="bg-[#2D2D2D] hover:bg-[#3D3D3D]"
                     />
@@ -43,7 +43,7 @@ const MeetingFooter = memo<MeetingFooterProps>(({ leaveCall, toggleScreenShare, 
                     {/* Leave Call */}
                     <CallControlButton
                         onClick={leaveCall}
-                        icon={<CallEndFilled className="w-5 h-5 sm:w-6 sm:h-6" />}
+                        icon={<EndCallIcon />}
                         title="Leave call"
                         className="bg-red-500 hover:bg-red-600"
                     />

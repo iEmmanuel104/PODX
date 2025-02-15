@@ -36,7 +36,7 @@ const IconButton: React.FC<IconButtonProps> = ({
                 variant === 'primary'
                     ? 'h-9 w-9 rounded-full hover:bg-[#3C3C3C] disabled:bg-transparent disabled:text-gray-500'
                     : cn(
-                          'h-14 w-14 rounded-full border border-solid',
+                          'rounded-full border border-solid',
                           active
                               ? 'bg-red-500 border-red-500 hover:bg-red-600 hover:border-red-600'
                               : 'hover:bg-[rgba(255,255,255,0.2)] border-white'
