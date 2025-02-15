@@ -1,4 +1,5 @@
 import { IUser } from '../models/Mongodb/user.model';
+import { Types } from 'mongoose';
 
 export interface SaveTokenToCache {
     key: string,
@@ -136,6 +137,26 @@ export interface CallSessionEndPayload {
     created_at: string;
 }
 
+export interface CustomEventPayload {
+    call_cid: string;
+    created_at: string;
+    custom: {
+        type: string;
+        amount: unknown;
+        transactionHash?: string;
+        from: {
+            id: string
+            name: string
+        };
+        to: {
+            id: string
+            name: string
+        };
+    };
+    type: string
+    user: UserResponse;
+}
+
 export interface ProcessingError {
     userId?: string;
     callId?: string;
@@ -150,3 +171,59 @@ export interface ProcessingSummary {
     errors: ProcessingError[];
     processingTime: number;
 }
+
+
+interface UserBasicInfo {
+    _id: Types.ObjectId;
+    username: string;
+    displayImage?: string;
+    walletAddress: string;
+}
+
+interface CallInfo {
+    type: string;
+    status: 'created' | 'live' | 'ended';
+    startTime?: Date;
+    endTime?: Date;
+    duration?: number;
+    custom?: Record<string, unknown>;
+    createdById: UserBasicInfo;
+}
+
+interface PopulatedTip {
+    _id: Types.ObjectId;
+    callId: string | CallInfo;
+    fromUserId: UserBasicInfo;
+    toUserId: UserBasicInfo;
+    amount: string;
+    timestamp: Date;
+    status: 'pending' | 'completed' | 'failed';
+    currency: string;
+}
+
+interface TipSummary {
+    totalSent: number;
+    totalReceived: number;
+    tipsSent: number;
+    tipsReceived: number;
+}
+
+interface TipsWithSummary {
+    tips: PopulatedTip[];
+    summary: TipSummary;
+}
+
+type TipQueryFilter = {
+    fromUserId?: Types.ObjectId;
+    toUserId?: Types.ObjectId;
+    $or?: Array<{ fromUserId: Types.ObjectId } | { toUserId: Types.ObjectId }>;
+}
+
+export {
+    UserBasicInfo,
+    CallInfo,
+    PopulatedTip,
+    TipSummary,
+    TipsWithSummary,
+    TipQueryFilter,
+};

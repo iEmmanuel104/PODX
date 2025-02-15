@@ -52,6 +52,7 @@ export const webhookConfig: WebhookConfig = {
         'call.session_participant_joined',
         'call.session_participant_left',
         'call.live_started',
+        'custom',
     ],
 };
 

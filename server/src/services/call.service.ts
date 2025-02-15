@@ -2,7 +2,8 @@ import { Call } from '../models/Mongodb/call.model';
 import { StreakService } from './streak.service';
 import StreamIOConfig from '../clients/streamio.config';
 import { webhookConfig } from '../clients/webhook.config';
-import { CallSessionPayload, CallSessionEndPayload, CallCreatedEvent } from '../utils/interface';
+import { CallSessionPayload, CallSessionEndPayload, CallCreatedEvent, CustomEventPayload } from '../utils/interface';
+import { TipService } from './tip.service';
 
 export class CallService {
     static async handleCallSessionStart(payload: CallSessionPayload): Promise<void> {
@@ -141,6 +142,33 @@ export class CallService {
         }
     }
 
+    static async handleCustomEvent(payload: CustomEventPayload): Promise<void> {
+        if (payload.custom.type !== 'tip') return;
+
+        const [, callId] = payload.call_cid.split(':');
+        const tipData = payload.custom;
+
+        try {
+            const call = await Call.findOne({ callId });
+            if (!call) {
+                throw new Error('Call not found');
+            }
+
+            await TipService.createTip(
+                callId,
+                call.sessionId,
+                tipData.from.id as string,
+                tipData.to.id as string,
+                tipData.amount as string,
+                tipData.transactionHash
+            );
+
+        } catch (error) {
+            console.error('Error handling tip event:', error);
+            throw error;
+        }
+    }
+
     static async processWebhook(eventType: string, payload: unknown): Promise<void> {
         try {
             switch (eventType) {
@@ -158,6 +186,9 @@ export class CallService {
                         call: CallSessionPayload['call'];
                         created_at: string
                     });
+                break;
+            case 'custom':
+                await this.handleCustomEvent(payload as CustomEventPayload);
                 break;
             case 'call.live_started':
                 // Handle live started event if needed

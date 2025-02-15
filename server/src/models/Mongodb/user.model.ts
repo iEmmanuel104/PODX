@@ -1,6 +1,8 @@
+// models/Mongodb/user.model.ts
 import { Schema, model, Document, Types } from 'mongoose';
 import { IUserSettings } from './userSettings.model';
 import { IUserStreak } from './userStreak.model';
+import { ITip } from './tip.model';
 
 export interface IUser extends Document {
     walletAddress: string;
@@ -12,6 +14,8 @@ export interface IUser extends Document {
     streak?: IUserStreak;
     createdAt: Date;
     updatedAt: Date;
+    sentTips?: ITip[];
+    receivedTips?: ITip[];
 }
 
 const mongooseUserSchema = new Schema<IUser>({
@@ -26,16 +30,7 @@ const mongooseUserSchema = new Schema<IUser>({
     toObject: { virtuals: true },
 });
 
-mongooseUserSchema.set('toJSON', {
-    virtuals: true,
-    transform: (_, ret) => {
-        ret.id = ret._id.toHexString();
-        delete ret._id;
-        delete ret.__v;
-        return ret;
-    },
-});
-
+// Existing virtuals
 mongooseUserSchema.virtual('settings', {
     ref: 'UserSettings',
     localField: '_id',
@@ -48,6 +43,33 @@ mongooseUserSchema.virtual('streak', {
     localField: '_id',
     foreignField: 'userId',
     justOne: true,
+});
+
+// Add virtual for sent tips
+mongooseUserSchema.virtual('sentTips', {
+    ref: 'Tip',
+    localField: '_id',
+    foreignField: 'fromUserId',
+    options: { sort: { timestamp: -1 } },
+});
+
+// Add virtual for received tips
+mongooseUserSchema.virtual('receivedTips', {
+    ref: 'Tip',
+    localField: '_id',
+    foreignField: 'toUserId',
+    options: { sort: { timestamp: -1 } },
+});
+
+// Keep existing toJSON transform
+mongooseUserSchema.set('toJSON', {
+    virtuals: true,
+    transform: (_, ret) => {
+        ret.id = ret._id.toHexString();
+        delete ret._id;
+        delete ret.__v;
+        return ret;
+    },
 });
 
 export const User = model<IUser>('User', mongooseUserSchema);

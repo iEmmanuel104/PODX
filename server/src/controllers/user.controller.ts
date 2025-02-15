@@ -5,6 +5,7 @@ import { AuthenticatedRequest } from '../middlewares/authMiddleware';
 import CloudinaryClientConfig from '../clients/cloudinary.config';
 import StreamIOConfig from '../clients/streamio.config';
 import { AuthUtil } from '../utils/token';
+import { TipService } from 'services/tip.service';
 
 export default class UserController {
 
@@ -225,6 +226,37 @@ export default class UserController {
             }
             console.error('Error retrieving user calls:', error);
             throw new BadRequestError('Failed to retrieve user calls');
+        }
+    }
+
+    static async getUserTips(req: AuthenticatedRequest, res: Response) {
+        try {
+            const { filter } = req.query;
+
+            // Validate filter if provided
+            if (filter && !['sent', 'received'].includes(filter as string)) {
+                throw new BadRequestError('Invalid filter value. Must be either "sent" or "received"');
+            }
+
+            const tipsData = await TipService.getUserTipsWithCallInfo(
+                req.user.walletAddress,
+                filter as 'sent' | 'received' | undefined
+            );
+
+            res.status(200).json({
+                status: 'success',
+                message: 'User tips retrieved successfully',
+                data: {
+                    ...tipsData,
+                    filter: filter || 'all',
+                },
+            });
+        } catch (error) {
+            if (error instanceof BadRequestError) {
+                throw error;
+            }
+            console.error('Error retrieving user tips:', error);
+            throw new BadRequestError('Failed to retrieve user tips');
         }
     }
 }
