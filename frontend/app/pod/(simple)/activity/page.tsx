@@ -21,6 +21,7 @@ import {
     Image as ImageIcon,
     ExternalLink,
     Loader2,
+    Calendar,
 } from 'lucide-react';
 import {
     Dialog,
@@ -35,8 +36,6 @@ import { useWalletOperations } from '@/hooks/useWalletOps';
 import { useBalance } from 'wagmi';
 
 type TabType = 'history' | 'tips';
-
-const RetroGrid = dynamic(() => import('@/components/ui/retro-grid'));
 
 const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -102,6 +101,22 @@ const POADialog = ({ poa }: { poa: POA }) => (
     </Dialog>
 );
 
+const EmptyState = ({ type }: { type: TabType }) => (
+    <div className="flex flex-col items-center justify-center py-16 px-4">
+        <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4">
+            <Calendar className="h-8 w-8 text-white/40" />
+        </div>
+        <h3 className="text-xl font-medium text-white mb-2">
+            No {type === 'history' ? 'sessions' : 'tips'} yet
+        </h3>
+        <p className="text-white/60 text-center max-w-md">
+            {type === 'history'
+                ? 'Join or create a session to start building your activity history.'
+                : 'Send or receive tips during sessions to see them here.'}
+        </p>
+    </div>
+);
+
 export default function Page() {
     const [activeTab, setActiveTab] = useState<TabType>('history');
     const [isBalanceHidden, setIsBalanceHidden] = useState(false);
@@ -148,10 +163,10 @@ export default function Page() {
     const sessions = userCallsData?.data?.calls || [];
 
     return (
-        <div className="w-full flex flex-col gap-8 transition-all duration-200">
+        <div className="w-full h-full">
             {/* Wallet Info Section - Only show for Privy wallets */}
             {isPrivyWallet && (
-                <div className="w-full flex flex-col items-center gap-4 p-4 sm:p-6 rounded-xl">
+                <div className="w-full flex flex-col items-center gap-4 p-4 sm:p-6 rounded-xl mb-8">
                     <div className="flex items-center gap-2">
                         {isLoadingBalance ? (
                             <Loader2 className="h-6 w-6 animate-spin text-white/60" />
@@ -213,7 +228,6 @@ export default function Page() {
                             </Button>
                         ))}
                     </div>
-
                     <div className="flex items-center gap-2 self-end sm:self-auto">
                         <span className="text-sm text-white/60 hidden sm:inline">Sort by:</span>
                         <div className="bg-white/5 rounded-lg px-3 py-1.5">
@@ -231,113 +245,145 @@ export default function Page() {
                 </div>
 
                 {/* Table Section */}
-                <div className="rounded-lg border border-white/10 overflow-x-auto">
+                <div className="rounded-lg border border-white/10 ">
                     {isLoadingCalls ? (
                         <div className="flex items-center justify-center p-8">
                             <Loader2 className="h-6 w-6 animate-spin text-white/60" />
                         </div>
+                    ) : sessions.length === 0 ? (
+                        <EmptyState type={activeTab} />
                     ) : (
-                        <table className="w-full whitespace-nowrap">
-                            <thead className="bg-white/5">
-                                <tr className="text-left text-sm text-white/60">
-                                    {activeTab === 'history' && (
-                                        <>
-                                            <th className="p-4">Date</th>
-                                            <th className="p-4">Session name</th>
-                                            <th className="p-4">Session type</th>
-                                            <th className="p-4">Session Duration</th>
-                                            <th className="p-4">POA Status</th>
-                                        </>
-                                    )}
-                                    {activeTab === 'tips' && (
-                                        <>
-                                            <th className="p-4">Date</th>
-                                            <th className="p-4">Session ID</th>
-                                            <th className="p-4">Tip received</th>
-                                            <th className="p-4">Tip sent</th>
-                                            <th className="p-4">Transaction</th>
-                                        </>
-                                    )}
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-white/10">
-                                {sessions.map(session => {
-                                    const { date, time } = formatDate(session.startTime ?? '');
-                                    return (
-                                        <tr
-                                            key={session._id}
-                                            className="text-sm hover:bg-white/5 transition-colors duration-200"
-                                        >
+                        <div className="w-full">
+                            <div className="min-w-[640px]">
+                                {/* Fixed Header */}
+                                <table className="w-full">
+                                    <thead className="bg-white/5">
+                                        <tr className="text-left text-sm text-white/60">
                                             {activeTab === 'history' && (
                                                 <>
-                                                    <td className="p-4">
-                                                        <div>{date}</div>
-                                                        <div className="text-white/60">{time}</div>
-                                                    </td>
-                                                    <td className="p-4">
-                                                        <div>{session.custom?.title as string}</div>
-                                                        <div className="text-white/60 flex items-center gap-1">
-                                                            <LinkIcon className="h-3 w-3" />
-                                                            {session.callId}
-                                                        </div>
-                                                    </td>
-                                                    <td className="p-4">
-                                                        <span className="px-2 py-1 rounded-full bg-white/10">
-                                                            {(session.custom?.type as string) ||
-                                                                '-'}
-                                                        </span>
-                                                    </td>
-                                                    <td className="p-4">
-                                                        {formatDuration(session.duration ?? 0)}
-                                                    </td>
-                                                    <td className="p-4">
-                                                        {session.poa ? (
-                                                            <POADialog poa={session.poa} />
-                                                        ) : (
-                                                            <span className="text-white/60">-</span>
-                                                        )}
-                                                    </td>
+                                                    <th className="p-4">Date</th>
+                                                    <th className="p-4">Session name</th>
+                                                    <th className="p-4">Session type</th>
+                                                    <th className="p-4">Session Duration</th>
+                                                    <th className="p-4">POA Status</th>
                                                 </>
                                             )}
                                             {activeTab === 'tips' && (
                                                 <>
-                                                    <td className="p-4">
-                                                        <div>{date}</div>
-                                                        <div className="text-white/60">{time}</div>
-                                                    </td>
-                                                    <td className="p-4">
-                                                        <div>{session.custom?.title as string}</div>
-                                                        <div className="text-white/60 flex items-center gap-1">
-                                                            <ArrowUturnLeft className="h-3 w-3" />
-                                                            {session.callId}
-                                                        </div>
-                                                    </td>
-                                                    <td className="p-4">0 USDC</td>
-                                                    <td className="p-4">0 USDC</td>
-                                                    <td className="p-4">
-                                                        <Button
-                                                            variant="link"
-                                                            className="text-white underline hover:text-white/90 p-0 h-auto"
-                                                        >
-                                                            View transaction
-                                                        </Button>
-                                                    </td>
+                                                    <th className="p-4">Date</th>
+                                                    <th className="p-4">Session ID</th>
+                                                    <th className="p-4">Tip received</th>
+                                                    <th className="p-4">Tip sent</th>
+                                                    <th className="p-4">Transaction</th>
                                                 </>
                                             )}
                                         </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
+                                    </thead>
+                                </table>
+
+                                {/* Scrollable Body */}
+                                <div className="overflow-y-auto max-h-[460px]">
+                                    <table className="w-full">
+                                        <tbody className="divide-y divide-white/10">
+                                            {sessions.map(session => {
+                                                const { date, time } = formatDate(
+                                                    session.startTime ?? ''
+                                                );
+                                                return (
+                                                    <tr
+                                                        key={session._id}
+                                                        className="text-sm hover:bg-white/5 transition-colors duration-200"
+                                                    >
+                                                        {/* Table row content remains the same */}
+                                                        {activeTab === 'history' ? (
+                                                            <>
+                                                                <td className="p-4">
+                                                                    <div>{date}</div>
+                                                                    <div className="text-white/60">
+                                                                        {time}
+                                                                    </div>
+                                                                </td>
+                                                                <td className="p-4">
+                                                                    <div>
+                                                                        {
+                                                                            session.custom
+                                                                                ?.title as string
+                                                                        }
+                                                                    </div>
+                                                                    <div className="text-white/60 flex items-center gap-1">
+                                                                        <LinkIcon className="h-3 w-3" />
+                                                                        {session.callId}
+                                                                    </div>
+                                                                </td>
+                                                                <td className="p-4">
+                                                                    <span className="px-2 py-1 rounded-full bg-white/10">
+                                                                        {(session.custom
+                                                                            ?.type as string) ||
+                                                                            '-'}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="p-4">
+                                                                    {formatDuration(
+                                                                        session.duration ?? 0
+                                                                    )}
+                                                                </td>
+                                                                <td className="p-4">
+                                                                    {session.poa ? (
+                                                                        <POADialog
+                                                                            poa={session.poa}
+                                                                        />
+                                                                    ) : (
+                                                                        <span className="text-white/60">
+                                                                            -
+                                                                        </span>
+                                                                    )}
+                                                                </td>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <td className="p-4">
+                                                                    <div>{date}</div>
+                                                                    <div className="text-white/60">
+                                                                        {time}
+                                                                    </div>
+                                                                </td>
+                                                                <td className="p-4">
+                                                                    <div>
+                                                                        {
+                                                                            session.custom
+                                                                                ?.title as string
+                                                                        }
+                                                                    </div>
+                                                                    <div className="text-white/60 flex items-center gap-1">
+                                                                        <ArrowUturnLeft className="h-3 w-3" />
+                                                                        {session.callId}
+                                                                    </div>
+                                                                </td>
+                                                                <td className="p-4">0 USDC</td>
+                                                                <td className="p-4">0 USDC</td>
+                                                                <td className="p-4">
+                                                                    <Button
+                                                                        variant="link"
+                                                                        className="text-white underline hover:text-white/90 p-0 h-auto"
+                                                                    >
+                                                                        View transaction
+                                                                    </Button>
+                                                                </td>
+                                                            </>
+                                                        )}
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
                     )}
                 </div>
                 <div className="sm:hidden mt-4">
                     <p className="text-sm text-white/60">↔️ Scroll horizontally to view all data</p>
                 </div>
-            </div>
-
-            <div className="absolute inset-0 w-full overflow-hidden pointer-events-none">
-                <RetroGrid />
             </div>
         </div>
     );

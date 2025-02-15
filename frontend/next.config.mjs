@@ -51,6 +51,13 @@ const nextConfig = {
                             priority: -20,
                             reuseExistingChunk: true,
                         },
+                        retroGrid: {
+                            test: /[\\/]components[\\/]ui[\\/]retro-grid/,
+                            name: 'retro-grid',
+                            priority: 1,
+                            reuseExistingChunk: true,
+                            enforce: true
+                        },
                     },
                 },
                 minimize: true,

@@ -27,8 +27,6 @@ const UserOnboardingFlow = dynamic(() => import('@/components/user/userOnboardin
     ssr: false,
 });
 
-const RetroGrid = dynamic(() => import('@/components/ui/retro-grid'));
-
 const ScheduledPods = dynamic(() => import('@/components/pod/scheduledPods'), { ssr: false });
 
 // Error Message Component
@@ -232,7 +230,7 @@ export default function PodPage() {
     }
 
     return (
-        <div className="flex flex-col justify-center items-center min-h-[calc(100vh-180px)] py-6 sm:py-8">
+        <div className="flex flex-col justify-center items-center h-full py-6 sm:py-8">
             {/* Main Content Container */}
             <div className="w-full max-w-[720px] mx-auto flex flex-col gap-8">
                 {/* Main Cards Section */}
@@ -381,10 +379,6 @@ export default function PodPage() {
                 )}
             </React.Suspense>
 
-            {/* Background Grid - Moved to bottom of stack */}
-            <div className="absolute inset-0 w-full overflow-hidden pointer-events-none">
-                <RetroGrid />
-            </div>
         </div>
     );
 }
