@@ -1,7 +1,7 @@
 // app/pod/(simple)/activity/page.tsx
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import {
@@ -29,7 +29,10 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import { useTypedSelector } from '@/store/config/store';
 import { useGetUserCallsQuery } from '@/store/user/slice';
+import { useWalletOperations } from '@/hooks/useWalletOps';
+import { useBalance } from 'wagmi';
 
 type TabType = 'history' | 'tips';
 
@@ -102,7 +105,38 @@ const POADialog = ({ poa }: { poa: POA }) => (
 export default function Page() {
     const [activeTab, setActiveTab] = useState<TabType>('history');
     const [isBalanceHidden, setIsBalanceHidden] = useState(false);
-    const [tokenGatingSwitch] = useState(true); // You might want to get this from your app state
+    const [tokenGatingSwitch] = useState(true);
+
+    // Get user info from auth hook
+    const { user } = useTypedSelector(state => state.auth);
+    // Check if it's a Privy wallet
+    const isPrivyWallet = user?.walletType === 'privy';
+
+    const { getActiveWalletAddress } = useWalletOperations();
+
+    // Only get wallet address if it's a Privy wallet
+    const activeWalletAddress = useMemo(
+        () => (isPrivyWallet ? getActiveWalletAddress() : undefined),
+        [isPrivyWallet, getActiveWalletAddress]
+    );
+
+    // Only fetch balance for Privy wallets
+    const { data: balance, isLoading: isLoadingBalance } = useBalance({
+        address: activeWalletAddress as `0x${string}`,
+    });
+
+    const displayBalance = useMemo(() => {
+        if (!balance) return '0.0000';
+        const formattedBalance = Number(balance.value) / 1e18;
+        return formattedBalance.toFixed(4);
+    }, [balance]);
+
+    const usdValue = useMemo(() => {
+        if (!balance) return '0.00';
+        const ethPrice = 3000; // Example price
+        const formattedBalance = Number(balance.value) / 1e18;
+        return (formattedBalance * ethPrice).toFixed(2);
+    }, [balance]);
 
     const { data: userCallsData, isLoading: isLoadingCalls } = useGetUserCallsQuery(
         { filter: undefined },
@@ -115,41 +149,47 @@ export default function Page() {
 
     return (
         <div className="w-full flex flex-col gap-8 transition-all duration-200">
-            {/* Wallet Info Section */}
-            <div className="w-full flex flex-col items-center gap-4 p-4 sm:p-6 rounded-xl">
-                <div className="flex items-center gap-2">
-                    <span className="text-3xl sm:text-5xl font-bold bg-gradient-to-r from-[#552FC9] to-[#D7B35D] bg-clip-text text-transparent transition-all duration-200">
-                        {isBalanceHidden ? '****' : '0 USDC'}
-                    </span>
-                    <Button
-                        variant="ghost"
-                        className="p-1 h-auto hover:bg-white/5 transition-all duration-200"
-                        onClick={() => setIsBalanceHidden(!isBalanceHidden)}
-                    >
-                        {isBalanceHidden ? (
-                            <EyeOff className="h-4 w-4 text-white/60" />
+            {/* Wallet Info Section - Only show for Privy wallets */}
+            {isPrivyWallet && (
+                <div className="w-full flex flex-col items-center gap-4 p-4 sm:p-6 rounded-xl">
+                    <div className="flex items-center gap-2">
+                        {isLoadingBalance ? (
+                            <Loader2 className="h-6 w-6 animate-spin text-white/60" />
                         ) : (
-                            <Eye className="h-4 w-4 text-white/60" />
+                            <span className="text-3xl sm:text-5xl font-bold bg-gradient-to-r from-[#552FC9] to-[#D7B35D] bg-clip-text text-transparent transition-all duration-200">
+                                {isBalanceHidden ? '****' : `${displayBalance} ETH`}
+                            </span>
                         )}
-                    </Button>
+                        <Button
+                            variant="ghost"
+                            className="p-1 h-auto hover:bg-white/5 transition-all duration-200"
+                            onClick={() => setIsBalanceHidden(!isBalanceHidden)}
+                        >
+                            {isBalanceHidden ? (
+                                <EyeOff className="h-4 w-4 text-white/60" />
+                            ) : (
+                                <Eye className="h-4 w-4 text-white/60" />
+                            )}
+                        </Button>
+                    </div>
+                    <div className="text-sm text-white/60">
+                        {isBalanceHidden ? '****' : `~USD ${usdValue}`}
+                    </div>
+                    <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-3 sm:gap-4 mt-2">
+                        <Button className="bg-[#6032F6] hover:bg-[#6032F6]/90 py-3 sm:py-5 w-full sm:w-auto transition-all duration-200">
+                            <Wallet className="h-4 w-4 mr-2" />
+                            Load Wallet
+                        </Button>
+                        <Button
+                            variant="outline"
+                            className="border-white/10 bg-transparent text-white hover:text-white hover:bg-white/5 py-3 sm:py-5 w-full sm:w-auto transition-all duration-200"
+                        >
+                            <ArrowUpRight className="h-4 w-4 mr-2" />
+                            Withdraw
+                        </Button>
+                    </div>
                 </div>
-                <div className="text-sm text-white/60">
-                    {isBalanceHidden ? '****' : '~USD 50.01'}
-                </div>
-                <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-3 sm:gap-4 mt-2">
-                    <Button className="bg-[#6032F6] hover:bg-[#6032F6]/90 py-3 sm:py-5 w-full sm:w-auto transition-all duration-200">
-                        <Wallet className="h-4 w-4 mr-2" />
-                        Load Wallet
-                    </Button>
-                    <Button
-                        variant="outline"
-                        className="border-white/10 bg-transparent text-white hover:text-white hover:bg-white/5 py-3 sm:py-5 w-full sm:w-auto transition-all duration-200"
-                    >
-                        <ArrowUpRight className="h-4 w-4 mr-2" />
-                        Withdraw
-                    </Button>
-                </div>
-            </div>
+            )}
 
             {/* Session Activity Section */}
             <div className="w-full rounded-xl p-4 sm:p-6">
