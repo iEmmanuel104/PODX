@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useMemo, memo } from 'react';
-import { ChevronDown, Mic, MicOff, Video, VideoOff, DollarSign, UsersRound } from 'lucide-react';
+import { ChevronDown, Mic, MicOff, Video, VideoOff, DollarSign, UsersRound, MoreHorizontal, Volume2, VideoIcon, ArrowBigDown } from 'lucide-react';
 import { StreamVideoParticipant, OwnUserResponse } from '@stream-io/video-react-sdk';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 
 // Types
 interface ParticipantsSidebarProps {
@@ -59,38 +60,38 @@ const Tooltip = memo<{ content: string; children: React.ReactNode }>(({ content,
         {children}
         <div
             className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-2 py-1 text-xs 
-                      bg-black text-white rounded opacity-0 invisible group-hover:opacity-100 
-                      group-hover:visible transition-all duration-200 whitespace-nowrap z-50"
+                        bg-black text-white rounded opacity-0 invisible group-hover:opacity-100 
+                        group-hover:visible transition-all duration-200 whitespace-nowrap z-50"
         >
             {content}
             <div
                 className="absolute left-1/2 -translate-x-1/2 top-full -mt-1 border-4 
-                          border-transparent border-t-black"
+                            border-transparent border-t-black"
             />
         </div>
     </div>
-));
+))
 
 const ActionButton = memo<{
-    icon: React.ReactNode;
-    text: string;
-    onClick?: () => void;
-    variant?: 'primary' | 'secondary';
-    className?: string;
-}>(({ icon, text, onClick, variant = 'primary', className = '' }) => (
+    icon: React.ReactNode
+    text: string
+    onClick?: () => void
+    variant?: "primary" | "secondary"
+    className?: string
+}>(({ icon, text, onClick, variant = "primary", className = "" }) => (
     <Tooltip content={text}>
         <Button
             onClick={onClick}
             className={`flex items-center space-x-1 px-2.5 py-1.5
-                ${variant === 'primary' ? 'bg-[#6032F6] hover:bg-[#4C28C4]' : 'bg-[#383838] hover:bg-[#424242]'}
-                transition-colors duration-200 rounded-full
-                text-white text-xs ${className}`}
+                  ${variant === "primary" ? "bg-[#6032F6] hover:bg-[#4C28C4]" : "bg-[#383838] hover:bg-[#424242]"}
+                  transition-colors duration-200 rounded-full
+                  text-white text-xs ${className}`}
         >
             {icon}
             <span className="hidden sm:inline">{text}</span>
         </Button>
     </Tooltip>
-));
+))
 
 // Memoized Sub-components
 const ParticipantControls = memo<{
@@ -168,15 +169,13 @@ const ParticipantActions = memo<{
 });
 
 const PendingParticipantsList = memo<{
-    participants: StreamVideoParticipant[];
-    onJoinRequest: (userId: string, accept: boolean) => void;
+    participants: StreamVideoParticipant[]
+    onJoinRequest: (userId: string, accept: boolean) => void
 }>(({ participants, onJoinRequest }) => (
     <div className="mb-4 sm:mb-6">
-        <h3 className="text-[#AFAFAF] text-xs sm:text-sm font-semibold mb-2 sm:mb-3">
-            Pending Requests
-        </h3>
+        <h3 className="text-[#AFAFAF] text-xs sm:text-sm font-semibold mb-2 sm:mb-3">Pending Requests</h3>
         <div className="space-y-2">
-            {participants.map(participant => (
+            {participants.map((participant) => (
                 <div
                     key={participant.userId}
                     className="flex items-center justify-between bg-[#2C2C2C] p-2.5 sm:p-3 rounded-[10px]"
@@ -187,16 +186,16 @@ const PendingParticipantsList = memo<{
                     <div className="flex items-center space-x-2">
                         <Button
                             className="bg-[#6032F6] hover:bg-[#4C28C4] text-white 
-                                text-xs sm:text-sm px-3 py-1.5 rounded-full 
-                                transition-colors duration-200"
+                                  text-xs sm:text-sm px-3 py-1.5 rounded-full 
+                                  transition-colors duration-200"
                             onClick={() => onJoinRequest(participant.userId, true)}
                         >
                             Accept
                         </Button>
                         <Button
                             className="bg-[#383838] hover:bg-[#424242] text-white 
-                                text-xs sm:text-sm px-3 py-1.5 rounded-full 
-                                transition-colors duration-200"
+                                  text-xs sm:text-sm px-3 py-1.5 rounded-full 
+                                  transition-colors duration-200"
                             onClick={() => onJoinRequest(participant.userId, false)}
                         >
                             Decline
@@ -206,36 +205,29 @@ const PendingParticipantsList = memo<{
             ))}
         </div>
     </div>
-));
+))
 
 const ParticipantItem = memo<{
-    participant: StreamVideoParticipant;
-    currentUser: OwnUserResponse | undefined;
-    isExpanded: boolean;
-    onExpand: () => void;
-    onTip: (participant: StreamVideoParticipant) => void;
-    onUpdateRole: (userId: string, newRole: string) => void;
-}>(({ participant, currentUser, isExpanded, onExpand, onTip, onUpdateRole }) => {
-    const isCurrentUser = participant.userId === currentUser?.id;
+    participant: StreamVideoParticipant
+    currentUser: OwnUserResponse | undefined
+    onTip: (participant: StreamVideoParticipant) => void
+    onUpdateRole: (userId: string, newRole: string) => void
+}>(({ participant, currentUser, onTip, onUpdateRole }) => {
+    const isCurrentUser = participant.userId === currentUser?.id
 
-    const { role, currentUserRoles, displayName } = useMemo(
+    const { role, displayName } = useMemo(
         () => ({
-            role: participant.roles.includes('host')
-                ? 'host'
-                : participant.roles.includes('cohost')
-                    ? 'cohost'
-                    : participant.roles.includes('user')
-                        ? 'user'
-                        : 'listener',
-            currentUserRoles: !currentUser?.role
-                ? undefined
-                : Array.isArray(currentUser.role)
-                    ? currentUser.role
-                    : [currentUser.role],
+            role: participant.roles.includes("host")
+                ? "host"
+                : participant.roles.includes("cohost")
+                    ? "cohost"
+                    : participant.roles.includes("user")
+                        ? "user"
+                        : "listener",
             displayName: formatName(participant.name || participant.userId),
         }),
-        [participant, currentUser?.role]
-    );
+        [participant],
+    )
 
     const isAudioActive = participant.publishedTracks.includes(1);
     const isVideoActive = participant.publishedTracks.includes(2);
@@ -247,122 +239,93 @@ const ParticipantItem = memo<{
     };
 
     return (
-        <div className="bg-[#2C2C2C] rounded-lg hover:bg-[#3C3C3C] transition-colors duration-200">
+        <div className="bg-[#1F1F1F] hover:bg-[#2C2C2C] transition-colors duration-200 group">
             <div className="flex items-center justify-between p-2.5">
-                <div className="flex flex-col min-w-0 flex-1 mr-2">
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-white text-xs sm:text-sm font-medium truncate max-w-[120px] sm:max-w-[200px]">
-                            {displayName}
-                        </span>
-                        {isCurrentUser && (
-                            <span className="text-gray-400 text-xs px-1.5 py-0.5 bg-[#383838] rounded-full">
-                                You
-                            </span>
-                        )}
-                    </div>
-                    <div className="flex items-center gap-2 mt-1">
-                        <span
-                            className={`text-xs px-1.5 py-0.5 rounded-full ${roleStyles[role as keyof typeof roleStyles] || roleStyles.default}`}
-                        >
-                            {role.charAt(0).toUpperCase() + role.slice(1)}
-                        </span>
-                    </div>
+                <div className="flex flex-col min-w-0 flex-1">
+                    <span className="text-white font-normal">{displayName}</span>
+                    <span className="text-gray-400 text-xs">{role === "host" ? "Session Host" : "Listener"}</span>
                 </div>
-                <ParticipantControls
-                    isAudioActive={isAudioActive}
-                    isVideoActive={isVideoActive}
-                    onExpandClick={onExpand}
-                    showControls={!isCurrentUser}
-                />
+                {!isCurrentUser && (
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <button className="text-gray-400 opacity-0 group-hover:opacity-100">
+                                <MoreHorizontal className="h-5 w-5" />
+                            </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-48 p-0 bg-[#1F1F1F] border-[#2C2C2C]">
+                            <div className="py-1">
+                                <button
+                                    onClick={() => onTip(participant)}
+                                    className="w-full px-3 py-2 text-sm text-white hover:bg-[#2C2C2C] flex items-center gap-2"
+                                >
+                                    <DollarSign className="h-4 w-4" />
+                                    Tip {displayName}
+                                </button>
+                                <button className="w-full px-3 py-2 text-sm text-white hover:bg-[#2C2C2C] flex items-center gap-2">
+                                    <ArrowBigDown className="h-4 w-4" />
+                                    Pin
+                                </button>
+                                <button className="w-full px-3 py-2 text-sm text-white hover:bg-[#2C2C2C] flex items-center gap-2">
+                                    <Volume2 className="h-4 w-4" />
+                                    Mute audio
+                                </button>
+                                <button className="w-full px-3 py-2 text-sm text-white hover:bg-[#2C2C2C] flex items-center gap-2">
+                                    <VideoIcon className="h-4 w-4" />
+                                    Disable video
+                                </button>
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+                )}
             </div>
-            {isExpanded && !isCurrentUser && (
-                <div className="flex flex-wrap items-center gap-2 p-2 border-t border-[#383838]">
-                    <Button
-                        onClick={() => {
-                            console.log("participant to tip", { participant })
-                            onTip(participant)
-                        }}
-                        className="flex items-center justify-center gap-1.5 bg-[#6032F6] hover:bg-[#4C28C4] text-white text-xs px-2 py-1 rounded-full"
-                    >
-                        <Image
-                            src="/images/money-send.svg"
-                            alt="Send Tip"
-                            width={20}
-                            height={20}
-                            className="mb-0"
-                            priority
-                        />
-                        <p className="">Send Tip to {participant.name}</p>
-                    </Button>
-
-                    {currentUserRoles?.includes('host') && !participant.roles.includes('host') && (
-                        <Button
-                            onClick={() => onUpdateRole(participant.userId, 'cohost')}
-                            className="flex items-center gap-1.5 bg-[#383838] hover:bg-[#424242] text-white text-xs px-3 py-1.5 rounded-full"
-                        >
-                            <UsersRound className="w-3 h-3 sm:w-4 sm:h-4 text-[#DDB958]" />
-                            <span className="hidden sm:inline">Make Co-host</span>
-                        </Button>
-                    )}
-                </div>
-            )}
         </div>
-    );
-});
+    )
+})
 
 // Main Component
 const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
     ({ participants, currentUser, openTipModal, updateParticipantRole, handleJoinRequest }) => {
-        const [expandedParticipant, setExpandedParticipant] = useState<string | null>(null);
-        const participoantsObj = JSON.parse(JSON.stringify(participants));
-        console.log({participoantsObj});
+        const participoantsObj = JSON.parse(JSON.stringify(participants))
+        console.log({ participoantsObj })
 
-        const { sortedParticipants, pendingParticipants, activeParticipants, isCurrentUserHost } =
-            useMemo(() => {
-                const sorted = [...participants].sort((a, b) => {
-                    const getRoleWeight = (roles: string[]) => {
-                        if (roles.includes('host')) return 3;
-                        if (roles.includes('cohost')) return 2;
-                        if (roles.includes('user')) return 1;
-                        return 0;
-                    };
-                    return getRoleWeight(b.roles) - getRoleWeight(a.roles);
-                });
+        const { sortedParticipants, pendingParticipants } = useMemo(() => {
+            const sorted = [...participants].sort((a, b) => {
+                const getRoleWeight = (roles: string[]) => {
+                    if (roles.includes("host")) return 3
+                    if (roles.includes("cohost")) return 2
+                    if (roles.includes("user")) return 1
+                    return 0
+                }
+                return getRoleWeight(b.roles) - getRoleWeight(a.roles)
+            })
 
-                const isCurrentUserHost =
-                    currentUser?.role?.includes('host') ||
-                    currentUser?.role?.includes('cohost') ||
-                    false;
-
-                return {
-                    sortedParticipants: sorted,
-                    pendingParticipants: sorted.filter(p => p.roles.includes('pending')),
-                    activeParticipants: sorted.filter(p => !p.roles.includes('pending')),
-                    isCurrentUserHost,
-                };
-            }, [participants, currentUser]);
+            return {
+                sortedParticipants: sorted,
+                pendingParticipants: sorted.filter((p) => p.roles.includes("pending")),
+            }
+        }, [participants])
 
         return (
-            <div className="flex flex-col h-full bg-[#1F1F1F]">
+            <div className="flex flex-col h-full bg-[#1F1F1F] text-sm">
+                <div className="p-4 border-b border-[#2C2C2C]">
+                    <div className="relative">
+                        <input
+                            type="text"
+                            placeholder="Search for participant"
+                            className="w-full bg-[#2C2C2C] text-white placeholder-gray-400 rounded-lg px-4 py-2 focus:outline-none focus:ring-1 focus:ring-[#6032F6]"
+                        />
+                    </div>
+                </div>
                 {/* Participants List */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
                     {pendingParticipants.length > 0 && (
-                        <PendingParticipantsList
-                            participants={pendingParticipants}
-                            onJoinRequest={handleJoinRequest}
-                        />
+                        <PendingParticipantsList participants={pendingParticipants} onJoinRequest={handleJoinRequest} />
                     )}
-                    {sortedParticipants.map(participant => (
+                    {sortedParticipants.map((participant) => (
                         <ParticipantItem
                             key={participant.userId}
                             participant={participant}
                             currentUser={currentUser}
-                            isExpanded={expandedParticipant === participant.userId}
-                            onExpand={() =>
-                                setExpandedParticipant(prev =>
-                                    prev === participant.userId ? null : participant.userId
-                                )
-                            }
                             onTip={openTipModal}
                             onUpdateRole={updateParticipantRole}
                         />
@@ -370,25 +333,23 @@ const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
                 </div>
 
                 {/* Fixed Bottom Section */}
-                <div className="sticky bottom-0 bg-[#2C2C2C] p-4">
-                    <h1>Your session is live!</h1>
-                    <p className="mb-4 text-gray-400">
-                        Click the button below to copy the call link
-                    </p>
+                <div className="border-t border-[#2C2C2C] bg-[#1F1F1F] p-4">
+                    <p className="text-white mb-2">Your session is live!</p>
+                    <p className="text-gray-400 text-sm mb-4">Click the button below to copy the call link</p>
                     <Button
-                        className="w-full bg-[#6032F6] hover:bg-[#4C28C4] text-white px-4 py-2 rounded-lg"
+                        className="w-full bg-[#6032F6] hover:bg-[#4C28C4] text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2"
                         onClick={() => {
                             navigator.clipboard.writeText(window.location.href)
-                            toast.success('Link copied to clipboard');
+                            toast.success("Link copied to clipboard")
                         }}
                     >
-                        Copy Link
+                        Copy invite link
                     </Button>
                 </div>
             </div>
-        );
-    }
-);
+        )
+    },
+)
 
 // Add display names for debugging
 ParticipantControls.displayName = 'ParticipantControls';
