@@ -192,7 +192,7 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
                 if (to.id === connectedUser?.id) {
                     setState(prev => ({
                         ...prev,
-                        receivedTips: [...prev.receivedTips, { senderName, amount }],
+                        receivedTips: [...prev.receivedTips, { from: senderName, amount }],
                     }));
                 }
             }
