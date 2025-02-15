@@ -3,9 +3,9 @@ import clsx from 'clsx';
 
 import { AudioInputDeviceSelector, AudioOutputDeviceSelector } from './deviceSelector';
 import CallControlButton from './callControlButton';
-import MicFilled from '../icons/MicFilled';
-import MicOffFilled from '../icons/MicOffFilled';
 import ToggleButtonContainer from './toggleButtonContainer';
+import Mic from '../icons/Mic';
+import MicMuted from '@/public/images/icons/MicMuted';
 
 const ToggleAudioButton = () => {
     const { useMicrophoneState } = useCallStateHooks();
@@ -43,9 +43,9 @@ const ToggleAudioButton = () => {
             <CallControlButton
                 icon={
                     isMicrophoneMute ? (
-                        <MicOffFilled className="w-5 h-5 sm:w-6 sm:h-6" />
+                        <Mic />
                     ) : (
-                        <MicFilled className="w-5 h-5 sm:w-6 sm:h-6" />
+                        <MicMuted />
                     )
                 }
                 title={isMicrophoneMute ? 'Turn on microphone' : 'Turn off microphone'}

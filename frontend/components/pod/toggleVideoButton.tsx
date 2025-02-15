@@ -7,6 +7,8 @@ import Videocam from '../icons/Videocam';
 import VideocamOff from '../icons/VideocamOff';
 import VisualEffects from '../icons/VisualEffects';
 import { VideoInputDeviceSelector } from './deviceSelector';
+import VideoCall from '@/public/images/icons/VideoCall';
+import VideoCallMuted from '@/public/images/icons/VideoCallMuted';
 
 const ICON_SIZE = 20;
 
@@ -31,18 +33,18 @@ const ToggleVideoButton = () => {
                     disabled={!hasBrowserPermission}
                 />
             }
-            // icons={
-            //     <div title="Apply visual effects">
-            //         <VisualEffects className="w-5 h-5 sm:w-6 sm:h-6" />
-            //     </div>
-            // }
+        // icons={
+        //     <div title="Apply visual effects">
+        //         <VisualEffects className="w-5 h-5 sm:w-6 sm:h-6" />
+        //     </div>
+        // }
         >
             <CallControlButton
                 icon={
                     isCameraMute ? (
-                        <VideocamOff className="w-5 h-5 sm:w-6 sm:h-6" />
+                        <VideoCall />
                     ) : (
-                        <Videocam className="w-5 h-5 sm:w-6 sm:h-6" />
+                        <VideoCallMuted />
                     )
                 }
                 title={isCameraMute ? 'Turn on camera' : 'Turn off camera'}
