@@ -259,32 +259,14 @@ export default function Page() {
 
             {/* Session Activity Section */}
             <div className="w-full">
-                <h2 className="text-xl sm:text-2xl font-semibold mb-6">Session Activity</h2>
-
-                {/* Sort Section */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                    <div className="flex flex-wrap gap-2">
-                        {(['history', 'tips'] as TabType[]).map(tab => (
-                            <Button
-                                key={tab}
-                                variant="ghost"
-                                className={`rounded-full px-4 py-2 text-sm ${
-                                    activeTab === tab
-                                        ? 'bg-[#DDB958] text-black'
-                                        : 'text-white/60 hover:text-white hover:bg-white/5'
-                                }`}
-                                onClick={() => setActiveTab(tab)}
-                            >
-                                {tab === 'history' ? 'Session history' : 'Tip history'}
-                            </Button>
-                        ))}
-                    </div>
-
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
-                        <span className="text-sm text-white/60 hidden sm:inline">Sort by:</span>
-                        <div className="bg-white/5 rounded-lg px-3 py-1.5 w-full sm:w-auto">
+                {/* Header with Sort - Desktop */}
+                <div className="hidden sm:flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-semibold">Session Activity</h2>
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm text-white/60">Sort by:</span>
+                        <div className="bg-white/5 rounded-lg px-3 py-1.5">
                             <Select defaultValue="newest">
-                                <SelectTrigger className="w-full sm:w-[160px] bg-transparent border-0 p-0 h-auto focus:ring-0">
+                                <SelectTrigger className="w-[160px] bg-transparent border-0 p-0 h-auto focus:ring-0">
                                     <SelectValue placeholder="Sort by" />
                                 </SelectTrigger>
                                 <SelectContent className="bg-[#1E1E1E] border-white/10">
@@ -294,6 +276,40 @@ export default function Page() {
                             </Select>
                         </div>
                     </div>
+                </div>
+
+                {/* Header with Sort - Mobile */}
+                <div className="sm:hidden space-y-4 mb-6">
+                    <h2 className="text-xl font-semibold">Session Activity</h2>
+                    <div className="bg-white/5 rounded-lg px-3 py-1.5 w-full">
+                        <Select defaultValue="newest">
+                            <SelectTrigger className="w-full bg-transparent border-0 p-0 h-auto focus:ring-0">
+                                <SelectValue placeholder="Sort by" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-[#1E1E1E] border-white/10">
+                                <SelectItem value="newest">Newest session</SelectItem>
+                                <SelectItem value="oldest">Oldest session</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+
+                {/* Tabs - Always Visible */}
+                <div className="flex gap-2 mb-6">
+                    {(['history', 'tips'] as TabType[]).map(tab => (
+                        <Button
+                            key={tab}
+                            variant="ghost"
+                            className={`rounded-full px-4 py-2 text-sm ${
+                                activeTab === tab
+                                    ? 'bg-[#DDB958] text-black'
+                                    : 'text-white/60 hover:text-white hover:bg-white/5'
+                            }`}
+                            onClick={() => setActiveTab(tab)}
+                        >
+                            {tab === 'history' ? 'Session history' : 'Tip history'}
+                        </Button>
+                    ))}
                 </div>
             </div>
 
