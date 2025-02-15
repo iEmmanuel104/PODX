@@ -264,7 +264,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                         className={`
                             fixed sm:absolute right-0 top-0 h-full
                             w-full sm:w-56 lg:w-64 xl:w-80
-                            bg-[#1E1E1E] 
+                            bg-inherit
                             transform transition-transform duration-300 ease-in-out
                             ${showParticipants ? 'translate-x-0' : 'translate-x-full'}
                             z-20

@@ -210,51 +210,69 @@ const ParticipantItem = memo<{
     onTip: (participant: StreamVideoParticipant) => void
     onUpdateRole: (userId: string, newRole: string) => void
 }>(({ participant, currentUser, onTip, onUpdateRole }) => {
-    const isCurrentUser = participant.userId === currentUser?.id
+    const isCurrentUser = participant.userId === currentUser?.id;
 
-    const { role, currentUserRoles, displayName } = useMemo(
-        () => ({
-            role: participant.roles.includes("host")
-                ? "host"
-                : participant.roles.includes("cohost")
-                    ? "cohost"
-                    : participant.roles.includes("user")
-                        ? "user"
-                        : "listener",
-            currentUserRoles: !currentUser?.role
-                ? undefined
-                : Array.isArray(currentUser.role)
-                    ? currentUser.role
-                    : [currentUser.role],
-            displayName: formatName(participant.name || participant.userId),
-        }),
-        [participant, currentUser?.role],
-    )
+    // Correctly determine the role based on participant.roles
+    const role = useMemo(() => {
+        console.log("role", participant.roles)
+        if (participant.roles.includes("host")) {
+            return "host";
+        } else if (participant.roles.includes("cohost")) {
+            return "cohost";
+        } else if (participant.roles.includes("user")) {
+            return "user";
+        } else {
+            return "listener";
+        }
+    }, [participant.roles]);
 
-    const isAudioActive = participant.publishedTracks.includes(1)
-    const isVideoActive = participant.publishedTracks.includes(2)
+    const displayName = formatName(participant.name || participant.userId);
+
+    const isAudioActive = participant.publishedTracks.includes(1);
+    const isVideoActive = participant.publishedTracks.includes(2);
 
     return (
         <div className="bg-[#2C2C2C] rounded-lg mb-2">
             <div className="flex items-center justify-between p-3">
                 <div className="flex flex-col min-w-0 flex-1">
                     <span className="text-white text-sm font-medium truncate">{displayName}</span>
-                    <span className="text-[#9B9B9B] text-xs mt-0.5">{role === "host" ? "Session Host" : "Listener"}</span>
+                    {/* Display the correct role */}
+                    <span className="text-[#9B9B9B] text-xs mt-0.5">
+                        {role === "host"
+                            ? "Session Host"
+                            : role === "cohost"
+                                ? "Co-host"
+                                : role === "user"
+                                    ? "User"
+                                    : "Listener"}
+                    </span>
                 </div>
                 <div className="flex items-center gap-2">
                     <div
                         className={`w-8 h-8 rounded-full flex items-center justify-center 
                         ${isAudioActive ? "bg-[#7C3AED]" : "bg-red-500"}`}
                     >
-                        {isAudioActive ? <Mic className="w-4 h-4 text-white" /> : <MicOff className="w-4 h-4 text-white" />}
+                        {isAudioActive ? (
+                            <Mic className="w-4 h-4 text-white" />
+                        ) : (
+                            <MicOff className="w-4 h-4 text-white" />
+                        )}
                     </div>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button disabled={isCurrentUser} variant="ghost" size="icon" className="text-[#9B9B9B] bg-inherit hover:bg-inherit hover:text-white">
+                            <Button
+                                disabled={isCurrentUser}
+                                variant="ghost"
+                                size="icon"
+                                className="text-[#9B9B9B] bg-inherit hover:bg-inherit hover:text-white"
+                            >
                                 <MoreHorizontal className="w-5 h-5" />
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent className="bg-[#2C2C2C] border border-[#383838] rounded-lg p-1" side="left">
+                        <DropdownMenuContent
+                            className="bg-[#2C2C2C] border border-[#383838] rounded-lg p-1"
+                            side="left"
+                        >
                             <DropdownMenuItem
                                 onClick={() => onTip(participant)}
                                 className="flex items-center px-3 py-2 text-sm text-white hover:bg-[#383838] rounded-md cursor-pointer"
@@ -279,8 +297,8 @@ const ParticipantItem = memo<{
                 </div>
             </div>
         </div>
-    )
-})
+    );
+});
 
 const SessionNotification = () => {
     const [isVisible, setIsVisible] = useState(true);
@@ -341,6 +359,8 @@ const SessionNotification = () => {
 // Main Component
 const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
     ({ participants, currentUser, openTipModal, updateParticipantRole, handleJoinRequest }) => {
+        const [searchQuery, setSearchQuery] = useState("");
+
         const { pendingParticipants, activeParticipants } = useMemo(() => {
             return {
                 pendingParticipants: participants.filter((p) => p.roles.includes("pending")),
@@ -348,8 +368,15 @@ const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
             }
         }, [participants])
 
+        const filteredActiveParticipants = useMemo(() => {
+            if (!searchQuery) return activeParticipants; // If no search query, return all active participants
+            return activeParticipants.filter((participant) =>
+                (participant.name || participant.userId).toLowerCase().includes(searchQuery.toLowerCase())
+            );
+        }, [activeParticipants, searchQuery]);
+
         return (
-            <div className="flex flex-col h-full bg-[#1C1C1C] p-4 rounded-2xl">
+            <div className="flex flex-col h-full bg-[#1C1C1C] p-4 rounded-[20px]">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-white text-lg font-medium">Participants</h2>
                     <span className="text-sm bg-[#6032F6] text-white px-2 py-1 rounded-full">{activeParticipants.length}/50</span>
@@ -362,6 +389,8 @@ const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
                         <input
                             type="text"
                             placeholder="Search for participant"
+                            value={searchQuery} // Bind searchQuery state
+                            onChange={(e) => setSearchQuery(e.target.value)} // Update searchQuery on change
                             className="w-full bg-[#2C2C2C] text-white text-sm rounded-lg px-4 py-2.5 
                        focus:outline-none focus:border-transparent"
                         />
@@ -373,7 +402,7 @@ const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
                         <PendingParticipantsList participants={pendingParticipants} onJoinRequest={handleJoinRequest} />
                     )}
                     {/* Use activeParticipants instead of sortedParticipants */}
-                    {activeParticipants.map((participant) => (
+                    {filteredActiveParticipants.map((participant) => (
                         <ParticipantItem
                             key={participant.userId}
                             participant={participant}
