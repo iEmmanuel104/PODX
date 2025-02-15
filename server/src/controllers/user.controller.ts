@@ -5,7 +5,7 @@ import { AuthenticatedRequest } from '../middlewares/authMiddleware';
 import CloudinaryClientConfig from '../clients/cloudinary.config';
 import StreamIOConfig from '../clients/streamio.config';
 import { AuthUtil } from '../utils/token';
-import { TipService } from 'services/tip.service';
+import { TipService } from '../services/tip.service';
 
 export default class UserController {
 

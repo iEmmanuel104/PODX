@@ -1,8 +1,8 @@
 // services/tip.service.ts
-import { User } from 'models/Mongodb/user.model';
+import { User } from '../models/Mongodb/user.model';
 import { Tip, ITip } from '../models/Mongodb/tip.model';
 import { Types } from 'mongoose';
-import { TipsWithSummary, PopulatedTip } from 'utils/interface';
+import { TipsWithSummary, PopulatedTip } from '../utils/interface';
 
 export class TipService {
     static async createTip(
