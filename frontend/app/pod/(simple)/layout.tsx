@@ -1,11 +1,11 @@
 'use client';
-
 import React, { useLayoutEffect } from 'react';
 import type { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import UserDetails from '@/components/user/userDetails';
 import Footer from '@/components/common/Footer';
 import { useTypedSelector } from '@/store/config/store';
+import RetroGrid from '@/components/ui/retro-grid';
 
 function SimpleLayout({ children }: { children: ReactNode }) {
     const router = useRouter();
@@ -13,10 +13,8 @@ function SimpleLayout({ children }: { children: ReactNode }) {
     const [mounted, setMounted] = React.useState(false);
     const [visible, setVisible] = React.useState(false);
 
-    // Use useLayoutEffect to prevent initial flash
     useLayoutEffect(() => {
         setMounted(true);
-        // Trigger fade-in animation on next frame
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
                 setVisible(true);
@@ -26,50 +24,58 @@ function SimpleLayout({ children }: { children: ReactNode }) {
 
     useLayoutEffect(() => {
         if (mounted && !isLoggedIn) {
-            // Fade out before redirect
             setVisible(false);
             router.replace('/');
         }
     }, [isLoggedIn, router, mounted]);
 
-    // Return null on server-side to prevent hydration issues
     if (!mounted) return null;
 
     return (
         <div
-            className="min-h-screen bg-[#151515] text-white flex flex-col overflow-x-clip transition-opacity duration-150"
+            className="fixed inset-0 bg-[#151515] text-white transition-opacity duration-150"
             style={{
                 opacity: visible ? 1 : 0,
                 transform: `translateY(${visible ? '0' : '10px'})`,
                 transition: 'opacity 150ms ease-out, transform 150ms ease-out',
             }}
         >
-            {/* Fixed header with fade effect */}
-            <header className="sticky top-0 pt-4 z-50 bg-[#151515]/95 backdrop-blur-md transition-all duration-200">
-                <div className="max-w-[800px] mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-4">
-                   {user ? <UserDetails user={user} /> : null}
-                </div>
-            </header>
+            {/* Background Grid */}
+            <div className="fixed inset-0 w-full h-full overflow-hidden pointer-events-none">
+                <RetroGrid />
+            </div>
 
-            {/* Main content area with transform */}
-            <main
-                className="flex-1 relative transition-transform duration-200"
-                style={{
-                    transform: visible ? 'none' : 'translateY(10px)',
-                    opacity: visible ? 1 : 0,
-                }}
-            >
-                <div className="max-w-[800px] mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8">
-                    {children}
-                </div>
-            </main>
+            {/* Content wrapper */}
+            <div className="relative z-10 flex flex-col h-full">
+                {/* Header */}
+                <header className="flex-none z-20 bg-[#151515]/95 backdrop-blur-md transition-all duration-200">
+                    <div className="max-w-[800px] mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-5">
+                        {user ? <UserDetails user={user} /> : null}
+                    </div>
+                </header>
 
-            {/* Fixed footer with fade effect */}
-            <footer className="sticky bottom-0 pb-4 z-50 bg-[#151515]/95 backdrop-blur-md transition-all duration-200">
-                <div className="max-w-[800px] mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-4">
-                    <Footer />
-                </div>
-            </footer>
+                {/* Main content area */}
+                <main
+                    className="flex-1 relative transition-transform duration-200 flex flex-col justify-center overflow-auto"
+                    style={{
+                        transform: visible ? 'none' : 'translateY(10px)',
+                        opacity: visible ? 1 : 0,
+                    }}
+                >
+                    <div className="max-w-[800px] w-full mx-auto px-3 sm:px-6 lg:px-8 py-8 sm:py-10 md:py-12">
+                        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-280px)]">
+                            {children}
+                        </div>
+                    </div>
+                </main>
+
+                {/* Footer - Enhanced for mobile */}
+                <footer className="flex-none z-20 backdrop-blur-sm transition-all duration-200 mt-auto">
+                    <div className="max-w-[800px] mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-5">
+                        <Footer />
+                    </div>
+                </footer>
+            </div>
         </div>
     );
 }

@@ -1,4 +1,3 @@
-import { string } from "@/types";
 
 export interface CallStats {
     totalCalls: number;

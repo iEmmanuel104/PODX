@@ -11,6 +11,12 @@ import Header from '@/components/meeting/header';
 import {
     StreamTheme,
     useCall,
+    Comparator,
+    combineComparators,
+    role,
+    speaking,
+    publishingVideo,
+    publishingAudio,
     useCallStateHooks,
     useConnectedUser,
     StreamVideoEvent,
@@ -47,7 +53,21 @@ export default function MeetingInterface({ params }: MeetingProps) {
         useScreenShareState,
     } = useCallStateHooks();
 
-    const participants = useParticipants();
+    const participantComparator = useMemo(() => {
+        return combineComparators(
+            // Sort by role first (host -> cohost -> user -> listener)
+            role('host', 'cohost', 'user', 'listener'),
+            // Then by speaking status
+            speaking,
+            // Then by those publishing video
+            publishingVideo,
+            // Then by those publishing audio
+            publishingAudio
+        );
+    }, []);
+
+    // Use the custom comparator with useParticipants
+    const participants = useParticipants({ sortBy: participantComparator });
     const customData = useCallCustomData();
     const live = useIsCallLive();
     const { screenShare } = useScreenShareState() || {};
@@ -78,7 +98,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
         handleCancelTip,
         setTipAmount,
         handleTipEvent,
-    } = useTipping(isEmbeddedWallet, connectedUser, call);
+    } = useTipping(isEmbeddedWallet);
 
     const {
         data: balance,

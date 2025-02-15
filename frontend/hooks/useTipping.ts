@@ -2,8 +2,8 @@ import { useState, useCallback } from 'react';
 import {
     StreamVideoParticipant,
     CustomVideoEvent,
-    OwnUserResponse,
-    Call,
+    useCall,
+    useConnectedUser,
 } from '@stream-io/video-react-sdk';
 import { useSendTransaction } from '@privy-io/react-auth';
 import { useSendTransaction as useSendTransactionWagmi } from 'wagmi';
@@ -18,7 +18,7 @@ interface TippingState {
     receivedTips: Array<{ from: string; amount: string }>;
 }
 
-export const useTipping = (isEmbeddedWallet: boolean, connectedUser: OwnUserResponse | undefined, call: Call | undefined  ) => {
+export const useTipping = (isEmbeddedWallet: boolean) => {
     const [state, setState] = useState<TippingState>({
         showTipModal: false,
         tipAmount: '',
@@ -26,6 +26,9 @@ export const useTipping = (isEmbeddedWallet: boolean, connectedUser: OwnUserResp
         selectedTipRecipient: null,
         receivedTips: [],
     });
+
+    const call = useCall();
+    const connectedUser = useConnectedUser();
 
     // Embedded wallet transaction handling
     const { sendTransaction: sendTransactionEmbedded } = useSendTransaction({
@@ -116,13 +119,19 @@ export const useTipping = (isEmbeddedWallet: boolean, connectedUser: OwnUserResp
     };
 
     const sendTipEvent = useCallback(
-        async (recipient: string, amount: string) => {
+        async (recipient: StreamVideoParticipant | null, amount: string) => {
             if (!call) return;
 
             await call.sendCustomEvent({
                 type: 'tip',
-                from: connectedUser?.id || 'Unknown',
-                to: recipient,
+                from: {
+                    id: connectedUser?.id || 'Unknown',
+                    name: connectedUser?.name || 'Anon',
+            },
+                to: {
+                    id: recipient?.userId,
+                    name: recipient?.name,
+                },
                 amount: amount,
             });
         },
@@ -154,7 +163,7 @@ export const useTipping = (isEmbeddedWallet: boolean, connectedUser: OwnUserResp
             }
 
             await sendETH(walletAddress, state.tipAmount);
-            await sendTipEvent(state.selectedTipRecipient.userId, state.tipAmount);
+            await sendTipEvent(state.selectedTipRecipient, state.tipAmount);
             
             // Show success state
             setState(prev => ({ 
@@ -179,10 +188,11 @@ export const useTipping = (isEmbeddedWallet: boolean, connectedUser: OwnUserResp
             if (event.custom.type === 'tip') {
                 console.log('event.custom', event.custom);
                 const { from, to, amount } = event.custom;
-                if (to === connectedUser?.id) {
+                const senderName = from?.name || 'Anon';
+                if (to.id === connectedUser?.id) {
                     setState(prev => ({
                         ...prev,
-                        receivedTips: [...prev.receivedTips, { from, amount }],
+                        receivedTips: [...prev.receivedTips, { from: senderName, amount }],
                     }));
                 }
             }
