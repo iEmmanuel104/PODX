@@ -28,12 +28,12 @@ import {
 import { useRouter } from 'next/navigation';
 import { useBalance } from 'wagmi';
 import EndScreen from '@/components/meeting/end-screen';
-import Image from 'next/image';
 import { useTipping } from '@/hooks/useTipping';
 import SpeakerLayout from '@/components/pod/speakerLayout';
 import GridLayout from '@/components/pod/gridLayout';
 import MeetingFooter from '@/components/meeting/meetingFooter';
 import { useTypedSelector } from '@/store/config/store';
+import TipNotification from '@/components/meeting/tip-notification';
 
 interface MeetingProps {
     params: {
@@ -79,7 +79,6 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const [showParticipants, setShowParticipants] = useState(false);
     const [joinRequests, setJoinRequests] = useState<string[]>([]);
     const [speakRequests, setSpeakRequests] = useState<string[]>([]);
-    const [showSidebar, setShowSidebar] = useState(false);
     const { user } = useTypedSelector(state => state.auth);
     const userAddress = user?.walletAddress as `0x${string}`;
     const [participantInSpotlight, _] = participants;
@@ -228,10 +227,6 @@ export default function MeetingInterface({ params }: MeetingProps) {
         setSpeakRequests(prev => prev.filter(u => u !== user));
     };
 
-    const toggleSidebar = () => {
-        setShowSidebar(!showSidebar);
-    };
-
     const handleLogout = () => {
         // Implement logout logic here
     };
@@ -323,29 +318,33 @@ export default function MeetingInterface({ params }: MeetingProps) {
                         {selectedTipRecipient.name || selectedTipRecipient.userId} {tipAmount} ETH
                     </div>
                 )}
-                {receivedTips.length > 0 && (
-                    <div className="fixed bottom-4 left-4 text-white px-4 py-2">
-                        {/* Recent tips:{" "} */}
-                        {receivedTips.map((tip, index) => (
-                            <div
-                                key={index}
-                                className="bg-[#6032F6] rounded-full flex items-center justify-between gap-2 px-2"
-                            >
-                                <Image
-                                    src={'/images/confetti.svg'}
-                                    alt="confetti"
-                                    className="h-10"
-                                    width={30}
-                                    height={10}
-                                />
-                                <div className="flex items-center gap-2">
-                                    <p className="text-semibold">{tip.from}</p> tipped you{' '}
-                                    <p className="text-semibold">{tip.amount}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
+                {receivedTips.length > 0 &&
+                    receivedTips.map((tip, index) => (
+                        <TipNotification
+                            key={index}
+                            tip={{
+                                from: tip.from,
+                                amount: `${tip.amount} USDC`,
+                                profileImage: "/images/default-avatar.png",
+                            }}
+                            onClose={() => {
+                                // Remove this specific tip from receivedTips array
+                                const newTips = [...receivedTips]
+                                newTips.splice(index, 1)
+                                // Update your tips state here -  This needs to be implemented with useState hook
+                                // Example: setReceivedTips(newTips);
+                            }}
+                            onAppreciate={() => {
+                                // Handle appreciation logic
+                                console.log(`Appreciated tip from ${tip.from}`)
+                                // Remove tip after appreciation
+                                const newTips = [...receivedTips]
+                                newTips.splice(index, 1)
+                                // Update your tips state here - This needs to be implemented with useState hook
+                                // Example: setReceivedTips(newTips);
+                            }}
+                        />
+                    ))}
             </div>
         </StreamTheme>
     );
