@@ -230,25 +230,22 @@ export default function PodPage() {
     }
 
     return (
-        <div className="flex flex-col justify-center items-center h-full py-6 sm:py-8">
+        <div className="flex flex-col justify-center items-center min-h-screen w-full px-4 sm:px-6 py-4 sm:py-8">
             {/* Main Content Container */}
-            <div className="w-full max-w-[720px] mx-auto flex flex-col gap-8">
+            <div className="w-full max-w-[720px] mx-auto flex flex-col gap-6 sm:gap-8">
                 {/* Main Cards Section */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     {/* Join Session Card */}
-                    <div
-                        className="w-full rounded-[20px] p-4 sm:p-6 bg-[#1E1E1E] flex flex-col justify-between 
-                                  transition-all duration-200 h-full"
-                    >
-                        <div>
-                            <h2 className="text-2xl sm:text-[32px] font-semibold text-white mb-2">
-                                Join
+                    <div className="w-full rounded-[20px] p-4 sm:p-6 bg-[#1E1E1E] flex flex-col justify-between transition-all duration-200 h-full">
+                        <div className="space-y-2 sm:space-y-3">
+                            <h2 className="text-xl sm:text-2xl md:text-[32px] font-semibold text-white leading-tight">
+                                Join{' '}
                                 <span className="hidden sm:inline">
                                     <br />
                                 </span>
                                 Session
                             </h2>
-                            <p className="text-[#A3A3A3] text-sm">
+                            <p className="text-[#A3A3A3] text-sm sm:text-base">
                                 Join a meeting instantly and collaborate!
                             </p>
                         </div>
@@ -283,43 +280,37 @@ export default function PodPage() {
                     </div>
 
                     {/* Create Session Card */}
-                    <div
-                        className="w-full rounded-[20px] p-4 sm:p-6 bg-gradient-to-br from-[#6032F6] to-[#381D90] 
-                                  flex flex-col justify-between transition-all duration-200 h-full"
-                    >
-                        <div>
+                    <div className="w-full rounded-[20px] p-4 sm:p-6 bg-gradient-to-br from-[#6032F6] to-[#381D90] flex flex-col justify-between">
+                        <div className="space-y-3">
                             <Image
                                 src="/images/play-add.svg"
                                 alt="Create Session"
                                 width={32}
                                 height={32}
-                                className="mb-4"
+                                className="mb-3 sm:mb-4"
                                 priority
                             />
-                            <h2 className="text-2xl sm:text-[32px] font-semibold text-white">
+                            <h2 className="text-xl sm:text-2xl md:text-[32px] font-semibold text-white leading-tight">
                                 Create{' '}
                                 <span className="hidden sm:inline">
                                     <br />
                                 </span>
                                 Session
                             </h2>
-                            <p className="text-[#E9D5FF] text-sm mt-2">
+                            <p className="text-[#E9D5FF] text-sm sm:text-base">
                                 Start a meeting or podcast session in seconds - collaborate, share,
                                 and record with ease!
                             </p>
                         </div>
-                        <Button
-                            onClick={() => setState(prev => ({ ...prev, isCreateModalOpen: true }))}
-                            className="bg-[#DDB958] hover:bg-[#DDB958] text-black font-semibold 
-                                     py-2.5 px-4 rounded-[10px] transition-all duration-200 mt-4 w-fit"
-                        >
+
+                        <Button className="mt-4 sm:mt-6 bg-[#DDB958] text-black font-semibold py-2.5 px-6 rounded-[10px] w-fit">
                             Create Session
                         </Button>
                     </div>
                 </div>
 
                 {/* Session streak dialog */}
-                <div className="w-full mt-24">
+                <div className="w-full mt-12 sm:mt-16 md:mt-24">
                     <StreakDialog
                         user={user}
                         onToggleCreateSession={() =>
@@ -332,7 +323,7 @@ export default function PodPage() {
                 </div>
 
                 {/* Scheduled sessions */}
-                <div className="w-full mb-12 sm:mb-16">
+                <div className="w-full mb-8 sm:mb-12">
                     <ScheduledPods
                         sessions={scheduledSessions}
                         foundSession={state.foundSession}
@@ -378,7 +369,6 @@ export default function PodPage() {
                     />
                 )}
             </React.Suspense>
-
         </div>
     );
 }
