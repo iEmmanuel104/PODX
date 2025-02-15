@@ -414,7 +414,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
             <div className="container mx-auto px-4 py-6 sm:py-8 md:py-12 flex flex-col min-h-screen">
                 <div className="flex-grow flex flex-col items-center justify-center">
                     <Suspense fallback={<SimpleLoader />}>
-                        <div className="w-32 sm:w-40 md:w-48 mb-6 sm:mb-8">
+                        <div className="w-32 sm:w-40 md:w-48 mb-6 sm:mb-8 mx-auto">
                             <Logo />
                         </div>
                     </Suspense>

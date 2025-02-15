@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { getBasename, getBasenameAvatar } from '@/app/apis/basenames';
 
-async function fetchData(address: `0x${string}`) {
+export async function fetchData(address: `0x${string}`) {
     try {
         const basename = await getBasename(address);
         if (basename) {
