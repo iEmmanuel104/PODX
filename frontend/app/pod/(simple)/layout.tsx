@@ -32,21 +32,21 @@ function SimpleLayout({ children }: { children: ReactNode }) {
     if (!mounted) return null;
 
     return (
-        <div
-            className="fixed inset-0 bg-[#151515] text-white transition-opacity duration-150"
-            style={{
-                opacity: visible ? 1 : 0,
-                transform: `translateY(${visible ? '0' : '10px'})`,
-                transition: 'opacity 150ms ease-out, transform 150ms ease-out',
-            }}
-        >
+        <div className="fixed md:relative h-screen w-full bg-[#151515] text-white overflow-auto md:overflow-hidden">
             {/* Background Grid */}
             <div className="fixed inset-0 w-full h-full overflow-hidden pointer-events-none">
                 <RetroGrid />
             </div>
 
             {/* Content wrapper */}
-            <div className="relative z-10 flex flex-col h-full">
+            <div
+                className="relative z-10 flex flex-col h-full"
+                style={{
+                    opacity: visible ? 1 : 0,
+                    transform: `translateY(${visible ? '0' : '10px'})`,
+                    transition: 'opacity 150ms ease-out, transform 150ms ease-out',
+                }}
+            >
                 {/* Header */}
                 <header className="flex-none z-20 bg-[#151515]/95 backdrop-blur-md transition-all duration-200">
                     <div className="max-w-[800px] mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-5">
@@ -55,22 +55,16 @@ function SimpleLayout({ children }: { children: ReactNode }) {
                 </header>
 
                 {/* Main content area */}
-                <main
-                    className="flex-1 relative transition-transform duration-200 flex flex-col justify-center overflow-auto"
-                    style={{
-                        transform: visible ? 'none' : 'translateY(10px)',
-                        opacity: visible ? 1 : 0,
-                    }}
-                >
-                    <div className="max-w-[800px] w-full mx-auto px-3 sm:px-6 lg:px-8 py-8 sm:py-10 md:py-12">
-                        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-280px)]">
+                <main className="flex-1 relative transition-transform duration-200">
+                    <div className="max-w-[800px] w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 md:py-6">
+                        <div className="flex flex-col items-center justify-center max-h-[calc(100vh-180px)]">
                             {children}
                         </div>
                     </div>
                 </main>
 
-                {/* Footer - Enhanced for mobile */}
-                <footer className="flex-none z-20 backdrop-blur-sm transition-all duration-200 mt-auto">
+                {/* Footer */}
+                <footer className="flex-none z-20 backdrop-blur-sm transition-all duration-200">
                     <div className="max-w-[800px] mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-5">
                         <Footer />
                     </div>
