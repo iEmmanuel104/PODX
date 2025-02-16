@@ -28,12 +28,29 @@ import { formatDate, formatDuration } from '@/lib/utils';
 import { Call, Tip } from '@/store/user/types';
 import { TabType } from '@/types';
 import { POADialog, SessionCard, EmptyState } from '@/components/activity/activity-props';
+import { useSendTransaction } from '@privy-io/react-auth';
+import { parseEther } from 'ethers';
+import { WithdrawModal } from '@/components/activity/withdraw-modal';
 
 // Main Component
 export default function Page() {
     const [activeTab, setActiveTab] = useState<TabType>('history');
     const [isBalanceHidden, setIsBalanceHidden] = useState(false);
     const [tokenGatingSwitch] = useState(true);
+
+    const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+    const { sendTransaction } = useSendTransaction();
+
+    const handleWithdraw = async (address: string, amount: string) => {
+        const parsedAmount = parseEther(amount);
+
+        // Send the transaction using Privy's embedded wallet
+        await sendTransaction({
+            to: address,
+            value: parsedAmount,
+            chainId: 8453,
+        });
+    };
 
     // Get user info from auth hook
     const { user } = useTypedSelector(state => state.auth);
@@ -132,11 +149,19 @@ export default function Page() {
                         </Button>
                         <Button
                             variant="outline"
-                            className="border-white/10 hover:bg-white/5 py-3 w-full sm:w-auto"
+                            className="text-black hover:text-black hover:bg-white/80 border-white/10 py-3 w-full sm:w-auto"
+                            onClick={() => setIsWithdrawModalOpen(true)}
                         >
                             <ArrowUpRight className="h-4 w-4 mr-2" />
                             Withdraw
                         </Button>
+
+                        {/* Withdraw Modal */}
+                        <WithdrawModal
+                            isOpen={isWithdrawModalOpen}
+                            onClose={() => setIsWithdrawModalOpen(false)}
+                            onWithdraw={handleWithdraw}
+                        />
                     </div>
                 </div>
             )}
@@ -284,11 +309,10 @@ export default function Page() {
                         <Button
                             key={tab}
                             variant="ghost"
-                            className={`rounded-full px-4 py-2 text-sm ${
-                                activeTab === tab
-                                    ? 'bg-[#DDB958] text-black'
-                                    : 'text-white/60 hover:text-white hover:bg-white/5'
-                            }`}
+                            className={`rounded-full px-4 py-2 text-sm ${activeTab === tab
+                                ? 'bg-[#DDB958] text-black'
+                                : 'text-white/60 hover:text-white hover:bg-white/5'
+                                }`}
                             onClick={() => setActiveTab(tab)}
                         >
                             {tab === 'history' ? 'Session history' : 'Tip history'}
@@ -418,14 +442,13 @@ export default function Page() {
                                                             </td>
                                                             <td className="p-4">
                                                                 <span
-                                                                    className={`px-2 py-1 rounded-full ${
-                                                                        item.status === 'completed'
-                                                                            ? 'bg-green-500/20 text-green-400'
-                                                                            : item.status ===
-                                                                                'pending'
-                                                                              ? 'bg-yellow-500/20 text-yellow-400'
-                                                                              : 'bg-red-500/20 text-red-400'
-                                                                    }`}
+                                                                    className={`px-2 py-1 rounded-full ${item.status === 'completed'
+                                                                        ? 'bg-green-500/20 text-green-400'
+                                                                        : item.status ===
+                                                                            'pending'
+                                                                            ? 'bg-yellow-500/20 text-yellow-400'
+                                                                            : 'bg-red-500/20 text-red-400'
+                                                                        }`}
                                                                 >
                                                                     {item.status}
                                                                 </span>
