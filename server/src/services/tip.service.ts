@@ -11,9 +11,13 @@ export class TipService {
         fromUserId: string,
         toUserId: string,
         amount: string,
-        transactionHash?: string
+        currency: string = 'USDC',
+        timestamp: string | Date = new Date(),
+        transactionHash?: string,
     ): Promise<ITip> {
         try {
+            const tipTimestamp = typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
+
             const tip = await Tip.create({
                 callId,
                 sessionId,
@@ -21,6 +25,8 @@ export class TipService {
                 toUserId: new Types.ObjectId(toUserId),
                 amount,
                 transactionHash,
+                currency,
+                timestamp: tipTimestamp,
                 status: transactionHash ? 'completed' : 'pending',
             });
 

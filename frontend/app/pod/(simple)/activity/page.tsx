@@ -2,7 +2,6 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import {
     Select,
@@ -13,160 +12,22 @@ import {
 } from '@/components/ui/select';
 import {
     ArrowUpRight,
-    ArrowUpLeftIcon as ArrowUturnLeft,
+    ArrowLeft,
     Eye,
     EyeOff,
     LinkIcon,
     Wallet,
-    Image as ImageIcon,
-    ExternalLink,
     Loader2,
-    Calendar,
 } from 'lucide-react';
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from '@/components/ui/dialog';
 import { useTypedSelector } from '@/store/config/store';
-import { useGetUserCallsQuery } from '@/store/user/slice';
+import { useGetUserCallsQuery, useGetUserTipHistoryQuery } from '@/store/user/slice';
+import { useRouter } from 'next/navigation';
 import { useWalletOperations } from '@/hooks/useWalletOps';
 import { useBalance } from 'wagmi';
 import { formatDate, formatDuration } from '@/lib/utils';
-
-type TabType = 'history' | 'tips';
-interface POA {
-    image: string;
-    transaction: string;
-}
-
-const POADialog = ({ poa }: { poa: POA }) => (
-    <Dialog>
-        <DialogTrigger asChild>
-            <Button variant="link" className="text-[#69CB58] p-0 h-auto">
-                Received POA
-            </Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-md bg-[#1E1E1E] border-white/10">
-            <DialogHeader>
-                <DialogTitle>Proof of Attendance</DialogTitle>
-            </DialogHeader>
-            <div className="flex flex-col gap-4">
-                <div className="relative aspect-square w-full rounded-lg overflow-hidden border border-white/10">
-                    <img src={poa.image} alt="POA NFT" className="object-cover" />
-                </div>
-                <div className="flex gap-3">
-                    <Button
-                        className="flex-1 bg-[#6032F6] hover:bg-[#6032F6]/90"
-                        onClick={() => {
-                            const link = document.createElement('a');
-                            link.href = poa.image;
-                            link.download = 'poa-nft.png';
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                        }}
-                    >
-                        <ImageIcon className="h-4 w-4 mr-2" />
-                        Download Image
-                    </Button>
-                    <Button
-                        variant="outline"
-                        className="flex-1 border-white/10 hover:bg-white/5"
-                        onClick={() => window.open(poa.transaction, '_blank')}
-                    >
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        View Transaction
-                    </Button>
-                </div>
-            </div>
-        </DialogContent>
-    </Dialog>
-);
-
-// Mobile Session Card Component
-const SessionCard = ({ session, type }: { session: any; type: TabType }) => {
-    const { date, time } = formatDate(session.startTime ?? '');
-
-    return (
-        <div className="bg-white/5 rounded-lg p-4 mb-4">
-            <div className="flex justify-between items-start mb-3">
-                <div>
-                    <div className="font-medium">{session.custom?.title}</div>
-                    <div className="text-sm text-white/60 flex items-center gap-1 mt-1">
-                        <LinkIcon className="h-3 w-3" />
-                        {session.callId}
-                    </div>
-                </div>
-                <div className="text-right text-sm">
-                    <div>{date}</div>
-                    <div className="text-white/60">{time}</div>
-                </div>
-            </div>
-
-            {type === 'history' ? (
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                        <div className="text-white/60 mb-1">Type</div>
-                        <span className="px-2 py-1 rounded-full bg-white/10 text-sm">
-                            {session.custom?.type || '-'}
-                        </span>
-                    </div>
-                    <div>
-                        <div className="text-white/60 mb-1">Duration</div>
-                        <div>{formatDuration(session.duration ?? 0)}</div>
-                    </div>
-                    <div className="col-span-2">
-                        <div className="text-white/60 mb-1">POA Status</div>
-                        {session.poa ? (
-                            <POADialog poa={session.poa} />
-                        ) : (
-                            <span className="text-white/60">-</span>
-                        )}
-                    </div>
-                </div>
-            ) : (
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                        <div className="text-white/60 mb-1">Received</div>
-                        <div>0 USDC</div>
-                    </div>
-                    <div>
-                        <div className="text-white/60 mb-1">Sent</div>
-                        <div>0 USDC</div>
-                    </div>
-                    <div className="col-span-2">
-                        <Button
-                            variant="link"
-                            className="text-white underline hover:text-white/90 p-0 h-auto"
-                        >
-                            View transaction
-                        </Button>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-};
-
-// Empty State Component
-const EmptyState = ({ type }: { type: TabType }) => (
-    <div className="flex flex-col items-center justify-center py-8 px-4">
-        <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4">
-            <Calendar className="h-8 w-8 text-white/40" />
-        </div>
-        <h3 className="text-xl font-medium text-white mb-2">
-            No {type === 'history' ? 'sessions' : 'tips'} yet
-        </h3>
-        <p className="text-white/60 text-center max-w-md">
-            {type === 'history'
-                ? 'Join or create a session to start building your activity history.'
-                : 'Send or receive tips during sessions to see them here.'}
-        </p>
-    </div>
-);
+import { Call, Tip } from '@/store/user/types';
+import { TabType } from '@/types';
+import { POADialog, SessionCard, EmptyState } from '@/components/activity/activity-props';
 
 // Main Component
 export default function Page() {
@@ -209,7 +70,17 @@ export default function Page() {
         { skip: !tokenGatingSwitch }
     );
 
+    // fetch user tip history
+    const { data: tipHistoryData, isLoading: isLoadingTips } = useGetUserTipHistoryQuery(
+        undefined,
+        { skip: !tokenGatingSwitch }
+    );
+
+    const router = useRouter();
+
     const sessions = userCallsData?.data?.calls || [];
+    const tips = tipHistoryData?.data?.tips || [];
+    const tipSummary = tipHistoryData?.data?.summary;
 
     return (
         <div className="w-full flex flex-col gap-6">
@@ -257,12 +128,74 @@ export default function Page() {
                 </div>
             )}
 
+            {/* Navigation Header */}
+            <div className="flex items-center gap-4">
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10 rounded-full hover:bg-white/5"
+                    onClick={() => router.back()}
+                >
+                    <ArrowLeft className="h-5 w-5" />
+                </Button>
+                <h1 className="text-xl font-semibold">Activity</h1>
+            </div>
+
             {/* Session Activity Section */}
             <div className="w-full">
                 {/* Header with Sort - Desktop */}
-                <div className="hidden sm:flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-semibold">Session Activity</h2>
-                    <div className="flex items-center gap-2">
+                <div className="hidden sm:flex justify-between items-start mb-6">
+                    <div className="flex-1">
+                        <h2 className="text-2xl font-semibold">Session Activity</h2>
+                        {activeTab === 'tips' && tipSummary && (
+                            <div className="mt-4 grid grid-cols-4 gap-4">
+                                <div className="bg-white/5 rounded-lg p-4">
+                                    <div className="text-sm text-white/60 mb-1">Total Sent</div>
+                                    <div className="text-lg font-medium">
+                                        {tipSummary.totalSent.toFixed(2)} USDC
+                                    </div>
+                                    <div className="text-sm text-white/60 mt-1">
+                                        {tipSummary.tipsSent} tips
+                                    </div>
+                                </div>
+                                <div className="bg-white/5 rounded-lg p-4">
+                                    <div className="text-sm text-white/60 mb-1">Total Received</div>
+                                    <div className="text-lg font-medium">
+                                        {tipSummary.totalReceived.toFixed(2)} USDC
+                                    </div>
+                                    <div className="text-sm text-white/60 mt-1">
+                                        {tipSummary.tipsReceived} tips
+                                    </div>
+                                </div>
+                                <div className="bg-white/5 rounded-lg p-4">
+                                    <div className="text-sm text-white/60 mb-1">Net Balance</div>
+                                    <div className="text-lg font-medium">
+                                        {(tipSummary.totalReceived - tipSummary.totalSent).toFixed(
+                                            2
+                                        )}{' '}
+                                        USDC
+                                    </div>
+                                    <div className="text-sm text-white/60 mt-1">
+                                        {tipSummary.tipsReceived + tipSummary.tipsSent} total tips
+                                    </div>
+                                </div>
+                                <div className="bg-white/5 rounded-lg p-4">
+                                    <div className="text-sm text-white/60 mb-1">Average Tip</div>
+                                    <div className="text-lg font-medium">
+                                        {(
+                                            (tipSummary.totalSent + tipSummary.totalReceived) /
+                                            (tipSummary.tipsSent + tipSummary.tipsReceived || 1)
+                                        ).toFixed(2)}{' '}
+                                        USDC
+                                    </div>
+                                    <div className="text-sm text-white/60 mt-1">
+                                        per transaction
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    <div className="flex items-center gap-2 ml-4">
                         <span className="text-sm text-white/60">Sort by:</span>
                         <div className="bg-white/5 rounded-lg px-3 py-1.5">
                             <Select defaultValue="newest">
@@ -270,31 +203,82 @@ export default function Page() {
                                     <SelectValue placeholder="Sort by" />
                                 </SelectTrigger>
                                 <SelectContent className="bg-[#1E1E1E] border-white/10">
-                                    <SelectItem value="newest">Newest session</SelectItem>
-                                    <SelectItem value="oldest">Oldest session</SelectItem>
+                                    <SelectItem value="newest">
+                                        Newest {activeTab === 'history' ? 'session' : 'tip'}
+                                    </SelectItem>
+                                    <SelectItem value="oldest">
+                                        Oldest {activeTab === 'history' ? 'session' : 'tip'}
+                                    </SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                     </div>
                 </div>
 
-                {/* Header with Sort - Mobile */}
+                {/* Header with Sort and Summary - Mobile */}
                 <div className="sm:hidden space-y-4 mb-6">
                     <h2 className="text-xl font-semibold">Session Activity</h2>
+                    {activeTab === 'tips' && tipSummary && (
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-white/5 rounded-lg p-3">
+                                <div className="text-sm text-white/60 mb-1">Total Sent</div>
+                                <div className="text-base font-medium">
+                                    {tipSummary.totalSent.toFixed(2)} USDC
+                                </div>
+                                <div className="text-xs text-white/60 mt-1">
+                                    {tipSummary.tipsSent} tips
+                                </div>
+                            </div>
+                            <div className="bg-white/5 rounded-lg p-3">
+                                <div className="text-sm text-white/60 mb-1">Total Received</div>
+                                <div className="text-base font-medium">
+                                    {tipSummary.totalReceived.toFixed(2)} USDC
+                                </div>
+                                <div className="text-xs text-white/60 mt-1">
+                                    {tipSummary.tipsReceived} tips
+                                </div>
+                            </div>
+                            <div className="bg-white/5 rounded-lg p-3">
+                                <div className="text-sm text-white/60 mb-1">Net Balance</div>
+                                <div className="text-base font-medium">
+                                    {(tipSummary.totalReceived - tipSummary.totalSent).toFixed(2)}{' '}
+                                    USDC
+                                </div>
+                                <div className="text-xs text-white/60 mt-1">
+                                    {tipSummary.tipsReceived + tipSummary.tipsSent} total
+                                </div>
+                            </div>
+                            <div className="bg-white/5 rounded-lg p-3">
+                                <div className="text-sm text-white/60 mb-1">Average</div>
+                                <div className="text-base font-medium">
+                                    {(
+                                        (tipSummary.totalSent + tipSummary.totalReceived) /
+                                        (tipSummary.tipsSent + tipSummary.tipsReceived || 1)
+                                    ).toFixed(2)}{' '}
+                                    USDC
+                                </div>
+                                <div className="text-xs text-white/60 mt-1">per tip</div>
+                            </div>
+                        </div>
+                    )}
                     <div className="bg-white/5 rounded-lg px-3 py-1.5 w-full">
                         <Select defaultValue="newest">
                             <SelectTrigger className="w-full bg-transparent border-0 p-0 h-auto focus:ring-0">
                                 <SelectValue placeholder="Sort by" />
                             </SelectTrigger>
                             <SelectContent className="bg-[#1E1E1E] border-white/10">
-                                <SelectItem value="newest">Newest session</SelectItem>
-                                <SelectItem value="oldest">Oldest session</SelectItem>
+                                <SelectItem value="newest">
+                                    Newest {activeTab === 'history' ? 'session' : 'tip'}
+                                </SelectItem>
+                                <SelectItem value="oldest">
+                                    Oldest {activeTab === 'history' ? 'session' : 'tip'}
+                                </SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
                 </div>
 
-                {/* Tabs - Always Visible */}
+                {/* Keep the existing tabs section */}
                 <div className="flex gap-2 mb-6">
                     {(['history', 'tips'] as TabType[]).map(tab => (
                         <Button
@@ -315,11 +299,11 @@ export default function Page() {
 
             {/* Table Section */}
             <div className="w-full rounded-lg border border-white/10 overflow-hidden">
-                {isLoadingCalls ? (
+                {(activeTab === 'history' ? isLoadingCalls : isLoadingTips) ? (
                     <div className="flex items-center justify-center p-8">
                         <Loader2 className="h-6 w-6 animate-spin text-white/60" />
                     </div>
-                ) : sessions.length === 0 ? (
+                ) : (activeTab === 'history' ? sessions.length === 0 : tips.length === 0) ? (
                     <EmptyState type={activeTab} />
                 ) : (
                     <>
@@ -340,8 +324,10 @@ export default function Page() {
                                             <>
                                                 <th className="p-4">Date</th>
                                                 <th className="p-4">Session ID</th>
-                                                <th className="p-4">Tip received</th>
-                                                <th className="p-4">Tip sent</th>
+                                                <th className="p-4">From</th>
+                                                <th className="p-4">To</th>
+                                                <th className="p-4">Amount</th>
+                                                <th className="p-4">Status</th>
                                                 <th className="p-4">Transaction</th>
                                             </>
                                         )}
@@ -353,16 +339,23 @@ export default function Page() {
                             <div className="overflow-y-auto max-h-[460px]">
                                 <table className="w-full">
                                     <tbody className="divide-y divide-white/10">
-                                        {sessions.map(session => {
+                                        {(activeTab === 'history' ? sessions : tips).map(item => {
+                                            // Type guard to check if item is a Call or Tip
+                                            const isCall = (item: Call | Tip): item is Call =>
+                                                'startTime' in item && !('timestamp' in item);
+
                                             const { date, time } = formatDate(
-                                                session.startTime ?? ''
+                                                isCall(item)
+                                                    ? (item.startTime ?? '').toString()
+                                                    : (item.timestamp ?? '').toString()
                                             );
+
                                             return (
                                                 <tr
-                                                    key={session._id}
+                                                    key={item._id}
                                                     className="text-sm hover:bg-white/5 transition-colors duration-200"
                                                 >
-                                                    {activeTab === 'history' ? (
+                                                    {isCall(item) ? (
                                                         <>
                                                             <td className="p-4">
                                                                 <div>{date}</div>
@@ -372,30 +365,25 @@ export default function Page() {
                                                             </td>
                                                             <td className="p-4">
                                                                 <div>
-                                                                    {
-                                                                        session.custom
-                                                                            ?.title as string
-                                                                    }
+                                                                    {item.custom?.title as string}
                                                                 </div>
                                                                 <div className="text-white/60 flex items-center gap-1">
                                                                     <LinkIcon className="h-3 w-3" />
-                                                                    {session.callId}
+                                                                    {item.callId}
                                                                 </div>
                                                             </td>
                                                             <td className="p-4">
                                                                 <span className="px-2 py-1 rounded-full bg-white/10">
-                                                                    {(session.custom
+                                                                    {(item.custom
                                                                         ?.type as string) || '-'}
                                                                 </span>
                                                             </td>
                                                             <td className="p-4">
-                                                                {formatDuration(
-                                                                    session.duration ?? 0
-                                                                )}
+                                                                {formatDuration(item.duration ?? 0)}
                                                             </td>
                                                             <td className="p-4">
-                                                                {session.poa ? (
-                                                                    <POADialog poa={session.poa} />
+                                                                {item.poa ? (
+                                                                    <POADialog poa={item.poa} />
                                                                 ) : (
                                                                     <span className="text-white/60">
                                                                         -
@@ -412,26 +400,51 @@ export default function Page() {
                                                                 </div>
                                                             </td>
                                                             <td className="p-4">
-                                                                <div>
-                                                                    {
-                                                                        session.custom
-                                                                            ?.title as string
-                                                                    }
-                                                                </div>
                                                                 <div className="text-white/60 flex items-center gap-1">
-                                                                    <ArrowUturnLeft className="h-3 w-3" />
-                                                                    {session.callId}
+                                                                    <LinkIcon className="h-3 w-3" />
+                                                                    {typeof item.callId === 'string'
+                                                                        ? item.callId
+                                                                        : item.callId._id}
                                                                 </div>
                                                             </td>
-                                                            <td className="p-4">0 USDC</td>
-                                                            <td className="p-4">0 USDC</td>
                                                             <td className="p-4">
-                                                                <Button
-                                                                    variant="link"
-                                                                    className="text-white underline hover:text-white/90 p-0 h-auto"
+                                                                {item.fromUserId.username}
+                                                            </td>
+                                                            <td className="p-4">
+                                                                {item.toUserId.username}
+                                                            </td>
+                                                            <td className="p-4">
+                                                                {item.amount} {item.currency}
+                                                            </td>
+                                                            <td className="p-4">
+                                                                <span
+                                                                    className={`px-2 py-1 rounded-full ${
+                                                                        item.status === 'completed'
+                                                                            ? 'bg-green-500/20 text-green-400'
+                                                                            : item.status ===
+                                                                                'pending'
+                                                                              ? 'bg-yellow-500/20 text-yellow-400'
+                                                                              : 'bg-red-500/20 text-red-400'
+                                                                    }`}
                                                                 >
-                                                                    View transaction
-                                                                </Button>
+                                                                    {item.status}
+                                                                </span>
+                                                            </td>
+                                                            <td className="p-4">
+                                                                {item.transactionHash && (
+                                                                    <Button
+                                                                        variant="link"
+                                                                        className="text-white underline hover:text-white/90 p-0 h-auto"
+                                                                        onClick={() =>
+                                                                            window.open(
+                                                                                `https://etherscan.io/tx/${item.transactionHash}`,
+                                                                                '_blank'
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        View transaction
+                                                                    </Button>
+                                                                )}
                                                             </td>
                                                         </>
                                                     )}
@@ -445,10 +458,13 @@ export default function Page() {
                         {/* Mobile View - Card Layout */}
                         <div className="md:hidden max-h-[460px] overflow-y-auto">
                             <div className="p-4 space-y-4">
-                                {sessions.map(session => (
+                                {(activeTab === 'history' ? sessions : tips).map(item => (
                                     <SessionCard
-                                        key={session._id}
-                                        session={session}
+                                        key={item._id}
+                                        session={{
+                                            ...item,
+                                            userId: user?.id, // Add user ID for comparison
+                                        }}
                                         type={activeTab}
                                     />
                                 ))}

@@ -86,3 +86,55 @@ export interface GetUserCallsResponse {
 export interface GetUserCallsArgs {
     filter?: 'creator' | 'member' | 'tokengate';
 }
+
+export interface GetUserTipHistoryArgs {
+    filter?: 'sent' | 'received';
+}
+
+
+interface UserBasicInfo {
+    id: string;
+    username: string;
+    displayImage?: string;
+    walletAddress: string;
+}
+
+interface CallInfo {
+    _id: string;
+    type: string;
+    status: 'created' | 'live' | 'ended';
+    startTime?: string;
+    endTime?: string;
+    duration?: number;
+    custom?: Record<string, unknown>;
+    createdById: UserBasicInfo;
+}
+
+export interface Tip {
+    _id: string;
+    callId: CallInfo;
+    fromUserId: UserBasicInfo;
+    toUserId: UserBasicInfo;
+    amount: string;
+    timestamp: Date;
+    status: 'pending' | 'completed' | 'failed';
+    currency: string;
+    transactionHash?: string;
+}
+
+export interface TipSummary {
+    totalSent: number;
+    totalReceived: number;
+    tipsSent: number;
+    tipsReceived: number;
+}
+
+export interface GetUserTipHistoryResponse {
+    status: string;
+    message: string;
+    data: {
+        tips: Tip[];
+        summary: TipSummary;
+        filter: 'all' | 'sent' | 'received';
+    };
+}

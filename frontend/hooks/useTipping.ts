@@ -15,7 +15,7 @@ interface TippingState {
     tipAmount: string;
     showTipSuccess: boolean;
     selectedTipRecipient: MemberResponse | null;
-    receivedTips: Array<{ from: string; amount: string }>;
+    receivedTips: Array<{ from: string; amount: string, currency: string }>;
 }
 
 export const useTipping = (isEmbeddedWallet: boolean) => {
@@ -137,6 +137,9 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
                     name: recipient.user.name,
                 },
                 amount: amount,
+                transactionHash: null,
+                currency: 'ETH',
+                timestamp: new Date().toISOString(),
             });
         },
         [call, connectedUser]
@@ -188,12 +191,12 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
         (event: CustomVideoEvent) => {
             if (event.custom.type === 'tip') {
                 console.log('event.custom', event.custom);
-                const { from, to, amount } = event.custom;
+                const { from, to, amount, currency } = event.custom;
                 const senderName = from?.name || 'Anon';
                 if (to.id === connectedUser?.id) {
                     setState(prev => ({
                         ...prev,
-                        receivedTips: [...prev.receivedTips, { from: senderName, amount }],
+                        receivedTips: [...prev.receivedTips, { from: senderName, amount, currency }],
                     }));
                 }
             }

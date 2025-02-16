@@ -39,3 +39,8 @@ export interface Session {
     startTime?: string;
     whitelisted: boolean;
 }
+export type TabType = 'history' | 'tips';
+export interface POA {
+    image: string;
+    transaction: string;
+}

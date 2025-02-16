@@ -2,7 +2,8 @@ import { api } from "../config/base";
 import { USER_ENDPOINTS } from "./endpoint";
 import type {
     UpdateUsernameArgs, UpdateUsernameResponse, UserInfo, ValidateUserArgs,
-    ValidateUserResponse, GetUserCallsResponse, GetUserCallsArgs
+    ValidateUserResponse, GetUserCallsResponse, GetUserCallsArgs, GetUserTipHistoryArgs,
+    GetUserTipHistoryResponse
 } from "./types";
 import { createTag } from "../config/tags";
 
@@ -52,7 +53,33 @@ export const userSlice = api.injectEndpoints({
                     : [createTag('UserCalls')],
             transformResponse: (response: GetUserCallsResponse) => response,
         }),
+        getUserTipHistory: builder.query<GetUserTipHistoryResponse, GetUserTipHistoryArgs | void>({
+            query: (args) => ({
+                method: 'GET',
+                url: USER_ENDPOINTS.getUserTipHistory(args?.filter),
+            }),
+            providesTags: (result) =>
+                result
+                    ? [
+                        ...result.data.tips.map(tip =>
+                            createTag({
+                                type: 'UserTips',
+                                prefix: 'userTipsId',
+                                id: tip._id
+                            })
+                        ),
+                        createTag('UserTips')
+                    ]
+                    : [createTag('UserTips')],
+            transformResponse: (response: GetUserTipHistoryResponse) => response,
+        }),
     }),
 })
 
-export const { useRetrieveUserQuery, useUpdateUsernameMutation, useValidateUserMutation, useGetUserCallsQuery } = userSlice;
+export const {
+    useRetrieveUserQuery,
+    useUpdateUsernameMutation,
+    useValidateUserMutation, 
+    useGetUserTipHistoryQuery,
+    useGetUserCallsQuery
+} = userSlice;

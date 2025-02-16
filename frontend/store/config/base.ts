@@ -12,7 +12,8 @@ const API_TAG_CONFIG = {
     DetailedCallStats: { prefixes: ["detailedCallStatsId"] as const },
     UserCalls: { prefixes: ["userCallsId"] as const },
     CallDetails: { prefixes: ["callDetailsId"] as const },
-    Leaderboard: { prefixes: ["leaderboardId"] as const }
+    Leaderboard: { prefixes: ["leaderboardId"] as const },
+    UserTips: { prefixes: ["userTipsId"] as const },
 } as const;
 
 // Use native Object.keys instead of lodash.keys

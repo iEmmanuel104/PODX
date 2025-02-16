@@ -160,6 +160,8 @@ export class CallService {
                 tipData.from.id as string,
                 tipData.to.id as string,
                 tipData.amount as string,
+                tipData.currency as string,
+                tipData.timestamp,
                 tipData.transactionHash
             );
 

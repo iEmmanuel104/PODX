@@ -143,7 +143,6 @@ export interface CustomEventPayload {
     custom: {
         type: string;
         amount: unknown;
-        transactionHash?: string;
         from: {
             id: string
             name: string
@@ -152,6 +151,9 @@ export interface CustomEventPayload {
             id: string
             name: string
         };
+        currency: string;
+        timestamp: string;
+        transactionHash?: string;
     };
     type: string
     user: UserResponse;
