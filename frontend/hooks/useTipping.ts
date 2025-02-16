@@ -328,6 +328,7 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
 
     return {
         ...state,
+        setState,
         openTipModal,
         handleTip,
         handleCancelTip,

@@ -70,7 +70,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
     // Use the custom comparator with useParticipants
     const members = useCallMembers();
 
-    console.log({callmembers: members});
+    console.log({ callmembers: members });
     const participants = useParticipants({ sortBy: participantComparator });
     const customData = useCallCustomData();
     const live = useIsCallLive();
@@ -101,6 +101,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
         handleCancelTip,
         setTipAmount,
         handleTipEvent,
+        setState,
     } = useTipping(isEmbeddedWallet);
 
     const {
@@ -326,24 +327,17 @@ export default function MeetingInterface({ params }: MeetingProps) {
                             key={index}
                             tip={{
                                 from: tip.from,
-                                amount: `${tip.amount} USDC`,
-                                profileImage: "/images/default-avatar.png",
+                                amount: `${tip.amount} ${tip.currency}`,
+                                profileImage: '/images/default-avatar.png',
                             }}
                             onClose={() => {
                                 // Remove this specific tip from receivedTips array
-                                const newTips = [...receivedTips]
-                                newTips.splice(index, 1)
-                                // Update your tips state here -  This needs to be implemented with useState hook
-                                // Example: setReceivedTips(newTips);
-                            }}
-                            onAppreciate={() => {
-                                // Handle appreciation logic
-                                console.log(`Appreciated tip from ${tip.from}`)
-                                // Remove tip after appreciation
-                                const newTips = [...receivedTips]
-                                newTips.splice(index, 1)
-                                // Update your tips state here - This needs to be implemented with useState hook
-                                // Example: setReceivedTips(newTips);
+                                const newTips = [...receivedTips];
+                                newTips.splice(index, 1);
+                                setState(prevState => ({
+                                    ...prevState,
+                                    receivedTips: newTips
+                                })); // Update the state
                             }}
                         />
                     ))}
