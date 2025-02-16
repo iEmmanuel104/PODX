@@ -276,6 +276,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                         `}
                     >
                         <ParticipantsSidebar
+                            members={members}
                             participants={participants}
                             currentUser={connectedUser}
                             openTipModal={openTipModal}
@@ -294,10 +295,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                 {showTipModal && selectedTipRecipient && (
                     <TipModal
                         selectedTipRecipient={selectedTipRecipient}
-                        walletAddress={
-                            (selectedTipRecipient?.custom?.fields?.walletAddress?.kind as any)
-                                .stringValue || '0xaaaaa'
-                        }
+                        walletAddress={selectedTipRecipient.user.custom.walletAddress}
                         tipAmount={tipAmount}
                         setTipAmount={setTipAmount}
                         handleTip={handleTip}
@@ -319,7 +317,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                     <div className="fixed bottom-4 right-4 bg-green-500 text-white px-3 sm:px-4 py-2 rounded-[10px] flex items-center text-xs sm:text-sm">
                         <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                         You successfully tipped{' '}
-                        {selectedTipRecipient.name || selectedTipRecipient.userId} {tipAmount} ETH
+                        {selectedTipRecipient.user.name} {tipAmount} ETH
                     </div>
                 )}
                 {receivedTips.length > 0 &&

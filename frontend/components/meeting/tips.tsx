@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
-import { DollarSign, ChevronDown, X } from 'lucide-react';
-import { StreamVideoParticipant } from '@stream-io/video-react-sdk';
-import DotPattern from '../ui/dot-pattern';
-import { cn } from '@/lib/utils';
-
+import { ChevronDown, X } from 'lucide-react';
+import { MemberResponse } from '@stream-io/video-react-sdk';
 interface ModalProps {
     children: React.ReactNode;
 }
@@ -17,7 +14,7 @@ export const Modal: React.FC<ModalProps> = ({ children }) => (
 );
 
 interface TipModalProps {
-    selectedTipRecipient: StreamVideoParticipant | null;
+    selectedTipRecipient: MemberResponse;
     tipAmount: string;
     walletAddress: string;
     setTipAmount: (amount: string) => void;
@@ -56,13 +53,14 @@ const TipModal: React.FC<TipModalProps> = ({
                 <button
                     onClick={onCancel}
                     className="text-gray-400 hover:text-white transition-colors"
+                    aria-label="Close tip modal"
                 >
                     <X className="h-5 w-5" />
                 </button>
             </div>
 
             {/* Recipient Info */}
-            <p className="text-white mb-4">{selectedTipRecipient?.name || walletAddress}</p>
+            <p className="text-white mb-4">{selectedTipRecipient.user.name}</p>
 
             {/* Input Field and Tip Button */}
             <div className="flex items-center gap-2 mb-4">

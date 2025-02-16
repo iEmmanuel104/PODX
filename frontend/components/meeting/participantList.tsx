@@ -1,32 +1,61 @@
-"use client"
+'use client';
 
-import type React from "react"
-import { useState, useMemo, memo } from "react"
-import { ChevronDown, Mic, MicOff, Video, VideoOff, DollarSign, UsersRound, X, MoreHorizontal, Pin } from "lucide-react"
-import type { StreamVideoParticipant, OwnUserResponse } from "@stream-io/video-react-sdk"
-import { Button } from "@/components/ui/button"
-import toast from "react-hot-toast"
-import Farcaster from "@/public/icons/socials/Farcaster"
-import Instagram from "@/public/icons/socials/Instagram"
-import Twitter from "@/public/icons/socials/Twitter"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu"
+import type React from 'react';
+import { useState, useMemo, memo } from 'react';
+import {
+    ChevronDown,
+    Mic,
+    MicOff,
+    Video,
+    VideoOff,
+    DollarSign,
+    UsersRound,
+    X,
+    MoreHorizontal,
+    Pin,
+} from 'lucide-react';
+import type {
+    StreamVideoParticipant,
+    OwnUserResponse,
+    MemberResponse,
+} from '@stream-io/video-react-sdk';
+import { Button } from '@/components/ui/button';
+import toast from 'react-hot-toast';
+import Farcaster from '@/public/icons/socials/Farcaster';
+import Instagram from '@/public/icons/socials/Instagram';
+import Twitter from '@/public/icons/socials/Twitter';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@radix-ui/react-dropdown-menu';
 
 // Types
-interface ParticipantsSidebarProps {
-    participants: StreamVideoParticipant[]
-    currentUser: OwnUserResponse | undefined
-    openTipModal: (participant: StreamVideoParticipant) => void
-    updateParticipantRole: (userId: string, newRole: string) => void
-    handleJoinRequest: (userId: string, accept: boolean) => void
+export interface ParticipantsSidebarProps {
+    members: MemberResponse[];
+    participants: StreamVideoParticipant[];
+    currentUser: OwnUserResponse | undefined;
+    openTipModal: (member: MemberResponse) => void;
+    updateParticipantRole: (userId: string, newRole: string) => void;
+    handleJoinRequest: (userId: string, accept: boolean) => void;
 }
 
-const formatName = (name: string, maxLength = 15): string => {
-    if (!name) return ""
-    if (name.length <= maxLength) return name
-    return `${name.slice(0, maxLength)}...`
+export interface ParticipantItemProps {
+    participant: StreamVideoParticipant;
+    member: MemberResponse;
+    currentUser: OwnUserResponse | undefined;
+    onTip: (member: MemberResponse) => void;
+    onUpdateRole: (userId: string, newRole: string) => void;
 }
 
-const MicHandIcon = () => (
+export const formatName = (name: string, maxLength = 15): string => {
+    if (!name) return '';
+    if (name.length <= maxLength) return name;
+    return `${name.slice(0, maxLength)}...`;
+};
+
+export const MicHandIcon = () => (
     <svg
         viewBox="0 0 24 24"
         width="1em"
@@ -43,9 +72,9 @@ const MicHandIcon = () => (
         <line x1="12" x2="12" y1="19" y2="22" />
         <path d="M19 15.5c.5 1 .5 2-.5 2.5s-2 .5-2.5-.5" />
     </svg>
-)
+);
 
-const RequestHostButton = memo(() => (
+export const RequestHostButton = memo(() => (
     <Tooltip content="Request host permissions">
         <Button
             className="flex items-center space-x-1.5 px-2.5 py-1.5
@@ -56,37 +85,39 @@ const RequestHostButton = memo(() => (
             <MicHandIcon />
         </Button>
     </Tooltip>
-))
+));
 
-const Tooltip = memo<{ content: string; children: React.ReactNode }>(({ content, children }) => (
-    <div className="group relative inline-block">
-        {children}
-        <div
-            className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-2 py-1 text-xs 
+export const Tooltip = memo<{ content: string; children: React.ReactNode }>(
+    ({ content, children }) => (
+        <div className="group relative inline-block">
+            {children}
+            <div
+                className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-2 py-1 text-xs 
                       bg-black text-white rounded opacity-0 invisible group-hover:opacity-100 
                       group-hover:visible transition-all duration-200 whitespace-nowrap z-50"
-        >
-            {content}
-            <div
-                className="absolute left-1/2 -translate-x-1/2 top-full -mt-1 border-4 
+            >
+                {content}
+                <div
+                    className="absolute left-1/2 -translate-x-1/2 top-full -mt-1 border-4 
                           border-transparent border-t-black"
-            />
+                />
+            </div>
         </div>
-    </div>
-))
+    )
+);
 
-const ActionButton = memo<{
-    icon: React.ReactNode
-    text: string
-    onClick?: () => void
-    variant?: "primary" | "secondary"
-    className?: string
-}>(({ icon, text, onClick, variant = "primary", className = "" }) => (
+export const ActionButton = memo<{
+    icon: React.ReactNode;
+    text: string;
+    onClick?: () => void;
+    variant?: 'primary' | 'secondary';
+    className?: string;
+}>(({ icon, text, onClick, variant = 'primary', className = '' }) => (
     <Tooltip content={text}>
         <Button
             onClick={onClick}
             className={`flex items-center space-x-1 px-2.5 py-1.5
-                ${variant === "primary" ? "bg-[#6032F6] hover:bg-[#4C28C4]" : "bg-[#383838] hover:bg-[#424242]"}
+                ${variant === 'primary' ? 'bg-[#6032F6] hover:bg-[#4C28C4]' : 'bg-[#383838] hover:bg-[#424242]'}
                 transition-colors duration-200 rounded-full
                 text-white text-xs ${className}`}
         >
@@ -94,19 +125,19 @@ const ActionButton = memo<{
             <span className="hidden sm:inline">{text}</span>
         </Button>
     </Tooltip>
-))
+));
 
 // Memoized Sub-components
-const ParticipantControls = memo<{
-    isAudioActive: boolean
-    isVideoActive: boolean
-    onExpandClick: () => void
-    showControls: boolean
+export const ParticipantControls = memo<{
+    isAudioActive: boolean;
+    isVideoActive: boolean;
+    onExpandClick: () => void;
+    showControls: boolean;
 }>(({ isAudioActive, isVideoActive, onExpandClick, showControls }) => (
     <div className="flex items-center">
         <div
             className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center 
-            ${isAudioActive ? "bg-[#7C3AED]" : "bg-red-500"}`}
+            ${isAudioActive ? 'bg-[#7C3AED]' : 'bg-red-500'}`}
         >
             {isAudioActive ? (
                 <Mic className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
@@ -116,7 +147,7 @@ const ParticipantControls = memo<{
         </div>
         <div
             className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center ml-1 
-            ${isVideoActive ? "bg-[#7C3AED]" : "bg-red-500"}`}
+            ${isVideoActive ? 'bg-[#7C3AED]' : 'bg-red-500'}`}
         >
             {isVideoActive ? (
                 <Video className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
@@ -125,24 +156,30 @@ const ParticipantControls = memo<{
             )}
         </div>
         {showControls && (
-            <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 ml-1 cursor-pointer" onClick={onExpandClick} />
+            <ChevronDown
+                className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 ml-1 cursor-pointer"
+                onClick={onExpandClick}
+            />
         )}
     </div>
-))
+));
 
-const ParticipantActions = memo<{
-    participant: StreamVideoParticipant
-    currentUserRole?: string[]
-    onTip: (participant: StreamVideoParticipant) => void
-    onUpdateRole: (userId: string, newRole: string) => void
+export const ParticipantActions = memo<{
+    participant: StreamVideoParticipant;
+    currentUserRole?: string[];
+    onTip: (participant: StreamVideoParticipant) => void;
+    onUpdateRole: (userId: string, newRole: string) => void;
 }>(({ participant, currentUserRole, onTip, onUpdateRole }) => {
     const { canPromote } = useMemo(() => {
-        const isCurrentUserHost = currentUserRole?.some((role) => ["host", "cohost"].includes(role)) || false
-        const isTargetPrivileged = participant.roles.some((role) => ["host", "cohost"].includes(role))
+        const isCurrentUserHost =
+            currentUserRole?.some(role => ['host', 'cohost'].includes(role)) || false;
+        const isTargetPrivileged = participant.roles.some(role =>
+            ['host', 'cohost'].includes(role)
+        );
         return {
             canPromote: isCurrentUserHost && !isTargetPrivileged,
-        }
-    }, [currentUserRole, participant.roles])
+        };
+    }, [currentUserRole, participant.roles]);
 
     return (
         <div className="flex flex-wrap items-center gap-2 p-2">
@@ -157,22 +194,24 @@ const ParticipantActions = memo<{
                 <ActionButton
                     icon={<UsersRound className="text-[#DDB958] w-3 h-3 sm:w-4 sm:h-4" />}
                     text="Make Co-host"
-                    onClick={() => onUpdateRole(participant.userId, "cohost")}
+                    onClick={() => onUpdateRole(participant.userId, 'cohost')}
                     variant="secondary"
                 />
             )}
         </div>
-    )
-})
+    );
+});
 
-const PendingParticipantsList = memo<{
-    participants: StreamVideoParticipant[]
-    onJoinRequest: (userId: string, accept: boolean) => void
+export const PendingParticipantsList = memo<{
+    participants: StreamVideoParticipant[];
+    onJoinRequest: (userId: string, accept: boolean) => void;
 }>(({ participants, onJoinRequest }) => (
     <div className="mb-4 sm:mb-6">
-        <h3 className="text-[#AFAFAF] text-xs sm:text-sm font-semibold mb-2 sm:mb-3">Pending Requests</h3>
+        <h3 className="text-[#AFAFAF] text-xs sm:text-sm font-semibold mb-2 sm:mb-3">
+            Pending Requests
+        </h3>
         <div className="space-y-2">
-            {participants.map((participant) => (
+            {participants.map(participant => (
                 <div
                     key={participant.userId}
                     className="flex items-center justify-between bg-[#2C2C2C] p-2.5 sm:p-3 rounded-[10px]"
@@ -202,105 +241,9 @@ const PendingParticipantsList = memo<{
             ))}
         </div>
     </div>
-))
+));
 
-const ParticipantItem = memo<{
-    participant: StreamVideoParticipant
-    currentUser: OwnUserResponse | undefined
-    onTip: (participant: StreamVideoParticipant) => void
-    onUpdateRole: (userId: string, newRole: string) => void
-}>(({ participant, currentUser, onTip, onUpdateRole }) => {
-    const isCurrentUser = participant.userId === currentUser?.id;
-
-    // Correctly determine the role based on participant.roles
-    const role = useMemo(() => {
-        console.log("role", participant.roles)
-        if (participant.roles.includes("host")) {
-            return "host";
-        } else if (participant.roles.includes("cohost")) {
-            return "cohost";
-        } else if (participant.roles.includes("user")) {
-            return "user";
-        } else {
-            return "listener";
-        }
-    }, [participant.roles]);
-
-    const displayName = formatName(participant.name || participant.userId);
-
-    const isAudioActive = participant.publishedTracks.includes(1);
-    const isVideoActive = participant.publishedTracks.includes(2);
-
-    return (
-        <div className="bg-[#2C2C2C] rounded-lg mb-2">
-            <div className="flex items-center justify-between p-3">
-                <div className="flex flex-col min-w-0 flex-1">
-                    <span className="text-white text-sm font-medium truncate">{displayName}</span>
-                    {/* Display the correct role */}
-                    <span className="text-[#9B9B9B] text-xs mt-0.5">
-                        {role === "host"
-                            ? "Session Host"
-                            : role === "cohost"
-                                ? "Co-host"
-                                : role === "user"
-                                    ? "User"
-                                    : "Listener"}
-                    </span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center 
-                        ${isAudioActive ? "bg-[#7C3AED]" : "bg-red-500"}`}
-                    >
-                        {isAudioActive ? (
-                            <Mic className="w-4 h-4 text-white" />
-                        ) : (
-                            <MicOff className="w-4 h-4 text-white" />
-                        )}
-                    </div>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button
-                                disabled={isCurrentUser}
-                                variant="ghost"
-                                size="icon"
-                                className="text-[#9B9B9B] bg-inherit hover:bg-inherit hover:text-white"
-                            >
-                                <MoreHorizontal className="w-5 h-5" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                            className="bg-[#2C2C2C] border border-[#383838] rounded-lg p-1"
-                            side="left"
-                        >
-                            <DropdownMenuItem
-                                onClick={() => onTip(participant)}
-                                className="flex items-center px-3 py-2 text-sm text-white hover:bg-[#383838] rounded-md cursor-pointer"
-                            >
-                                <DollarSign className="w-4 h-4 mr-2" />
-                                Tip {formatName(participant.name || participant.userId)}...
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="flex items-center px-3 py-2 text-sm text-white hover:bg-[#383838] rounded-md cursor-pointer">
-                                <Pin className="w-4 h-4 mr-2" />
-                                Pin
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="flex items-center px-3 py-2 text-sm text-white hover:bg-[#383838] rounded-md cursor-pointer">
-                                <MicOff className="w-4 h-4 mr-2" />
-                                Mute audio
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="flex items-center px-3 py-2 text-sm text-white hover:bg-[#383838] rounded-md cursor-pointer">
-                                <VideoOff className="w-4 h-4 mr-2" />
-                                Disable video
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
-            </div>
-        </div>
-    );
-});
-
-const SessionNotification = () => {
+export const SessionNotification = () => {
     const [isVisible, setIsVisible] = useState(true);
     if (!isVisible) return null;
 
@@ -313,16 +256,18 @@ const SessionNotification = () => {
                     {/* Close Button and Title */}
                     <div className="flex justify-between items-start mb-2">
                         <h2 className="text-xl text-white font-medium">Your session is live!</h2>
-                        <button
+                        <Button
                             onClick={() => setIsVisible(false)}
                             className="text-gray-400 hover:text-white transition-colors"
                         >
                             <X className="h-5 w-5" />
-                        </button>
+                        </Button>
                     </div>
 
                     {/* Description */}
-                    <p className="text-gray-400 text-sm mb-4">Click the button below to copy the call link</p>
+                    <p className="text-gray-400 text-sm mb-4">
+                        Click the button below to copy the call link
+                    </p>
 
                     {/* Buttons */}
                     <div className="flex items-center gap-4">
@@ -331,7 +276,7 @@ const SessionNotification = () => {
                             className="flex-1 bg-[#6032F6] hover:bg-[#4C28C4] text-white px-4 py-2.5 rounded-lg transition-colors text-sm font-medium"
                             onClick={() => {
                                 navigator.clipboard.writeText(window.location.href);
-                                toast.success("Link copied to clipboard");
+                                toast.success('Link copied to clipboard');
                             }}
                         >
                             Copy invite link
@@ -339,15 +284,15 @@ const SessionNotification = () => {
 
                         {/* Social Icons */}
                         <div className="flex gap-3">
-                            <button className="text-gray-400 hover:text-white transition-colors">
+                            <Button className="text-gray-400 hover:text-white transition-colors">
                                 <Farcaster />
-                            </button>
-                            <button className="text-gray-400 hover:text-white transition-colors">
+                            </Button>
+                            <Button className="text-gray-400 hover:text-white transition-colors">
                                 <Instagram />
-                            </button>
-                            <button className="text-gray-400 hover:text-white transition-colors">
+                            </Button>
+                            <Button className="text-gray-400 hover:text-white transition-colors">
                                 <Twitter />
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -356,22 +301,126 @@ const SessionNotification = () => {
     );
 };
 
+const ParticipantItem = memo<ParticipantItemProps>(
+    ({ participant, member, currentUser, onTip, onUpdateRole }) => {
+        const isCurrentUser = participant.userId === currentUser?.id;
+
+        // Correctly determine the role based on participant.roles
+        const role = useMemo(() => {
+            console.log('role', participant.roles);
+            if (participant.roles.includes('host')) {
+                return 'host';
+            } else if (participant.roles.includes('cohost')) {
+                return 'cohost';
+            } else if (participant.roles.includes('user')) {
+                return 'user';
+            } else {
+                return 'listener';
+            }
+        }, [participant.roles]);
+
+        const displayName = formatName(participant.name || participant.userId);
+
+        const isAudioActive = participant.publishedTracks.includes(1);
+        const isVideoActive = participant.publishedTracks.includes(2);
+
+        return (
+            <div className="bg-[#2C2C2C] rounded-lg mb-2">
+                <div className="flex items-center justify-between p-3">
+                    <div className="flex flex-col min-w-0 flex-1">
+                        <span className="text-white text-sm font-medium truncate">
+                            {displayName}
+                        </span>
+                        {/* Display the correct role */}
+                        <span className="text-[#9B9B9B] text-xs mt-0.5">
+                            {role === 'host'
+                                ? 'Session Host'
+                                : role === 'cohost'
+                                  ? 'Co-host'
+                                  : role === 'user'
+                                    ? 'User'
+                                    : 'Listener'}
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center 
+                        ${isAudioActive ? 'bg-[#7C3AED]' : 'bg-red-500'}`}
+                        >
+                            {isAudioActive ? (
+                                <Mic className="w-4 h-4 text-white" />
+                            ) : (
+                                <MicOff className="w-4 h-4 text-white" />
+                            )}
+                        </div>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    disabled={isCurrentUser}
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-[#9B9B9B] bg-inherit hover:bg-inherit hover:text-white"
+                                >
+                                    <MoreHorizontal className="w-5 h-5" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                                className="bg-[#2C2C2C] border border-[#383838] rounded-lg p-1"
+                                side="left"
+                            >
+                                <DropdownMenuItem
+                                    onClick={() => onTip(member)}
+                                    className="flex items-center px-3 py-2 text-sm text-white hover:bg-[#383838] rounded-md cursor-pointer"
+                                >
+                                    <DollarSign className="w-4 h-4 mr-2" />
+                                    Tip {formatName(participant.name || participant.userId)}...
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="flex items-center px-3 py-2 text-sm text-white hover:bg-[#383838] rounded-md cursor-pointer">
+                                    <Pin className="w-4 h-4 mr-2" />
+                                    Pin
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="flex items-center px-3 py-2 text-sm text-white hover:bg-[#383838] rounded-md cursor-pointer">
+                                    <MicOff className="w-4 h-4 mr-2" />
+                                    Mute audio
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="flex items-center px-3 py-2 text-sm text-white hover:bg-[#383838] rounded-md cursor-pointer">
+                                    <VideoOff className="w-4 h-4 mr-2" />
+                                    Disable video
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+);
+
 // Main Component
 const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
-    ({ participants, currentUser, openTipModal, updateParticipantRole, handleJoinRequest }) => {
-        const [searchQuery, setSearchQuery] = useState("");
+    ({
+        members,
+        participants,
+        currentUser,
+        openTipModal,
+        updateParticipantRole,
+        handleJoinRequest,
+    }) => {
+        const [searchQuery, setSearchQuery] = useState('');
 
         const { pendingParticipants, activeParticipants } = useMemo(() => {
             return {
-                pendingParticipants: participants.filter((p) => p.roles.includes("pending")),
-                activeParticipants: participants.filter((p) => !p.roles.includes("pending")),
-            }
-        }, [participants])
+                pendingParticipants: participants.filter(p => p.roles.includes('pending')),
+                activeParticipants: participants.filter(p => !p.roles.includes('pending')),
+            };
+        }, [participants]);
 
         const filteredActiveParticipants = useMemo(() => {
             if (!searchQuery) return activeParticipants; // If no search query, return all active participants
-            return activeParticipants.filter((participant) =>
-                (participant.name || participant.userId).toLowerCase().includes(searchQuery.toLowerCase())
+            return activeParticipants.filter(participant =>
+                (participant.name || participant.userId)
+                    .toLowerCase()
+                    .includes(searchQuery.toLowerCase())
             );
         }, [activeParticipants, searchQuery]);
 
@@ -379,7 +428,9 @@ const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
             <div className="flex flex-col h-full bg-[#1C1C1C] p-4 rounded-[20px]">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-white text-lg font-medium">Participants</h2>
-                    <span className="text-sm bg-[#6032F6] text-white px-2 py-1 rounded-full">{activeParticipants.length}/50</span>
+                    <span className="text-sm bg-[#6032F6] text-white px-2 py-1 rounded-full">
+                        {activeParticipants.length}/50
+                    </span>
                 </div>
 
                 <div className="relative mb-4">
@@ -390,7 +441,7 @@ const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
                             type="text"
                             placeholder="Search for participant"
                             value={searchQuery} // Bind searchQuery state
-                            onChange={(e) => setSearchQuery(e.target.value)} // Update searchQuery on change
+                            onChange={e => setSearchQuery(e.target.value)} // Update searchQuery on change
                             className="w-full bg-[#2C2C2C] text-white text-sm rounded-lg px-4 py-2.5 
                        focus:outline-none focus:border-transparent"
                         />
@@ -399,35 +450,45 @@ const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
                 {/* Participants List */}
                 <div className="flex-1 overflow-y-auto space-y-4">
                     {pendingParticipants.length > 0 && (
-                        <PendingParticipantsList participants={pendingParticipants} onJoinRequest={handleJoinRequest} />
+                        <PendingParticipantsList
+                            participants={pendingParticipants}
+                            onJoinRequest={handleJoinRequest}
+                        />
                     )}
                     {/* Use activeParticipants instead of sortedParticipants */}
-                    {filteredActiveParticipants.map((participant) => (
-                        <ParticipantItem
-                            key={participant.userId}
-                            participant={participant}
-                            currentUser={currentUser}
-                            onTip={openTipModal}
-                            onUpdateRole={updateParticipantRole}
-                        />
-                    ))}
+                    {filteredActiveParticipants.map(participant => {
+                        // Find matching member record
+                        const member = members.find(m => m.user.id === participant.userId);
+                        if (!member) return null; // Skip if no matching member found
+
+                        return (
+                            <ParticipantItem
+                                key={participant.userId}
+                                participant={participant}
+                                member={member}
+                                currentUser={currentUser}
+                                onTip={openTipModal}
+                                onUpdateRole={updateParticipantRole}
+                            />
+                        );
+                    })}
                 </div>
 
                 {/* Fixed Bottom Section */}
                 {SessionNotification()}
             </div>
-        )
-    },
-)
+        );
+    }
+);
 
 // Add display names for debugging
-ParticipantControls.displayName = "ParticipantControls"
-ParticipantActions.displayName = "ParticipantActions"
-PendingParticipantsList.displayName = "PendingParticipantsList"
-ParticipantItem.displayName = "ParticipantItem"
-ParticipantsSidebar.displayName = "ParticipantsSidebar"
-Tooltip.displayName = "Tooltip"
-ActionButton.displayName = "ActionButton"
-RequestHostButton.displayName = "RequestHostButton"
+ParticipantControls.displayName = 'ParticipantControls';
+ParticipantActions.displayName = 'ParticipantActions';
+PendingParticipantsList.displayName = 'PendingParticipantsList';
+ParticipantItem.displayName = 'ParticipantItem';
+ParticipantsSidebar.displayName = 'ParticipantsSidebar';
+Tooltip.displayName = 'Tooltip';
+ActionButton.displayName = 'ActionButton';
+RequestHostButton.displayName = 'RequestHostButton';
 
-export default ParticipantsSidebar
+export default ParticipantsSidebar;

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import {
-    StreamVideoParticipant,
+    MemberResponse,
     CustomVideoEvent,
     useCall,
     useConnectedUser,
@@ -14,7 +14,7 @@ interface TippingState {
     showTipModal: boolean;
     tipAmount: string;
     showTipSuccess: boolean;
-    selectedTipRecipient: StreamVideoParticipant | null;
+    selectedTipRecipient: MemberResponse | null;
     receivedTips: Array<{ from: string; amount: string }>;
 }
 
@@ -39,7 +39,7 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
             console.log('Embedded wallet transaction successful:', response);
             if (state.selectedTipRecipient) {
                 toast.success(
-                    `You successfully tipped ${state.selectedTipRecipient.name || state.selectedTipRecipient.userId} ${state.tipAmount} ETH`,
+                    `You successfully tipped ${state.selectedTipRecipient.user.name || state.selectedTipRecipient.user.id} ${state.tipAmount} ETH`,
                     { duration: 5000 }
                 );
             }
@@ -119,7 +119,7 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
     };
 
     const sendTipEvent = useCallback(
-        async (recipient: StreamVideoParticipant | null, amount: string) => {
+        async (recipient: MemberResponse, amount: string) => {
             if (!call) return;
 
             await call.sendCustomEvent({
@@ -129,8 +129,8 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
                     name: connectedUser?.name || 'Anon',
             },
                 to: {
-                    id: recipient?.userId,
-                    name: recipient?.name,
+                    id: recipient.user.id,
+                    name: recipient.user.name,
                 },
                 amount: amount,
             });
@@ -152,10 +152,7 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
 
         try {
             // Safely access the wallet address with proper type checking
-            const recipientAddress = state.selectedTipRecipient?.custom?.fields?.walletAddress?.kind;
-            const walletAddress = typeof recipientAddress === 'object' && 
-                'stringValue' in recipientAddress ? 
-                recipientAddress.stringValue : null;
+            const walletAddress = state.selectedTipRecipient.user.custom?.walletAddress;
 
             if (!walletAddress || !isAddress(walletAddress)) {
                 toast.error('Invalid recipient wallet address');
@@ -200,7 +197,7 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
         [connectedUser?.id]
     );
 
-    const openTipModal = (participant: StreamVideoParticipant) => {
+    const openTipModal = (participant: MemberResponse) => {
         console.log("opening tip modal and setting recipient to", { participant })
         setState(prev => ({
             ...prev,
