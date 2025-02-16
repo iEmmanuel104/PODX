@@ -46,6 +46,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const { id } = params;
     const router = useRouter();
     const {
+        useCallMembers,
         useParticipants,
         useIsCallLive,
         useCallCustomData,
@@ -67,6 +68,9 @@ export default function MeetingInterface({ params }: MeetingProps) {
     }, []);
 
     // Use the custom comparator with useParticipants
+    const members = useCallMembers();
+
+    console.log({callmembers: members});
     const participants = useParticipants({ sortBy: participantComparator });
     const customData = useCallCustomData();
     const live = useIsCallLive();
