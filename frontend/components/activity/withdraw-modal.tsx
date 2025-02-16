@@ -42,27 +42,29 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose, o
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent>
+            <DialogContent className='bg-[#151515] text-white'>
                 <DialogHeader>
-                    <DialogTitle>Withdraw Funds</DialogTitle>
+                    <DialogTitle className=''>Withdraw Funds</DialogTitle>
                     <DialogDescription>
                         Enter the external wallet address and the amount to withdraw.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
                     <Input
+                        className="w-full bg-[#2C2C2C] rounded-[10px] px-4 py-2 border-[#3c3c3c]"
                         placeholder="External Wallet Address"
                         value={address}
                         onChange={(e) => setAddress(e.target.value)}
                     />
                     <Input
+                        className="w-full bg-[#2C2C2C] rounded-[10px] px-4 py-2 border-[#3c3c3c]"
                         placeholder="Amount (ETH)"
                         type="number"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
                     />
                     <Button
-                        className="w-full"
+                        className="w-full px-3 py-3 rounded-[10px] bg-[#6032F6] hover:bg-[#6D28D9] disabled:bg-gray-500"
                         onClick={handleWithdraw}
                         disabled={isLoading}
                     >

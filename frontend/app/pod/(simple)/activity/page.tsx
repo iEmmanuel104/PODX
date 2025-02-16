@@ -116,7 +116,7 @@ export default function Page() {
 
             {/* Wallet Info Section */}
             {isPrivyWallet && (
-                <div className="w-full flex flex-col items-center gap-4 p-4 sm:p-6 rounded-xl bg-white/5">
+                <div className="w-full flex flex-col items-center gap-4 p-4 sm:p-6 rounded-xl">
                     <div className="flex items-center gap-2">
                         {isLoadingBalance ? (
                             <Loader2 className="h-6 w-6 animate-spin text-white/60" />
