@@ -84,6 +84,19 @@ export default function Page() {
 
     return (
         <div className="w-full flex flex-col gap-6">
+            {/* Navigation Header */}
+            <div className="flex items-center gap-4">
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10 rounded-full hover:bg-white/5"
+                    onClick={() => router.back()}
+                >
+                    <ArrowLeft className="h-5 w-5" />
+                </Button>
+                <h1 className="text-xl font-semibold">Back</h1>
+            </div>
+
             {/* Wallet Info Section */}
             {isPrivyWallet && (
                 <div className="w-full flex flex-col items-center gap-4 p-4 sm:p-6 rounded-xl bg-white/5">
@@ -127,19 +140,6 @@ export default function Page() {
                     </div>
                 </div>
             )}
-
-            {/* Navigation Header */}
-            <div className="flex items-center gap-4">
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-10 w-10 rounded-full hover:bg-white/5"
-                    onClick={() => router.back()}
-                >
-                    <ArrowLeft className="h-5 w-5" />
-                </Button>
-                <h1 className="text-xl font-semibold">Activity</h1>
-            </div>
 
             {/* Session Activity Section */}
             <div className="w-full">
