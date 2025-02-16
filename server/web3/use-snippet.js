@@ -8,7 +8,7 @@ require('dotenv').config();
 // Initialize Pinata SDK
 const pinata = new PinataSDK({
     pinataJwt: process.env.PINATA_JWT,
-    pinataGateway: process.env.GATEWAY_URL
+    pinataGateway: process.env.GATEWAY_URL,
 });
 
 // Initialize ethers contract and provider
@@ -29,7 +29,7 @@ router.post('/create-session', upload.single('image'), async (req, res) => {
 
         if (!imageFile || !sessionName || !sessionId) {
             return res.status(400).json({
-                error: 'Missing required fields: image, sessionName, or sessionId'
+                error: 'Missing required fields: image, sessionName, or sessionId',
             });
         }
 
@@ -48,19 +48,19 @@ router.post('/create-session', upload.single('image'), async (req, res) => {
 
         // 2. Create and upload metadata JSON
         const metadata = {
-            name: "PODX",
-            description: description || "This is a POAP NFT from PODX.",
+            name: 'PODX',
+            description: description || 'This is a POAP NFT from PODX.',
             image: `ipfs://${imageUpload.IpfsHash}`,
             attributes: [
                 {
-                    trait_type: "Session Name",
-                    value: sessionName
+                    trait_type: 'Session Name',
+                    value: sessionName,
                 },
                 {
-                    trait_type: "Session ID",
-                    value: sessionId
-                }
-            ]
+                    trait_type: 'Session ID',
+                    value: sessionId,
+                },
+            ],
         };
 
         // Upload metadata as JSON
@@ -90,14 +90,14 @@ router.post('/create-session', upload.single('image'), async (req, res) => {
                 success: true,
                 sessionId: sessionId,
                 transactionHash: receipt.transactionHash,
-                blockNumber: receipt.blockNumber
+                blockNumber: receipt.blockNumber,
             });
 
         } catch (contractError) {
             console.error('Smart contract error:', contractError);
             res.status(500).json({
                 error: 'Failed to create session in smart contract',
-                details: contractError.message
+                details: contractError.message,
             });
         }
 
@@ -105,7 +105,7 @@ router.post('/create-session', upload.single('image'), async (req, res) => {
         console.error('Error creating session:', error);
         res.status(500).json({
             error: 'Failed to create session',
-            details: error.message
+            details: error.message,
         });
     }
 });
@@ -117,7 +117,7 @@ router.post('/batch-mint', async (req, res) => {
 
         if (!recipients || !recipients.length || !sessionId) {
             return res.status(400).json({
-                error: 'Missing required fields: recipients or sessionId'
+                error: 'Missing required fields: recipients or sessionId',
             });
         }
 
@@ -125,7 +125,7 @@ router.post('/batch-mint', async (req, res) => {
         const validAddresses = recipients.every(addr => ethers.utils.isAddress(addr));
         if (!validAddresses) {
             return res.status(400).json({
-                error: 'Invalid Ethereum address in recipients list'
+                error: 'Invalid Ethereum address in recipients list',
             });
         }
 
@@ -138,14 +138,14 @@ router.post('/batch-mint', async (req, res) => {
             sessionId: sessionId,
             recipientCount: recipients.length,
             transactionHash: receipt.transactionHash,
-            blockNumber: receipt.blockNumber
+            blockNumber: receipt.blockNumber,
         });
 
     } catch (error) {
         console.error('Error batch minting tokens:', error);
         res.status(500).json({
             error: 'Failed to batch mint tokens',
-            details: error.message
+            details: error.message,
         });
     }
 });
