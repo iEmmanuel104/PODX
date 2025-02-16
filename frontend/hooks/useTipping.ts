@@ -70,6 +70,8 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
                 value: parsedAmount,
             });
 
+            console.log({ tipExternal: hash });
+
             toast.success('Tip sent successfully!', { id: notification });
             return hash;
 
@@ -97,12 +99,14 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
             if (!isAddress(recipient)) throw new Error('Invalid recipient address');
             const parsedAmount = parseEther(amount.toString());
 
-            await sendTransactionEmbedded({
+            const tipEmbedded = await sendTransactionEmbedded({
                 chainId: 8453,
                 to: recipient,
                 value: parsedAmount,
                 gasLimit: 21000,
             });
+
+            console.log({tipEmbedded});
             toast.success('tip successful', { id: notification });
         } catch (error) {
             console.error('Error sending ETH:', error);
