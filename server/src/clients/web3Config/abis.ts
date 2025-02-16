@@ -1,5 +1,5 @@
 // abis.ts
-export const POAP_CONTRACT_ADDRESS = ''; // Add your deployed contract address here
+export const POAP_CONTRACT_ADDRESS = '0xf2bb496b045df0f787Ecd8A84c6890b6d2a3CFa7';
 export const RPC_URL = 'https://base-sepolia-rpc.publicnode.com';
 export const PRIVATE_KEY = process.env.PRIVATE_KEY as string;
 
