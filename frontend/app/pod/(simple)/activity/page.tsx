@@ -29,8 +29,10 @@ import { Call, Tip } from '@/store/user/types';
 import { TabType } from '@/types';
 import { POADialog, SessionCard, EmptyState } from '@/components/activity/activity-props';
 import { useSendTransaction } from '@privy-io/react-auth';
-import { parseEther } from 'ethers';
+import { ethers, parseEther, parseUnits } from 'ethers';
 import { WithdrawModal } from '@/components/activity/withdraw-modal';
+import { erc20Abi } from 'viem';
+import { USDC_CONTRACT_ADDRESS, USDC_DECIMALS } from '@/hooks/useTipping';
 
 // Main Component
 export default function Page() {
@@ -41,15 +43,32 @@ export default function Page() {
     const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
     const { sendTransaction } = useSendTransaction();
 
-    const handleWithdraw = async (address: string, amount: string) => {
-        const parsedAmount = parseEther(amount);
+    const handleWithdraw = async (address: string, amount: string, currency: 'ETH' | 'USDC') => {
+        if (currency === 'ETH') {
+            // Withdraw ETH
+            const parsedAmount = parseEther(amount);
+            await sendTransaction({
+                to: address,
+                value: parsedAmount,
+                chainId: 8453, // Base Mainnet
+            });
+        } else if (currency === 'USDC') {
+            // Withdraw USDC
+            const parsedAmount = parseUnits(amount, USDC_DECIMALS); // Parse USDC amount with 6 decimals
 
-        // Send the transaction using Privy's embedded wallet
-        await sendTransaction({
-            to: address,
-            value: parsedAmount,
-            chainId: 8453,
-        });
+            // Encode the USDC transfer function call
+            const data = new ethers.Interface(erc20Abi).encodeFunctionData('transfer', [
+                address,
+                parsedAmount,
+            ]);
+
+            // Send the transaction
+            await sendTransaction({
+                to: USDC_CONTRACT_ADDRESS,
+                data,
+                chainId: 8453, // Base Mainnet
+            });
+        }
     };
 
     // Get user info from auth hook
