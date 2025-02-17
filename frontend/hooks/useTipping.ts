@@ -167,6 +167,7 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
         } catch (error) {
             console.error('Error sending ETH:', error);
             toast.error('Failed to send tip. Please try again.', { id: notification });
+            throw Error(error as string)
         }
     };
 
@@ -266,8 +267,8 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
                 return;
             }
 
+            // Send the tip and wait for the transaction to complete
             await sendETH(walletAddress, state.tipAmount);
-            await sendTipEvent(state.selectedTipRecipient, state.tipAmount);
 
             // Show success state
             setState(prev => ({
@@ -276,6 +277,10 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
                 showTipSuccess: true
             }));
 
+            // if (state.showTipSuccess){
+            // }
+            await sendTipEvent(state.selectedTipRecipient, state.tipAmount);
+
             // Hide success message after 5 seconds
             setTimeout(() => {
                 setState(prev => ({ ...prev, showTipSuccess: false }));
@@ -283,7 +288,7 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
 
         } catch (error) {
             console.error('Error sending tip:', error);
-            toast.error(error instanceof Error ? error.message : 'Failed to send tip. Please try again.');
+            // toast.error(error instanceof Error ? error.message : 'Failed to send tip. Please try again.');
         }
     };
 

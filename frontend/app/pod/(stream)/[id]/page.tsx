@@ -11,7 +11,6 @@ import Header from '@/components/meeting/header';
 import {
     StreamTheme,
     useCall,
-    Comparator,
     combineComparators,
     role,
     speaking,
@@ -315,7 +314,8 @@ export default function MeetingInterface({ params }: MeetingProps) {
                     callingState={callingState}
                 />
                 {showTipSuccess && selectedTipRecipient && (
-                    <div className="fixed bottom-4 right-4 bg-green-500 text-white px-3 sm:px-4 py-2 rounded-[10px] flex items-center text-xs sm:text-sm">
+                    console.log("Rendering success notification", { showTipSuccess, selectedTipRecipient }),
+                    <div className="fixed bottom-4 right-4 bg-green-500 text-white px-3 sm:px-4 py-2 rounded-[10px] flex items-center text-xs sm:text-sm z-50">
                         <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                         You successfully tipped{' '}
                         {selectedTipRecipient.user.name} {tipAmount} ETH
