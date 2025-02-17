@@ -16,7 +16,8 @@ interface TippingState {
     tipAmount: string;
     showTipSuccess: boolean;
     selectedTipRecipient: MemberResponse | null;
-    receivedTips: Array<{ from: string; amount: string, currency: string }>;
+    receivedTips: Array<{ from: string; amount: string; currency: string }>;
+    selectedCurrency: 'ETH' | 'USDC';
 }
 
 // USDC contract address (example for Base chain)
@@ -30,6 +31,7 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
         showTipSuccess: false,
         selectedTipRecipient: null,
         receivedTips: [],
+        selectedCurrency: 'ETH',
     });
 
     const call = useCall();
@@ -206,22 +208,21 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
         }
     };
 
-    // mock function to detect if tipping with eth or usdc
-    // const sendTip = async (recipient: string, amount: string) => {
-    //     if (state.selectedCurrency === 'ETH') {
-    //         if (isEmbeddedWallet) {
-    //             await sendETHEmbedded(recipient, amount);
-    //         } else {
-    //             await sendETHExternal(recipient, amount);
-    //         }
-    //     } else if (state.selectedCurrency === 'USDC') {
-    //         if (isEmbeddedWallet) {
-    //             await sendUSDCEmbedded(recipient, amount);
-    //         } else {
-    //             await sendUSDCExternal(recipient, amount);
-    //         }
-    //     }
-    // };
+    const sendTip = async (recipient: string, amount: string) => {
+        if (state.selectedCurrency === 'ETH') {
+            if (isEmbeddedWallet) {
+                await sendETHEmbedded(recipient, amount);
+            } else {
+                await sendETHExternal(recipient, amount);
+            }
+        } else if (state.selectedCurrency === 'USDC') {
+            if (isEmbeddedWallet) {
+                await sendUSDCEmbedded(recipient, amount);
+            } else {
+                await sendUSDCExternal(recipient, amount);
+            }
+        }
+    };
 
     const sendTipEvent = useCallback(
         async (recipient: MemberResponse, amount: string) => {
@@ -239,15 +240,14 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
                 },
                 amount: amount,
                 transactionHash: null,
-                currency: 'ETH',
+                currency: state.selectedCurrency,  // Use selected currency
                 timestamp: new Date().toISOString(),
             });
         },
-        [call, connectedUser]
+        [call, connectedUser, state.selectedCurrency]  // Add selectedCurrency to dependencies
     );
 
     const handleTip = async () => {
-        console.log("state.selectedTipRecipient", state.selectedTipRecipient)
         if (!state.selectedTipRecipient) {
             toast.error('No recipient selected');
             return;
@@ -259,7 +259,6 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
         }
 
         try {
-            // Safely access the wallet address with proper type checking
             const walletAddress = state.selectedTipRecipient.user.custom?.walletAddress;
 
             if (!walletAddress || !isAddress(walletAddress)) {
@@ -267,29 +266,28 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
                 return;
             }
 
-            // Send the tip and wait for the transaction to complete
-            await sendETH(walletAddress, state.tipAmount);
+            // Use the new sendTip function
+            await sendTip(walletAddress, state.tipAmount);
 
-            // Show success state
             setState(prev => ({
                 ...prev,
                 showTipModal: false,
                 showTipSuccess: true
             }));
 
-            // if (state.showTipSuccess){
-            // }
             await sendTipEvent(state.selectedTipRecipient, state.tipAmount);
 
-            // Hide success message after 5 seconds
             setTimeout(() => {
                 setState(prev => ({ ...prev, showTipSuccess: false }));
             }, 5000);
 
         } catch (error) {
             console.error('Error sending tip:', error);
-            // toast.error(error instanceof Error ? error.message : 'Failed to send tip. Please try again.');
         }
+    };
+
+    const setCurrency = (currency: 'ETH' | 'USDC') => {
+        setState(prev => ({ ...prev, selectedCurrency: currency }));
     };
 
     const handleTipEvent = useCallback(
@@ -338,6 +336,7 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
         handleTip,
         handleCancelTip,
         setTipAmount,
+        setCurrency,
         handleTipEvent,
     };
 };

@@ -21,6 +21,8 @@ interface TipModalProps {
     handleTip: () => void;
     onCancel: () => void;
     balance: string;
+    selectedCurrency: 'ETH' | 'USDC';
+    setCurrency: (currency: 'ETH' | 'USDC') => void;
 }
 
 const TipModal: React.FC<TipModalProps> = ({
@@ -31,23 +33,13 @@ const TipModal: React.FC<TipModalProps> = ({
     walletAddress,
     onCancel,
     balance,
+    selectedCurrency,
+    setCurrency,
 }) => {
-    const [currency, setCurrency] = useState<'ETH' | 'USDC'>('USDC'); // State for selected currency
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false); // State for dropdown visibility
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
     return (
         <Modal>
-            {/* <DotPattern
-                width={20}
-                height={20}
-                cx={2}
-                cy={2}
-                cr={1}
-                className={cn(
-                    '[mask-image:radial-gradient(to_bottom_right,white,transparent,transparent)] rounded-[20px] top-[6px] left-[5px] px-[10px] -z-10'
-                )}
-            /> */}
-            {/* Header */}
             <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-white">Tip</h2>
                 <button
@@ -80,7 +72,7 @@ const TipModal: React.FC<TipModalProps> = ({
                             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                             className="flex items-center text-gray-400 hover:text-white transition-colors"
                         >
-                            <span className="mr-1">{currency}</span>
+                            <span className="mr-1">{selectedCurrency}</span>
                             <ChevronDown className="h-4 w-4" />
                         </button>
                         {/* Dropdown Menu */}
@@ -117,9 +109,8 @@ const TipModal: React.FC<TipModalProps> = ({
                     Tip
                 </button>
             </div>
-
             {/* Balance Display */}
-            <p className="text-white text-sm">Balance: {balance} {currency}</p>
+            <p className="text-white text-sm">Balance: {balance} {selectedCurrency}</p>
         </Modal>
     );
 };
