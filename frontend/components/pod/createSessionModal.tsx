@@ -160,9 +160,9 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className={`
-                bg-[#1d1d1d] text-white sm:rounded-[20px] p-4 sm:p-8 
+                bg-[#1d1d1d] text-white rounded-[20px] sm:rounded-[20px] p-4 sm:p-8 
                 w-full max-w-[90%] sm:max-w-lg mx-auto 
-                overflow-y-auto max-h-[90vh] border border-white/[0.1]
+                overflow-hidden max-h-[90vh] border border-white/[0.1]
             `}
             >
                 {/* Background gradient - moved behind content */}
