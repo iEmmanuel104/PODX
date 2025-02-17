@@ -38,5 +38,3 @@ This contract is useful for:
 - Issuing participation certificates
 - Creating non-transferable membership badges
 - Documenting completion of courses or workshops
-
-

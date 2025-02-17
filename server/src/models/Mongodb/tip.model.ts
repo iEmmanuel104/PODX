@@ -2,7 +2,7 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface ITip extends Document {
-    callId: string;
+    callId: Types.ObjectId;
     sessionId?: string;
     fromUserId: Types.ObjectId;
     toUserId: Types.ObjectId;
@@ -14,7 +14,7 @@ export interface ITip extends Document {
 }
 
 const TipSchema = new Schema({
-    callId: { type: String, required: true },
+    callId: { type: Schema.Types.ObjectId, ref: 'Call', required: true },
     sessionId: { type: String },
     fromUserId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     toUserId: { type: Schema.Types.ObjectId, ref: 'User', required: true },

@@ -68,8 +68,6 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
     // Use the custom comparator with useParticipants
     const members = useCallMembers();
-
-    console.log({ callmembers: members });
     const participants = useParticipants({ sortBy: participantComparator });
     const customData = useCallCustomData();
     const live = useIsCallLive();
@@ -95,10 +93,12 @@ export default function MeetingInterface({ params }: MeetingProps) {
         tipAmount,
         selectedTipRecipient,
         receivedTips,
+        selectedCurrency,
         openTipModal,
         handleTip,
         handleCancelTip,
         setTipAmount,
+        setCurrency,
         handleTipEvent,
         setState,
     } = useTipping(isEmbeddedWallet);
@@ -301,6 +301,8 @@ export default function MeetingInterface({ params }: MeetingProps) {
                         handleTip={handleTip}
                         onCancel={handleCancelTip}
                         balance={displayBalance}
+                        selectedCurrency={selectedCurrency}
+                        setCurrency={setCurrency}
                     />
                 )}
                 {showThankYouModal && <EndScreen onClose={confirmLeave} user={user} />}
@@ -314,11 +316,10 @@ export default function MeetingInterface({ params }: MeetingProps) {
                     callingState={callingState}
                 />
                 {showTipSuccess && selectedTipRecipient && (
-                    console.log("Rendering success notification", { showTipSuccess, selectedTipRecipient }),
                     <div className="fixed bottom-4 right-4 bg-green-500 text-white px-3 sm:px-4 py-2 rounded-[10px] flex items-center text-xs sm:text-sm z-50">
                         <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                        You successfully tipped{' '}
-                        {selectedTipRecipient.user.name} {tipAmount} ETH
+                        You successfully tipped {selectedTipRecipient.user.name} {tipAmount}{' '}
+                        {selectedCurrency}
                     </div>
                 )}
                 {receivedTips.length > 0 &&
@@ -336,7 +337,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                                 newTips.splice(index, 1);
                                 setState(prevState => ({
                                     ...prevState,
-                                    receivedTips: newTips
+                                    receivedTips: newTips,
                                 })); // Update the state
                             }}
                         />

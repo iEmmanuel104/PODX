@@ -194,7 +194,7 @@ interface CallInfo {
 
 interface PopulatedTip {
     _id: Types.ObjectId;
-    callId: string | CallInfo;
+    callId: CallInfo;
     fromUserId: UserBasicInfo;
     toUserId: UserBasicInfo;
     amount: string;

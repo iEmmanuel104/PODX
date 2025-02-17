@@ -4,6 +4,7 @@ import StreamIOConfig from '../clients/streamio.config';
 import { webhookConfig } from '../clients/webhook.config';
 import { CallSessionPayload, CallSessionEndPayload, CallCreatedEvent, CustomEventPayload } from '../utils/interface';
 import { TipService } from './tip.service';
+import { POAPService } from './poap.service';
 
 export class CallService {
     static async handleCallSessionStart(payload: CallSessionPayload): Promise<void> {
@@ -14,10 +15,9 @@ export class CallService {
             if (!call_cid) {
                 throw new Error('call_cid is required');
             }
-            // Split the call_cid to get type and id
             const [type, id] = call_cid.split(':');
 
-            // First update StreamIO
+            // Update StreamIO
             await StreamIOConfig.updateCallMembers(
                 type,
                 id,
@@ -30,7 +30,7 @@ export class CallService {
                 }]
             );
 
-            // Then update local database
+            // Update local database and track join event
             await Call.findOneAndUpdate(
                 {
                     callId: id,
@@ -45,7 +45,13 @@ export class CallService {
                             role: participant.role,
                         },
                     },
-                    // Update session ID and status
+                    $push: {
+                        'custom.events': {
+                            userId: participant.user.id,
+                            type: 'joined',
+                            timestamp: new Date().toISOString(),
+                        },
+                    },
                     $set: {
                         sessionId: session_id,
                         status: 'live',
@@ -118,12 +124,20 @@ export class CallService {
         console.log({ handleEndedPayload: payload });
         if (!call?.current_session_id) return;
 
+        // Update call status
         await Call.findOneAndUpdate(
             { callId: call?.id },
             {
                 status: 'ended',
                 endTime: new Date(created_at),
-                $set: { 'custom.ended_at': created_at },
+                $set: {
+                    'custom.ended_at': created_at,
+                    'custom.events': call.session?.participants.map(participant => ({
+                        userId: participant.user.id,
+                        type: 'left',
+                        timestamp: created_at,
+                    })),
+                },
             }
         );
 
@@ -139,6 +153,14 @@ export class CallService {
                 duration_seconds: duration,
                 created_at,
             });
+        }
+
+        // Handle POAP minting after call ends
+        try {
+            await POAPService.handleCallPOAP(call.id);
+        } catch (error) {
+            console.error('Error handling POAP for call:', error);
+            // Don't throw the error here to prevent disrupting the main call end flow
         }
     }
 
