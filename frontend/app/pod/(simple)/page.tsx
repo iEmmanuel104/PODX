@@ -230,7 +230,7 @@ export default function PodPage() {
     }
 
     return (
-        <div className="flex flex-col justify-center items-center min-h-screen w-full px-4 sm:px-6 py-4 sm:py-8">
+        <div className="flex flex-col justify-center items-center max-h-screen w-full px-4 sm:px-6 py-4 sm:py-8">
             {/* Main Content Container */}
             <div className="w-full max-w-[720px] mx-auto flex flex-col gap-6 sm:gap-8">
                 {/* Main Cards Section */}
