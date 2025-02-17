@@ -241,7 +241,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
     return (
         <StreamTheme className="root-theme">
-            <div className="h-screen bg-[#151515] text-white flex flex-col w-[95%] mx-auto">
+            <div className="h-screen bg-black text-white flex flex-col w-[95%] mx-auto">
                 <Header
                     userInfo={user}
                     withdrawFunds={isEmbeddedWallet}
