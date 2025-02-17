@@ -174,7 +174,6 @@ export interface ProcessingSummary {
     processingTime: number;
 }
 
-
 interface UserBasicInfo {
     _id: Types.ObjectId;
     username: string;
@@ -182,7 +181,8 @@ interface UserBasicInfo {
     walletAddress: string;
 }
 
-interface CallInfo {
+interface CallInfoPopulated {
+    callId: string;
     type: string;
     status: 'created' | 'live' | 'ended';
     startTime?: Date;
@@ -194,13 +194,15 @@ interface CallInfo {
 
 interface PopulatedTip {
     _id: Types.ObjectId;
-    callId: CallInfo;
+    callId: string;  // The string callId
+    call: CallInfoPopulated;  // The populated call information
     fromUserId: UserBasicInfo;
     toUserId: UserBasicInfo;
     amount: string;
     timestamp: Date;
     status: 'pending' | 'completed' | 'failed';
     currency: string;
+    transactionHash?: string;
 }
 
 interface TipSummary {
@@ -223,7 +225,7 @@ type TipQueryFilter = {
 
 export {
     UserBasicInfo,
-    CallInfo,
+    CallInfoPopulated,
     PopulatedTip,
     TipSummary,
     TipsWithSummary,

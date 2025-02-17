@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // services/tip.service.ts
 import { User } from '../models/Mongodb/user.model';
 import { Tip, ITip } from '../models/Mongodb/tip.model';
 import { Types } from 'mongoose';
-import { TipsWithSummary, PopulatedTip } from '../utils/interface';
+import { PopulatedTip, TipSummary, TipsWithSummary, UserBasicInfo } from '../utils/interface';
+import { ICall } from 'models/Mongodb/call.model';
 
 export class TipService {
     static async createTip(
@@ -61,7 +63,27 @@ export class TipService {
     ): Promise<TipsWithSummary> {
         try {
             const user = await User.findOne({ walletAddress: walletAddress.toLowerCase() })
-                .populate({
+                .populate<{
+                    _id: Types.ObjectId;
+                    sentTips: Array<
+                        Omit<ITip, 'fromUserId' | 'toUserId' | 'call'> & {
+                            fromUserId: UserBasicInfo;
+                            toUserId: UserBasicInfo;
+                            call: Omit<ICall, 'createdById'> & {
+                                createdById: UserBasicInfo;
+                            };
+                        }
+                    >;
+                    receivedTips: Array<
+                        Omit<ITip, 'fromUserId' | 'toUserId' | 'call'> & {
+                            fromUserId: UserBasicInfo;
+                            toUserId: UserBasicInfo;
+                            call: Omit<ICall, 'createdById'> & {
+                                createdById: UserBasicInfo;
+                            };
+                        }
+                    >;
+                }>({
                     path: filter === 'sent' ? 'sentTips' :
                         filter === 'received' ? 'receivedTips' :
                             'sentTips receivedTips',
@@ -75,9 +97,9 @@ export class TipService {
                             select: 'username displayImage walletAddress',
                         },
                         {
-                            path: 'callId',
+                            path: 'call',
                             model: 'Call',
-                            select: 'type status startTime endTime duration custom createdById',
+                            select: 'callId type status startTime endTime duration custom createdById',
                             populate: {
                                 path: 'createdById',
                                 model: 'User',
@@ -86,7 +108,7 @@ export class TipService {
                         },
                     ],
                 });
-
+            
             if (!user) {
                 throw new Error('User not found');
             }
@@ -96,8 +118,8 @@ export class TipService {
                 filter === 'received' ? user.receivedTips || [] :
                     [...(user.sentTips || []), ...(user.receivedTips || [])];
 
-            const summary = tips.reduce((acc, tip) => {
-                const isSender = tip.fromUserId._id.toString() === user.id.toString();
+            const summary: TipSummary = tips.reduce((acc: TipSummary, tip) => {
+                const isSender = tip.fromUserId._id.toString() === user._id.toString();
                 const amount = parseFloat(tip.amount);
 
                 if (isSender) {
@@ -117,7 +139,7 @@ export class TipService {
             });
 
             return {
-                tips: tips as unknown as PopulatedTip[],
+                tips: tips as PopulatedTip[],
                 summary,
             };
         } catch (error) {

@@ -92,34 +92,36 @@ export interface GetUserTipHistoryArgs {
 }
 
 
-interface UserBasicInfo {
-    id: string;
-    username: string;
-    displayImage?: string;
-    walletAddress: string;
-}
-
-interface CallInfo {
+export interface CallInfo {
     _id: string;
+    callId: string;
     type: string;
     status: 'created' | 'live' | 'ended';
-    startTime?: string;
-    endTime?: string;
+    startTime?: Date;
+    endTime?: Date;
     duration?: number;
     custom?: Record<string, unknown>;
     createdById: UserBasicInfo;
 }
 
-export interface Tip {
+export interface UserBasicInfo {
     _id: string;
-    callId: CallInfo;
+    username: string;
+    displayImage?: string;
+    walletAddress: string;
+}
+
+export interface Tip {
+    sessionId: string;
+    _id: string;
+    callId: string;
     fromUserId: UserBasicInfo;
     toUserId: UserBasicInfo;
     amount: string;
     timestamp: Date;
     status: 'pending' | 'completed' | 'failed';
     currency: string;
-    transactionHash?: string;
+    transactionHash: string | null;
 }
 
 export interface TipSummary {

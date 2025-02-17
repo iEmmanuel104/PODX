@@ -1,7 +1,7 @@
 // app/pod/(simple)/activity/page.tsx
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Select,
@@ -10,15 +10,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import {
-    ArrowUpRight,
-    ArrowLeft,
-    Eye,
-    EyeOff,
-    LinkIcon,
-    Wallet,
-    Loader2,
-} from 'lucide-react';
+import { ArrowUpRight, ArrowLeft, Eye, EyeOff, LinkIcon, Wallet, Loader2 } from 'lucide-react';
 import { useTypedSelector } from '@/store/config/store';
 import { useGetUserCallsQuery, useGetUserTipHistoryQuery } from '@/store/user/slice';
 import { useRouter } from 'next/navigation';
@@ -38,81 +30,122 @@ import { USDC_CONTRACT_ADDRESS, USDC_DECIMALS } from '@/hooks/useTipping';
 export default function Page() {
     const [activeTab, setActiveTab] = useState<TabType>('history');
     const [isBalanceHidden, setIsBalanceHidden] = useState(false);
-    const [tokenGatingSwitch] = useState(true);
-
+    const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
     const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
-    const { sendTransaction } = useSendTransaction();
 
-    const handleWithdraw = async (address: string, amount: string, currency: 'ETH' | 'USDC') => {
-        if (currency === 'ETH') {
-            // Withdraw ETH
-            const parsedAmount = parseEther(amount);
-            await sendTransaction({
-                to: address,
-                value: parsedAmount,
-                chainId: 8453, // Base Mainnet
-            });
-        } else if (currency === 'USDC') {
-            // Withdraw USDC
-            const parsedAmount = parseUnits(amount, USDC_DECIMALS); // Parse USDC amount with 6 decimals
-
-            // Encode the USDC transfer function call
-            const data = new ethers.Interface(erc20Abi).encodeFunctionData('transfer', [
-                address,
-                parsedAmount,
-            ]);
-
-            // Send the transaction
-            await sendTransaction({
-                to: USDC_CONTRACT_ADDRESS,
-                data,
-                chainId: 8453, // Base Mainnet
-            });
-        }
-    };
-
-    // Get user info from auth hook
+    // Auth and wallet state
     const { user } = useTypedSelector(state => state.auth);
     const isPrivyWallet = user?.walletType === 'privy';
     const { getActiveWalletAddress } = useWalletOperations();
+    const { sendTransaction } = useSendTransaction();
 
-    // Only get wallet address if it's a Privy wallet
+    // Get wallet address for Privy wallets
     const activeWalletAddress = useMemo(
         () => (isPrivyWallet ? getActiveWalletAddress() : undefined),
         [isPrivyWallet, getActiveWalletAddress]
     );
 
-    // Balance fetching
+    // Query configuration
+    const queryConfig = useMemo(
+        () => ({
+            refetchOnMountOrArgChange: true,
+            refetchOnReconnect: true,
+            refetchOnFocus: true,
+        }),
+        []
+    );
+
+    // Fetch data with optimized queries
+    const {
+        data: userCallsData,
+        isLoading: isLoadingCalls,
+        refetch: refetchCalls,
+    } = useGetUserCallsQuery({ filter: undefined }, queryConfig);
+
+    const {
+        data: tipHistoryData,
+        isLoading: isLoadingTips,
+        refetch: refetchTips,
+    } = useGetUserTipHistoryQuery(undefined, queryConfig);
+
+    // Fetch balance
     const { data: balance, isLoading: isLoadingBalance } = useBalance({
         address: activeWalletAddress as `0x${string}`,
+        // enabled: isPrivyWallet,
     });
 
+    // Effect to trigger initial data load
+    useEffect(() => {
+        if (user?.id) {
+            refetchCalls();
+            refetchTips();
+        }
+    }, [user?.id, refetchCalls, refetchTips]);
+
+    // Memoized data processing
     const displayBalance = useMemo(() => {
         if (!balance) return '0.0000';
-        const formattedBalance = Number(balance.value) / 1e18;
-        return formattedBalance.toFixed(4);
+        return (Number(balance.value) / 1e18).toFixed(4);
     }, [balance]);
 
     const usdValue = useMemo(() => {
         if (!balance) return '0.00';
-        const ethPrice = 3000;
-        const formattedBalance = Number(balance.value) / 1e18;
-        return (formattedBalance * ethPrice).toFixed(2);
+        const ethPrice = 3000; // Consider fetching this from an API
+        return ((Number(balance.value) / 1e18) * ethPrice).toFixed(2);
     }, [balance]);
 
-    // Fetch user calls data
-    const { data: userCallsData, isLoading: isLoadingCalls } = useGetUserCallsQuery(
-        { filter: undefined },
-        { skip: !tokenGatingSwitch }
-    );
+    // Sort and process data
+    const sortedData = useMemo(() => {
+        const data =
+            activeTab === 'history'
+                ? userCallsData?.data?.calls || []
+                : tipHistoryData?.data?.tips || [];
 
-    // fetch user tip history
-    const { data: tipHistoryData, isLoading: isLoadingTips } = useGetUserTipHistoryQuery(
-        undefined,
-        { skip: !tokenGatingSwitch }
-    );
+        const isCall = (item: Call | Tip): item is Call =>
+            'startTime' in item && !('timestamp' in item);
+
+        return [...data].sort((a, b) => {
+            const dateA = new Date(isCall(a) ? (a.startTime ?? '') : (a.timestamp ?? ''));
+            const dateB = new Date(isCall(b) ? (b.startTime ?? '') : (b.timestamp ?? ''));
+            return sortOrder === 'newest'
+                ? dateB.getTime() - dateA.getTime()
+                : dateA.getTime() - dateB.getTime();
+        });
+    }, [activeTab, userCallsData, tipHistoryData, sortOrder]);
+
+    // Withdraw handler
+    const handleWithdraw = async (address: string, amount: string, currency: 'ETH' | 'USDC') => {
+        try {
+            if (currency === 'ETH') {
+                await sendTransaction({
+                    to: address,
+                    value: parseEther(amount),
+                    chainId: 8453,
+                });
+            } else if (currency === 'USDC') {
+                const parsedAmount = parseUnits(amount, USDC_DECIMALS);
+                const data = new ethers.Interface(erc20Abi).encodeFunctionData('transfer', [
+                    address,
+                    parsedAmount,
+                ]);
+                await sendTransaction({
+                    to: USDC_CONTRACT_ADDRESS,
+                    data,
+                    chainId: 8453,
+                });
+            }
+        } catch (error) {
+            console.error('Withdrawal failed:', error);
+            // Add error handling here
+        }
+    };
 
     const router = useRouter();
+
+    // Loading state
+    const isLoading =
+        (activeTab === 'history' ? isLoadingCalls : isLoadingTips) ||
+        (isPrivyWallet && isLoadingBalance);
 
     const sessions = userCallsData?.data?.calls || [];
     const tips = tipHistoryData?.data?.tips || [];
@@ -328,10 +361,11 @@ export default function Page() {
                         <Button
                             key={tab}
                             variant="ghost"
-                            className={`rounded-full px-4 py-2 text-sm ${activeTab === tab
-                                ? 'bg-[#DDB958] text-black'
-                                : 'text-white/60 hover:text-white hover:bg-white/5'
-                                }`}
+                            className={`rounded-full px-4 py-2 text-sm ${
+                                activeTab === tab
+                                    ? 'bg-[#DDB958] text-black'
+                                    : 'text-white/60 hover:text-white hover:bg-white/5'
+                            }`}
                             onClick={() => setActiveTab(tab)}
                         >
                             {tab === 'history' ? 'Session history' : 'Tip history'}
@@ -445,9 +479,7 @@ export default function Page() {
                                                             <td className="p-4">
                                                                 <div className="text-white/60 flex items-center gap-1">
                                                                     <LinkIcon className="h-3 w-3" />
-                                                                    {typeof item.callId === 'string'
-                                                                        ? item.callId
-                                                                        : item.callId._id}
+                                                                    {item.callId}{' '}
                                                                 </div>
                                                             </td>
                                                             <td className="p-4">
@@ -461,13 +493,14 @@ export default function Page() {
                                                             </td>
                                                             <td className="p-4">
                                                                 <span
-                                                                    className={`px-2 py-1 rounded-full ${item.status === 'completed'
-                                                                        ? 'bg-green-500/20 text-green-400'
-                                                                        : item.status ===
-                                                                            'pending'
-                                                                            ? 'bg-yellow-500/20 text-yellow-400'
-                                                                            : 'bg-red-500/20 text-red-400'
-                                                                        }`}
+                                                                    className={`px-2 py-1 rounded-full ${
+                                                                        item.status === 'completed'
+                                                                            ? 'bg-green-500/20 text-green-400'
+                                                                            : item.status ===
+                                                                                'pending'
+                                                                              ? 'bg-yellow-500/20 text-yellow-400'
+                                                                              : 'bg-red-500/20 text-red-400'
+                                                                    }`}
                                                                 >
                                                                     {item.status}
                                                                 </span>
@@ -503,10 +536,11 @@ export default function Page() {
                                 {(activeTab === 'history' ? sessions : tips).map(item => (
                                     <SessionCard
                                         key={item._id}
-                                        session={{
-                                            ...item,
-                                            userId: user?.id, // Add user ID for comparison
-                                        }}
+                                        session={
+                                            activeTab === 'history'
+                                                ? { ...(item as Call), userId: user?.id }
+                                                : { ...(item as Tip), userId: user?.id }
+                                        }
                                         type={activeTab}
                                     />
                                 ))}

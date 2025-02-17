@@ -2,7 +2,8 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface ITip extends Document {
-    callId: Types.ObjectId;
+    callId: string;  // Changed to string to match Call model
+    call: Types.ObjectId;  // Added to reference Call document
     sessionId?: string;
     fromUserId: Types.ObjectId;
     toUserId: Types.ObjectId;
@@ -14,7 +15,8 @@ export interface ITip extends Document {
 }
 
 const TipSchema = new Schema({
-    callId: { type: Schema.Types.ObjectId, ref: 'Call', required: true },
+    callId: { type: String, required: true },  // String field for the callId
+    call: { type: Schema.Types.ObjectId, ref: 'Call', required: true },  // Reference to Call document
     sessionId: { type: String },
     fromUserId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     toUserId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
@@ -31,8 +33,9 @@ const TipSchema = new Schema({
     timestamps: true,
 });
 
-// Indexes for efficient querying
+// Updated indexes
 TipSchema.index({ callId: 1 });
+TipSchema.index({ call: 1 });
 TipSchema.index({ fromUserId: 1 });
 TipSchema.index({ toUserId: 1 });
 TipSchema.index({ timestamp: 1 });
