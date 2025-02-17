@@ -78,16 +78,15 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
             });
 
             console.log({ tipExternal: hash });
-
             toast.success('Tip sent successfully!', { id: notification });
-            return hash;
+
+            return { hash }; // Return transaction hash
 
         } catch (error) {
             console.error('Error sending ETH:', error);
             let errorMessage = 'Failed to send tip. Please try again.';
 
             if (error instanceof Error) {
-                // Handle specific error cases
                 if (error.message.includes('insufficient funds')) {
                     errorMessage = 'Insufficient funds to send tip';
                 } else if (error.message.includes('user rejected')) {
@@ -96,7 +95,7 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
             }
 
             toast.error(errorMessage, { id: notification });
-            throw error; // Re-throw to be caught by handleTip
+            throw error;
         }
     };
 
@@ -128,10 +127,8 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
                 chainId: 8453
             });
 
-            console.log({ tipExternal: hash });
-
             toast.success('USDC tip sent successfully!', { id: notification });
-            return hash;
+            return { hash };
 
         } catch (error) {
             console.error('Error sending USDC:', error);
@@ -157,15 +154,16 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
             if (!isAddress(recipient)) throw new Error('Invalid recipient address');
             const parsedAmount = parseEther(amount.toString());
 
-            const tipEmbedded = await sendTransactionEmbedded({
+            const response = await sendTransactionEmbedded({
                 chainId: 8453,
                 to: recipient,
                 value: parsedAmount,
                 gasLimit: 21000,
             });
 
-            console.log({ tipEmbedded });
             toast.success('tip successful', { id: notification });
+            return { hash: response.transactionHash };
+
         } catch (error) {
             console.error('Error sending ETH:', error);
             toast.error('Failed to send tip. Please try again.', { id: notification });
@@ -185,47 +183,47 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
                 parsedAmount,
             ]);
 
-            const tipEmbedded = await sendTransactionEmbedded({
+            const response = await sendTransactionEmbedded({
                 chainId: 8453,
                 to: USDC_CONTRACT_ADDRESS,
                 data,
-                gasLimit: 100000, // Adjust gas limit for contract interactions
+                gasLimit: 100000,
             });
 
-            console.log({ tipEmbedded });
             toast.success('USDC tip successful', { id: notification });
+            return { hash: response.transactionHash };
         } catch (error) {
             console.error('Error sending USDC:', error);
             toast.error('Failed to send USDC tip. Please try again.', { id: notification });
         }
     };
 
-    const sendETH = async (recipient: string, amount: string) => {
-        if (isEmbeddedWallet) {
-            await sendETHEmbedded(recipient, amount);
-        } else {
-            await sendETHExternal(recipient, amount);
-        }
-    };
+    const sendTip = async (recipient: string, amount: string): Promise<string> => {
+        let transactionHash = '';
 
-    const sendTip = async (recipient: string, amount: string) => {
         if (state.selectedCurrency === 'ETH') {
             if (isEmbeddedWallet) {
-                await sendETHEmbedded(recipient, amount);
+                const response = await sendETHEmbedded(recipient, amount);
+                transactionHash = response?.hash || '';
             } else {
-                await sendETHExternal(recipient, amount);
+                const response = await sendETHExternal(recipient, amount);
+                transactionHash = response?.hash || '';
             }
         } else if (state.selectedCurrency === 'USDC') {
             if (isEmbeddedWallet) {
-                await sendUSDCEmbedded(recipient, amount);
+                const response = await sendUSDCEmbedded(recipient, amount);
+                transactionHash = response?.hash || '';
             } else {
-                await sendUSDCExternal(recipient, amount);
+                const response = await sendUSDCExternal(recipient, amount);
+                transactionHash = response?.hash || '';
             }
         }
+
+        return transactionHash;
     };
 
     const sendTipEvent = useCallback(
-        async (recipient: MemberResponse, amount: string) => {
+        async (recipient: MemberResponse, amount: string, transactionHash: string) => {
             if (!call) return;
 
             await call.sendCustomEvent({
@@ -239,12 +237,12 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
                     name: recipient.user.name,
                 },
                 amount: amount,
-                transactionHash: null,
-                currency: state.selectedCurrency,  // Use selected currency
+                transactionHash,
+                currency: state.selectedCurrency,
                 timestamp: new Date().toISOString(),
             });
         },
-        [call, connectedUser, state.selectedCurrency]  // Add selectedCurrency to dependencies
+        [call, connectedUser, state.selectedCurrency]
     );
 
     const handleTip = async () => {
@@ -266,8 +264,8 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
                 return;
             }
 
-            // Use the new sendTip function
-            await sendTip(walletAddress, state.tipAmount);
+            // Get transaction hash from sendTip
+            const transactionHash = await sendTip(walletAddress, state.tipAmount);
 
             setState(prev => ({
                 ...prev,
@@ -275,7 +273,8 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
                 showTipSuccess: true
             }));
 
-            await sendTipEvent(state.selectedTipRecipient, state.tipAmount);
+            // Send tip event with transaction hash
+            await sendTipEvent(state.selectedTipRecipient, state.tipAmount, transactionHash);
 
             setTimeout(() => {
                 setState(prev => ({ ...prev, showTipSuccess: false }));
