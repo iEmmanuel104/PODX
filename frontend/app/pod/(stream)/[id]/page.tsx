@@ -114,10 +114,6 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const formattedBalance = balance ? Number(balance.value) / 1e18 : 0;
     const displayBalance = formattedBalance.toFixed(4);
 
-    const toggleParticipants = () => {
-        setShowParticipants(!showParticipants);
-    };
-
     const isSpeakerLayout = useMemo(() => {
         if (participantInSpotlight) {
             return hasScreenShare(participantInSpotlight) || isPinned(participantInSpotlight);
@@ -199,6 +195,10 @@ export default function MeetingInterface({ params }: MeetingProps) {
         }
     }, [call, screenShare]);
 
+    const toggleParticipants = () => {
+        setShowParticipants(!showParticipants);
+    };
+
     const confirmLeave = async () => {
         router.push('/pod');
     };
@@ -241,7 +241,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
     return (
         <StreamTheme className="root-theme">
-            <div className="h-screen bg-[#151515] text-white flex flex-col w-[95%] mx-auto">
+            <div className="h-screen bg-black text-white flex flex-col w-[95%] mx-auto">
                 <Header
                     userInfo={user}
                     withdrawFunds={isEmbeddedWallet}
@@ -282,6 +282,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                             openTipModal={openTipModal}
                             updateParticipantRole={updateParticipantRole}
                             handleJoinRequest={handleJoinRequest}
+                            onClose={toggleParticipants}
                         />
                     </div>
                 </div>

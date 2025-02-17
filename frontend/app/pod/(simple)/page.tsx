@@ -230,7 +230,7 @@ export default function PodPage() {
     }
 
     return (
-        <div className="flex flex-col justify-center items-center min-h-screen w-full px-4 sm:px-6 py-4 sm:py-8">
+        <div className="flex flex-col justify-center items-center max-h-screen w-full px-4 sm:px-6 py-4 sm:py-8">
             {/* Main Content Container */}
             <div className="w-full max-w-[720px] mx-auto flex flex-col gap-6 sm:gap-8">
                 {/* Main Cards Section */}
@@ -305,7 +305,7 @@ export default function PodPage() {
 
                         <Button
                             onClick={() => setState(prev => ({ ...prev, isCreateModalOpen: true }))}
-                            className="mt-4 sm:mt-6 bg-[#DDB958] text-black font-semibold py-2.5 px-6 rounded-[10px] w-fit"
+                            className="mt-4 sm:mt-6 bg-[#DDB958] hover:bg-[#DDB958]/80 text-black font-semibold py-2.5 px-6 rounded-[10px] w-fit"
                         >
                             Create Session
                         </Button>
