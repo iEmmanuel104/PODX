@@ -412,7 +412,8 @@ const ParticipantItem = memo<ParticipantItemProps>(
 );
 
 // Main Component
-const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
+// Update the ParticipantsSidebar component
+const ParticipantsSidebar = memo<ParticipantsSidebarProps & { onClose: () => void }>(
     ({
         members,
         participants,
@@ -420,6 +421,7 @@ const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
         openTipModal,
         updateParticipantRole,
         handleJoinRequest,
+        onClose, // Add onClose prop
     }) => {
         const [searchQuery, setSearchQuery] = useState('');
 
@@ -431,7 +433,7 @@ const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
         }, [participants]);
 
         const filteredActiveParticipants = useMemo(() => {
-            if (!searchQuery) return activeParticipants; // If no search query, return all active participants
+            if (!searchQuery) return activeParticipants;
             return activeParticipants.filter(participant =>
                 (participant.name || participant.userId)
                     .toLowerCase()
@@ -441,28 +443,35 @@ const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
 
         return (
             <div className="flex flex-col h-full bg-[#1C1C1C] p-4 rounded-[20px]">
+                {/* Add a close button next to the title */}
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-white text-lg font-medium">Participants</h2>
+                    <div className="flex items-center">
+                        <button
+                            onClick={onClose}
+                            className="mr-2 text-gray-400 hover:text-white transition-colors"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                        <h2 className="text-white text-lg font-medium">Participants</h2>
+                    </div>
                     <span className="text-sm bg-[#6032F6] text-white px-2 py-1 rounded-full">
                         {activeParticipants.length}/50
                     </span>
                 </div>
 
                 <div className="relative mb-4">
-                    {/* Gradient Border Wrapper */}
                     <div className="rounded-lg p-[1px] bg-gradient-to-r from-[#6032F6] to-[#F5A524]">
-                        {/* Input Field */}
                         <input
                             type="text"
                             placeholder="Search for participant"
-                            value={searchQuery} // Bind searchQuery state
-                            onChange={e => setSearchQuery(e.target.value)} // Update searchQuery on change
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
                             className="w-full bg-[#2C2C2C] text-white text-sm rounded-lg px-4 py-2.5 
                        focus:outline-none focus:border-transparent"
                         />
                     </div>
                 </div>
-                {/* Participants List */}
+
                 <div className="flex-1 overflow-y-auto space-y-4">
                     {pendingParticipants.length > 0 && (
                         <PendingParticipantsList
@@ -470,11 +479,9 @@ const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
                             onJoinRequest={handleJoinRequest}
                         />
                     )}
-                    {/* Use activeParticipants instead of sortedParticipants */}
                     {filteredActiveParticipants.map(participant => {
-                        // Find matching member record
                         const member = members.find(m => m.user.id === participant.userId);
-                        if (!member) return null; // Skip if no matching member found
+                        if (!member) return null;
 
                         return (
                             <ParticipantItem
@@ -489,7 +496,6 @@ const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
                     })}
                 </div>
 
-                {/* Fixed Bottom Section */}
                 {SessionNotification()}
             </div>
         );

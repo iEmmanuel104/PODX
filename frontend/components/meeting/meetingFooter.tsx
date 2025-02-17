@@ -28,7 +28,7 @@ const MeetingFooter = memo<MeetingFooterProps>(({ leaveCall, toggleScreenShare, 
                     {!isAudioSession && <ToggleVideoButton />}
 
                     {/* Replace Mood button with ReactionButton */}
-                    <div className="hidden sm:flex bg-[#6032F6] hover:[#6032F6] h-14 w-14 rounded-full items-center justify-center hover:cursor-pointer">
+                    <div className="flex bg-[#6032F6] hover:[#6032F6] h-14 w-14 rounded-full items-center justify-center hover:cursor-pointer">
                         <ReactionIcon />
                     </div>
 

@@ -114,10 +114,6 @@ export default function MeetingInterface({ params }: MeetingProps) {
     const formattedBalance = balance ? Number(balance.value) / 1e18 : 0;
     const displayBalance = formattedBalance.toFixed(4);
 
-    const toggleParticipants = () => {
-        setShowParticipants(!showParticipants);
-    };
-
     const isSpeakerLayout = useMemo(() => {
         if (participantInSpotlight) {
             return hasScreenShare(participantInSpotlight) || isPinned(participantInSpotlight);
@@ -198,6 +194,10 @@ export default function MeetingInterface({ params }: MeetingProps) {
             console.error('Error toggling screen share:', error);
         }
     }, [call, screenShare]);
+
+    const toggleParticipants = () => {
+        setShowParticipants(!showParticipants);
+    };
 
     const confirmLeave = async () => {
         router.push('/pod');
@@ -282,6 +282,7 @@ export default function MeetingInterface({ params }: MeetingProps) {
                             openTipModal={openTipModal}
                             updateParticipantRole={updateParticipantRole}
                             handleJoinRequest={handleJoinRequest}
+                            onClose={toggleParticipants}
                         />
                     </div>
                 </div>
