@@ -3,9 +3,6 @@ import clsx from 'clsx';
 
 import CallControlButton from './callControlButton';
 import ToggleButtonContainer from './toggleButtonContainer';
-import Videocam from '../icons/Videocam';
-import VideocamOff from '../icons/VideocamOff';
-import VisualEffects from '../icons/VisualEffects';
 import { VideoInputDeviceSelector } from './deviceSelector';
 import VideoCall from '@/public/images/icons/VideoCall';
 import VideoCallMuted from '@/public/images/icons/VideoCallMuted';
@@ -42,9 +39,11 @@ const ToggleVideoButton = () => {
             <CallControlButton
                 icon={
                     isCameraMute ? (
-                        <VideoCall />
+                        <div className='bg-red-500 rounded-full p-2.5'>
+                            <VideoCallMuted />
+                        </div>
                     ) : (
-                        <VideoCallMuted />
+                        <VideoCall />
                     )
                 }
                 title={isCameraMute ? 'Turn on camera' : 'Turn off camera'}

@@ -43,9 +43,11 @@ const ToggleAudioButton = () => {
             <CallControlButton
                 icon={
                     isMicrophoneMute ? (
-                        <Mic />
+                        <div className='bg-red-500 rounded-full p-2.5'>
+                            <MicMuted />
+                        </div>
                     ) : (
-                        <MicMuted />
+                        <Mic />
                     )
                 }
                 title={isMicrophoneMute ? 'Turn on microphone' : 'Turn off microphone'}
