@@ -243,10 +243,10 @@ export default function Page() {
                         <span className="text-sm text-white/60">Sort by:</span>
                         <div className="bg-white/5 rounded-lg px-3 py-1.5">
                             <Select defaultValue="newest">
-                                <SelectTrigger className="w-[160px] bg-transparent border-0 p-0 h-auto focus:ring-0">
+                                <SelectTrigger className="w-[160px] bg-transparent border-0 p-1 h-auto focus:ring-0">
                                     <SelectValue placeholder="Sort by" />
                                 </SelectTrigger>
-                                <SelectContent className="bg-[#1E1E1E] border-white/10">
+                                <SelectContent className="bg-[#1E1E1E] text-white border-white/10">
                                     <SelectItem value="newest">
                                         Newest {activeTab === 'history' ? 'session' : 'tip'}
                                     </SelectItem>
@@ -340,7 +340,6 @@ export default function Page() {
                 </div>
             </div>
 
-            {/* Table Section */}
             <div className="w-full rounded-lg border border-white/10 overflow-hidden">
                 {(activeTab === 'history' ? isLoadingCalls : isLoadingTips) ? (
                     <div className="flex items-center justify-center p-8">
@@ -378,12 +377,11 @@ export default function Page() {
                                 </thead>
                             </table>
 
-                            {/* Scrollable Body */}
-                            <div className="overflow-y-auto max-h-[460px]">
+                             {/* Table Section */}
+                            <div className="overflow-y-auto max-h-[460px] custom-scrollbar">
                                 <table className="w-full">
                                     <tbody className="divide-y divide-white/10">
                                         {(activeTab === 'history' ? sessions : tips).map(item => {
-                                            // Type guard to check if item is a Call or Tip
                                             const isCall = (item: Call | Tip): item is Call =>
                                                 'startTime' in item && !('timestamp' in item);
 
@@ -402,14 +400,10 @@ export default function Page() {
                                                         <>
                                                             <td className="p-4">
                                                                 <div>{date}</div>
-                                                                <div className="text-white/60">
-                                                                    {time}
-                                                                </div>
+                                                                <div className="text-white/60">{time}</div>
                                                             </td>
                                                             <td className="p-4">
-                                                                <div>
-                                                                    {item.custom?.title as string}
-                                                                </div>
+                                                                <div>{item.custom?.title as string}</div>
                                                                 <div className="text-white/60 flex items-center gap-1">
                                                                     <LinkIcon className="h-3 w-3" />
                                                                     {item.callId}
@@ -417,8 +411,7 @@ export default function Page() {
                                                             </td>
                                                             <td className="p-4">
                                                                 <span className="px-2 py-1 rounded-full bg-white/10">
-                                                                    {(item.custom
-                                                                        ?.type as string) || '-'}
+                                                                    {(item.custom?.type as string) || '-'}
                                                                 </span>
                                                             </td>
                                                             <td className="p-4">
@@ -428,9 +421,7 @@ export default function Page() {
                                                                 {item.poa ? (
                                                                     <POADialog poa={item.poa} />
                                                                 ) : (
-                                                                    <span className="text-white/60">
-                                                                        -
-                                                                    </span>
+                                                                    <span className="text-white/60">-</span>
                                                                 )}
                                                             </td>
                                                         </>
@@ -438,9 +429,7 @@ export default function Page() {
                                                         <>
                                                             <td className="p-4">
                                                                 <div>{date}</div>
-                                                                <div className="text-white/60">
-                                                                    {time}
-                                                                </div>
+                                                                <div className="text-white/60">{time}</div>
                                                             </td>
                                                             <td className="p-4">
                                                                 <div className="text-white/60 flex items-center gap-1">
@@ -450,23 +439,18 @@ export default function Page() {
                                                                         : item.callId._id}
                                                                 </div>
                                                             </td>
-                                                            <td className="p-4">
-                                                                {item.fromUserId.username}
-                                                            </td>
-                                                            <td className="p-4">
-                                                                {item.toUserId.username}
-                                                            </td>
+                                                            <td className="p-4">{item.fromUserId.username}</td>
+                                                            <td className="p-4">{item.toUserId.username}</td>
                                                             <td className="p-4">
                                                                 {item.amount} {item.currency}
                                                             </td>
                                                             <td className="p-4">
                                                                 <span
                                                                     className={`px-2 py-1 rounded-full ${item.status === 'completed'
-                                                                        ? 'bg-green-500/20 text-green-400'
-                                                                        : item.status ===
-                                                                            'pending'
-                                                                            ? 'bg-yellow-500/20 text-yellow-400'
-                                                                            : 'bg-red-500/20 text-red-400'
+                                                                            ? 'bg-green-500/20 text-green-400'
+                                                                            : item.status === 'pending'
+                                                                                ? 'bg-yellow-500/20 text-yellow-400'
+                                                                                : 'bg-red-500/20 text-red-400'
                                                                         }`}
                                                                 >
                                                                     {item.status}
@@ -497,8 +481,9 @@ export default function Page() {
                                 </table>
                             </div>
                         </div>
+
                         {/* Mobile View - Card Layout */}
-                        <div className="md:hidden max-h-[460px] overflow-y-auto">
+                        <div className="md:hidden max-h-[460px] overflow-y-auto custom-scrollbar">
                             <div className="p-4 space-y-4">
                                 {(activeTab === 'history' ? sessions : tips).map(item => (
                                     <SessionCard
