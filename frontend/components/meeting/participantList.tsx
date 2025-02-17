@@ -22,7 +22,6 @@ import type {
 import { Button } from '@/components/ui/button';
 import toast from 'react-hot-toast';
 import Farcaster from '@/public/icons/socials/Farcaster';
-import Instagram from '@/public/icons/socials/Instagram';
 import Twitter from '@/public/icons/socials/Twitter';
 import {
     DropdownMenu,
@@ -273,7 +272,7 @@ export const SessionNotification = () => {
                     <div className="flex items-center gap-4">
                         {/* Copy Invite Link Button */}
                         <button
-                            className="flex-1 bg-[#6032F6] hover:bg-[#4C28C4] text-white px-4 py-2.5 rounded-lg transition-colors text-sm font-medium"
+                            className="bg-[#6032F6] hover:bg-[#4C28C4] text-white px-4 py-2.5 rounded-lg transition-colors text-xs font-medium"
                             onClick={() => {
                                 navigator.clipboard.writeText(window.location.href);
                                 toast.success('Link copied to clipboard');
@@ -284,15 +283,31 @@ export const SessionNotification = () => {
 
                         {/* Social Icons */}
                         <div className="flex gap-3">
-                            <Button className="text-gray-400 hover:text-white transition-colors">
+                            {/* Farcaster Share Button */}
+                            <button
+                                className="text-gray-400 hover:text-white transition-colors"
+                                onClick={() => {
+                                    const shareUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(
+                                        `Come and join the pod session! ${window.location.href}`
+                                    )}`;
+                                    window.open(shareUrl, '_blank');
+                                }}
+                            >
                                 <Farcaster />
-                            </Button>
-                            <Button className="text-gray-400 hover:text-white transition-colors">
-                                <Instagram />
-                            </Button>
-                            <Button className="text-gray-400 hover:text-white transition-colors">
+                            </button>
+
+                            {/* Twitter Share Button */}
+                            <button
+                                className="text-gray-400 hover:text-white transition-colors"
+                                onClick={() => {
+                                    const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+                                        `Come and join the pod session! ${window.location.href}`
+                                    )}`;
+                                    window.open(shareUrl, '_blank');
+                                }}
+                            >
                                 <Twitter />
-                            </Button>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -336,10 +351,10 @@ const ParticipantItem = memo<ParticipantItemProps>(
                             {role === 'host'
                                 ? 'Session Host'
                                 : role === 'cohost'
-                                  ? 'Co-host'
-                                  : role === 'user'
-                                    ? 'User'
-                                    : 'Listener'}
+                                    ? 'Co-host'
+                                    : role === 'user'
+                                        ? 'User'
+                                        : 'Listener'}
                         </span>
                     </div>
                     <div className="flex items-center gap-2">
