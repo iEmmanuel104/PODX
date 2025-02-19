@@ -12,6 +12,7 @@
     },
     "dependencies": {
         "@coinbase/onchainkit": "^0.33.6",
+        "@google/generative-ai": "^0.21.0",
         "@gsap/react": "^2.1.2",
         "@privy-io/react-auth": "^1.88.4",
         "@radix-ui/react-avatar": "^1.1.1",

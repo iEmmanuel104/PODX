@@ -29,6 +29,7 @@ import VideoIcon from '@/public/icons/VideoIcon';
 import { useGetUserCallsQuery } from '@/store/user/slice';
 import { SessionFormState, Session } from '@/types';
 import { CallMember } from '@/store/user/types';
+import TokenGatingTooltip from './token-gating-tooltip';
 
 interface CreateSessionModalProps {
     isOpen: boolean;
@@ -60,31 +61,28 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
     const [isCreating, setIsCreating] = useState(false);
     const [timeError, setTimeError] = useState('');
     const [isSelectingSession, setIsSelectingSession] = useState(false);
+    const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
     const { data: userCallsData, isLoading: isLoadingCalls } = useGetUserCallsQuery(
-        { filter: 'tokengate' }, // or { filter: 'creator' } if you only want created calls
+        { filter: 'tokengate' },
         {
-            skip: !tokenGatingSwitch, // Only fetch when token gating is enabled
+            skip: !tokenGatingSwitch,
         }
     );
 
     const handleSessionSelectionChange = (sessions: Session[]) => {
         if (!userCallsData?.data?.calls) return;
 
-        // Get the selected call data from userCallsData
         const selectedCallsData = userCallsData.data.calls.filter(call =>
             sessions.some(session => session.id === call.callId)
         );
 
-        // Extract unique wallet addresses from all members of selected calls
         const allMemberAddresses = selectedCallsData.flatMap(call =>
             (call.members as CallMember[]).map(member => member.userId.id.toLowerCase())
         );
 
-        // Create a unique list of wallet addresses
         const uniqueAddresses = Array.from(new Set(allMemberAddresses));
 
-        // Update state with unique addresses
         setWhitelistedAddresses(uniqueAddresses);
     };
 
@@ -127,7 +125,6 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                 scheduledDate.setHours(hours, minutes, 0, 0);
             }
 
-            // Pass the whitelisted addresses only if token gating is enabled
             const addresses = tokenGatingSwitch ? whitelistedAddresses : undefined;
 
             await onCreateSession(formState.title, formState.type, scheduledDate, addresses);
@@ -165,7 +162,6 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                 overflow-hidden max-h-[90vh] border border-white/[0.1]
             `}
             >
-                {/* Background gradient - moved behind content */}
                 <div className="absolute inset-0 pointer-events-none">
                     <div className="absolute inset-0 bg-gradient-to-br from-white/[0.1] via-transparent to-transparent" />
                 </div>
@@ -213,7 +209,6 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                 </div>
 
                 <div className="space-y-6">
-                    {/* Session Title Input */}
                     <div>
                         <label className="block text-[#A3A3A3] mb-2">Session title</label>
                         <Input
@@ -223,7 +218,6 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                         />
                     </div>
 
-                    {/* Session Type Select */}
                     <div>
                         <label className="block text-[#A3A3A3] mb-2">Session type</label>
                         <Select
@@ -248,13 +242,6 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                                             </div>
                                         )}
                                         <span>{formState.type}</span>
-                                        {formState.type === sessionType.AUDIO && (
-                                            <div>
-                                                <span className="bg-[#DDB958] px-[6px] py-[4px] rounded-3xl text-[10px] text-[#51431D] font-medium">
-                                                    Coming soon
-                                                </span>
-                                            </div>
-                                        )}
                                     </div>
                                 </SelectValue>
                             </SelectTrigger>
@@ -267,11 +254,6 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                                             </div>
                                         </div>
                                         <span> Audio Session</span>
-                                        <div>
-                                            <span className="bg-[#DDB958] px-[6px] py-[4px] rounded-3xl text-[10px] text-[#51431D] font-medium">
-                                                Coming soon
-                                            </span>
-                                        </div>
                                     </div>
                                 </SelectItem>
                                 <SelectItem value={sessionType.POD}>
@@ -288,12 +270,11 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                         </Select>
                     </div>
 
-                    {/* Date and Time Selection - Only shown when scheduled */}
                     {formState.isScheduled && (
                         <div>
                             <label className="block text-[#A3A3A3] mb-2">Date and time</label>
                             <div className="grid grid-cols-2 gap-4">
-                                <Popover modal>
+                                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen} modal>
                                     <PopoverTrigger asChild>
                                         <Button
                                             variant="outline"
@@ -314,6 +295,7 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                                             selected={formState.date}
                                             onSelect={date => {
                                                 updateFormState({ date });
+                                                setIsCalendarOpen(false);
                                                 setTimeError('');
                                             }}
                                             disabled={date =>
@@ -325,7 +307,6 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                                     </PopoverContent>
                                 </Popover>
 
-                                {/* New Time Picker */}
                                 <SimpleTimePicker
                                     value={formState.time || ''}
                                     onChange={newTime => {
@@ -348,42 +329,7 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                     <div className="flex items-center justify-between p-4">
                         <div className="flex items-center gap-2">
                             <span className="text-sm text-white/70">Token Gating</span>
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger>
-                                        <div className="w-4 h-4 rounded-full border border-white/20 flex items-center justify-center text-xs text-white/50 cursor-help">
-                                            !
-                                        </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent className="bg-[#2B2B2B] rounded-xl border-none min-w-[329px]">
-                                        <div className="flex items-center justify-between p-2">
-                                            <div className="flex items-center gap-2">
-                                                <Twinkle />
-                                                <span className="text-sm bg-gradient-to-br from-[#6032F6] to-[#DDB958] text-transparent bg-clip-text">
-                                                    AI Assisted
-                                                </span>
-                                            </div>
-                                            <button
-                                                type="button"
-                                                className="text-sm flex items-center gap-2 hover:cursor-pointer bg-[#444343] px-2 py-1 rounded-full"
-                                            >
-                                                <Retry />
-                                                Reexplain
-                                            </button>
-                                        </div>
-                                        <div className="p-4">
-                                            <p className="text-base font-medium text-white mb-2">
-                                                What is Token Gating
-                                            </p>
-                                            <p className="text-sm text-white/70 max-w-sm">
-                                                PodX uses Proof of Attendance NFTs to restrict
-                                                access. Attendees earn these onchain NFTs, which can
-                                                grant entry to future exclusive events
-                                            </p>
-                                        </div>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
+                            <TokenGatingTooltip />
                         </div>
                         <Button
                             className="flex bg-[#2B2B2B] p-[2px] rounded-3xl"
@@ -414,7 +360,6 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
 
                     {getWhitelistSummary()}
 
-                    {/* Conditionally render MultiSelect based on tokenGatingSwitch state */}
                     {tokenGatingSwitch &&
                         (isLoadingCalls ? (
                             <div className="flex justify-center items-center p-4">
@@ -428,7 +373,6 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                             />
                         ))}
 
-                    {/* Action Buttons */}
                     <div className="flex justify-between items-center gap-6 pt-3">
                         <Button
                             onClick={onClose}
@@ -446,7 +390,6 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                     </div>
                 </div>
 
-                {/* Session Selection View */}
                 {tokenGatingSwitch && isSelectingSession && (
                     <div className="space-y-4">
                         <div className="flex items-center justify-between mb-6">
