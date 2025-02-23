@@ -18,7 +18,7 @@ const MeetingFooter = memo<MeetingFooterProps>(({ leaveCall, toggleScreenShare, 
     const isAudioSession = customData?.type === 'Audio Session';
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 bg-[#121212]/80 backdrop-blur-sm">
+        <div className="fixed bottom-0 left-0 right-0 bg-[#121212]/80 backdrop-blur-sm z-50">
             <div className="max-w-screen-xl mx-auto px-4 py-4">
                 <div className="flex items-center justify-center gap-3 sm:gap-4">
                     {/* Audio Control */}

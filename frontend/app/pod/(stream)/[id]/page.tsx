@@ -33,6 +33,7 @@ import GridLayout from '@/components/pod/gridLayout';
 import MeetingFooter from '@/components/meeting/meetingFooter';
 import { useTypedSelector } from '@/store/config/store';
 import TipNotification from '@/components/meeting/tip-notification';
+import clsx from 'clsx';
 
 interface MeetingProps {
     params: {
@@ -245,40 +246,45 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
     return (
         <StreamTheme className="root-theme">
-            <div className="h-screen bg-black text-white flex flex-col w-[95%] mx-auto">
-                <Header
-                    userInfo={user}
-                    withdrawFunds={isEmbeddedWallet}
-                    customData={customData}
-                    live={live}
-                    userAddress={userAddress}
-                    displayBalance={displayBalance}
-                    balanceSymbol={balance?.symbol}
-                    toggleParticipants={toggleParticipants}
-                    copyAddress={copyAddress}
-                />
+            <div className="h-screen bg-[#151515] text-white flex flex-col w-[95%] mx-auto">
+                {/* Header with responsive height */}
+                <div className="h-[60px] sm:h-auto">
+                    <Header
+                        userInfo={user}
+                        withdrawFunds={isEmbeddedWallet}
+                        customData={customData}
+                        live={live}
+                        userAddress={userAddress}
+                        displayBalance={displayBalance}
+                        balanceSymbol={balance?.symbol}
+                        toggleParticipants={toggleParticipants}
+                        copyAddress={copyAddress}
+                    />
+                </div>
 
-                {/* Main content area */}
-                <div className="flex-grow flex overflow-hidden relative mb-20">
-                    <div
-                        className={`flex-1 relative ${showParticipants ? 'sm:mr-56 lg:mr-64 xl:mr-80' : ''}`}
-                    >
+                {/* Main content area with responsive margins */}
+                <div className={clsx(
+                    "flex-grow flex overflow-hidden relative",
+                    "mb-[60px] sm:mb-20" // Smaller margin on mobile
+                )}>
+                    {/* Main content area - will shrink when sidebar is open */}
+                    <div className={clsx(
+                        'flex-1 transition-all duration-300 ease-in-out',
+                        showParticipants ? 'sm:mr-[224px] lg:mr-[256px] xl:mr-[320px]' : ''
+                    )}>
                         {isSpeakerLayout && <SpeakerLayout />}
                         {!isSpeakerLayout && <GridLayout />}
                     </div>
 
                     {/* Participants sidebar */}
-                    <div
-                        className={`
-                            fixed sm:absolute right-0 top-0 h-full
-                            w-full sm:w-56 lg:w-64 xl:w-80
-                            bg-inherit
-                            transform transition-transform duration-300 ease-in-out
-                            ${showParticipants ? 'translate-x-0' : 'translate-x-full'}
-                            z-20
-                            overflow-y-auto
-                        `}
-                    >
+                    <div className={clsx(
+                        'fixed sm:absolute right-0 top-0 h-full',
+                        'w-full sm:w-56 lg:w-64 xl:w-80',
+                        'bg-[#1D1D1D]',
+                        'transform transition-transform duration-300 ease-in-out',
+                        showParticipants ? 'translate-x-0' : 'translate-x-full',
+                        'z-20 overflow-y-auto'
+                    )}>
                         <ParticipantsSidebar
                             members={members}
                             participants={participants}
@@ -291,12 +297,15 @@ export default function MeetingInterface({ params }: MeetingProps) {
                     </div>
                 </div>
 
-                {/* New Footer Component */}
-                <MeetingFooter
-                    leaveCall={leaveCall}
-                    toggleScreenShare={toggleScreenShare}
-                    customData={customData}
-                />
+                {/* Footer with responsive height */}
+                <div className="h-[60px] sm:h-auto">
+                    <MeetingFooter
+                        leaveCall={leaveCall}
+                        toggleScreenShare={toggleScreenShare}
+                        customData={customData}
+                    />
+                </div>
+                
                 {showTipModal && selectedTipRecipient && (
                     <TipModal
                         selectedTipRecipient={selectedTipRecipient}
