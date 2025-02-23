@@ -55,6 +55,18 @@ const SpeakerLayout = () => {
         return () => cleanup();
     }, [participantsBar, call]);
 
+    // Add cleanup effect
+    useEffect(() => {
+        if (!hasOngoingScreenShare && call) {
+            // When screen sharing ends, unpin any pinned participants
+            participants.forEach(participant => {
+                if (isPinned(participant) && !hasScreenShare(participant)) {
+                    call.unpin(participant.sessionId);
+                }
+            });
+        }
+    }, [hasOngoingScreenShare, call, participants]);
+
     // Special layout for screen sharing
     if (hasOngoingScreenShare && screenSharingParticipant) {
         return (

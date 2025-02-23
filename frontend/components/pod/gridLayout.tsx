@@ -1,5 +1,5 @@
 // GridLayout.tsx
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import {
     combineComparators,
     ParticipantView,
@@ -11,6 +11,7 @@ import {
     speaking,
     publishingVideo,
     publishingAudio,
+    isPinned,
 } from '@stream-io/video-react-sdk';
 import clsx from 'clsx';
 
@@ -20,9 +21,22 @@ import VideoPlaceholder from './videoPlaceholder';
 
 const GridLayout = () => {
     const call = useCall();
-    const { useParticipants } = useCallStateHooks();
+    const { useParticipants, useHasOngoingScreenShare } = useCallStateHooks();
     const participants = useParticipants();
+    const hasOngoingScreenShare = useHasOngoingScreenShare();
     const { ref } = useAnimateVideoLayout(false);
+
+    // Add effect to handle screen share cleanup
+    useEffect(() => {
+        if (!hasOngoingScreenShare && call) {
+            // Find any pinned participants
+            const pinnedParticipant = participants.find(p => isPinned(p));
+            if (pinnedParticipant && !hasScreenShare(pinnedParticipant)) {
+                // Unpin if they're not screen sharing
+                call.unpin(pinnedParticipant.sessionId);
+            }
+        }
+    }, [hasOngoingScreenShare, call, participants]);
 
     const participantComparator = useMemo(() => {
         return combineComparators(
@@ -84,7 +98,7 @@ const GridLayout = () => {
                 'grid w-full h-full gap-4',
                 layoutType === 'single' && 'grid-cols-1 grid-rows-1',
                 layoutType === 'double' && 'grid-cols-2 grid-rows-1 gap-x-14',
-                layoutType === 'triple' && 'grid-rows-2 grid-cols-2',
+                layoutType === 'triple' && 'grid-cols-2 grid-rows-2 gap-4',
                 layoutType === 'quad' && 'grid-cols-2 grid-rows-2',
                 layoutType === 'overflow' && 'grid-cols-2 grid-rows-2'
             )}>
@@ -95,7 +109,12 @@ const GridLayout = () => {
                             'relative rounded-xl overflow-hidden transition-all duration-300 ease-in-out',
                             layoutType === 'single' && 'w-full h-full',
                             layoutType === 'double' && 'w-full h-full',
-                            layoutType === 'triple' && index === 2 && 'col-span-2 row-start-2 h-[calc(50%-7px)]',
+                            layoutType === 'triple' && index === 2 && [
+                                'w-[calc(50%-8px)]',
+                                'h-full',
+                                'mx-auto',
+                                'col-span-2'
+                            ],
                             layoutType === 'overflow' && index === 3 && 'relative'
                         )}
                     >
@@ -110,9 +129,6 @@ const GridLayout = () => {
                         )}
                     </div>
                 ))}
-                {layoutType === 'triple' && sortedParticipants.length === 3 && (
-                    <div className="col-span-2 row-start-2 h-[calc(50%-7px)]" />
-                )}
             </div>
         </div>
     );
