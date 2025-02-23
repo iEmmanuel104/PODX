@@ -108,11 +108,7 @@ const ParticipantViewUI = () => {
 
     return (
         <>
-            {participant.reaction && (
-                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10">
-                    <div className="text-4xl animate-bounce">{participant.reaction.emoji_code}</div>
-                </div>
-            )}
+            {isScreenSharing && <DefaultScreenShareOverlay />}
             <ParticipantDetails />
             {hasAudioTrack && (
                 <div className="absolute top-3.5 right-3.5 w-6.5 h-6.5 flex items-center justify-center bg-primary rounded-full">
