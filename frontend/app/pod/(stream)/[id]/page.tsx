@@ -55,7 +55,11 @@ export default function MeetingInterface({ params }: MeetingProps) {
 
     const participantComparator = useMemo(() => {
         return combineComparators(
-            // Sort by role first (host -> cohost -> user -> listener)
+            // First sort by screen sharing
+            (a, b) => hasScreenShare(b) ? 1 : hasScreenShare(a) ? -1 : 0,
+            // Then by pinned status
+            (a, b) => isPinned(b) ? 1 : isPinned(a) ? -1 : 0,
+            // Then by role
             role('host', 'cohost', 'user', 'listener'),
             // Then by speaking status
             speaking,
