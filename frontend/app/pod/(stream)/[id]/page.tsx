@@ -67,6 +67,8 @@ const MeetingInterface = memo(({ params }: MeetingProps) => {
         useCallCustomData,
         useCallCallingState,
         useScreenShareState,
+        useSpeakerState,
+        useMicrophoneState,
     } = useCallStateHooks();
 
     const participantComparator = useMemo(() => {
@@ -94,6 +96,7 @@ const MeetingInterface = memo(({ params }: MeetingProps) => {
     const { screenShare } = useScreenShareState() || {};
     const connectedUser = useConnectedUser();
     const callingState = useCallCallingState();
+    const { speaker, devices } = useSpeakerState();
 
     const [showTipSuccess, setShowTipSuccess] = useState(false);
     const [showThankYouModal, setShowThankYouModal] = useState(false);
@@ -142,8 +145,14 @@ const MeetingInterface = memo(({ params }: MeetingProps) => {
     }, [participantInSpotlight]);
 
     useEffect(() => {
-        if (!call) return;
+        if (call) {
+            call.microphone.disable()
+                .then(() => console.log('Mic disabled by default'))
+                .catch(console.error);
+        }
+    }, [call]);
 
+    useEffect(() => {
         const startup = async () => {
             if (isUnkownOrIdle) {
                 router.push(`/pod/join/${id}`);
@@ -185,20 +194,17 @@ const MeetingInterface = memo(({ params }: MeetingProps) => {
     }, [call, handleCallEvent]);
 
     const handleJoinSession = useCallback(() => {
-        if (!call || !connectedUser) {
-            console.log('Call or connected user not available');
-            return;
-        }
+        if (!call || !connectedUser) return;
 
         const needsToJoin = [CallingState.IDLE, CallingState.UNKNOWN].includes(callingState);
 
         if (needsToJoin && !live) {
-            console.log('User needs to join the call, redirecting to join page');
-            router.push(`/pod/join/${id}`);
-        } else if (callingState === CallingState.JOINED) {
-            console.log('User is already in the call');
-        } else {
-            console.log(`Call is in ${callingState} state, waiting for it to complete`);
+            call.microphone.disable()
+                .then(() => {
+                    console.log('Microphone disabled before join');
+                    router.push(`/pod/join/${id}`);
+                })
+                .catch(console.error);
         }
     }, [id, callingState, call, connectedUser, router, live]);
 
@@ -297,6 +303,33 @@ const MeetingInterface = memo(({ params }: MeetingProps) => {
             call?.off('custom', handleCallEvent);
         };
     }, [call, handleCallEvent]);
+
+    // Update the media initialization
+    useEffect(() => {
+        const initializeMedia = async () => {
+            if (!call) return;
+            
+            try {
+                // Start with microphone disabled
+                await call.microphone.disable();
+                
+                // Only enable camera
+                await call.camera.enable();
+                
+                // Setup speaker
+                if (devices?.length > 0) {
+                    await speaker.select(devices[0].deviceId);
+                    speaker.setVolume(1.0);
+                }
+                
+                console.log('Media devices initialized with muted mic');
+            } catch (error) {
+                console.error('Media initialization failed:', error);
+            }
+        };
+        
+        initializeMedia();
+    }, [call, speaker, devices]);
 
     return (
         <StreamTheme className="root-theme">

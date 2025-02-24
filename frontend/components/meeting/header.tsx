@@ -200,6 +200,7 @@ const UserDropdownContent = memo<{
                     <button
                         onClick={onCopy}
                         className="ml-1 rounded-md p-1 hover:bg-white/10 transition-colors"
+                        aria-label="Copy address"
                     >
                         <Copy className="h-3.5 w-3.5 text-zinc-400" />
                     </button>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getBasename, getBasenameAvatar } from '@/app/apis/basenames';
+import { getAvatars, getRandomAvatar } from '@/utils/avatarUtils';
 
 export const useIsMobile = () => {
     const [isMobile, setIsMobile] = useState(false);
@@ -69,4 +70,50 @@ export const truncateUsername = async (name: string, userId: string, isMobile: b
     return isMobile
         ? name.length > 8 ? `${name.slice(0, 3)}...${name.slice(-5)}` : name
         : name.length > 12 ? `${name.slice(0, 12)}...` : name;
+};
+
+export const useParticipantConsistentAvatar = (
+    userId: string,
+    name: string,
+    image?: string
+) => {
+    const [avatarUrl, setAvatarUrl] = useState<string>('');
+    const [avatars, setAvatars] = useState<string[]>([]);
+    const basenameAvatar = useParticipantAvatar(userId);
+
+    // Load avatars on mount
+    useEffect(() => {
+        const loadAvatars = async () => {
+            const loadedAvatars = await getAvatars();
+            setAvatars(loadedAvatars);
+        };
+        loadAvatars();
+    }, []);
+
+    // Get consistent avatar
+    useEffect(() => {
+        const getAvatar = async () => {
+            if (basenameAvatar) {
+                setAvatarUrl(basenameAvatar);
+                return;
+            }
+            
+            if (image) {
+                setAvatarUrl(image);
+                return;
+            }
+            
+            const seed = userId || name || '';
+            const randomAvatar = await getRandomAvatar(seed);
+            setAvatarUrl(randomAvatar);
+        };
+        
+        getAvatar();
+    }, [basenameAvatar, image, userId, name]);
+
+    const getFallbackAvatar = () => {
+        return avatars[0] || '/icons/Avatar/Oval-1.png';
+    };
+
+    return { avatarUrl, getFallbackAvatar };
 }; 

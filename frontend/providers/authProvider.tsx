@@ -70,6 +70,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         if (!ready || isLoading) return;
 
         // Only handle auth flow for non-pod pages
+        if (!pathname) return;
         if (pathname.startsWith('/pod')) return;
 
         if (authenticated && !isLoggedIn) {
