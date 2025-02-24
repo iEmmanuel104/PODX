@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
     combineComparators,
     hasScreenShare,
@@ -11,10 +11,220 @@ import {
     isPinned,
 } from '@stream-io/video-react-sdk';
 import clsx from 'clsx';
+import { Mic, MicOff, MoreHorizontal } from "lucide-react";
+import { getBasename, getBasenameAvatar } from '@/app/apis/basenames';
 
 import ParticipantViewUI from './participantViewUI';
 import useAnimateVideoLayout from '../../hooks/useAnimateVideoLayout';
 import VideoPlaceholder from './videoPlaceholder';
+
+// ============= Utility Hooks =============
+const useDebounceSpeak = (isSpeaking: boolean, delay: number = 550) => {
+    const [debouncedSpeaking, setDebouncedSpeaking] = useState(false);
+
+    useEffect(() => {
+        let timeoutId: NodeJS.Timeout;
+        if (isSpeaking) {
+            setDebouncedSpeaking(true);
+        } else {
+            timeoutId = setTimeout(() => setDebouncedSpeaking(false), delay);
+        }
+        return () => timeoutId && clearTimeout(timeoutId);
+    }, [isSpeaking, delay]);
+
+    return debouncedSpeaking;
+};
+
+const useParticipantAvatar = (userId: string) => {
+    const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchAvatar = async () => {
+            if (!userId.startsWith('0x')) return;
+            try {
+                const basename = await getBasename(userId as `0x${string}`);
+                if (basename) {
+                    const avatar = await getBasenameAvatar(basename);
+                    setAvatarUrl(avatar);
+                }
+            } catch (error) {
+                console.error('Error fetching avatar:', error);
+            }
+        };
+        fetchAvatar();
+    }, [userId]);
+
+    return avatarUrl;
+};
+
+// ============= Utility Functions =============
+const truncateNameTo6Chars = (name: string) => {
+    if (name.startsWith('guest-')) {
+        const username = name.slice(6);
+        return `guest-${username.slice(0, 6)}${username.length > 6 ? '...' : ''}`;
+    }
+    return name.length > 6 ? `${name.slice(0, 6)}...` : name;
+};
+
+// ============= Component Interfaces =============
+interface ParticipantTileProps {
+    participant: StreamVideoParticipant;
+    totalParticipants: number;
+    index: number;
+    style?: React.CSSProperties;
+}
+
+interface MinimalParticipantUIProps {
+    children: React.ReactNode;
+    participant: StreamVideoParticipant;
+}
+
+// ============= UI Components =============
+const ParticipantTile = React.memo(({ participant, index, style }: ParticipantTileProps) => {
+    const isAudioEnabled = participant.publishedTracks.includes(1);
+    const isSpeaking = participant.isSpeaking;
+    const debouncedSpeaking = useDebounceSpeak(isSpeaking);
+    const basenameAvatar = useParticipantAvatar(participant.userId);
+    const isMobile = window.innerWidth < 640;
+    const displayName = useMemo(() => 
+        truncateNameTo6Chars(participant.name || participant.userId),
+        [participant.name, participant.userId]
+    );
+    
+    const shouldShowAllElements = !isMobile || index === 0;
+    const shouldShowMinimalElements = isMobile && index === 1;
+
+    return (
+        <div 
+            className={clsx(
+                "relative w-full h-full flex",
+                "items-center justify-center",
+                "bg-[#2A2A2A] rounded-xl overflow-hidden"
+            )}
+            style={style}
+        >
+            {(shouldShowAllElements || shouldShowMinimalElements) && (
+                <>
+                    <div className={clsx(
+                        "absolute left-[14px] top-[13px] z-10",
+                        "flex items-center",
+                        "p-[6px]",
+                        "bg-[rgba(75,75,75,0.5)] backdrop-blur-[5.7px] rounded-[1000px]"
+                    )}>
+                        <div
+                            style={{
+                                background: !isAudioEnabled ? "#FF3B30" : debouncedSpeaking ? "#5E5CE6" : "#808080",
+                                borderRadius: "50%",
+                                padding: "6px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                            }}
+                        >
+                            {!isAudioEnabled ? <MicOff className="h-3 w-3 text-white" /> : <Mic className="h-3 w-3 text-white" />}
+                        </div>
+                    </div>
+                    <button
+                        aria-label="More options"
+                        className={clsx(
+                            "absolute right-[14px] top-[13px] z-10",
+                            "bg-transparent border-none",
+                            "cursor-pointer",
+                            "p-1"
+                        )}
+                    >
+                        <MoreHorizontal className="h-5 w-5 text-white/80" />
+                    </button>
+                </>
+            )}
+
+            {shouldShowAllElements && (
+                <>
+                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                        {basenameAvatar ? (
+                            <img
+                                src={basenameAvatar}
+                                alt={displayName}
+                                className="w-[38.4px] h-[38.4px] rounded-full object-cover"
+                            />
+                        ) : (
+                            <div className={clsx(
+                                "w-[38.4px] h-[38.4px]",
+                                "flex items-center justify-center",
+                                "rounded-full bg-[#4B4B4B]"
+                            )}>
+                                <svg
+                                    width="25.6"
+                                    height="25.6"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="1"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    className="text-[#808080]"
+                                >
+                                    <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                            </div>
+                        )}
+                    </div>
+                    <div className={clsx(
+                        "absolute left-[14px] bottom-[13px]",
+                        "flex items-center",
+                        "p-[6px] gap-2",
+                        "bg-[rgba(75,75,75,0.5)] backdrop-blur-[5.7px] rounded-[1000px]"
+                    )}>
+                        <span className="text-white text-sm px-1.5">{displayName}</span>
+                    </div>
+                </>
+            )}
+        </div>
+    );
+});
+ParticipantTile.displayName = 'ParticipantTile';
+
+const ScreenShareUI = React.memo(({ children }: { children: React.ReactNode }) => (
+    <div className="w-full h-full">{children}</div>
+));
+ScreenShareUI.displayName = 'ScreenShareUI';
+
+const OverflowIndicator = ({ count }: { count: number }) => (
+    <div className={clsx(
+        "flex items-center",
+        "p-[6px_12px] gap-2",
+        "bg-[rgba(75,75,75,0.5)] backdrop-blur-[5.7px] rounded-[1000px]"
+    )}>
+        <div className="flex items-center bg-transparent p-0.5">
+            {[...Array(3)].map((_, index) => (
+                <div
+                    key={index}
+                    className={clsx(
+                        "w-6 h-6 flex items-center justify-center",
+                        "-ml-1.5 first:ml-0",
+                        "rounded-full bg-[#2A2A2A] border border-[#1D1D1D]"
+                    )}
+                    style={{ zIndex: 3 - index }}
+                >
+                    <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="text-[#808080]"
+                    >
+                        <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                </div>
+            ))}
+        </div>
+        <span className="text-white text-sm">+{count}</span>
+    </div>
+);
 
 const SpeakerLayout = () => {
     const call = useCall();
@@ -34,14 +244,16 @@ const SpeakerLayout = () => {
 
     // Determine spotlight participant and others
     const [participantInSpotlight, ...otherParticipants] = useMemo(() => {
-        if (screenSharingParticipant) {
-            return [screenSharingParticipant, ...participants.filter(p => !hasScreenShare(p))];
-        }
-        if (pinnedParticipant) {
-            return [pinnedParticipant, ...participants.filter(p => !isPinned(p))];
-        }
-        return participants;
-    }, [screenSharingParticipant, pinnedParticipant, participants]);
+        const sortedParticipants = [...participants].sort((a, b) => {
+            if (hasScreenShare(a)) return -1;
+            if (hasScreenShare(b)) return 1;
+            if (isPinned(a)) return -1;
+            if (isPinned(b)) return 1;
+            return 0;
+        });
+        
+        return sortedParticipants;
+    }, [participants]);
 
     useEffect(() => {
         if (!call) return;
@@ -67,47 +279,70 @@ const SpeakerLayout = () => {
         }
     }, [hasOngoingScreenShare, call, participants]);
 
-    // Special layout for screen sharing
+    // First, let's properly type the MinimalParticipantUI component
+    interface MinimalParticipantUIProps {
+        children: React.ReactNode;
+        participant: StreamVideoParticipant;
+    }
+
+    const MinimalParticipantUI = ({ children }: MinimalParticipantUIProps) => {
+        return (
+            <div className="str-video__participant-view w-full h-full">
+                {children}
+            </div>
+        );
+    };
+
+    // Then update the screen sharing section:
     if (hasOngoingScreenShare && screenSharingParticipant) {
         return (
             <div ref={ref} className="w-full h-full relative overflow-hidden">
-                <div className="h-full p-2 md:p-4 flex flex-col">
+                <div className="h-full flex flex-col">
                     {/* Main content area with screen share */}
-                    <div className="flex-grow min-h-0 mb-2 flex items-center justify-center">
-                        <div className="w-full h-full max-w-7xl mx-auto rounded-xl overflow-hidden">
+                    <div className="flex-1 min-h-0 w-full p-2 md:p-4">
+                        <div className="w-full h-full">
+                            <div className="w-full h-full relative">
+                                <div className="absolute inset-0">
                             <ParticipantView
                                 participant={screenSharingParticipant}
                                 trackType="screenShareTrack"
-                                ParticipantViewUI={ParticipantViewUI}
+                                        ParticipantViewUI={ScreenShareUI}
                                 VideoPlaceholder={VideoPlaceholder}
                             />
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     {/* Participants bar */}
                     {otherParticipants.length > 0 && (
-                        <div className="h-32 flex-shrink-0">
+                        <div className="h-32 sm:h-36 flex-shrink-0">
                             <div
                                 ref={setParticipantsBar}
-                                className="flex gap-2 h-full overflow-x-auto justify-center"
+                                className="flex gap-4 h-full overflow-x-auto justify-center px-2 relative"
                             >
-                                {otherParticipants.map(participant => (
+                                {/* Show only first 2 participants */}
+                                <div className="flex gap-4">
+                                    {otherParticipants.slice(0, 2).map((participant, index) => (
                                     <div
                                         key={participant.sessionId}
-                                        className="h-full aspect-[4/3] flex-shrink-0 rounded-xl overflow-hidden"
+                                            className="h-full aspect-[4/3] flex-shrink-0 bg-[#2A2A2A] rounded-xl overflow-hidden"
                                     >
-                                        <ParticipantView
+                                            <ParticipantTile
                                             participant={participant}
-                                            trackType={
-                                                hasScreenShare(participant)
-                                                    ? 'screenShareTrack'
-                                                    : 'videoTrack'
-                                            }
-                                            ParticipantViewUI={ParticipantViewUI}
-                                            VideoPlaceholder={VideoPlaceholder}
+                                                totalParticipants={2}  // Force to show only 2
+                                                index={index}
                                         />
                                     </div>
                                 ))}
+                                </div>
+
+                                {/* Show overflow indicator when more than 2 participants */}
+                                {otherParticipants.length > 2 && (
+                                    <div className="absolute right-4 bottom-4 z-10">
+                                        <OverflowIndicator count={otherParticipants.length - 2} />
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
@@ -170,7 +405,10 @@ const SpeakerLayout = () => {
                 <div className="flex-grow min-h-0 mb-2 md:mb-4">
                     <div className="w-full h-full max-w-6xl mx-auto rounded-xl overflow-hidden">
                         <ParticipantView
-                            participant={participantInSpotlight}
+                            participant={{
+                                ...participantInSpotlight,
+                                name: truncateNameTo6Chars(participantInSpotlight.name || participantInSpotlight.userId)
+                            }}
                             trackType={
                                 hasScreenShare(participantInSpotlight)
                                     ? 'screenShareTrack'
@@ -184,28 +422,33 @@ const SpeakerLayout = () => {
 
                 {/* Other participants */}
                 {otherParticipants.length > 0 && (
-                    <div className="h-32 md:h-36">
+                    <div className="h-32 sm:h-36 flex-shrink-0">
                         <div
                             ref={setParticipantsBar}
-                            className="flex gap-2 h-full overflow-x-auto justify-center"
+                            className="flex gap-4 h-full overflow-x-auto justify-center px-2 relative"
                         >
-                            {otherParticipants.map(participant => (
+                            {/* Show only first 2 participants */}
+                            <div className="flex gap-4">
+                                {otherParticipants.slice(0, 2).map((participant, index) => (
                                 <div
                                     key={participant.sessionId}
-                                    className="h-full aspect-[4/3] flex-shrink-0 rounded-xl overflow-hidden"
+                                        className="h-full aspect-[4/3] flex-shrink-0 bg-[#2A2A2A] rounded-xl overflow-hidden"
                                 >
-                                    <ParticipantView
+                                        <ParticipantTile
                                         participant={participant}
-                                        trackType={
-                                            hasScreenShare(participant)
-                                                ? 'screenShareTrack'
-                                                : 'videoTrack'
-                                        }
-                                        ParticipantViewUI={ParticipantViewUI}
-                                        VideoPlaceholder={VideoPlaceholder}
+                                            totalParticipants={2}  // Force to show only 2
+                                            index={index}
                                     />
                                 </div>
                             ))}
+                            </div>
+
+                            {/* Show overflow indicator when more than 2 participants */}
+                            {otherParticipants.length > 2 && (
+                                <div className="absolute right-4 bottom-4 z-10">
+                                    <OverflowIndicator count={otherParticipants.length - 2} />
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

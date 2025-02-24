@@ -77,14 +77,65 @@ const useParticipantAvatar = (userId: string) => {
     return avatarUrl;
 };
 
+// Add useIsMobile hook at the top
+const useIsMobile = () => {
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 640); // 640px is Tailwind's 'sm' breakpoint
+        };
+
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    return isMobile;
+};
+
+// Update truncateUsername to consider screen size
+const truncateUsername = (name: string, isMobile: boolean) => {
+    if (!isMobile) return name;
+    
+    if (name.startsWith('guest-')) {
+        // Remove 'guest-' prefix and then take first 9 chars
+        const username = name.slice(6);
+        return `guest-${username.slice(0, 9)}...`;
+    }
+    // For non-guest names, just take first 9 chars
+    return name.length > 9 ? `${name.slice(0, 9)}...` : name;
+};
+
 // Update ParticipantTile component
-const ParticipantTile = ({ name, isMuted, isSpeaking, style, userId }: ParticipantTileProps & { userId: string }) => {
+const ParticipantTile = ({ 
+    name, 
+    isMuted, 
+    isSpeaking, 
+    style, 
+    userId,
+    totalParticipants,
+    index
+}: ParticipantTileProps & { 
+    userId: string;
+    totalParticipants: number;
+    index: number;
+}) => {
     const isActuallySpeaking = useDebounceSpeak(isSpeaking);
     const basenameAvatar = useParticipantAvatar(userId);
+    const isMobile = useIsMobile();
+    const displayName = truncateUsername(name, isMobile);
+    
+    // Show name if:
+    // 1. On desktop OR
+    // 2. On mobile AND:
+    //    - Total participants <= 4 OR
+    //    - This is one of the first 3 tiles when there are more than 4 participants
+    const shouldShowName = !isMobile || (totalParticipants <= 4 || index < 3);
 
     return (
         <div style={style}>
-            {/* Show indicator for all states: muted, speaking, and not speaking */}
+            {/* Status indicator */}
             <div
                 style={{
                     position: "absolute",
@@ -116,20 +167,12 @@ const ParticipantTile = ({ name, isMuted, isSpeaking, style, userId }: Participa
                         <Mic className="h-3 w-3 text-white" />
                     )}
                 </div>
-                <span
-                    style={{
-                        color: "white",
-                        fontSize: "14px",
-                        paddingRight: "6px",
-                    }}
-                >
-                    {isMuted 
-                        ? "Muted" 
-                        : isActuallySpeaking 
-                            ? "Speaking..." 
-                            : "Not Speaking"
-                    }
-                </span>
+                {/* Only show text on desktop */}
+                {!isMobile && (
+                    <span style={{ color: "white", fontSize: "14px", paddingRight: "6px" }}>
+                        {isMuted ? "Muted" : isActuallySpeaking ? "Speaking..." : "Not Speaking"}
+                    </span>
+                )}
             </div>
 
             {/* More Options */}
@@ -198,23 +241,89 @@ const ParticipantTile = ({ name, isMuted, isSpeaking, style, userId }: Participa
                 )}
             </div>
 
-            {/* Name Label */}
-            <div
+            {/* Name Label - Only show when appropriate */}
+            {shouldShowName && (
+                <div
+                    style={{
+                        position: "absolute",
+                        left: "14px",
+                        bottom: "13px",
+                        display: "flex",
+                        alignItems: "center",
+                        padding: "6px",
+                        gap: "8px",
+                        background: "rgba(75, 75, 75, 0.5)",
+                        backdropFilter: "blur(5.7px)",
+                        borderRadius: "1000px",
+                    }}
+                >
+                    <span style={{ color: "white", fontSize: "14px" }}>{displayName}</span>
+                </div>
+            )}
+        </div>
+    );
+};
+
+// Update the OverflowIndicator component
+const OverflowIndicator = ({ count, style }: { count: number, style: React.CSSProperties }) => {
+    return (
+        <div 
+            style={{
+                display: "flex",
+                alignItems: "center",
+                padding: "6px 12px",
+                gap: "8px",
+                background: "rgba(75, 75, 75, 0.5)",
+                backdropFilter: "blur(5.7px)",
+                borderRadius: "1000px",
+                ...style
+            }}
+        >
+            {/* Container for overlapping avatars - without blur */}
+            <div 
                 style={{
-                    position: "absolute",
-                    left: "14px",
-                    bottom: "13px",
                     display: "flex",
                     alignItems: "center",
-                    padding: "6px",
-                    gap: "8px",
-                    background: "rgba(75, 75, 75, 0.5)",
-                    backdropFilter: "blur(5.7px)",
-                    borderRadius: "1000px",
+                    background: "transparent",
+                    padding: "2px"
                 }}
             >
-                <span style={{ color: "white", fontSize: "14px" }}>{name}</span>
+                {[...Array(3)].map((_, index) => (
+                    <div
+                        key={index}
+                        style={{
+                            width: "24px",
+                            height: "24px",
+                            borderRadius: "50%",
+                            background: "#2A2A2A",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginLeft: index > 0 ? '-6px' : '0',
+                            zIndex: 3 - index,
+                            border: "1px solid #1D1D1D"
+                        }}
+                    >
+                        <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            style={{ color: "#808080" }}
+                        >
+                            <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                    </div>
+                ))}
             </div>
+            {/* Overflow Count */}
+            <span className="text-white text-sm">
+                +{count}
+            </span>
         </div>
     );
 };
@@ -360,26 +469,28 @@ const GridLayout = () => {
                     "p-2 sm:p-3",
                     "gap-4 sm:gap-6",
                     // Desktop specific
-                    "sm:max-w-[1249px] sm:h-[802px]",
+                    "sm:max-w-[1249px]",
                     // Mobile specific - maintain aspect ratio and spacing
                     "mx-4",
                     // Adjust height to account for footer, header, and margins
-                    "h-[calc(100vh-270px)] sm:h-[802px]", // Further increased to prevent overlap
-                    // Different top and bottom margins
-                    "mt-[50px] mb-[100px] sm:mt-[42px] sm:mb-[84px]" // Halved top margin
+                    "h-[calc(100vh-270px)]", // Mobile height
+                    "sm:h-[calc(100vh-250px)]", // Increased space for desktop footer
+                    // Different margins for mobile and desktop
+                    "mt-[50px] mb-[100px]", // Mobile margins
+                    "sm:mt-[42px] sm:mb-[120px]" // Much larger bottom margin for desktop
                 )}
             >
                 <div className={clsx(
                     'grid w-full h-full',
-                    // Grid gaps
                     'gap-2 sm:gap-6',
-                    // Grid columns based on participant count
+                    // Always use 2x2 grid when there are 4 or more participants
                     sortedParticipants.length === 1 && 'grid-cols-1',
                     sortedParticipants.length === 2 && 'grid-cols-2',
                     sortedParticipants.length === 3 && 'grid-cols-2 grid-rows-2',
                     sortedParticipants.length >= 4 && 'grid-cols-2 grid-rows-2'
                 )}>
-                    {sortedParticipants.slice(0, 8).map((participant, index) => {
+                    {/* Show only first 4 participants */}
+                    {sortedParticipants.slice(0, 4).map((participant, index) => {
                         const isAudioEnabled = participant.publishedTracks.includes(1);
                         const isSpeaking = participant.isSpeaking;
                         
@@ -390,14 +501,29 @@ const GridLayout = () => {
                                 userId={participant.userId}
                                 isMuted={!isAudioEnabled}
                                 isSpeaking={isSpeaking}
+                                totalParticipants={sortedParticipants.length}
+                                index={index}
                                 style={{
-                                    ...getTileStyles(index, sortedParticipants.length),
+                                    ...getTileStyles(index, Math.min(4, sortedParticipants.length)),
                                     width: '100%',
                                     height: '100%',
                                 }}
                             />
                         );
                     })}
+
+                    {/* Show overflow indicator if more than 4 participants */}
+                    {sortedParticipants.length > 4 && (
+                        <div className="absolute bottom-4 right-4">
+                            <OverflowIndicator 
+                                count={sortedParticipants.length - 4} 
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                }}
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
