@@ -43,71 +43,36 @@ const MeetingPreview: React.FC = () => {
 
     // Initialize devices
     useEffect(() => {
-        let isMounted = true;
-
         const initializeDevices = async () => {
             setIsInitializing(true);
 
             try {
-                // Only enable camera for non-audio sessions
+                // Camera initialization
                 if (!isAudioSession && hasCameraPermission && camera) {
-                    try {
-                        await camera.enable();
-                        if (isMounted) dispatch(setVideoEnabled(true));
-                    } catch (error) {
-                        console.error('Camera error:', error);
-                        if (isMounted) {
-                            dispatch(setVideoEnabled(false));
-                            dispatch(
-                                setToast(
-                                    `Camera error: ${error instanceof Error ? error.message : String(error)}`
-                                )
-                            );
-                        }
-                    }
+                    await camera.enable();
+                    dispatch(setVideoEnabled(true));
                 }
 
-                // Wait a bit before initializing microphone to prevent conflicts
-                await new Promise(resolve => setTimeout(resolve, 500));
-
-                // Always enable microphone as it's needed for both session types
+                // Microphone initialization
                 if (hasMicrophonePermission && microphone) {
-                    try {
-                        await microphone.enable();
-                        if (isMounted) dispatch(setAudioEnabled(true));
-                    } catch (error) {
-                        console.error('Microphone error:', error);
-                        if (isMounted) {
-                            dispatch(setAudioEnabled(false));
-                            dispatch(
-                                setToast(
-                                    `Microphone error: ${error instanceof Error ? error.message : String(error)}`
-                                )
-                            );
-                        }
-                    }
+                    await microphone.enable();
+                    dispatch(setAudioEnabled(true));
                 }
+            } catch (error) {
+                console.error('Device initialization error:', error);
+                dispatch(setToast(`Device error: ${error instanceof Error ? error.message : String(error)}`));
             } finally {
-                if (isMounted) setIsInitializing(false);
+                setIsInitializing(false);
             }
         };
 
         initializeDevices();
 
-        // Cleanup function
         return () => {
-            isMounted = false;
             if (camera?.enabled) camera.disable().catch(console.error);
             if (microphone?.enabled) microphone.disable().catch(console.error);
         };
-    }, [
-        camera,
-        microphone,
-        hasCameraPermission,
-        hasMicrophonePermission,
-        dispatch,
-        isAudioSession,
-    ]);
+    }, [camera, microphone, hasCameraPermission, hasMicrophonePermission, dispatch, isAudioSession]);
 
     const AudioSessionPreview = () => (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-[#6032F6]/20 to-[#381D90]/20">

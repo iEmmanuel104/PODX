@@ -68,11 +68,11 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     // Handle authentication and redirection without useEffect
     const handleAuthFlow = useCallback(async () => {
         if (!ready || isLoading) return;
-
+    
         // Only handle auth flow for non-pod pages
         if (!pathname) return;
         if (pathname.startsWith('/pod')) return;
-
+    
         if (authenticated && !isLoggedIn) {
             setIsLoading(true);
             const success = await handleAuthentication();
@@ -86,7 +86,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
             dispatch(logOut());
         }
     }, [ready, isLoading, pathname, authenticated, isLoggedIn, handleAuthentication, redirectToPod, dispatch]);
-
+    
     // Call handleAuthFlow when necessary
     useEffect(() => {
         handleAuthFlow();
@@ -96,7 +96,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     if (isLoading || isValidating) {
         return (
             <div className="fixed inset-0 bg-[#121212] bg-opacity-90 backdrop-blur-sm">
-                <LoadingOverlay text={`${isLoading ? 'Connecting...' : 'Validating User...'}`} />
+                <LoadingOverlay text={`${isLoading ? 'Signing in...' : 'Validating User...'}`} />
             </div>
         );
     }
