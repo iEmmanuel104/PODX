@@ -184,8 +184,10 @@ const UserDropdownContent = memo<{
                     </span>
                 </div>
                 <div className="flex items-center justify-between w-full gap-1.5">
-                    <img
-                        src={'/images/base.png'}
+                    <Image
+                        src="/images/base.png"
+                        width={20}
+                        height={20}
                         alt="Base"
                         className="h-5 w-5 object-contain"
                     />

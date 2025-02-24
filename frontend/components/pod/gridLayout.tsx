@@ -16,6 +16,7 @@ import {
 import { Mic, MicOff, MoreHorizontal, ScreenShareOff } from "lucide-react"
 import clsx from 'clsx';
 import { getBasename, getBasenameAvatar } from '@/app/apis/basenames';
+import Image from 'next/image';
 
 import ParticipantViewUI from './participantViewUI';
 import useAnimateVideoLayout from '../../hooks/useAnimateVideoLayout';
@@ -152,10 +153,13 @@ const ParticipantTile = ({
             {/* Avatar */}
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
                 {basenameAvatar ? (
-                    <img
+                    <Image
                         src={basenameAvatar}
-                        alt={name}
-                        className="w-24 h-24 rounded-full object-cover"
+                        width={48}
+                        height={48}
+                        alt="Participant avatar"
+                        className="rounded-full"
+                        priority
                     />
                 ) : (
                     <div className="w-24 h-24 rounded-full bg-[#4B4B4B] flex items-center justify-center">

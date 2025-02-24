@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, memo, ComponentType } from 'react';
 import {
     combineComparators,
     hasScreenShare,
@@ -9,9 +9,12 @@ import {
     useCall,
     useCallStateHooks,
     isPinned,
+    useParticipantViewContext,
 } from '@stream-io/video-react-sdk';
 import clsx from 'clsx';
 import { Mic, MicOff, MoreHorizontal } from "lucide-react";
+import Image from 'next/image';
+import type { ComponentType as ReactComponentType } from 'react';
 
 import ParticipantViewUI from './participantViewUI';
 import useAnimateVideoLayout from '../../hooks/useAnimateVideoLayout';
@@ -24,7 +27,47 @@ import {
     truncateUsername 
 } from '../../hooks/useParticipantUtils';
 
-const SpeakerLayout = () => {
+interface ScreenShareUIProps {
+    participant: StreamVideoParticipant;
+    children: React.ReactNode;
+}
+
+// Add display name to the inline component
+const ParticipantViewUIComponent = memo((props: ScreenShareUIProps) => (
+    <div className="w-full h-full">
+        {props.children}
+    </div>
+));
+ParticipantViewUIComponent.displayName = 'ParticipantViewUIComponent';
+
+interface ParticipantViewUIProps {
+    participant: StreamVideoParticipant;
+    children?: React.ReactNode;
+    trackType?: 'videoTrack' | 'screenShareTrack';
+}
+
+// First define ScreenShareUI
+const ScreenShareUI = memo<ScreenShareUIProps>(({ children, participant }) => {
+    return (
+        <div className="relative w-full h-full">
+            {children}
+        </div>
+    );
+});
+ScreenShareUI.displayName = 'ScreenShareUI';
+
+// Then use it in ParticipantViewUIWrapper
+const ParticipantViewUIWrapper = memo(() => {
+    const { participant } = useParticipantViewContext();
+    return (
+        <div className="relative w-full h-full">
+            {/* Your UI elements using participant from context */}
+        </div>
+    );
+}) as ComponentType;
+ParticipantViewUIWrapper.displayName = 'ParticipantViewUIWrapper';
+
+const SpeakerLayout = memo(() => {
     const call = useCall();
     const { useParticipants, useHasOngoingScreenShare } = useCallStateHooks();
     const { ref } = useAnimateVideoLayout(true);
@@ -232,6 +275,7 @@ const SpeakerLayout = () => {
             </div>
         );
     });
+    ParticipantTile.displayName = 'ParticipantTile';
 
     // First, let's properly type the MinimalParticipantUI component
     interface MinimalParticipantUIProps {
@@ -239,29 +283,36 @@ const SpeakerLayout = () => {
         participant: StreamVideoParticipant;
     }
 
-    const MinimalParticipantUI = ({ children }: MinimalParticipantUIProps) => {
+    const MinimalParticipantUI = memo(({ children }: MinimalParticipantUIProps) => {
         return (
             <div className="str-video__participant-view w-full h-full">
                 {children}
             </div>
         );
-    };
-
-    // First, add proper types for the ScreenShareUI component
-    interface ScreenShareUIProps {
-        children: React.ReactNode;
-        participant: StreamVideoParticipant;
-    }
-
-    // Update the ScreenShareUI component to properly handle the participant prop
-    const ScreenShareUI = React.memo(({ children, participant }: ScreenShareUIProps) => {
-        return (
-            <div className="w-full h-full">
-                {children}
-            </div>
-        );
     });
-    ScreenShareUI.displayName = 'ScreenShareUI';
+    MinimalParticipantUI.displayName = 'MinimalParticipantUI';
+
+    // Update the CustomParticipantViewUI component
+    const CustomParticipantViewUI = memo(() => {
+        const { participant } = useParticipantViewContext();
+        return (
+            <ScreenShareUI participant={participant}>
+                <div className="relative w-full h-full">
+                    <div className="avatar-container">
+                        <Image
+                            src={participant.image || '/default-avatar.png'}
+                            alt={participant.name || 'User avatar'}
+                            width={40}
+                            height={40}
+                            className="rounded-full"
+                            priority
+                        />
+                    </div>
+                </div>
+            </ScreenShareUI>
+        );
+    }) as ComponentType;
+    CustomParticipantViewUI.displayName = 'CustomParticipantViewUI';
 
     // First, add the OverflowIndicator component from GridLayout
     const OverflowIndicator = ({ count }: { count: number }) => {
@@ -347,11 +398,7 @@ const SpeakerLayout = () => {
                             <ParticipantView
                                 participant={screenSharingParticipant}
                                 trackType="screenShareTrack"
-                                ParticipantViewUI={(props) => (
-                                    <ScreenShareUI {...props} participant={screenSharingParticipant}>
-                                        {props.children}
-                                    </ScreenShareUI>
-                                )}
+                                ParticipantViewUI={ParticipantViewUIWrapper}
                                 VideoPlaceholder={VideoPlaceholder}
                             />
                                 </div>
@@ -417,7 +464,7 @@ const SpeakerLayout = () => {
                         >
                             <ParticipantView
                                 participant={participant}
-                                ParticipantViewUI={ParticipantViewUI}
+                                ParticipantViewUI={CustomParticipantViewUI}
                                 VideoPlaceholder={VideoPlaceholder}
                             />
                         </div>
@@ -434,7 +481,7 @@ const SpeakerLayout = () => {
                 <div className="w-full h-full max-w-4xl mx-auto rounded-xl overflow-hidden">
                     <ParticipantView
                         participant={participants[0]}
-                        ParticipantViewUI={ParticipantViewUI}
+                        ParticipantViewUI={CustomParticipantViewUI}
                         VideoPlaceholder={VideoPlaceholder}
                     />
                 </div>
@@ -459,7 +506,7 @@ const SpeakerLayout = () => {
                                     ? 'screenShareTrack'
                                     : 'videoTrack'
                             }
-                            ParticipantViewUI={ParticipantViewUI}
+                            ParticipantViewUI={ParticipantViewUIWrapper}
                             VideoPlaceholder={VideoPlaceholder}
                         />
                     </div>
@@ -483,9 +530,9 @@ const SpeakerLayout = () => {
                                         participant={participant}
                                             totalParticipants={2}
                                             index={index}
-                                    />
-                                </div>
-                            ))}
+                                        />
+                                    </div>
+                                ))}
                             </div>
 
                             {/* Show overflow indicator for remaining participants */}
@@ -500,6 +547,8 @@ const SpeakerLayout = () => {
             </div>
         </div>
     );
-};
+});
+
+SpeakerLayout.displayName = 'SpeakerLayout';
 
 export default SpeakerLayout;
