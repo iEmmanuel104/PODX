@@ -84,7 +84,9 @@ const setSessionState = (state: any) => {
 
 // Memoize the layout component
 const StreamLayout = memo(({ children }: { children: ReactNode }) => {
-    const { id } = useParams();
+    const params = useParams();
+    // Type-safe way to get id from params
+    const id = params?.['id'] as string | undefined;
     const router = useRouter();
     const { isLoggedIn } = useTypedSelector(state => state.auth);
     const [isValidId, setIsValidId] = useState(() => {

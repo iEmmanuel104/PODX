@@ -1,5 +1,5 @@
 // GridLayout.tsx
-import { useMemo, useEffect, useState } from 'react';
+import React, { useMemo, useEffect, useState, memo } from 'react';
 import {
     combineComparators,
     ParticipantView,
@@ -12,6 +12,7 @@ import {
     publishingVideo,
     publishingAudio,
     isPinned,
+    Audio
 } from '@stream-io/video-react-sdk';
 import { Mic, MicOff, MoreHorizontal, ScreenShareOff } from "lucide-react"
 import clsx from 'clsx';
@@ -25,22 +26,26 @@ import {
     useIsMobile, 
     useDebounceSpeak, 
     useParticipantAvatar,
-    truncateUsername 
+    truncateUsername,
+    useParticipantConsistentAvatar
 } from '../../hooks/useParticipantUtils';
 
-// Add ParticipantTile component
+// Update ParticipantTile interface to include required props
 interface ParticipantTileProps {
     name: string;
     isMuted?: boolean;
     isSpeaking?: boolean;
-    avatarUrl?: string;
     style?: React.CSSProperties;
+    userId: string;
+    totalParticipants: number;
+    index: number;
+    participant: StreamVideoParticipant;
     isScreenSharing?: boolean;
     onStopScreenShare?: () => void;
 }
 
 // Update ParticipantTile component
-const ParticipantTile = ({
+const ParticipantTile = memo(({
     name,
     isMuted,
     isSpeaking,
@@ -48,26 +53,24 @@ const ParticipantTile = ({
     userId,
     totalParticipants,
     index,
+    participant,
     isScreenSharing,
     onStopScreenShare
-}: ParticipantTileProps & {
-    userId: string;
-    totalParticipants: number;
-    index: number;
-    isScreenSharing?: boolean;
-    onStopScreenShare?: () => void;
-}) => {
+}: ParticipantTileProps) => {
     const isActuallySpeaking = useDebounceSpeak(isSpeaking || false);
     const isMobile = useIsMobile();
     const [displayName, setDisplayName] = useState(name);
-    const basenameAvatar = useParticipantAvatar(userId);
-    
+    const { avatarUrl, getFallbackAvatar } = useParticipantConsistentAvatar(
+        userId,
+        name,
+        participant.image
+    );
+
     useEffect(() => {
         const updateDisplayName = async () => {
             const truncated = await truncateUsername(name, userId, isMobile);
             setDisplayName(truncated);
         };
-
         updateDisplayName();
     }, [name, userId, isMobile]);
 
@@ -80,6 +83,10 @@ const ParticipantTile = ({
 
     return (
         <div style={style}>
+            <Audio
+                participant={participant}
+                trackType="audioTrack"
+            />
             {/* Status indicator */}
             <div
                 style={{
@@ -135,16 +142,7 @@ const ParticipantTile = ({
             {!isScreenSharing && (
                 <button
                     aria-label="More options"
-                    style={{
-                        position: "absolute",
-                        right: "14px",
-                        top: "13px",
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        padding: "4px",
-                        zIndex: 10,
-                    }}
+                    className="absolute right-[14px] top-[13px] bg-transparent border-none cursor-pointer p-1 z-10"
                 >
                     <MoreHorizontal className="h-5 w-5 text-white/80" />
                 </button>
@@ -152,59 +150,36 @@ const ParticipantTile = ({
 
             {/* Avatar */}
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-                {basenameAvatar ? (
-                    <Image
-                        src={basenameAvatar}
-                        width={48}
-                        height={48}
-                        alt="Participant avatar"
-                        className="rounded-full"
-                        priority
-                    />
-                ) : (
-                    <div className="w-24 h-24 rounded-full bg-[#4B4B4B] flex items-center justify-center">
-                        <svg
-                            width="64"
-                            height="64"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="1"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="text-[#808080]"
-                        >
-                            <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                    </div>
-                )}
+                <Image
+                    src={avatarUrl || getFallbackAvatar()}
+                    width={48}
+                    height={48}
+                    alt="Participant avatar"
+                    className="rounded-full"
+                    priority
+                    onError={(e) => {
+                        e.currentTarget.src = getFallbackAvatar();
+                    }}
+                />
             </div>
 
-            {/* Name Label - Only show when appropriate */}
+            {/* Name Label */}
             {shouldShowName && (
-                <div
-                    style={{
-                        position: "absolute",
-                        left: "14px",
-                        bottom: "13px",
-                        display: "flex",
-                        alignItems: "center",
-                        padding: "6px",
-                        gap: "8px",
-                        background: "rgba(75, 75, 75, 0.5)",
-                        backdropFilter: "blur(5.7px)",
-                        borderRadius: "1000px",
-                    }}
-                >
-                    <span style={{ color: "white", fontSize: "14px" }}>{displayName}</span>
+                <div className="absolute left-[14px] bottom-[13px] flex items-center p-[6px] gap-2 bg-[rgba(75,75,75,0.5)] backdrop-blur-[5.7px] rounded-[1000px]">
+                    <span className="text-white text-sm px-1.5">
+                        {displayName}
+                    </span>
                 </div>
             )}
         </div>
     );
-};
+});
+
+// Add display name
+ParticipantTile.displayName = 'ParticipantTile';
 
 // Update the OverflowIndicator component
-const OverflowIndicator = ({ count, style }: { count: number, style: React.CSSProperties }) => {
+const OverflowIndicator = memo(({ count, style }: { count: number, style: React.CSSProperties }) => {
     return (
         <div 
             style={{
@@ -265,7 +240,10 @@ const OverflowIndicator = ({ count, style }: { count: number, style: React.CSSPr
             </span>
         </div>
     );
-};
+});
+
+// Add display name
+OverflowIndicator.displayName = 'OverflowIndicator';
 
 const GridLayout = () => {
     const call = useCall();
@@ -498,6 +476,7 @@ const GridLayout = () => {
                                 isSpeaking={isSpeaking}
                                 totalParticipants={visibleParticipants.length}
                                 index={index}
+                                participant={participant}
                                 isScreenSharing={isScreenSharing}
                                 onStopScreenShare={isScreenSharing ? () => handleStopScreenShare(participant) : undefined}
                                 style={{

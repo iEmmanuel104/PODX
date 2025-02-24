@@ -10,11 +10,22 @@ import {
     useCallStateHooks,
     isPinned,
     useParticipantViewContext,
+    Audio,
 } from '@stream-io/video-react-sdk';
 import clsx from 'clsx';
 import { Mic, MicOff, MoreHorizontal } from "lucide-react";
 import Image from 'next/image';
 import type { ComponentType as ReactComponentType } from 'react';
+import avatar1 from '/images/avatars/Oval-1.png';
+import avatar2 from '/images/avatars/Oval-2.png';
+import avatar3 from '/images/avatars/Oval-3.png';
+import avatar4 from '/images/avatars/Oval-4.png';
+import avatar5 from '/images/avatars/Oval-5.png';
+import avatar6 from '/images/avatars/Oval-6.png';
+import avatar7 from '/images/avatars/Oval-7.png';
+import avatar8 from '/images/avatars/Oval-8.png';
+import avatar9 from '/images/avatars/Oval-9.png';
+import avatar10 from '/images/avatars/Oval-10.png';
 
 import ParticipantViewUI from './participantViewUI';
 import useAnimateVideoLayout from '../../hooks/useAnimateVideoLayout';
@@ -26,6 +37,19 @@ import {
     useParticipantAvatar,
     truncateUsername 
 } from '../../hooks/useParticipantUtils';
+
+const avatars = [
+    '/icons/Avatar/Oval-1.png',
+    '/icons/Avatar/Oval-2.png',
+    '/icons/Avatar/Oval-3.png',
+    '/icons/Avatar/Oval-4.png',
+    '/icons/Avatar/Oval-5.png',
+    '/icons/Avatar/Oval-6.png',
+    '/icons/Avatar/Oval-7.png',
+    '/icons/Avatar/Oval-8.png',
+    '/icons/Avatar/Oval-9.png',
+    '/icons/Avatar/Oval-10.png'
+];
 
 interface ScreenShareUIProps {
     participant: StreamVideoParticipant;
@@ -66,6 +90,18 @@ const ParticipantViewUIWrapper = memo(() => {
     );
 }) as ComponentType;
 ParticipantViewUIWrapper.displayName = 'ParticipantViewUIWrapper';
+
+// Move CustomParticipantViewUI outside the SpeakerLayout component and export it
+const CustomParticipantViewUI = memo(() => {
+    const { participant } = useParticipantViewContext();
+    
+    return (
+        <div className="relative w-full h-full">
+            <Audio participant={participant} />
+        </div>
+    );
+}) as ComponentType;
+CustomParticipantViewUI.displayName = 'CustomParticipantViewUI';
 
 const SpeakerLayout = memo(() => {
     const call = useCall();
@@ -113,14 +149,43 @@ const SpeakerLayout = memo(() => {
 
     useEffect(() => {
         if (!call) return;
-        const customSortingPreset = combineComparators(screenSharing, pinned);
-        call.setSortParticipantsBy(customSortingPreset);
+
+        const setupCall = async () => {
+            try {
+                // Wait for call state to be ready
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Set up sorting preset using Stream's API
+                const customSortingPreset = combineComparators(screenSharing, pinned);
+                await call.setSortParticipantsBy(customSortingPreset);
+            } catch (error) {
+                console.error('Error in call setup:', error);
+            }
+        };
+
+        setupCall();
     }, [call]);
 
     useEffect(() => {
         if (!participantsBar || !call) return;
-        const cleanup = call.dynascaleManager.setViewport(participantsBar);
-        return () => cleanup();
+
+        let cleanup: (() => void) | undefined;
+
+        const setupViewport = async () => {
+            try {
+                // Ensure call is ready before setting viewport
+                await new Promise(resolve => setTimeout(resolve, 500));
+                cleanup = call.dynascaleManager.setViewport(participantsBar);
+            } catch (error) {
+                console.error('Error setting viewport:', error);
+            }
+        };
+
+        setupViewport();
+
+        return () => {
+            if (cleanup) cleanup();
+        };
     }, [participantsBar, call]);
 
     // Add cleanup effect
@@ -165,8 +230,12 @@ const SpeakerLayout = memo(() => {
         const debouncedSpeaking = useDebounceSpeak(isSpeaking);
         const [displayName, setDisplayName] = useState(participant.name || participant.userId);
         const isMobile = useIsMobile();
-        const basenameAvatar = useParticipantAvatar(participant.userId);
         
+        // Show all elements for first tile on mobile or all tiles on desktop
+        const shouldShowAllElements = !isMobile || index === 0;
+        // Show only mic and more options for second tile on mobile
+        const shouldShowMinimalElements = isMobile && index === 1;
+
         useEffect(() => {
             const updateDisplayName = async () => {
                 const name = participant.name || participant.userId;
@@ -189,11 +258,6 @@ const SpeakerLayout = memo(() => {
             updateDisplayName();
         }, [participant.name, participant.userId, isMobile]);
 
-        // Show all elements for first tile on mobile or all tiles on desktop
-        const shouldShowAllElements = !isMobile || index === 0;
-        // Show only mic and more options for second tile on mobile
-        const shouldShowMinimalElements = isMobile && index === 1;
-
         return (
             <div 
                 className={clsx(
@@ -203,33 +267,6 @@ const SpeakerLayout = memo(() => {
                 )}
                 style={style}
             >
-                {/* Avatar */}
-                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-                    {basenameAvatar ? (
-                        <img
-                            src={basenameAvatar}
-                            alt={displayName}
-                            className="w-[38.4px] h-[38.4px] rounded-full object-cover"
-                        />
-                    ) : (
-                        <div className="w-[38.4px] h-[38.4px] rounded-full bg-[#4B4B4B] flex items-center justify-center">
-                            <svg
-                                width="25.6"
-                                height="25.6"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="1"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                className="text-[#808080]"
-                            >
-                                <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                        </div>
-                    )}
-                </div>
-
                 {/* Status indicator */}
                 {(shouldShowAllElements || shouldShowMinimalElements) && (
                     <div
@@ -264,7 +301,7 @@ const SpeakerLayout = memo(() => {
                     </button>
                 )}
 
-                {/* Name Label - only show for first tile on mobile or all on desktop */}
+                {/* Name Label */}
                 {shouldShowAllElements && (
                     <div className="absolute left-[14px] bottom-[13px] flex items-center p-[6px] gap-2 bg-[rgba(75,75,75,0.5)] backdrop-blur-[5.7px] rounded-[1000px]">
                         <span className="text-white text-sm px-1.5">
@@ -291,28 +328,6 @@ const SpeakerLayout = memo(() => {
         );
     });
     MinimalParticipantUI.displayName = 'MinimalParticipantUI';
-
-    // Update the CustomParticipantViewUI component
-    const CustomParticipantViewUI = memo(() => {
-        const { participant } = useParticipantViewContext();
-        return (
-            <ScreenShareUI participant={participant}>
-                <div className="relative w-full h-full">
-                    <div className="avatar-container">
-                        <Image
-                            src={participant.image || '/default-avatar.png'}
-                            alt={participant.name || 'User avatar'}
-                            width={40}
-                            height={40}
-                            className="rounded-full"
-                            priority
-                        />
-                    </div>
-                </div>
-            </ScreenShareUI>
-        );
-    }) as ComponentType;
-    CustomParticipantViewUI.displayName = 'CustomParticipantViewUI';
 
     // First, add the OverflowIndicator component from GridLayout
     const OverflowIndicator = ({ count }: { count: number }) => {
@@ -397,9 +412,10 @@ const SpeakerLayout = memo(() => {
                                 <div className="absolute inset-0">
                             <ParticipantView
                                 participant={screenSharingParticipant}
-                                trackType="screenShareTrack"
-                                ParticipantViewUI={ParticipantViewUIWrapper}
+                                trackType="videoTrack"
+                                ParticipantViewUI={CustomParticipantViewUI}
                                 VideoPlaceholder={VideoPlaceholder}
+                                muteAudio={true}
                             />
                                 </div>
                             </div>
@@ -464,8 +480,10 @@ const SpeakerLayout = memo(() => {
                         >
                             <ParticipantView
                                 participant={participant}
+                                trackType="videoTrack"
                                 ParticipantViewUI={CustomParticipantViewUI}
                                 VideoPlaceholder={VideoPlaceholder}
+                                muteAudio={true}
                             />
                         </div>
                     ))}
@@ -481,8 +499,10 @@ const SpeakerLayout = memo(() => {
                 <div className="w-full h-full max-w-4xl mx-auto rounded-xl overflow-hidden">
                     <ParticipantView
                         participant={participants[0]}
+                        trackType="videoTrack"
                         ParticipantViewUI={CustomParticipantViewUI}
                         VideoPlaceholder={VideoPlaceholder}
+                        muteAudio={true}
                     />
                 </div>
             </div>
@@ -501,13 +521,10 @@ const SpeakerLayout = memo(() => {
                                 ...participantInSpotlight,
                                 name: truncateNameTo6Chars(participantInSpotlight.name || participantInSpotlight.userId)
                             }}
-                            trackType={
-                                hasScreenShare(participantInSpotlight)
-                                    ? 'screenShareTrack'
-                                    : 'videoTrack'
-                            }
-                            ParticipantViewUI={ParticipantViewUIWrapper}
+                            trackType="videoTrack"
+                            ParticipantViewUI={CustomParticipantViewUI}
                             VideoPlaceholder={VideoPlaceholder}
+                            muteAudio={true}
                         />
                     </div>
                 </div>

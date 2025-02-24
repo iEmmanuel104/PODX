@@ -1,7 +1,7 @@
 'use client';
 
 import type React from 'react';
-import { useState, useMemo, memo } from 'react';
+import { useState, useMemo, memo, useEffect } from 'react';
 import {
     ChevronDown,
     Mic,
@@ -31,6 +31,14 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import Avatar from '@/components/meeting/participantAvatar'; // Add this import if not already present
+import Image from 'next/image';
+import { 
+    useIsMobile, 
+    useDebounceSpeak, 
+    useParticipantAvatar,
+    truncateUsername,
+    useParticipantConsistentAvatar
+} from '../../hooks/useParticipantUtils';
 
 // Types
 export interface ParticipantsSidebarProps {
@@ -322,8 +330,17 @@ export const SessionNotification = () => {
     );
 };
 
+// Update ParticipantItem component
 const ParticipantItem = memo<ParticipantItemProps>(
     ({ participant, member, currentUser, onTip, onUpdateRole }) => {
+        const userId = member.user.id;
+        const name = member.user.name ?? '';
+        const { avatarUrl, getFallbackAvatar } = useParticipantConsistentAvatar(
+            userId,
+            name,
+            member.user.image ?? ''
+        );
+
         const isCurrentUser = participant.userId === currentUser?.id;
 
         // Move the role definition before we use it
@@ -346,7 +363,16 @@ const ParticipantItem = memo<ParticipantItemProps>(
             <div className="bg-[#2C2C2C] rounded-lg mb-2">
                 <div className="flex items-center justify-between p-3">
                     <div className="flex items-center min-w-0 flex-1 gap-3">
-                        <Avatar participant={member} width={32} />
+                        <Image
+                            src={avatarUrl || getFallbackAvatar()}
+                            width={32}
+                            height={32}
+                            alt={name || 'User avatar'}
+                            className="rounded-full"
+                            onError={(e) => {
+                                e.currentTarget.src = getFallbackAvatar();
+                            }}
+                        />
                         <div className="flex flex-col">
                             <span className="text-white text-sm font-medium truncate">
                                 {displayName}
