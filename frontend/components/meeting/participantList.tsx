@@ -20,6 +20,7 @@ import type {
     MemberResponse,
 } from '@stream-io/video-react-sdk';
 import { Button } from '@/components/ui/button';
+// Remove duplicate Avatar import since it's already imported below
 import toast from 'react-hot-toast';
 import Farcaster from '@/public/icons/socials/Farcaster';
 import Twitter from '@/public/icons/socials/Twitter';
@@ -28,7 +29,8 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
-} from '@radix-ui/react-dropdown-menu';
+} from '@/components/ui/dropdown-menu';
+import Avatar from '@/components/meeting/participantAvatar'; // Add this import if not already present
 
 // Types
 export interface ParticipantsSidebarProps {
@@ -324,9 +326,8 @@ const ParticipantItem = memo<ParticipantItemProps>(
     ({ participant, member, currentUser, onTip, onUpdateRole }) => {
         const isCurrentUser = participant.userId === currentUser?.id;
 
-        // Correctly determine the role based on participant.roles
+        // Move the role definition before we use it
         const role = useMemo(() => {
-            console.log('role', participant.roles);
             if (participant.roles.includes('host')) {
                 return 'host';
             } else if (participant.roles.includes('cohost')) {
@@ -339,27 +340,27 @@ const ParticipantItem = memo<ParticipantItemProps>(
         }, [participant.roles]);
 
         const displayName = formatName(participant.name || participant.userId);
-
         const isAudioActive = participant.publishedTracks.includes(1);
-        const isVideoActive = participant.publishedTracks.includes(2);
 
         return (
             <div className="bg-[#2C2C2C] rounded-lg mb-2">
                 <div className="flex items-center justify-between p-3">
-                    <div className="flex flex-col min-w-0 flex-1">
-                        <span className="text-white text-sm font-medium truncate">
-                            {displayName}
-                        </span>
-                        {/* Display the correct role */}
-                        <span className="text-[#9B9B9B] text-xs mt-0.5">
-                            {role === 'host'
-                                ? 'Session Host'
-                                : role === 'cohost'
-                                    ? 'Co-host'
-                                    : role === 'user'
-                                        ? 'User'
-                                        : 'Listener'}
-                        </span>
+                    <div className="flex items-center min-w-0 flex-1 gap-3">
+                        <Avatar participant={member} width={32} />
+                        <div className="flex flex-col">
+                            <span className="text-white text-sm font-medium truncate">
+                                {displayName}
+                            </span>
+                            <span className="text-[#9B9B9B] text-xs mt-0.5">
+                                {role === 'host'
+                                    ? 'Session Host'
+                                    : role === 'cohost'
+                                        ? 'Co-host'
+                                        : role === 'user'
+                                            ? 'User'
+                                            : 'Listener'}
+                            </span>
+                        </div>
                     </div>
                     <div className="flex items-center gap-2">
                         <div
@@ -457,7 +458,7 @@ const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
                         backfaceVisibility: 'hidden',
                         position: 'fixed',
                         top: 0,
-                        bottom: 0,
+                        bottom: '80px', // Add space for footer
                         right: 0
                     }}
                 >
@@ -498,7 +499,7 @@ const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
                             </div>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-[#383838] scrollbar-track-transparent">
+                        <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-[#383838] scrollbar-track-transparent pb-4">
                             <div className="space-y-4">
                                 {pendingParticipants.length > 0 && (
                                     <PendingParticipantsList
@@ -524,7 +525,7 @@ const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
                             </div>
                         </div>
 
-                        <div className="mt-4">
+                        <div className="mt-4 mb-4"> {/* Added bottom margin */}
                             {SessionNotification()}
                         </div>
                     </div>

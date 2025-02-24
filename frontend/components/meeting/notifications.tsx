@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';  // Add useEffect to the import
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,6 +12,7 @@ import {
     WifiOff,
 } from 'lucide-react';
 import { CallingState } from '@stream-io/video-react-sdk';
+import { playJoinSound, playLeaveSound } from '@/lib/sounds';  // ✅ Correct import
 
 interface NotificationProps {
     type: 'join' | 'speak' | 'callState';
@@ -134,6 +135,15 @@ const Notifications: React.FC<NotificationsProps> = ({
     onRejectSpeak,
     callingState,
 }) => {
+    useEffect(() => {
+        if (callingState === CallingState.JOINED) {
+            playJoinSound();
+        }
+        if (callingState === CallingState.LEFT) {
+            playLeaveSound();
+        }
+    }, [callingState]);
+
     return (
         <>
             {joinRequests.map(user => (

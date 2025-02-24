@@ -28,25 +28,13 @@ const CallParticipants: React.FC<CallParticipantsProps> = ({ participants }) => 
     };
 
     return (
-        <div className="flex items-center justify-center md:justify-start gap-2">
+        <div className="flex items-center justify-center md:justify-start gap-2 mb-16">
             <div className="flex items-center justify-start -space-x-1">
-                {participants.slice(0, 3).map(p => (
-                    <Avatar
-                        key={(p as CallParticipantResponse).user_session_id || p.user.id}
-                        participant={p}
-                        width={AVATAR_SIZE}
-                    />
+                {participants.slice(0, 3).map((p) => (
+                    <Avatar key={(p as CallParticipantResponse).user_session_id || p.user.id} participant={p} width={AVATAR_SIZE} />
                 ))}
-                {participants.length === 4 && (
-                    <Avatar participant={participants[3]} width={AVATAR_SIZE} />
-                )}
-                {participants.length > 4 && (
-                    <div className="w-6 h-6 bg-[#6032F6] rounded-full flex items-center justify-center text-xs font-bold text-white">
-                        +{participants.length - 3}
-                    </div>
-                )}
             </div>
-            <span className="text-[#A3A3A3] text-sm">{getText()}</span>
+            <span className="text-sm text-gray-400">{getText()}</span>
         </div>
     );
 };
