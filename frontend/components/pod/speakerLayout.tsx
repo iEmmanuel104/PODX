@@ -17,22 +17,12 @@ import ParticipantViewUI from './participantViewUI';
 import useAnimateVideoLayout from '../../hooks/useAnimateVideoLayout';
 import VideoPlaceholder from './videoPlaceholder';
 import { getBasename, getBasenameAvatar } from '@/app/apis/basenames';
-
-const useIsMobile = () => {
-    const [isMobile, setIsMobile] = useState(false);
-
-    useEffect(() => {
-        const checkMobile = () => {
-            setIsMobile(window.innerWidth < 640); // 640px is Tailwind's 'sm' breakpoint
-        };
-
-        checkMobile();
-        window.addEventListener('resize', checkMobile);
-        return () => window.removeEventListener('resize', checkMobile);
-    }, []);
-
-    return isMobile;
-};
+import { 
+    useIsMobile, 
+    useDebounceSpeak, 
+    useParticipantAvatar,
+    truncateUsername 
+} from '../../hooks/useParticipantUtils';
 
 const SpeakerLayout = () => {
     const call = useCall();
@@ -102,51 +92,6 @@ const SpeakerLayout = () => {
         }
     }, [hasOngoingScreenShare, call, participants]);
 
-    // Add these imports from gridLayout.tsx
-    const useDebounceSpeak = (isSpeaking: boolean, delay: number = 550) => {
-        const [debouncedSpeaking, setDebouncedSpeaking] = useState(false);
-
-        useEffect(() => {
-            let timeoutId: NodeJS.Timeout;
-            
-            if (isSpeaking) {
-                setDebouncedSpeaking(true);
-            } else {
-                timeoutId = setTimeout(() => {
-                    setDebouncedSpeaking(false);
-                }, delay);
-            }
-
-            return () => {
-                if (timeoutId) {
-                    clearTimeout(timeoutId);
-                }
-            };
-        }, [isSpeaking, delay]);
-
-        return debouncedSpeaking;
-    };
-
-    // Update the truncation function
-    const truncateUserId = async (userId: string) => {
-        // First check if it's a basename user
-        if (userId.startsWith('0x')) {
-            try {
-                const basename = await getBasename(userId as `0x${string}`);
-                if (basename) {
-                    // If basename exists, return it
-                    return basename;
-                }
-            } catch (error) {
-                console.error('Error fetching basename:', error);
-            }
-            // If no basename or error, truncate the ethereum address
-            return `${userId.slice(0, 5)}...${userId.slice(-5)}`;
-        }
-        // For regular userIds: first 3 and last 5
-        return userId.length > 8 ? `${userId.slice(0, 3)}...${userId.slice(-5)}` : userId;
-    };
-
     // First, add this function to truncate the name to 6 characters
     const truncateNameTo6Chars = (name: string) => {
         if (name.startsWith('guest-')) {
@@ -194,12 +139,12 @@ const SpeakerLayout = () => {
                     }
                 }
                 // If no basename or not an ethereum address, truncate
-                const truncated = await truncateUserId(name);
+                const truncated = await truncateUsername(name, participant.userId, isMobile);
                 setDisplayName(truncated);
             };
 
             updateDisplayName();
-        }, [participant.name, participant.userId]);
+        }, [participant.name, participant.userId, isMobile]);
 
         // Show all elements for first tile on mobile or all tiles on desktop
         const shouldShowAllElements = !isMobile || index === 0;
@@ -302,16 +247,17 @@ const SpeakerLayout = () => {
         );
     };
 
-    // First, fix the ScreenShareUI component to handle participant prop
+    // First, add proper types for the ScreenShareUI component
     interface ScreenShareUIProps {
         children: React.ReactNode;
         participant: StreamVideoParticipant;
     }
 
-    const ScreenShareUI = React.memo((props: ScreenShareUIProps) => {
+    // Update the ScreenShareUI component to properly handle the participant prop
+    const ScreenShareUI = React.memo(({ children, participant }: ScreenShareUIProps) => {
         return (
             <div className="w-full h-full">
-                {props.children}
+                {children}
             </div>
         );
     });
@@ -353,31 +299,6 @@ const SpeakerLayout = () => {
                 </span>
             </div>
         );
-    };
-
-    // Restore the basename avatar hook
-    const useParticipantAvatar = (userId: string) => {
-        const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-
-        useEffect(() => {
-            const fetchAvatar = async () => {
-                if (userId.startsWith('0x')) {
-                    try {
-                        const basename = await getBasename(userId as `0x${string}`);
-                        if (basename) {
-                            const avatar = await getBasenameAvatar(basename);
-                            setAvatarUrl(avatar);
-                        }
-                    } catch (error) {
-                        console.error('Error fetching avatar:', error);
-                    }
-                }
-            };
-
-            fetchAvatar();
-        }, [userId]);
-
-        return avatarUrl;
     };
 
     // Update the participant sorting and filtering logic
@@ -426,7 +347,11 @@ const SpeakerLayout = () => {
                             <ParticipantView
                                 participant={screenSharingParticipant}
                                 trackType="screenShareTrack"
-                                        ParticipantViewUI={ScreenShareUI}
+                                ParticipantViewUI={(props) => (
+                                    <ScreenShareUI {...props} participant={screenSharingParticipant}>
+                                        {props.children}
+                                    </ScreenShareUI>
+                                )}
                                 VideoPlaceholder={VideoPlaceholder}
                             />
                                 </div>

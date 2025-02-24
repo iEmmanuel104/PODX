@@ -13,13 +13,19 @@ import {
     publishingAudio,
     isPinned,
 } from '@stream-io/video-react-sdk';
-import { Mic, MicOff, MoreHorizontal } from "lucide-react"
+import { Mic, MicOff, MoreHorizontal, ScreenShareOff } from "lucide-react"
 import clsx from 'clsx';
 import { getBasename, getBasenameAvatar } from '@/app/apis/basenames';
 
 import ParticipantViewUI from './participantViewUI';
 import useAnimateVideoLayout from '../../hooks/useAnimateVideoLayout';
 import VideoPlaceholder from './videoPlaceholder';
+import { 
+    useIsMobile, 
+    useDebounceSpeak, 
+    useParticipantAvatar,
+    truncateUsername 
+} from '../../hooks/useParticipantUtils';
 
 // Add ParticipantTile component
 interface ParticipantTileProps {
@@ -28,114 +34,29 @@ interface ParticipantTileProps {
     isSpeaking?: boolean;
     avatarUrl?: string;
     style?: React.CSSProperties;
+    isScreenSharing?: boolean;
+    onStopScreenShare?: () => void;
 }
 
-// Add a custom hook for debounced speaking state
-const useDebounceSpeak = (isSpeaking: boolean, delay: number = 550) => {
-    const [debouncedSpeaking, setDebouncedSpeaking] = useState(false);
-
-    useEffect(() => {
-        if (isSpeaking) {
-            // If speaking, update immediately
-            setDebouncedSpeaking(true);
-            return;
-        }
-
-        // If not speaking, wait before updating
-        const timer = setTimeout(() => {
-            setDebouncedSpeaking(false);
-        }, delay);
-
-        return () => clearTimeout(timer);
-    }, [isSpeaking, delay]);
-
-    return debouncedSpeaking;
-};
-
-// Add useIsMobile hook at the top
-const useIsMobile = () => {
-    const [isMobile, setIsMobile] = useState(false);
-
-    useEffect(() => {
-        const checkMobile = () => {
-            setIsMobile(window.innerWidth < 640); // 640px is Tailwind's 'sm' breakpoint
-        };
-
-        checkMobile();
-        window.addEventListener('resize', checkMobile);
-        return () => window.removeEventListener('resize', checkMobile);
-    }, []);
-
-    return isMobile;
-};
-
-// Update truncateUsername to consider screen size
-const truncateUsername = async (name: string, userId: string, isMobile: boolean) => {
-    // First check if it's a basename user
-    if (userId.startsWith('0x')) {
-        try {
-            const basename = await getBasename(userId as `0x${string}`);
-            if (basename) {
-                // If basename exists, return it with mobile truncation if needed
-                if (isMobile && basename.length > 12) {
-                    return `${basename.slice(0, 12)}...`;
-                }
-                return basename;
-            }
-        } catch (error) {
-            console.error('Error fetching basename:', error);
-        }
-        // If no basename or error, truncate the ethereum address
-        return `${userId.slice(0, 5)}...${userId.slice(-5)}`;
-    }
-    
-    // For regular userIds
-    if (isMobile) {
-        return name.length > 8 ? `${name.slice(0, 3)}...${name.slice(-5)}` : name;
-    }
-    return name.length > 12 ? `${name.slice(0, 12)}...` : name;
-};
-
-// Restore the useParticipantAvatar hook
-const useParticipantAvatar = (userId: string) => {
-    const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-
-    useEffect(() => {
-        const fetchAvatar = async () => {
-            if (userId.startsWith('0x')) {
-                try {
-                    const basename = await getBasename(userId as `0x${string}`);
-                    if (basename) {
-                        const avatar = await getBasenameAvatar(basename);
-                        setAvatarUrl(avatar);
-                    }
-                } catch (error) {
-                    console.error('Error fetching avatar:', error);
-                }
-            }
-        };
-
-        fetchAvatar();
-    }, [userId]);
-
-    return avatarUrl;
-};
-
 // Update ParticipantTile component
-const ParticipantTile = ({ 
-    name, 
-    isMuted, 
-    isSpeaking, 
-    style, 
+const ParticipantTile = ({
+    name,
+    isMuted,
+    isSpeaking,
+    style,
     userId,
     totalParticipants,
-    index
-}: ParticipantTileProps & { 
+    index,
+    isScreenSharing,
+    onStopScreenShare
+}: ParticipantTileProps & {
     userId: string;
     totalParticipants: number;
     index: number;
+    isScreenSharing?: boolean;
+    onStopScreenShare?: () => void;
 }) => {
-    const isActuallySpeaking = useDebounceSpeak(isSpeaking);
+    const isActuallySpeaking = useDebounceSpeak(isSpeaking || false);
     const isMobile = useIsMobile();
     const [displayName, setDisplayName] = useState(name);
     const basenameAvatar = useParticipantAvatar(userId);
@@ -181,7 +102,7 @@ const ParticipantTile = ({
                         padding: "6px",
                         display: "flex",
                         alignItems: "center",
-                        justifyContent: "center",
+                        justifyContent: "center"
                     }}
                 >
                     {isMuted ? (
@@ -198,22 +119,35 @@ const ParticipantTile = ({
                 )}
             </div>
 
-            {/* More Options */}
-            <button
-                aria-label="More options"
-                style={{
-                    position: "absolute",
-                    right: "14px",
-                    top: "13px",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    padding: "4px",
-                    zIndex: 10,
-                }}
-            >
-                <MoreHorizontal className="h-5 w-5 text-white/80" />
-            </button>
+            {/* Stop Screen Share Button - Only show when screen sharing */}
+            {isScreenSharing && onStopScreenShare && (
+                <button
+                    onClick={onStopScreenShare}
+                    className="absolute right-[14px] top-[13px] bg-[rgba(75,75,75,0.5)] backdrop-blur-[5.7px] rounded-full p-2 cursor-pointer z-20 hover:bg-[rgba(95,95,95,0.5)] transition-colors"
+                    aria-label="Stop screen sharing"
+                >
+                    <ScreenShareOff className="h-5 w-5 text-white" />
+                </button>
+            )}
+
+            {/* More Options - Only show when not screen sharing */}
+            {!isScreenSharing && (
+                <button
+                    aria-label="More options"
+                    style={{
+                        position: "absolute",
+                        right: "14px",
+                        top: "13px",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: "4px",
+                        zIndex: 10,
+                    }}
+                >
+                    <MoreHorizontal className="h-5 w-5 text-white/80" />
+                </button>
+            )}
 
             {/* Avatar */}
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
@@ -456,7 +390,7 @@ const GridLayout = () => {
             position: "relative" as const,
             background: "#2A2A2A",
             borderRadius: "20px",
-            padding: "13px 14px",
+            padding: "13px 14px"
         };
 
         if (count === 1) {
@@ -500,6 +434,22 @@ const GridLayout = () => {
         };
     };
 
+    // Add handler for stopping screen share
+    const handleStopScreenShare = async (participant: StreamVideoParticipant) => {
+        if (!call) return;
+        
+        try {
+            // Use the screenShare object's toggle method
+            if (call.screenShare) {
+                await call.screenShare.toggle();
+            }
+            // Unpin the participant
+            call.unpin(participant.sessionId);
+        } catch (error) {
+            console.error('Error stopping screen share:', error);
+        }
+    };
+
     return (
         <div ref={ref} className="w-full relative overflow-hidden flex items-center justify-center">
             <div 
@@ -533,6 +483,7 @@ const GridLayout = () => {
                     {visibleParticipants.slice(0, 4).map((participant, index) => {
                         const isAudioEnabled = participant.publishedTracks.includes(1);
                         const isSpeaking = participant.isSpeaking;
+                        const isScreenSharing = hasScreenShare(participant);
                         
                         return (
                             <ParticipantTile
@@ -543,6 +494,8 @@ const GridLayout = () => {
                                 isSpeaking={isSpeaking}
                                 totalParticipants={visibleParticipants.length}
                                 index={index}
+                                isScreenSharing={isScreenSharing}
+                                onStopScreenShare={isScreenSharing ? () => handleStopScreenShare(participant) : undefined}
                                 style={{
                                     ...getTileStyles(index, Math.min(4, visibleParticipants.length)),
                                     width: '100%',

@@ -1,7 +1,5 @@
-import { Suspense } from 'react';
 import type { Metadata } from 'next';
-import AuthProvider from '@/providers/authProvider';
-import { clashGrotesk } from '@/constants';
+import MainLayoutClient from './MainLayoutClient';
 
 export const metadata: Metadata = {
     title: 'Pod X',
@@ -10,13 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
-    return (
-        <div
-            className={`${clashGrotesk.className} antialiased bg-[#151515] min-h-screen w-full relative`}
-        >
-            <Suspense fallback={<div className="animate-pulse">Loading...</div>}>
-                <AuthProvider>{children}</AuthProvider>
-            </Suspense>
-        </div>
-    );
+    return <MainLayoutClient>{children}</MainLayoutClient>;
 }

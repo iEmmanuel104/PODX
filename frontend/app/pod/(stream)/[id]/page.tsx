@@ -2,15 +2,16 @@
 'use client';
 
 import '@stream-io/video-react-sdk/dist/css/styles.css';
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, Suspense, memo } from 'react';
 import { CheckCircle2 } from 'lucide-react';
-import TipModal from '@/components/meeting/tips';
-import ParticipantsSidebar from '@/components/meeting/participantList';
-import Notifications from '@/components/meeting/notifications';
-import Header from '@/components/meeting/header';
+import { useRouter } from 'next/navigation';
+import { useBalance } from 'wagmi';
+import { useTipping } from '@/hooks/useTipping';
+import { useTypedSelector } from '@/store/config/store';
+import clsx from 'clsx';
 import {
     StreamTheme,
-    useCall,
+    useCall as useStreamCall,
     combineComparators,
     role,
     speaking,
@@ -23,17 +24,11 @@ import {
     CustomVideoEvent,
     hasScreenShare,
     isPinned,
+    Call,
+    CallTypes,
+    PermissionRequestEvent,
+    CallRingEvent,
 } from '@stream-io/video-react-sdk';
-import { useRouter } from 'next/navigation';
-import { useBalance } from 'wagmi';
-import EndScreen from '@/components/meeting/end-screen';
-import { useTipping } from '@/hooks/useTipping';
-import SpeakerLayout from '@/components/pod/speakerLayout';
-import GridLayout from '@/components/pod/gridLayout';
-import MeetingFooter from '@/components/meeting/meetingFooter';
-import { useTypedSelector } from '@/store/config/store';
-import TipNotification from '@/components/meeting/tip-notification';
-import clsx from 'clsx';
 
 interface MeetingProps {
     params: {
@@ -41,8 +36,28 @@ interface MeetingProps {
     };
 }
 
-export default function MeetingInterface({ params }: MeetingProps) {
-    const call = useCall();
+// Optimize imports with dynamic loading
+const DynamicComponents = {
+    TipModal: React.lazy(() => import('@/components/meeting/tips')),
+    ParticipantsSidebar: React.lazy(() => import('@/components/meeting/participantList')),
+    Notifications: React.lazy(() => import('@/components/meeting/notifications')),
+    Header: React.lazy(() => import('@/components/meeting/header')),
+    EndScreen: React.lazy(() => import('@/components/meeting/end-screen')),
+    SpeakerLayout: React.lazy(() => import('@/components/pod/speakerLayout')),
+    GridLayout: React.lazy(() => import('@/components/pod/gridLayout')),
+    MeetingFooter: React.lazy(() => import('@/components/meeting/meetingFooter')),
+    TipNotification: React.lazy(() => import('@/components/meeting/tip-notification'))
+};
+
+// Create a loading fallback component
+const ComponentLoader = memo(() => (
+    <div className="animate-pulse bg-gray-800 rounded-lg h-full w-full" />
+));
+ComponentLoader.displayName = 'ComponentLoader';
+
+// Memoize the main interface component
+const MeetingInterface = memo(({ params }: MeetingProps) => {
+    const call = useStreamCall();
     const { id } = params;
     const router = useRouter();
     const {
@@ -139,24 +154,33 @@ export default function MeetingInterface({ params }: MeetingProps) {
         startup();
     }, [call, router, id, isUnkownOrIdle]);
 
-    useEffect(() => {
-        if (!call) return;
+    // Add type definition for CallEventHandler
+    type CallEventHandler = (event: StreamVideoEvent) => void;
 
-        const handleCallEvent = (event: StreamVideoEvent) => {
-            switch (event.type) {
-                case 'call.permission_request':
-                    setSpeakRequests(prev => [...prev, event.user.id]);
-                    break;
-                case 'call.ring':
-                    setJoinRequests(prev => [...prev, event.user.id]);
-                    break;
-                case 'custom':
-                    handleTipEvent(event as CustomVideoEvent);
-                    break;
+    // Update the event handler with proper type checking
+    const handleCallEvent: CallEventHandler = (event) => {
+        switch (event.type) {
+            case 'call.permission_request': {
+                const permissionEvent = event as PermissionRequestEvent;
+                setSpeakRequests(prev => [...prev, permissionEvent.user.id]);
+                break;
             }
-        };
+            case 'call.ring': {
+                const ringEvent = event as CallRingEvent;
+                setJoinRequests(prev => [...prev, ringEvent.user.id]);
+                break;
+            }
+            case 'custom': {
+                handleTipEvent(event as CustomVideoEvent);
+                break;
+            }
+        }
+    };
 
-        const unsubscribe = call.on('all', handleCallEvent);
+    useEffect(() => {
+        if (!call || !('on' in call)) return;
+        
+        const unsubscribe = (call as unknown as Call).on('all', handleCallEvent);
         return () => unsubscribe();
     }, [call, handleTipEvent]);
 
@@ -183,7 +207,9 @@ export default function MeetingInterface({ params }: MeetingProps) {
     }, [handleJoinSession]);
 
     const leaveCall = async () => {
-        await call?.leave();
+        if (call && 'leave' in call) {
+            await (call as unknown as Call).leave();
+        }
         router.push(`/pod/end`);
     };
 
@@ -200,9 +226,9 @@ export default function MeetingInterface({ params }: MeetingProps) {
         }
     }, [call, screenShare]);
 
-    const toggleParticipants = () => {
-        setShowParticipants(!showParticipants);
-    };
+    const toggleParticipants = useCallback(() => {
+        setShowParticipants(prev => !prev);
+    }, []);
 
     const confirmLeave = async () => {
         router.push('/pod');
@@ -244,119 +270,168 @@ export default function MeetingInterface({ params }: MeetingProps) {
         // Implement copy to clipboard functionality
     };
 
+    // Optimize layout determination
+    const layoutType = useMemo(() => {
+        if (!participantInSpotlight) return 'grid';
+        return hasScreenShare(participantInSpotlight) || isPinned(participantInSpotlight) 
+            ? 'speaker' 
+            : 'grid';
+    }, [participantInSpotlight]);
+
+    // Add preloading effect inside the component
+    useEffect(() => {
+        const preloadComponents = async () => {
+            const imports = [
+                import('@/components/meeting/header'),
+                import('@/components/pod/gridLayout'),
+                import('@/components/pod/speakerLayout')
+            ];
+            await Promise.all(imports);
+        };
+        preloadComponents();
+    }, []);
+
     return (
         <StreamTheme className="root-theme">
-            <div className="h-screen bg-[#151515] text-white flex flex-col w-[95%] mx-auto">
-                {/* Header with responsive height */}
-                <div className="h-[60px] sm:h-auto">
-                    <Header
-                        userInfo={user}
-                        withdrawFunds={isEmbeddedWallet}
-                        customData={customData}
-                        live={live}
-                        userAddress={userAddress}
-                        displayBalance={displayBalance}
-                        balanceSymbol={balance?.symbol}
-                        toggleParticipants={toggleParticipants}
-                        copyAddress={copyAddress}
-                    />
+            <div className="min-h-screen max-h-screen bg-[#151515] text-white flex flex-col">
+                {/* Header with proper mobile padding */}
+                <div className="px-3 sm:px-4 md:px-6">
+                    <Suspense fallback={<ComponentLoader />}>
+                        <DynamicComponents.Header
+                            userInfo={user}
+                            withdrawFunds={isEmbeddedWallet}
+                            customData={customData}
+                            live={live}
+                            userAddress={userAddress}
+                            displayBalance={displayBalance}
+                            balanceSymbol={balance?.symbol}
+                            toggleParticipants={toggleParticipants}
+                            copyAddress={copyAddress}
+                        />
+                    </Suspense>
                 </div>
 
-                {/* Main content area with responsive margins */}
+                {/* Main content area */}
                 <div className={clsx(
-                    "flex-grow flex overflow-hidden relative",
-                    "mb-[60px] sm:mb-20" // Smaller margin on mobile
+                    "flex-1 flex relative",
+                    "mb-[60px] sm:mb-20",
+                    "min-h-0", // Important for nested flex containers
+                    "overflow-hidden"
                 )}>
-                    {/* Main content area - will shrink when sidebar is open */}
+                    {/* Video grid container */}
                     <div className={clsx(
-                        'flex-1 transition-all duration-300 ease-in-out',
-                        showParticipants ? 'sm:mr-[224px] lg:mr-[256px] xl:mr-[320px]' : ''
+                        'flex-1',
+                        'transition-all duration-300 ease-in-out',
+                        'min-w-0 min-h-0', // Prevent flex item overflow
+                        'px-3 sm:px-4 md:px-6',
+                        showParticipants ? 'sm:mr-[320px]' : ''
                     )}>
-                        {isSpeakerLayout && <SpeakerLayout />}
-                        {!isSpeakerLayout && <GridLayout />}
+                        <Suspense fallback={<ComponentLoader />}>
+                            <div className="h-full">
+                                {layoutType === 'speaker' 
+                                    ? <DynamicComponents.SpeakerLayout /> 
+                                    : <DynamicComponents.GridLayout />
+                                }
+                            </div>
+                        </Suspense>
                     </div>
 
                     {/* Participants sidebar */}
-                    <div className={clsx(
-                        'fixed sm:absolute right-0 top-0 h-full',
-                        'w-full sm:w-56 lg:w-64 xl:w-80',
-                        'bg-[#1D1D1D]',
-                        'transform transition-transform duration-300 ease-in-out',
-                        showParticipants ? 'translate-x-0' : 'translate-x-full',
-                        'z-20 overflow-y-auto'
-                    )}>
-                        <ParticipantsSidebar
+                    <Suspense fallback={<ComponentLoader />}>
+                        <DynamicComponents.ParticipantsSidebar
+                            isOpen={showParticipants}
+                            onClose={() => setShowParticipants(false)}
                             members={members}
                             participants={participants}
                             currentUser={connectedUser}
                             openTipModal={openTipModal}
                             updateParticipantRole={updateParticipantRole}
                             handleJoinRequest={handleJoinRequest}
-                            onClose={toggleParticipants}
                         />
-                    </div>
+                    </Suspense>
                 </div>
 
-                {/* Footer with responsive height */}
-                <div className="h-[60px] sm:h-auto">
-                    <MeetingFooter
-                        leaveCall={leaveCall}
-                        toggleScreenShare={toggleScreenShare}
-                        customData={customData}
-                    />
-                </div>
-                
-                {showTipModal && selectedTipRecipient && (
-                    <TipModal
-                        selectedTipRecipient={selectedTipRecipient}
-                        walletAddress={selectedTipRecipient.user.custom.walletAddress}
-                        tipAmount={tipAmount}
-                        setTipAmount={setTipAmount}
-                        handleTip={handleTip}
-                        onCancel={handleCancelTip}
-                        balance={displayBalance}
-                        selectedCurrency={selectedCurrency}
-                        setCurrency={setCurrency}
-                    />
-                )}
-                {showThankYouModal && <EndScreen onClose={confirmLeave} user={user} />}
-                <Notifications
-                    joinRequests={joinRequests}
-                    speakRequests={speakRequests}
-                    onAcceptJoin={onAcceptJoin}
-                    onRejectJoin={onRejectJoin}
-                    onAcceptSpeak={onAcceptSpeak}
-                    onRejectSpeak={onRejectSpeak}
-                    callingState={callingState}
-                />
-                {showTipSuccess && selectedTipRecipient && (
-                    <div className="fixed bottom-4 right-4 bg-green-500 text-white px-3 sm:px-4 py-2 rounded-[10px] flex items-center text-xs sm:text-sm z-50">
-                        <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                        You successfully tipped {selectedTipRecipient.user.name} {tipAmount}{' '}
-                        {selectedCurrency}
-                    </div>
-                )}
-                {receivedTips.length > 0 &&
-                    receivedTips.map((tip, index) => (
-                        <TipNotification
-                            key={index}
-                            tip={{
-                                from: tip.from,
-                                amount: `${tip.amount} ${tip.currency}`,
-                                profileImage: '/images/default-avatar.png',
-                            }}
-                            onClose={() => {
-                                // Remove this specific tip from receivedTips array
-                                const newTips = [...receivedTips];
-                                newTips.splice(index, 1);
-                                setState(prevState => ({
-                                    ...prevState,
-                                    receivedTips: newTips,
-                                })); // Update the state
-                            }}
+                {/* Footer */}
+                <div className="fixed bottom-0 left-0 right-0 px-3 sm:px-4 md:px-6 bg-[#151515]">
+                    <Suspense fallback={<ComponentLoader />}>
+                        <DynamicComponents.MeetingFooter
+                            leaveCall={leaveCall}
+                            toggleScreenShare={toggleScreenShare}
+                            customData={customData}
                         />
-                    ))}
+                    </Suspense>
+                </div>
+
+                {/* Modals and notifications with proper z-index */}
+                <div className="fixed inset-0 pointer-events-none z-50">
+                    <div className="relative h-full">
+                        {showTipModal && selectedTipRecipient && (
+                            <Suspense fallback={null}>
+                                <div className="pointer-events-auto">
+                                    <DynamicComponents.TipModal
+                                        selectedTipRecipient={selectedTipRecipient}
+                                        walletAddress={selectedTipRecipient.user.custom.walletAddress}
+                                        tipAmount={tipAmount}
+                                        setTipAmount={setTipAmount}
+                                        handleTip={handleTip}
+                                        onCancel={handleCancelTip}
+                                        balance={displayBalance}
+                                        selectedCurrency={selectedCurrency}
+                                        setCurrency={setCurrency}
+                                    />
+                                </div>
+                            </Suspense>
+                        )}
+                        {showThankYouModal && (
+                            <Suspense fallback={null}>
+                                <DynamicComponents.EndScreen onClose={confirmLeave} user={user} />
+                            </Suspense>
+                        )}
+                        <Suspense fallback={null}>
+                            <DynamicComponents.Notifications
+                                joinRequests={joinRequests}
+                                speakRequests={speakRequests}
+                                onAcceptJoin={onAcceptJoin}
+                                onRejectJoin={onRejectJoin}
+                                onAcceptSpeak={onAcceptSpeak}
+                                onRejectSpeak={onRejectSpeak}
+                                callingState={callingState}
+                            />
+                        </Suspense>
+                        {showTipSuccess && selectedTipRecipient && (
+                            <div className="fixed bottom-4 right-4 bg-green-500 text-white px-3 sm:px-4 py-2 rounded-[10px] flex items-center text-xs sm:text-sm z-50">
+                                <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                                You successfully tipped {selectedTipRecipient.user.name} {tipAmount}{' '}
+                                {selectedCurrency}
+                            </div>
+                        )}
+                        {receivedTips.length > 0 &&
+                            receivedTips.map((tip, index) => (
+                                <Suspense key={index} fallback={null}>
+                                    <DynamicComponents.TipNotification
+                                        tip={{
+                                            from: tip.from,
+                                            amount: `${tip.amount} ${tip.currency}`,
+                                            profileImage: '/images/default-avatar.png',
+                                        }}
+                                        onClose={() => {
+                                            const newTips = [...receivedTips];
+                                            newTips.splice(index, 1);
+                                            setState(prevState => ({
+                                                ...prevState,
+                                                receivedTips: newTips,
+                                            }));
+                                        }}
+                                    />
+                                </Suspense>
+                            ))}
+                    </div>
+                </div>
             </div>
         </StreamTheme>
     );
-}
+});
+
+MeetingInterface.displayName = 'MeetingInterface';
+
+export default MeetingInterface;

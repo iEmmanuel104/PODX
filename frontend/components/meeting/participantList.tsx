@@ -38,6 +38,8 @@ export interface ParticipantsSidebarProps {
     openTipModal: (member: MemberResponse) => void;
     updateParticipantRole: (userId: string, newRole: string) => void;
     handleJoinRequest: (userId: string, accept: boolean) => void;
+    isOpen: boolean;
+    onClose: () => void;
 }
 
 export interface ParticipantItemProps {
@@ -285,6 +287,7 @@ export const SessionNotification = () => {
                         <div className="flex gap-3">
                             {/* Farcaster Share Button */}
                             <button
+                                aria-label="Share on Farcaster"
                                 className="text-gray-400 hover:text-white transition-colors"
                                 onClick={() => {
                                     const shareUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(
@@ -298,6 +301,7 @@ export const SessionNotification = () => {
 
                             {/* Twitter Share Button */}
                             <button
+                                aria-label="Share on Twitter"
                                 className="text-gray-400 hover:text-white transition-colors"
                                 onClick={() => {
                                     const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
@@ -413,7 +417,7 @@ const ParticipantItem = memo<ParticipantItemProps>(
 
 // Main Component
 // Update the ParticipantsSidebar component
-const ParticipantsSidebar = memo<ParticipantsSidebarProps & { onClose: () => void }>(
+const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
     ({
         members,
         participants,
@@ -421,7 +425,8 @@ const ParticipantsSidebar = memo<ParticipantsSidebarProps & { onClose: () => voi
         openTipModal,
         updateParticipantRole,
         handleJoinRequest,
-        onClose, // Add onClose prop
+        isOpen,
+        onClose,
     }) => {
         const [searchQuery, setSearchQuery] = useState('');
 
@@ -442,62 +447,89 @@ const ParticipantsSidebar = memo<ParticipantsSidebarProps & { onClose: () => voi
         }, [activeParticipants, searchQuery]);
 
         return (
-            <div className="flex flex-col h-full bg-[#1C1C1C] p-4 rounded-[20px]">
-                {/* Add a close button next to the title */}
-                <div className="flex justify-between items-center mb-4">
-                    <div className="flex items-center">
-                        <button
+            <>
+                <div 
+                    className={`fixed inset-y-0 right-0 z-50 w-[80%] sm:w-[380px] transform transition-transform duration-300 ease-in-out ${
+                        isOpen ? 'translate-x-0' : 'translate-x-full'
+                    }`}
+                    style={{
+                        willChange: 'transform',
+                        backfaceVisibility: 'hidden',
+                        position: 'fixed',
+                        top: 0,
+                        bottom: 0,
+                        right: 0
+                    }}
+                >
+                    {isOpen && (
+                        <div 
+                            className="fixed inset-0 -z-10 bg-black/50 sm:hidden"
                             onClick={onClose}
-                            className="mr-2 text-gray-400 hover:text-white transition-colors"
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
-                        <h2 className="text-white text-lg font-medium">Participants</h2>
-                    </div>
-                    <span className="text-sm bg-[#6032F6] text-white px-2 py-1 rounded-full">
-                        {activeParticipants.length}/50
-                    </span>
-                </div>
-
-                <div className="relative mb-4">
-                    <div className="rounded-lg p-[1px] bg-gradient-to-r from-[#6032F6] to-[#F5A524]">
-                        <input
-                            type="text"
-                            placeholder="Search for participant"
-                            value={searchQuery}
-                            onChange={e => setSearchQuery(e.target.value)}
-                            className="w-full bg-[#2C2C2C] text-white text-sm rounded-lg px-4 py-2.5 
-                       focus:outline-none focus:border-transparent"
-                        />
-                    </div>
-                </div>
-
-                <div className="flex-1 overflow-y-auto space-y-4">
-                    {pendingParticipants.length > 0 && (
-                        <PendingParticipantsList
-                            participants={pendingParticipants}
-                            onJoinRequest={handleJoinRequest}
                         />
                     )}
-                    {filteredActiveParticipants.map(participant => {
-                        const member = members.find(m => m.user.id === participant.userId);
-                        if (!member) return null;
+                    
+                    <div className="absolute right-0 h-full w-full bg-[#1C1C1C] p-4 rounded-l-[20px] overflow-hidden flex flex-col shadow-xl">
+                        <div className="flex justify-between items-center mb-4">
+                            <div className="flex items-center">
+                                <button
+                                    aria-label="Close participants sidebar"
+                                    onClick={onClose}
+                                    className="mr-2 text-gray-400 hover:text-white transition-colors"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                                <h2 className="text-white text-lg font-medium">Participants</h2>
+                            </div>
+                            <span className="text-sm bg-[#6032F6] text-white px-2 py-1 rounded-full">
+                                {activeParticipants.length}/50
+                            </span>
+                        </div>
 
-                        return (
-                            <ParticipantItem
-                                key={participant.userId}
-                                participant={participant}
-                                member={member}
-                                currentUser={currentUser}
-                                onTip={openTipModal}
-                                onUpdateRole={updateParticipantRole}
-                            />
-                        );
-                    })}
+                        <div className="relative mb-4">
+                            <div className="rounded-lg p-[1px] bg-gradient-to-r from-[#6032F6] to-[#F5A524]">
+                                <input
+                                    type="text"
+                                    placeholder="Search for participant"
+                                    value={searchQuery}
+                                    onChange={e => setSearchQuery(e.target.value)}
+                                    className="w-full bg-[#2C2C2C] text-white text-sm rounded-lg px-4 py-2.5 
+                                    focus:outline-none focus:border-transparent"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-[#383838] scrollbar-track-transparent">
+                            <div className="space-y-4">
+                                {pendingParticipants.length > 0 && (
+                                    <PendingParticipantsList
+                                        participants={pendingParticipants}
+                                        onJoinRequest={handleJoinRequest}
+                                    />
+                                )}
+                                {filteredActiveParticipants.map(participant => {
+                                    const member = members.find(m => m.user.id === participant.userId);
+                                    if (!member) return null;
+
+                                    return (
+                                        <ParticipantItem
+                                            key={participant.userId}
+                                            participant={participant}
+                                            member={member}
+                                            currentUser={currentUser}
+                                            onTip={openTipModal}
+                                            onUpdateRole={updateParticipantRole}
+                                        />
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        <div className="mt-4">
+                            {SessionNotification()}
+                        </div>
+                    </div>
                 </div>
-
-                {SessionNotification()}
-            </div>
+            </>
         );
     }
 );
