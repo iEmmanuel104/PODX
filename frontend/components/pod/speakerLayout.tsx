@@ -12,219 +12,27 @@ import {
 } from '@stream-io/video-react-sdk';
 import clsx from 'clsx';
 import { Mic, MicOff, MoreHorizontal } from "lucide-react";
-import { getBasename, getBasenameAvatar } from '@/app/apis/basenames';
 
 import ParticipantViewUI from './participantViewUI';
 import useAnimateVideoLayout from '../../hooks/useAnimateVideoLayout';
 import VideoPlaceholder from './videoPlaceholder';
+import { getBasename, getBasenameAvatar } from '@/app/apis/basenames';
 
-// ============= Utility Hooks =============
-const useDebounceSpeak = (isSpeaking: boolean, delay: number = 550) => {
-    const [debouncedSpeaking, setDebouncedSpeaking] = useState(false);
-
-    useEffect(() => {
-        let timeoutId: NodeJS.Timeout;
-        if (isSpeaking) {
-            setDebouncedSpeaking(true);
-        } else {
-            timeoutId = setTimeout(() => setDebouncedSpeaking(false), delay);
-        }
-        return () => timeoutId && clearTimeout(timeoutId);
-    }, [isSpeaking, delay]);
-
-    return debouncedSpeaking;
-};
-
-const useParticipantAvatar = (userId: string) => {
-    const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+const useIsMobile = () => {
+    const [isMobile, setIsMobile] = useState(false);
 
     useEffect(() => {
-        const fetchAvatar = async () => {
-            if (!userId.startsWith('0x')) return;
-            try {
-                const basename = await getBasename(userId as `0x${string}`);
-                if (basename) {
-                    const avatar = await getBasenameAvatar(basename);
-                    setAvatarUrl(avatar);
-                }
-            } catch (error) {
-                console.error('Error fetching avatar:', error);
-            }
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 640); // 640px is Tailwind's 'sm' breakpoint
         };
-        fetchAvatar();
-    }, [userId]);
 
-    return avatarUrl;
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    return isMobile;
 };
-
-// ============= Utility Functions =============
-const truncateNameTo6Chars = (name: string) => {
-    if (name.startsWith('guest-')) {
-        const username = name.slice(6);
-        return `guest-${username.slice(0, 6)}${username.length > 6 ? '...' : ''}`;
-    }
-    return name.length > 6 ? `${name.slice(0, 6)}...` : name;
-};
-
-// ============= Component Interfaces =============
-interface ParticipantTileProps {
-    participant: StreamVideoParticipant;
-    totalParticipants: number;
-    index: number;
-    style?: React.CSSProperties;
-}
-
-interface MinimalParticipantUIProps {
-    children: React.ReactNode;
-    participant: StreamVideoParticipant;
-}
-
-// ============= UI Components =============
-const ParticipantTile = React.memo(({ participant, index, style }: ParticipantTileProps) => {
-    const isAudioEnabled = participant.publishedTracks.includes(1);
-    const isSpeaking = participant.isSpeaking;
-    const debouncedSpeaking = useDebounceSpeak(isSpeaking);
-    const basenameAvatar = useParticipantAvatar(participant.userId);
-    const isMobile = window.innerWidth < 640;
-    const displayName = useMemo(() => 
-        truncateNameTo6Chars(participant.name || participant.userId),
-        [participant.name, participant.userId]
-    );
-    
-    const shouldShowAllElements = !isMobile || index === 0;
-    const shouldShowMinimalElements = isMobile && index === 1;
-
-    return (
-        <div 
-            className={clsx(
-                "relative w-full h-full flex",
-                "items-center justify-center",
-                "bg-[#2A2A2A] rounded-xl overflow-hidden"
-            )}
-            style={style}
-        >
-            {(shouldShowAllElements || shouldShowMinimalElements) && (
-                <>
-                    <div className={clsx(
-                        "absolute left-[14px] top-[13px] z-10",
-                        "flex items-center",
-                        "p-[6px]",
-                        "bg-[rgba(75,75,75,0.5)] backdrop-blur-[5.7px] rounded-[1000px]"
-                    )}>
-                        <div
-                            style={{
-                                background: !isAudioEnabled ? "#FF3B30" : debouncedSpeaking ? "#5E5CE6" : "#808080",
-                                borderRadius: "50%",
-                                padding: "6px",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                            }}
-                        >
-                            {!isAudioEnabled ? <MicOff className="h-3 w-3 text-white" /> : <Mic className="h-3 w-3 text-white" />}
-                        </div>
-                    </div>
-                    <button
-                        aria-label="More options"
-                        className={clsx(
-                            "absolute right-[14px] top-[13px] z-10",
-                            "bg-transparent border-none",
-                            "cursor-pointer",
-                            "p-1"
-                        )}
-                    >
-                        <MoreHorizontal className="h-5 w-5 text-white/80" />
-                    </button>
-                </>
-            )}
-
-            {shouldShowAllElements && (
-                <>
-                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-                        {basenameAvatar ? (
-                            <img
-                                src={basenameAvatar}
-                                alt={displayName}
-                                className="w-[38.4px] h-[38.4px] rounded-full object-cover"
-                            />
-                        ) : (
-                            <div className={clsx(
-                                "w-[38.4px] h-[38.4px]",
-                                "flex items-center justify-center",
-                                "rounded-full bg-[#4B4B4B]"
-                            )}>
-                                <svg
-                                    width="25.6"
-                                    height="25.6"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="1"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    className="text-[#808080]"
-                                >
-                                    <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                </svg>
-                            </div>
-                        )}
-                    </div>
-                    <div className={clsx(
-                        "absolute left-[14px] bottom-[13px]",
-                        "flex items-center",
-                        "p-[6px] gap-2",
-                        "bg-[rgba(75,75,75,0.5)] backdrop-blur-[5.7px] rounded-[1000px]"
-                    )}>
-                        <span className="text-white text-sm px-1.5">{displayName}</span>
-                    </div>
-                </>
-            )}
-        </div>
-    );
-});
-ParticipantTile.displayName = 'ParticipantTile';
-
-const ScreenShareUI = React.memo(({ children }: { children: React.ReactNode }) => (
-    <div className="w-full h-full">{children}</div>
-));
-ScreenShareUI.displayName = 'ScreenShareUI';
-
-const OverflowIndicator = ({ count }: { count: number }) => (
-    <div className={clsx(
-        "flex items-center",
-        "p-[6px_12px] gap-2",
-        "bg-[rgba(75,75,75,0.5)] backdrop-blur-[5.7px] rounded-[1000px]"
-    )}>
-        <div className="flex items-center bg-transparent p-0.5">
-            {[...Array(3)].map((_, index) => (
-                <div
-                    key={index}
-                    className={clsx(
-                        "w-6 h-6 flex items-center justify-center",
-                        "-ml-1.5 first:ml-0",
-                        "rounded-full bg-[#2A2A2A] border border-[#1D1D1D]"
-                    )}
-                    style={{ zIndex: 3 - index }}
-                >
-                    <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="text-[#808080]"
-                    >
-                        <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                </div>
-            ))}
-        </div>
-        <span className="text-white text-sm">+{count}</span>
-    </div>
-);
 
 const SpeakerLayout = () => {
     const call = useCall();
@@ -233,6 +41,7 @@ const SpeakerLayout = () => {
     const participants = useParticipants();
     const hasOngoingScreenShare = useHasOngoingScreenShare();
     const [participantsBar, setParticipantsBar] = useState<HTMLDivElement | null>(null);
+    const isMobile = useIsMobile();
 
     // Find participants by status using helper functions
     const screenSharingParticipant = useMemo(
@@ -245,10 +54,24 @@ const SpeakerLayout = () => {
     // Determine spotlight participant and others
     const [participantInSpotlight, ...otherParticipants] = useMemo(() => {
         const sortedParticipants = [...participants].sort((a, b) => {
+            // First priority: screen sharing
             if (hasScreenShare(a)) return -1;
             if (hasScreenShare(b)) return 1;
+
+            // Second priority: pinned
             if (isPinned(a)) return -1;
             if (isPinned(b)) return 1;
+
+            // Third priority: speaking
+            if (a.isSpeaking) return -1;
+            if (b.isSpeaking) return 1;
+
+            // Fourth priority: has basename (starts with 0x)
+            const aHasBasename = a.userId.startsWith('0x');
+            const bHasBasename = b.userId.startsWith('0x');
+            if (aHasBasename && !bHasBasename) return -1;
+            if (!aHasBasename && bHasBasename) return 1;
+
             return 0;
         });
         
@@ -279,6 +102,192 @@ const SpeakerLayout = () => {
         }
     }, [hasOngoingScreenShare, call, participants]);
 
+    // Add these imports from gridLayout.tsx
+    const useDebounceSpeak = (isSpeaking: boolean, delay: number = 550) => {
+        const [debouncedSpeaking, setDebouncedSpeaking] = useState(false);
+
+        useEffect(() => {
+            let timeoutId: NodeJS.Timeout;
+            
+            if (isSpeaking) {
+                setDebouncedSpeaking(true);
+            } else {
+                timeoutId = setTimeout(() => {
+                    setDebouncedSpeaking(false);
+                }, delay);
+            }
+
+            return () => {
+                if (timeoutId) {
+                    clearTimeout(timeoutId);
+                }
+            };
+        }, [isSpeaking, delay]);
+
+        return debouncedSpeaking;
+    };
+
+    // Update the truncation function
+    const truncateUserId = async (userId: string) => {
+        // First check if it's a basename user
+        if (userId.startsWith('0x')) {
+            try {
+                const basename = await getBasename(userId as `0x${string}`);
+                if (basename) {
+                    // If basename exists, return it
+                    return basename;
+                }
+            } catch (error) {
+                console.error('Error fetching basename:', error);
+            }
+            // If no basename or error, truncate the ethereum address
+            return `${userId.slice(0, 5)}...${userId.slice(-5)}`;
+        }
+        // For regular userIds: first 3 and last 5
+        return userId.length > 8 ? `${userId.slice(0, 3)}...${userId.slice(-5)}` : userId;
+    };
+
+    // First, add this function to truncate the name to 6 characters
+    const truncateNameTo6Chars = (name: string) => {
+        if (name.startsWith('guest-')) {
+            // Remove 'guest-' prefix and then take first 6 chars
+            const username = name.slice(6);
+            return `guest-${username.slice(0, 6)}${username.length > 6 ? '...' : ''}`;
+        }
+        // For non-guest names, just take first 6 chars
+        return name.length > 6 ? `${name.slice(0, 6)}...` : name;
+    };
+
+    // First, update the ParticipantTile interface
+    interface ParticipantTileProps {
+        participant: StreamVideoParticipant;
+        totalParticipants: number;
+        index: number;
+        style?: React.CSSProperties;
+    }
+
+    const ParticipantTile = React.memo(({
+        participant,
+        totalParticipants,
+        index,
+        style
+    }: ParticipantTileProps) => {
+        const isAudioEnabled = participant.publishedTracks.includes(1);
+        const isSpeaking = participant.isSpeaking;
+        const debouncedSpeaking = useDebounceSpeak(isSpeaking);
+        const [displayName, setDisplayName] = useState(participant.name || participant.userId);
+        const isMobile = useIsMobile();
+        const basenameAvatar = useParticipantAvatar(participant.userId);
+        
+        useEffect(() => {
+            const updateDisplayName = async () => {
+                const name = participant.name || participant.userId;
+                if (participant.userId.startsWith('0x')) {
+                    try {
+                        const basename = await getBasename(participant.userId as `0x${string}`);
+                        if (basename) {
+                            setDisplayName(basename);
+                            return;
+                        }
+                    } catch (error) {
+                        console.error('Error fetching basename:', error);
+                    }
+                }
+                // If no basename or not an ethereum address, truncate
+                const truncated = await truncateUserId(name);
+                setDisplayName(truncated);
+            };
+
+            updateDisplayName();
+        }, [participant.name, participant.userId]);
+
+        // Show all elements for first tile on mobile or all tiles on desktop
+        const shouldShowAllElements = !isMobile || index === 0;
+        // Show only mic and more options for second tile on mobile
+        const shouldShowMinimalElements = isMobile && index === 1;
+
+        return (
+            <div 
+                className={clsx(
+                    "relative w-full h-full",
+                    "flex items-center justify-center",
+                    "bg-[#2A2A2A] rounded-xl overflow-hidden"
+                )}
+                style={style}
+            >
+                {/* Avatar */}
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                    {basenameAvatar ? (
+                        <img
+                            src={basenameAvatar}
+                            alt={displayName}
+                            className="w-[38.4px] h-[38.4px] rounded-full object-cover"
+                        />
+                    ) : (
+                        <div className="w-[38.4px] h-[38.4px] rounded-full bg-[#4B4B4B] flex items-center justify-center">
+                            <svg
+                                width="25.6"
+                                height="25.6"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="text-[#808080]"
+                            >
+                                <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                        </div>
+                    )}
+                </div>
+
+                {/* Status indicator */}
+                {(shouldShowAllElements || shouldShowMinimalElements) && (
+                    <div
+                        className="absolute left-[14px] top-[13px] flex items-center p-[6px] bg-[rgba(75,75,75,0.5)] backdrop-blur-[5.7px] rounded-[1000px] z-10"
+                    >
+                        <div
+                            style={{
+                                background: !isAudioEnabled ? "#FF3B30" : debouncedSpeaking ? "#5E5CE6" : "#808080",
+                                borderRadius: "50%",
+                                padding: "6px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                            }}
+                        >
+                            {!isAudioEnabled ? (
+                                <MicOff className="h-3 w-3 text-white" />
+                            ) : (
+                                <Mic className="h-3 w-3 text-white" />
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* More Options */}
+                {(shouldShowAllElements || shouldShowMinimalElements) && (
+                    <button
+                        aria-label="More options"
+                        className="absolute right-[14px] top-[13px] bg-transparent border-none cursor-pointer p-1 z-10"
+                    >
+                        <MoreHorizontal className="h-5 w-5 text-white/80" />
+                    </button>
+                )}
+
+                {/* Name Label - only show for first tile on mobile or all on desktop */}
+                {shouldShowAllElements && (
+                    <div className="absolute left-[14px] bottom-[13px] flex items-center p-[6px] gap-2 bg-[rgba(75,75,75,0.5)] backdrop-blur-[5.7px] rounded-[1000px]">
+                        <span className="text-white text-sm px-1.5">
+                            {displayName}
+                        </span>
+                    </div>
+                )}
+            </div>
+        );
+    });
+
     // First, let's properly type the MinimalParticipantUI component
     interface MinimalParticipantUIProps {
         children: React.ReactNode;
@@ -292,6 +301,117 @@ const SpeakerLayout = () => {
             </div>
         );
     };
+
+    // First, fix the ScreenShareUI component to handle participant prop
+    interface ScreenShareUIProps {
+        children: React.ReactNode;
+        participant: StreamVideoParticipant;
+    }
+
+    const ScreenShareUI = React.memo((props: ScreenShareUIProps) => {
+        return (
+            <div className="w-full h-full">
+                {props.children}
+            </div>
+        );
+    });
+    ScreenShareUI.displayName = 'ScreenShareUI';
+
+    // First, add the OverflowIndicator component from GridLayout
+    const OverflowIndicator = ({ count }: { count: number }) => {
+        return (
+            <div 
+                className="flex items-center p-[6px_12px] gap-2 bg-[rgba(75,75,75,0.5)] backdrop-blur-[5.7px] rounded-[1000px]"
+            >
+                {/* Container for overlapping avatars */}
+                <div className="flex items-center bg-transparent p-0.5">
+                    {[...Array(3)].map((_, index) => (
+                        <div
+                            key={index}
+                            className="w-6 h-6 rounded-full bg-[#2A2A2A] flex items-center justify-center -ml-1.5 first:ml-0 border border-[#1D1D1D]"
+                            style={{ zIndex: 3 - index }}
+                        >
+                            <svg
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="text-[#808080]"
+                            >
+                                <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                        </div>
+                    ))}
+                </div>
+                {/* Overflow Count */}
+                <span className="text-white text-sm">
+                    +{count}
+                </span>
+            </div>
+        );
+    };
+
+    // Restore the basename avatar hook
+    const useParticipantAvatar = (userId: string) => {
+        const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+        useEffect(() => {
+            const fetchAvatar = async () => {
+                if (userId.startsWith('0x')) {
+                    try {
+                        const basename = await getBasename(userId as `0x${string}`);
+                        if (basename) {
+                            const avatar = await getBasenameAvatar(basename);
+                            setAvatarUrl(avatar);
+                        }
+                    } catch (error) {
+                        console.error('Error fetching avatar:', error);
+                    }
+                }
+            };
+
+            fetchAvatar();
+        }, [userId]);
+
+        return avatarUrl;
+    };
+
+    // Update the participant sorting and filtering logic
+    const [visibleParticipants, overflowParticipants] = useMemo(() => {
+        // First sort all participants
+        const sortedParticipants = [...otherParticipants].sort((a, b) => {
+            // Speaking participants first
+            if (a.isSpeaking && !b.isSpeaking) return -1;
+            if (!a.isSpeaking && b.isSpeaking) return 1;
+            
+            // Then basename users
+            const aHasBasename = a.userId.startsWith('0x');
+            const bHasBasename = b.userId.startsWith('0x');
+            if (aHasBasename && !bHasBasename) return -1;
+            if (!aHasBasename && bHasBasename) return 1;
+
+            return 0;
+        });
+
+        // Get speaking participants first
+        const speakingParticipants = sortedParticipants.filter(p => p.isSpeaking);
+        const nonSpeakingParticipants = sortedParticipants.filter(p => !p.isSpeaking);
+
+        // Show up to 2 participants: speaking ones first, then fill with non-speaking if needed
+        const visible = [...speakingParticipants];
+        if (visible.length < 2) {
+            visible.push(...nonSpeakingParticipants.slice(0, 2 - visible.length));
+        }
+
+        // Rest go to overflow
+        const overflow = sortedParticipants.filter(p => !visible.includes(p));
+
+        return [visible, overflow];
+    }, [otherParticipants]);
 
     // Then update the screen sharing section:
     if (hasOngoingScreenShare && screenSharingParticipant) {
@@ -321,26 +441,26 @@ const SpeakerLayout = () => {
                                 ref={setParticipantsBar}
                                 className="flex gap-4 h-full overflow-x-auto justify-center px-2 relative"
                             >
-                                {/* Show only first 2 participants */}
+                                {/* Show visible participants */}
                                 <div className="flex gap-4">
-                                    {otherParticipants.slice(0, 2).map((participant, index) => (
+                                    {visibleParticipants.map((participant, index) => (
                                     <div
                                         key={participant.sessionId}
                                             className="h-full aspect-[4/3] flex-shrink-0 bg-[#2A2A2A] rounded-xl overflow-hidden"
                                     >
                                             <ParticipantTile
                                             participant={participant}
-                                                totalParticipants={2}  // Force to show only 2
+                                                totalParticipants={2}
                                                 index={index}
                                         />
                                     </div>
                                 ))}
                                 </div>
 
-                                {/* Show overflow indicator when more than 2 participants */}
-                                {otherParticipants.length > 2 && (
+                                {/* Show overflow indicator for remaining participants */}
+                                {overflowParticipants.length > 0 && (
                                     <div className="absolute right-4 bottom-4 z-10">
-                                        <OverflowIndicator count={otherParticipants.length - 2} />
+                                        <OverflowIndicator count={overflowParticipants.length} />
                                     </div>
                                 )}
                             </div>
@@ -427,26 +547,26 @@ const SpeakerLayout = () => {
                             ref={setParticipantsBar}
                             className="flex gap-4 h-full overflow-x-auto justify-center px-2 relative"
                         >
-                            {/* Show only first 2 participants */}
+                            {/* Show visible participants */}
                             <div className="flex gap-4">
-                                {otherParticipants.slice(0, 2).map((participant, index) => (
+                                {visibleParticipants.map((participant, index) => (
                                 <div
                                     key={participant.sessionId}
                                         className="h-full aspect-[4/3] flex-shrink-0 bg-[#2A2A2A] rounded-xl overflow-hidden"
                                 >
                                         <ParticipantTile
                                         participant={participant}
-                                            totalParticipants={2}  // Force to show only 2
+                                            totalParticipants={2}
                                             index={index}
                                     />
                                 </div>
                             ))}
                             </div>
 
-                            {/* Show overflow indicator when more than 2 participants */}
-                            {otherParticipants.length > 2 && (
+                            {/* Show overflow indicator for remaining participants */}
+                            {overflowParticipants.length > 0 && (
                                 <div className="absolute right-4 bottom-4 z-10">
-                                    <OverflowIndicator count={otherParticipants.length - 2} />
+                                    <OverflowIndicator count={overflowParticipants.length} />
                                 </div>
                             )}
                         </div>

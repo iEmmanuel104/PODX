@@ -52,7 +52,51 @@ const useDebounceSpeak = (isSpeaking: boolean, delay: number = 550) => {
     return debouncedSpeaking;
 };
 
-// Add hook to fetch basename and avatar
+// Add useIsMobile hook at the top
+const useIsMobile = () => {
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 640); // 640px is Tailwind's 'sm' breakpoint
+        };
+
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    return isMobile;
+};
+
+// Update truncateUsername to consider screen size
+const truncateUsername = async (name: string, userId: string, isMobile: boolean) => {
+    // First check if it's a basename user
+    if (userId.startsWith('0x')) {
+        try {
+            const basename = await getBasename(userId as `0x${string}`);
+            if (basename) {
+                // If basename exists, return it with mobile truncation if needed
+                if (isMobile && basename.length > 12) {
+                    return `${basename.slice(0, 12)}...`;
+                }
+                return basename;
+            }
+        } catch (error) {
+            console.error('Error fetching basename:', error);
+        }
+        // If no basename or error, truncate the ethereum address
+        return `${userId.slice(0, 5)}...${userId.slice(-5)}`;
+    }
+    
+    // For regular userIds
+    if (isMobile) {
+        return name.length > 8 ? `${name.slice(0, 3)}...${name.slice(-5)}` : name;
+    }
+    return name.length > 12 ? `${name.slice(0, 12)}...` : name;
+};
+
+// Restore the useParticipantAvatar hook
 const useParticipantAvatar = (userId: string) => {
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
@@ -77,36 +121,6 @@ const useParticipantAvatar = (userId: string) => {
     return avatarUrl;
 };
 
-// Add useIsMobile hook at the top
-const useIsMobile = () => {
-    const [isMobile, setIsMobile] = useState(false);
-
-    useEffect(() => {
-        const checkMobile = () => {
-            setIsMobile(window.innerWidth < 640); // 640px is Tailwind's 'sm' breakpoint
-        };
-
-        checkMobile();
-        window.addEventListener('resize', checkMobile);
-        return () => window.removeEventListener('resize', checkMobile);
-    }, []);
-
-    return isMobile;
-};
-
-// Update truncateUsername to consider screen size
-const truncateUsername = (name: string, isMobile: boolean) => {
-    if (!isMobile) return name;
-    
-    if (name.startsWith('guest-')) {
-        // Remove 'guest-' prefix and then take first 9 chars
-        const username = name.slice(6);
-        return `guest-${username.slice(0, 9)}...`;
-    }
-    // For non-guest names, just take first 9 chars
-    return name.length > 9 ? `${name.slice(0, 9)}...` : name;
-};
-
 // Update ParticipantTile component
 const ParticipantTile = ({ 
     name, 
@@ -122,10 +136,19 @@ const ParticipantTile = ({
     index: number;
 }) => {
     const isActuallySpeaking = useDebounceSpeak(isSpeaking);
-    const basenameAvatar = useParticipantAvatar(userId);
     const isMobile = useIsMobile();
-    const displayName = truncateUsername(name, isMobile);
+    const [displayName, setDisplayName] = useState(name);
+    const basenameAvatar = useParticipantAvatar(userId);
     
+    useEffect(() => {
+        const updateDisplayName = async () => {
+            const truncated = await truncateUsername(name, userId, isMobile);
+            setDisplayName(truncated);
+        };
+
+        updateDisplayName();
+    }, [name, userId, isMobile]);
+
     // Show name if:
     // 1. On desktop OR
     // 2. On mobile AND:
@@ -193,37 +216,15 @@ const ParticipantTile = ({
             </button>
 
             {/* Avatar */}
-            <div
-                style={{
-                    position: "absolute",
-                    left: "50%",
-                    top: "50%",
-                    transform: "translate(-50%, -50%)",
-                }}
-            >
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
                 {basenameAvatar ? (
                     <img
                         src={basenameAvatar}
                         alt={name}
-                        style={{
-                            width: "96px",
-                            height: "96px",
-                            borderRadius: "50%",
-                            objectFit: "cover",
-                        }}
+                        className="w-24 h-24 rounded-full object-cover"
                     />
                 ) : (
-                    <div
-                        style={{
-                            width: "96px",
-                            height: "96px",
-                            borderRadius: "50%",
-                            background: "#4B4B4B",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                        }}
-                    >
+                    <div className="w-24 h-24 rounded-full bg-[#4B4B4B] flex items-center justify-center">
                         <svg
                             width="64"
                             height="64"
@@ -233,7 +234,7 @@ const ParticipantTile = ({
                             strokeWidth="1"
                             strokeLinecap="round"
                             strokeLinejoin="round"
-                            style={{ color: "#808080" }}
+                            className="text-[#808080]"
                         >
                             <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
@@ -356,9 +357,48 @@ const GridLayout = () => {
         );
     }, []);
 
+    // Update the participant sorting logic
     const sortedParticipants = useMemo(() => {
-        return [...participants].sort(participantComparator);
-    }, [participants, participantComparator]);
+        return [...participants].sort((a, b) => {
+            // Speaking participants first
+            if (a.isSpeaking && !b.isSpeaking) return -1;
+            if (!a.isSpeaking && b.isSpeaking) return 1;
+
+            // Then screen sharing
+            if (hasScreenShare(a)) return -1;
+            if (hasScreenShare(b)) return 1;
+
+            // Then pinned
+            if (isPinned(a)) return -1;
+            if (isPinned(b)) return 1;
+
+            // Then basename users
+            const aHasBasename = a.userId.startsWith('0x');
+            const bHasBasename = b.userId.startsWith('0x');
+            if (aHasBasename && !bHasBasename) return -1;
+            if (!aHasBasename && bHasBasename) return 1;
+
+            return 0;
+        });
+    }, [participants]);
+
+    // Split participants into visible and overflow
+    const [visibleParticipants, overflowParticipants] = useMemo(() => {
+        // Always show speaking participants
+        const speaking = sortedParticipants.filter(p => p.isSpeaking);
+        const nonSpeaking = sortedParticipants.filter(p => !p.isSpeaking);
+
+        // Fill remaining slots with non-speaking participants
+        const visible = [...speaking];
+        if (visible.length < 4) {
+            visible.push(...nonSpeaking.slice(0, 4 - visible.length));
+        }
+
+        // Rest go to overflow
+        const overflow = sortedParticipants.filter(p => !visible.includes(p));
+
+        return [visible, overflow];
+    }, [sortedParticipants]);
 
     // Get grid container styles based on participant count
     const getGridContainerStyles = (count: number) => {
@@ -484,13 +524,13 @@ const GridLayout = () => {
                     'grid w-full h-full',
                     'gap-2 sm:gap-6',
                     // Always use 2x2 grid when there are 4 or more participants
-                    sortedParticipants.length === 1 && 'grid-cols-1',
-                    sortedParticipants.length === 2 && 'grid-cols-2',
-                    sortedParticipants.length === 3 && 'grid-cols-2 grid-rows-2',
-                    sortedParticipants.length >= 4 && 'grid-cols-2 grid-rows-2'
+                    visibleParticipants.length === 1 && 'grid-cols-1',
+                    visibleParticipants.length === 2 && 'grid-cols-2',
+                    visibleParticipants.length === 3 && 'grid-cols-2 grid-rows-2',
+                    visibleParticipants.length >= 4 && 'grid-cols-2 grid-rows-2'
                 )}>
                     {/* Show only first 4 participants */}
-                    {sortedParticipants.slice(0, 4).map((participant, index) => {
+                    {visibleParticipants.slice(0, 4).map((participant, index) => {
                         const isAudioEnabled = participant.publishedTracks.includes(1);
                         const isSpeaking = participant.isSpeaking;
                         
@@ -501,10 +541,10 @@ const GridLayout = () => {
                                 userId={participant.userId}
                                 isMuted={!isAudioEnabled}
                                 isSpeaking={isSpeaking}
-                                totalParticipants={sortedParticipants.length}
+                                totalParticipants={visibleParticipants.length}
                                 index={index}
                                 style={{
-                                    ...getTileStyles(index, Math.min(4, sortedParticipants.length)),
+                                    ...getTileStyles(index, Math.min(4, visibleParticipants.length)),
                                     width: '100%',
                                     height: '100%',
                                 }}
@@ -513,10 +553,10 @@ const GridLayout = () => {
                     })}
 
                     {/* Show overflow indicator if more than 4 participants */}
-                    {sortedParticipants.length > 4 && (
+                    {visibleParticipants.length > 4 && (
                         <div className="absolute bottom-4 right-4">
                             <OverflowIndicator 
-                                count={sortedParticipants.length - 4} 
+                                count={visibleParticipants.length - 4} 
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center'

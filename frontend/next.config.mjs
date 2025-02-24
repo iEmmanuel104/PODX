@@ -2,7 +2,7 @@
 const nextConfig = {
     // Optimize image handling
     images: {
-        domains: ['api.placeholder'],
+        domains: ['ipfs.io'],
         formats: ['image/avif', 'image/webp'],
         minimumCacheTTL: 60,
     },
