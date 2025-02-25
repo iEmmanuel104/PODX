@@ -173,7 +173,7 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                     cy={2}
                     cr={1}
                     className={cn(
-                        '[mask-image:radial-gradient(to_bottom_right,white,transparent,transparent)] rounded-[20px] top-[6px] left-[8px] px-[10px] -z-10'
+                        '[mask-image:radial-gradient(to_bottom_right,#3B3B3B,transparent,transparent)] rounded-[20px] top-[6px] left-[8px] px-[10px] -z-10'
                     )}
                 />
                 <DialogHeader className="flex flex-row justify-between items-center mb-6">
@@ -214,7 +214,7 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                         <Input
                             value={formState.title}
                             onChange={e => updateFormState({ title: e.target.value })}
-                            className="w-full bg-[#2C2C2C] rounded-[10px] px-4 py-2 border-[#3c3c3c]"
+                            className="w-full bg-[#2C2C2C] rounded-[10px] px-4 py-2 border-[#3c3c3c] whitespace-nowrap"
                         />
                     </div>
 

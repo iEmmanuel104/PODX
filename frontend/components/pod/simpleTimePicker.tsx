@@ -3,84 +3,91 @@ import React, { useState, useRef } from 'react';
 import { Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Input } from '@/components/ui/input';
 
 interface SimpleTimePickerProps {
-    value: string;
-    onChange: (newTime: string) => void;
-    error?: string;
+  value: string;
+  onChange: (time: string) => void;
+  error?: string;
 }
 
 const SimpleTimePicker: React.FC<SimpleTimePickerProps> = ({ value, onChange, error }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
-    const minutes = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0'));
+  const [isAM, setIsAM] = useState(true);
 
-    const [selectedHour, selectedMinute] = value ? value.split(':') : ['00', '00'];
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target.value;
+    
+    // Allow direct input of numbers and colon
+    if (!/^[\d:]*$/.test(input)) return;
+    
+    // Handle backspace and regular input
+    if (input.length <= 5) {
+      let formattedTime = input;
+      
+      // Add colon if user types 4 numbers without colon
+      if (input.length === 4 && !input.includes(':')) {
+        formattedTime = input.slice(0, 2) + ':' + input.slice(2);
+      }
+      
+      // Validate final format when input is complete
+      if (input.length === 5) {
+        const [hours, minutes] = formattedTime.split(':').map(Number);
+        
+        // Validate hours (1-12)
+        if (hours > 12) formattedTime = '12:' + formattedTime.slice(3);
+        if (hours === 0) formattedTime = '12:' + formattedTime.slice(3);
+        
+        // Validate minutes (00-59)
+        if (minutes >= 60) formattedTime = formattedTime.slice(0, 3) + '59';
+      }
+      
+      onChange(formattedTime);
+    }
+  };
 
-    return (
-        <div className="relative">
-            <Popover open={isOpen} onOpenChange={setIsOpen} modal>
-                <PopoverTrigger asChild>
-                    <Button
-                        variant="outline"
-                        className="w-full justify-start text-left font-normal bg-[#2C2C2C] rounded-[10px] px-4 py-2 border-[#3c3c3c] hover:bg-[#3c3c3c]"
-                    >
-                        <Clock className="mr-2 h-4 w-4 text-[#6032F6]" />
-                        {value || 'Select time'}
-                    </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-64 p-0 bg-[#2C2C2C]" align="start">
-                    <div className="flex gap-2 p-2">
-                        <div className="flex-1">
-                            <div className="relative h-40 overflow-hidden rounded bg-[#1E1E1E]">
-                                <div className="absolute inset-0 overflow-y-auto scrollbar-hide">
-                                    {hours.map(hour => (
-                                        <div
-                                            key={hour}
-                                            className={`h-10 flex items-center justify-center cursor-pointer hover:bg-[#3C3C3C] transition-colors ${
-                                                hour === selectedHour
-                                                    ? 'bg-[#6032F6] text-white'
-                                                    : ''
-                                            }`}
-                                            onClick={() => {
-                                                const newTime = `${hour}:${selectedMinute}`;
-                                                onChange(newTime);
-                                            }}
-                                        >
-                                            {hour}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                        <div className="flex-1">
-                            <div className="relative h-40 overflow-hidden rounded bg-[#1E1E1E]">
-                                <div className="absolute inset-0 overflow-y-auto scrollbar-hide">
-                                    {minutes.map(minute => (
-                                        <div
-                                            key={minute}
-                                            className={`h-10 flex items-center justify-center cursor-pointer hover:bg-[#3C3C3C] transition-colors ${
-                                                minute === selectedMinute
-                                                    ? 'bg-[#6032F6] text-white'
-                                                    : ''
-                                            }`}
-                                            onClick={() => {
-                                                const newTime = `${selectedHour}:${minute}`;
-                                                onChange(newTime);
-                                            }}
-                                        >
-                                            {minute}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </PopoverContent>
-            </Popover>
-            {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
-        </div>
-    );
+  const toggleAMPM = () => {
+    setIsAM(!isAM);
+    // Convert the time based on AM/PM toggle
+    if (value) {
+      const [hours, minutes] = value.split(':').map(Number);
+      let newHours = hours;
+      
+      if (isAM && hours < 12) {
+        newHours = hours + 12;
+      } else if (!isAM && hours >= 12) {
+        newHours = hours - 12;
+      }
+      
+      onChange(`${newHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`);
+    }
+  };
+
+  return (
+    <div className="flex items-center space-x-2">
+      <div className="relative flex-1">
+        <Input
+          type="text"
+          value={value}
+          onChange={handleTimeChange}
+          placeholder="HH:MM"
+          className="bg-[#2C2C2C] text-white rounded-[10px] px-4 h-10"
+          maxLength={5}
+        />
+        {error && <span className="text-red-500 text-sm mt-1 absolute -bottom-6 left-0">{error}</span>}
+      </div>
+      <Button
+        type="button"
+        onClick={toggleAMPM}
+        className={`w-16 h-10 ${
+          isAM 
+            ? 'bg-[#6032F6] text-white' 
+            : 'bg-[#2C2C2C] text-white'
+        } hover:bg-[#4C28C4] rounded-[10px]`}
+      >
+        {isAM ? 'AM' : 'PM'}
+      </Button>
+    </div>
+  );
 };
 
 export default SimpleTimePicker;
