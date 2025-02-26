@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import '@stream-io/video-react-sdk/dist/css/styles.css';
 import './globals.css';
 import StoreProvider from '@/providers/storeProvider';
@@ -16,13 +16,12 @@ const APP_DESCRIPTION =
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.podx.fun';
 
 export const metadata: Metadata = {
+    metadataBase: new URL(BASE_URL), // Add metadataBase
     title: {
         default: APP_NAME,
         template: `%s | ${APP_NAME}`,
     },
     description: APP_DESCRIPTION,
-
-    // Basic metadata
     applicationName: APP_NAME,
     authors: [{ name: APP_NAME, url: BASE_URL }],
     generator: 'Next.js',
@@ -37,18 +36,6 @@ export const metadata: Metadata = {
         'web3 collaboration',
     ],
     referrer: 'origin-when-cross-origin',
-    themeColor: [
-        { media: '(prefers-color-scheme: dark)', color: '#1E1E1E' },
-        { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    ],
-    colorScheme: 'dark',
-    viewport: {
-        width: 'device-width',
-        initialScale: 1,
-        maximumScale: 1,
-    },
-
-    // OpenGraph metadata
     openGraph: {
         type: 'website',
         locale: 'en_US',
@@ -68,8 +55,6 @@ export const metadata: Metadata = {
             },
         ],
     },
-
-    // Twitter metadata
     twitter: {
         card: 'summary_large_image',
         title: APP_NAME,
@@ -78,8 +63,6 @@ export const metadata: Metadata = {
         creator: '@podx',
         site: '@podx',
     },
-
-    // Icons
     icons: {
         icon: [
             { url: '/favicon.ico' },
@@ -96,21 +79,13 @@ export const metadata: Metadata = {
             },
         ],
     },
-
-    // Manifest
     manifest: '/manifest.json',
-
-    // Additional metadata
     alternates: {
         canonical: BASE_URL,
     },
-
-    // Verification tokens
     verification: {
         google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
     },
-
-    // Robots directives
     robots: {
         index: true,
         follow: true,
@@ -122,10 +97,19 @@ export const metadata: Metadata = {
             'max-snippet': -1,
         },
     },
-
-    // Categories and classification
     category: 'technology',
     classification: 'video conferencing',
+};
+
+export const viewport: Viewport = {
+    themeColor: [
+        { media: '(prefers-color-scheme: dark)', color: '#1E1E1E' },
+        { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    ],
+    colorScheme: 'dark',
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
 };
 
 export default function RootLayout({
