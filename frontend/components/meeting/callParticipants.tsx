@@ -4,7 +4,7 @@ import Avatar from '@/components/meeting/participantAvatar';
 import { CallParticipantResponse, MemberResponse } from '@stream-io/video-react-sdk';
 
 interface CallParticipantsProps {
-    participants: CallParticipantResponse[] | MemberResponse[];
+    participants: CallParticipantResponse[];
 }
 
 const AVATAR_SIZE = 24; // Reduced from 32 to 24
