@@ -16,24 +16,24 @@ const avatarImages = [
     '/avatars/avatar10.png',
 ];
 
+import { StreamVideoParticipant } from '@stream-io/video-react-sdk';
+
 interface AvatarProps {
-    participant: CallParticipantResponse | MemberResponse;
+    participant: StreamVideoParticipant;
     width: number;
 }
 
 const Avatar: React.FC<AvatarProps> = ({ participant, width }) => {
-    // Use useMemo to keep the same avatar for the same user
     const randomAvatar = useMemo(() => {
-        // Use participant ID to generate consistent random index for each user
         const randomIndex = Math.abs(
-            participant.user.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+            participant.userId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
         ) % avatarImages.length;
         return avatarImages[randomIndex];
-    }, [participant.user.id]);
+    }, [participant.userId]);
 
-    const initials = participant.user.name
-        ? participant.user.name.slice(0, 2).toUpperCase()
-        : participant.user.id.slice(0, 2).toUpperCase();
+    const initials = participant.name
+        ? participant.name.slice(0, 2).toUpperCase()
+        : participant.userId.slice(0, 2).toUpperCase();
 
     return (
         <div
