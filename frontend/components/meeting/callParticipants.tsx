@@ -1,7 +1,7 @@
 import React from 'react';
 import Avatar from '@/components/meeting/participantAvatar';
 
-import { CallParticipantResponse, MemberResponse } from '@stream-io/video-react-sdk';
+import { CallParticipantResponse, MemberResponse, StreamVideoParticipant } from '@stream-io/video-react-sdk';
 
 interface CallParticipantsProps {
     participants: CallParticipantResponse[];
@@ -31,9 +31,13 @@ const CallParticipants: React.FC<CallParticipantsProps> = ({ participants }) => 
         <div className="flex items-center justify-center md:justify-start gap-2 mb-16">
             <div className="flex items-center justify-start -space-x-1">
                 {participants.slice(0, 3).map(p => (
+                    
                     <Avatar
                         key={(p as CallParticipantResponse).user_session_id || p.user.id}
-                        participant={p}
+                        participant={ {
+                            userId : (p as CallParticipantResponse).user_session_id || p.user.id,
+                            name : p.user.name,
+                        } as StreamVideoParticipant}
                         width={AVATAR_SIZE}
                     />
                 ))}
