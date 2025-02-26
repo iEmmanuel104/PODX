@@ -28,12 +28,15 @@ import {
   truncateUsername,
   useParticipantConsistentAvatar
 } from '../../hooks/useParticipantUtils';
+import { useApplaud } from '../../hooks/useApplaud';
 
+// In ParticipantTile component
+// Add after imports, before ParticipantTile component
 interface ParticipantTileProps {
   name: string;
-  isMuted?: boolean;
-  isSpeaking?: boolean;
-  style?: React.CSSProperties;
+  isMuted: boolean;
+  isSpeaking: boolean;
+  style: React.CSSProperties;
   userId: string;
   totalParticipants: number;
   index: number;
@@ -57,6 +60,7 @@ const ParticipantTile = memo(({
   const isActuallySpeaking = useDebounceSpeak(isSpeaking || false);
   const isMobile = useIsMobile();
   const [displayName, setDisplayName] = useState(name);
+  const { isApplauding, handleApplaud } = useApplaud(participant.sessionId);  // Add this line
   const { avatarUrl, getFallbackAvatar } = useParticipantConsistentAvatar(
     userId,
     name,
@@ -98,16 +102,38 @@ const ParticipantTile = memo(({
         <div className="absolute left-[14px] top-[13px] flex items-center p-[6px] gap-2 bg-[rgba(75,75,75,0.5)] backdrop-blur-[5.7px] rounded-[1000px] z-10">
           <div className={clsx(
             "rounded-full p-[6px] flex items-center justify-center",
-            isMuted ? "bg-[#FF3B30]" : isActuallySpeaking ? "bg-[#5E5CE6]" : "bg-[#808080]"
+            isApplauding ? "bg-[#FFD700]" : 
+            isMuted ? "bg-[#FF3B30]" : 
+            isActuallySpeaking ? "bg-[#5E5CE6]" : 
+            "bg-[#808080]"
           )}>
-            {isMuted ? <MicOff className="h-3 w-3 text-white" /> : <Mic className="h-3 w-3 text-white" />}
+            {isApplauding ? (
+              <span role="img" aria-label="applaud" className="text-lg">👏</span>
+            ) : isMuted ? (
+              <MicOff className="h-3 w-3 text-white" />
+            ) : (
+              <Mic className="h-3 w-3 text-white" />
+            )}
           </div>
           {!isMobile && (
             <span className="text-white text-sm pr-[6px]">
-              {isMuted ? "Muted" : isActuallySpeaking ? "Speaking..." : "Not Speaking"}
+              {isApplauding ? "Applauding" : 
+               isMuted ? "Muted" : 
+               isActuallySpeaking ? "Speaking..." : 
+               "Not Speaking"}
             </span>
           )}
         </div>
+
+        {/* Applaud button */}
+        <button
+          onClick={handleApplaud}
+          className="absolute right-[14px] top-[13px] bg-[#5E5CE6] backdrop-blur-[5.7px] rounded-full p-2 cursor-pointer z-20 hover:bg-[#4A48B6] transition-colors"
+        >
+          <span role="img" aria-label="applaud" className="text-white">
+            👏
+          </span>
+        </button>
 
         {/* Control buttons */}
         {isScreenSharing ? (

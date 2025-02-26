@@ -25,11 +25,13 @@ interface AvatarProps {
 
 const Avatar: React.FC<AvatarProps> = ({ participant, width }) => {
     const randomAvatar = useMemo(() => {
+        // Add null check and provide a fallback value
+        const userId = participant?.userId || 'default';
         const randomIndex = Math.abs(
-            participant.userId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+            userId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
         ) % avatarImages.length;
         return avatarImages[randomIndex];
-    }, [participant.userId]);
+    }, [participant?.userId]);
 
     const initials = participant.name
         ? participant.name.slice(0, 2).toUpperCase()
