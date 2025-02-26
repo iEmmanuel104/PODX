@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+} from '@/components/ui/dialog';
 import { toast } from 'react-hot-toast';
 import { isAddress } from 'ethers';
 import {
@@ -62,14 +68,14 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose, o
                         className="w-full bg-[#2C2C2C] rounded-[10px] px-4 py-2 border-[#3c3c3c]"
                         placeholder="External Wallet Address"
                         value={address}
-                        onChange={(e) => setAddress(e.target.value)}
+                        onChange={e => setAddress(e.target.value)}
                     />
                     <Input
                         className="w-full bg-[#2C2C2C] rounded-[10px] px-4 py-2 border-[#3c3c3c]"
                         placeholder={`Amount (${currency})`}
                         type="number"
                         value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
+                        onChange={e => setAmount(e.target.value)}
                     />
                     <Select
                         value={currency}

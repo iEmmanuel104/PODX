@@ -1,24 +1,26 @@
-"use client"
+'use client';
 
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { LogOut } from "lucide-react"
-import { useTypedSelector } from "@/store/config/store"
-import { useMemo } from "react"
-import Logo from "@/components/ui/logo"
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { LogOut } from 'lucide-react';
+import { useTypedSelector } from '@/store/config/store';
+import { useMemo } from 'react';
+import Logo from '@/components/ui/logo';
 
 export default function NetworkError() {
-    const router = useRouter()
+    const router = useRouter();
     const { isLoggedIn, user } = useTypedSelector(state => state.auth);
     const userInfo = useMemo(
         () => ({
-            displayName: user?.username || `${user?.walletAddress.slice(0, 6)}...${user?.walletAddress.slice(-4)}`,
+            displayName:
+                user?.username ||
+                `${user?.walletAddress.slice(0, 6)}...${user?.walletAddress.slice(-4)}`,
             initials: user?.username
                 ? user.username.slice(0, 2).toUpperCase()
                 : user?.walletAddress.slice(0, 2).toUpperCase(),
         }),
-        [user],
-    )
+        [user]
+    );
 
     return (
         <div className="min-h-screen bg-[#151515] flex flex-col items-center justify-between p-8 relative">
@@ -28,7 +30,7 @@ export default function NetworkError() {
                 style={{
                     backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
                                     linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
-                    backgroundSize: "50px 50px",
+                    backgroundSize: '50px 50px',
                     opacity: 0.1,
                 }}
             />
@@ -42,16 +44,20 @@ export default function NetworkError() {
             <div className="text-center max-w-md">
                 <h1 className="text-white text-2xl font-semibold mb-4">Network Error</h1>
                 <p className="text-white/60 mb-8">
-                    Unfortunately, there seems to be a problem with the network at the moment, please try again later
+                    Unfortunately, there seems to be a problem with the network at the moment,
+                    please try again later
                 </p>
                 <div className="flex gap-4 justify-center">
-                    <Button className="bg-[#DDB958] hover:bg-[#DDB958]/90 text-black px-8" onClick={() => router.refresh()}>
+                    <Button
+                        className="bg-[#DDB958] hover:bg-[#DDB958]/90 text-black px-8"
+                        onClick={() => router.refresh()}
+                    >
                         Rejoin
                     </Button>
                     <Button
                         variant="secondary"
                         className="bg-[#383838] hover:bg-[#383838]/90 text-white px-8"
-                        onClick={() => router.push("/")}
+                        onClick={() => router.push('/')}
                     >
                         Return home
                     </Button>
@@ -82,5 +88,5 @@ export default function NetworkError() {
                 </div>
             )}
         </div>
-    )
+    );
 }

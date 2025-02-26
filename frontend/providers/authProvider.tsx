@@ -4,7 +4,7 @@ import { usePrivy } from '@privy-io/react-auth';
 import { useRouter, usePathname } from 'next/navigation';
 import { LoadingOverlay } from '@/components/ui/loading';
 import { useTypedSelector, useAppDispatch } from '@/store/config/store';
-import { setUser, setSignature,logOut } from '@/store/auth/slice';
+import { setUser, setSignature, logOut } from '@/store/auth/slice';
 import { UserInfo } from '@/store/user/types';
 import { useValidateUserMutation } from '@/store/user/slice';
 
@@ -14,7 +14,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     const dispatch = useAppDispatch();
     const router = useRouter();
     const pathname = usePathname();
-    const [validateUser, {isLoading: isValidating}] = useValidateUserMutation();
+    const [validateUser, { isLoading: isValidating }] = useValidateUserMutation();
 
     // Simplified state management
     const [isLoading, setIsLoading] = useState(false);
@@ -38,7 +38,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
             if (result.data?.signature) {
                 console.log('Setting signature:', result.data);
-                
+
                 dispatch(setSignature(result.data.signature));
             }
 
@@ -68,11 +68,11 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     // Handle authentication and redirection without useEffect
     const handleAuthFlow = useCallback(async () => {
         if (!ready || isLoading) return;
-    
+
         // Only handle auth flow for non-pod pages
         if (!pathname) return;
         if (pathname.startsWith('/pod')) return;
-    
+
         if (authenticated && !isLoggedIn) {
             setIsLoading(true);
             const success = await handleAuthentication();
@@ -85,8 +85,17 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         } else if (!authenticated && isLoggedIn) {
             dispatch(logOut());
         }
-    }, [ready, isLoading, pathname, authenticated, isLoggedIn, handleAuthentication, redirectToPod, dispatch]);
-    
+    }, [
+        ready,
+        isLoading,
+        pathname,
+        authenticated,
+        isLoggedIn,
+        handleAuthentication,
+        redirectToPod,
+        dispatch,
+    ]);
+
     // Call handleAuthFlow when necessary
     useEffect(() => {
         handleAuthFlow();

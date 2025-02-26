@@ -7,7 +7,7 @@ interface OverflowIndicatorProps {
 
 export const OverflowIndicator = ({ count, style }: OverflowIndicatorProps) => {
     return (
-        <div 
+        <div
             className="flex items-center p-[6px_12px] gap-2 bg-[rgba(75,75,75,0.5)] backdrop-blur-[5.7px] rounded-[1000px]"
             style={style}
         >
@@ -37,4 +37,4 @@ export const OverflowIndicator = ({ count, style }: OverflowIndicatorProps) => {
             <span className="text-white text-sm">+{count}</span>
         </div>
     );
-}; 
+};

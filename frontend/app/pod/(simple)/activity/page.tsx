@@ -411,7 +411,7 @@ export default function Page() {
                                 </thead>
                             </table>
 
-                             {/* Table Section */}
+                            {/* Table Section */}
                             <div className="overflow-y-auto max-h-[460px] custom-scrollbar">
                                 <table className="w-full">
                                     <tbody className="divide-y divide-white/10">
@@ -434,10 +434,14 @@ export default function Page() {
                                                         <>
                                                             <td className="p-4">
                                                                 <div>{date}</div>
-                                                                <div className="text-white/60">{time}</div>
+                                                                <div className="text-white/60">
+                                                                    {time}
+                                                                </div>
                                                             </td>
                                                             <td className="p-4">
-                                                                <div>{item.custom?.title as string}</div>
+                                                                <div>
+                                                                    {item.custom?.title as string}
+                                                                </div>
                                                                 <div className="text-white/60 flex items-center gap-1">
                                                                     <LinkIcon className="h-3 w-3" />
                                                                     {item.callId}
@@ -445,7 +449,8 @@ export default function Page() {
                                                             </td>
                                                             <td className="p-4">
                                                                 <span className="px-2 py-1 rounded-full bg-white/10">
-                                                                    {(item.custom?.type as string) || '-'}
+                                                                    {(item.custom
+                                                                        ?.type as string) || '-'}
                                                                 </span>
                                                             </td>
                                                             <td className="p-4">
@@ -455,7 +460,9 @@ export default function Page() {
                                                                 {item.poa ? (
                                                                     <POADialog poa={item.poa} />
                                                                 ) : (
-                                                                    <span className="text-white/60">-</span>
+                                                                    <span className="text-white/60">
+                                                                        -
+                                                                    </span>
                                                                 )}
                                                             </td>
                                                         </>
@@ -463,7 +470,9 @@ export default function Page() {
                                                         <>
                                                             <td className="p-4">
                                                                 <div>{date}</div>
-                                                                <div className="text-white/60">{time}</div>
+                                                                <div className="text-white/60">
+                                                                    {time}
+                                                                </div>
                                                             </td>
                                                             <td className="p-4">
                                                                 <div className="text-white/60 flex items-center gap-1">
@@ -471,8 +480,12 @@ export default function Page() {
                                                                     {item.callId}{' '}
                                                                 </div>
                                                             </td>
-                                                            <td className="p-4">{item.fromUserId.username}</td>
-                                                            <td className="p-4">{item.toUserId.username}</td>
+                                                            <td className="p-4">
+                                                                {item.fromUserId.username}
+                                                            </td>
+                                                            <td className="p-4">
+                                                                {item.toUserId.username}
+                                                            </td>
                                                             <td className="p-4">
                                                                 {item.amount} {item.currency}
                                                             </td>

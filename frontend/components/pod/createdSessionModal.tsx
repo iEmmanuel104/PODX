@@ -75,10 +75,12 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className={`
+            <DialogContent
+                className={`
                 bg-[#1E1E1E] text-white rounded-[20px] sm:rounded-[20px] p-6 w-full max-w-[90%] sm:max-w-md mx-auto 
                 overflow-hidden max-h-[90vh] border border-white/[0.1]
-            `}>
+            `}
+            >
                 {/* Background gradient - moved behind content */}
                 <div className="absolute inset-0 pointer-events-none">
                     <div className="absolute inset-0 bg-gradient-to-bl from-white/[0.1] via-transparent to-transparent" />
@@ -126,8 +128,8 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({
                                 {isCopyingLink
                                     ? 'Copying...'
                                     : linkCopied
-                                        ? 'Copied!'
-                                        : 'Copy Link'}
+                                      ? 'Copied!'
+                                      : 'Copy Link'}
                             </Button>
                         </div>
                     </div>

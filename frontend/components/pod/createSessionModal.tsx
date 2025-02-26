@@ -156,7 +156,8 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className={`
+            <DialogContent
+                className={`
                 bg-[#1d1d1d] text-white rounded-[20px] sm:rounded-[20px] p-4 sm:p-8 
                 w-full max-w-[90%] sm:max-w-lg mx-auto 
                 overflow-hidden max-h-[90vh] border border-white/[0.1]
@@ -185,20 +186,22 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                 <div className="flex items-center gap-4 mb-6">
                     <Button
                         size="sm"
-                        className={`rounded-full ${!formState.isScheduled
-                            ? 'bg-[#6032F6] hover:bg-[#6D28D9]'
-                            : 'bg-[#1e1e1e] border border-zinc-600'
-                            }`}
+                        className={`rounded-full ${
+                            !formState.isScheduled
+                                ? 'bg-[#6032F6] hover:bg-[#6D28D9]'
+                                : 'bg-[#1e1e1e] border border-zinc-600'
+                        }`}
                         onClick={() => updateFormState({ isScheduled: false })}
                     >
                         Instant session
                     </Button>
                     <Button
                         size="sm"
-                        className={`rounded-full ${formState.isScheduled
-                            ? 'bg-[#6032F6] hover:bg-[#6D28D9]'
-                            : 'bg-[#1e1e1e] border border-zinc-600'
-                            }`}
+                        className={`rounded-full ${
+                            formState.isScheduled
+                                ? 'bg-[#6032F6] hover:bg-[#6D28D9]'
+                                : 'bg-[#1e1e1e] border border-zinc-600'
+                        }`}
                         onClick={() => updateFormState({ isScheduled: true })}
                     >
                         Schedule session{' '}
@@ -274,7 +277,11 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                         <div>
                             <label className="block text-[#A3A3A3] mb-2">Date and time</label>
                             <div className="grid grid-cols-2 gap-4">
-                                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen} modal>
+                                <Popover
+                                    open={isCalendarOpen}
+                                    onOpenChange={setIsCalendarOpen}
+                                    modal
+                                >
                                     <PopoverTrigger asChild>
                                         <Button
                                             variant="outline"

@@ -163,8 +163,8 @@ const UserDropdownContent = memo<{
             {basenameData?.avatar ? (
                 <div className="w-10 h-10 rounded-full overflow-hidden shrink-0">
                     <Image
-                        src={basenameData.avatar || "/placeholder.svg"}
-                        alt={basenameData.basename || "User avatar"}
+                        src={basenameData.avatar || '/placeholder.svg'}
+                        alt={basenameData.basename || 'User avatar'}
                         width={40}
                         height={40}
                         className="object-cover"
@@ -177,7 +177,9 @@ const UserDropdownContent = memo<{
             )}
             <div className="flex flex-col space-y-1.5 min-w-0">
                 <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-white truncate">{basenameData?.basename || truncateAddress(userAddress)}</span>
+                    <span className="text-sm font-medium text-white truncate">
+                        {basenameData?.basename || truncateAddress(userAddress)}
+                    </span>
                     <span className="rounded-full bg-[#7C3AED] px-1 text-[13px] font-medium text-white">
                         {displayBalance}
                         {balanceSymbol}
@@ -250,7 +252,10 @@ const Header = memo<HeaderProps>(
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <div className="flex items-center gap-1 bg-[#333333] rounded-full h-8 pl-1 pr-2 hover:cursor-pointer hover:bg-[#3d3d3d] transition-colors">
-                                <UserAvatar username={userInfo?.username} basenameData={basenameData} />
+                                <UserAvatar
+                                    username={userInfo?.username}
+                                    basenameData={basenameData}
+                                />
                                 <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
                             </div>
                         </DropdownMenuTrigger>

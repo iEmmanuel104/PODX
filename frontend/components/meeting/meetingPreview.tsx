@@ -60,7 +60,11 @@ const MeetingPreview: React.FC = () => {
                 }
             } catch (error) {
                 console.error('Device initialization error:', error);
-                dispatch(setToast(`Device error: ${error instanceof Error ? error.message : String(error)}`));
+                dispatch(
+                    setToast(
+                        `Device error: ${error instanceof Error ? error.message : String(error)}`
+                    )
+                );
             } finally {
                 setIsInitializing(false);
             }
@@ -72,7 +76,14 @@ const MeetingPreview: React.FC = () => {
             if (camera?.enabled) camera.disable().catch(console.error);
             if (microphone?.enabled) microphone.disable().catch(console.error);
         };
-    }, [camera, microphone, hasCameraPermission, hasMicrophonePermission, dispatch, isAudioSession]);
+    }, [
+        camera,
+        microphone,
+        hasCameraPermission,
+        hasMicrophonePermission,
+        dispatch,
+        isAudioSession,
+    ]);
 
     const AudioSessionPreview = () => (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-[#6032F6]/20 to-[#381D90]/20">

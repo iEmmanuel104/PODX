@@ -32,12 +32,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import Avatar from '@/components/meeting/participantAvatar'; // Add this import if not already present
 import Image from 'next/image';
-import { 
-    useIsMobile, 
-    useDebounceSpeak, 
+import {
+    useIsMobile,
+    useDebounceSpeak,
     useParticipantAvatar,
     truncateUsername,
-    useParticipantConsistentAvatar
+    useParticipantConsistentAvatar,
 } from '../../hooks/useParticipantUtils';
 
 // Types
@@ -369,7 +369,7 @@ const ParticipantItem = memo<ParticipantItemProps>(
                             height={32}
                             alt={name || 'User avatar'}
                             className="rounded-full"
-                            onError={(e) => {
+                            onError={e => {
                                 e.currentTarget.src = getFallbackAvatar();
                             }}
                         />
@@ -381,10 +381,10 @@ const ParticipantItem = memo<ParticipantItemProps>(
                                 {role === 'host'
                                     ? 'Session Host'
                                     : role === 'cohost'
-                                        ? 'Co-host'
-                                        : role === 'user'
-                                            ? 'User'
-                                            : 'Listener'}
+                                      ? 'Co-host'
+                                      : role === 'user'
+                                        ? 'User'
+                                        : 'Listener'}
                             </span>
                         </div>
                     </div>
@@ -475,7 +475,7 @@ const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
 
         return (
             <>
-                <div 
+                <div
                     className={`fixed inset-y-0 right-0 z-50 w-[80%] sm:w-[380px] transform transition-transform duration-300 ease-in-out ${
                         isOpen ? 'translate-x-0' : 'translate-x-full'
                     }`}
@@ -485,16 +485,16 @@ const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
                         position: 'fixed',
                         top: 0,
                         bottom: '80px', // Add space for footer
-                        right: 0
+                        right: 0,
                     }}
                 >
                     {isOpen && (
-                        <div 
+                        <div
                             className="fixed inset-0 -z-10 bg-black/50 sm:hidden"
                             onClick={onClose}
                         />
                     )}
-                    
+
                     <div className="absolute right-0 h-full w-full bg-[#1C1C1C] p-4 rounded-l-[20px] overflow-hidden flex flex-col shadow-xl">
                         <div className="flex justify-between items-center mb-4">
                             <div className="flex items-center">
@@ -534,7 +534,9 @@ const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
                                     />
                                 )}
                                 {filteredActiveParticipants.map(participant => {
-                                    const member = members.find(m => m.user.id === participant.userId);
+                                    const member = members.find(
+                                        m => m.user.id === participant.userId
+                                    );
                                     if (!member) return null;
 
                                     return (
@@ -551,7 +553,9 @@ const ParticipantsSidebar = memo<ParticipantsSidebarProps>(
                             </div>
                         </div>
 
-                        <div className="mt-4 mb-4"> {/* Added bottom margin */}
+                        <div className="mt-4 mb-4">
+                            {' '}
+                            {/* Added bottom margin */}
                             {SessionNotification()}
                         </div>
                     </div>

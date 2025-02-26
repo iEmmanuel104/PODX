@@ -27,9 +27,9 @@ const Avatar: React.FC<AvatarProps> = ({ participant, width }) => {
     const randomAvatar = useMemo(() => {
         // Add null check and provide a fallback value
         const userId = participant?.userId || 'default';
-        const randomIndex = Math.abs(
-            userId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
-        ) % avatarImages.length;
+        const randomIndex =
+            Math.abs(userId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)) %
+            avatarImages.length;
         return avatarImages[randomIndex];
     }, [participant?.userId]);
 

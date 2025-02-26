@@ -1,8 +1,8 @@
-import { api } from "../config/base";
+import { api } from '../config/base';
 import { StreamCallData } from '@/components/pod/streamCallData';
-import { ApiResponse, ScheduleCallArgs } from "./types";
-import { CALLS_ENDPOINTS } from "./endpoints";
-import { createTag } from "../config/tags";
+import { ApiResponse, ScheduleCallArgs } from './types';
+import { CALLS_ENDPOINTS } from './endpoints';
+import { createTag } from '../config/tags';
 
 export interface GetCallResponse {
     call: StreamCallData;
@@ -16,35 +16,38 @@ export interface GetUserScheduledCallsResponse {
 }
 
 export const scheduledCallsApiSlice = api.injectEndpoints({
-    endpoints: (builder) => ({
-        scheduleCall: builder.mutation<ApiResponse <StreamCallData>, ScheduleCallArgs>({
-            query: (payload) => ({
+    endpoints: builder => ({
+        scheduleCall: builder.mutation<ApiResponse<StreamCallData>, ScheduleCallArgs>({
+            query: payload => ({
                 body: payload,
                 method: 'POST',
-                url: CALLS_ENDPOINTS.scheduleCall()
+                url: CALLS_ENDPOINTS.scheduleCall(),
             }),
             invalidatesTags: [createTag('ScheduledCalls')],
         }),
         retrieveCall: builder.query<ApiResponse<GetCallResponse | null>, string>({
-            query: (sessionId) => ({
+            query: sessionId => ({
                 method: 'GET',
-                url: CALLS_ENDPOINTS.retrieveCall(sessionId)
+                url: CALLS_ENDPOINTS.retrieveCall(sessionId),
             }),
-            providesTags: (_result, _error, sessionId) => [createTag({
-                id: sessionId,
-                prefix: 'callsId',
-                type: 'Calls',
-            })],
-         }),
+            providesTags: (_result, _error, sessionId) => [
+                createTag({
+                    id: sessionId,
+                    prefix: 'callsId',
+                    type: 'Calls',
+                }),
+            ],
+        }),
 
         listUserScheduledCalls: builder.query<ApiResponse<GetUserScheduledCallsResponse>, void>({
             query: () => ({
                 method: 'GET',
-                url: CALLS_ENDPOINTS.listUserScheduledCalls()
+                url: CALLS_ENDPOINTS.listUserScheduledCalls(),
             }),
             providesTags: [createTag('ScheduledCalls')],
         }),
-    })
+    }),
 });
 
-export const { useRetrieveCallQuery, useListUserScheduledCallsQuery, useScheduleCallMutation } = scheduledCallsApiSlice;
+export const { useRetrieveCallQuery, useListUserScheduledCallsQuery, useScheduleCallMutation } =
+    scheduledCallsApiSlice;

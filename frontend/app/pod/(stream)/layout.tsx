@@ -15,8 +15,8 @@ const CACHE_KEYS = {
         STATE: (id: string) => `pod_state_${id}`,
         PROVIDER: 'pod_provider_cache',
         LAYOUT: (id: string) => `pod_layout_${id}`,
-        PARTICIPANTS: (id: string) => `pod_participants_${id}`
-    }
+        PARTICIPANTS: (id: string) => `pod_participants_${id}`,
+    },
 };
 
 // Preload and cache critical assets
@@ -26,9 +26,7 @@ const preloadAssets = async () => {
             '/images/default-avatar.png',
             // Add other critical assets here
         ];
-        const promises = assets.map(asset => 
-            fetch(asset, { method: 'GET', cache: 'force-cache' })
-        );
+        const promises = assets.map(asset => fetch(asset, { method: 'GET', cache: 'force-cache' }));
         await Promise.all(promises);
     } catch (error) {
         console.warn('Asset preload error:', error);
@@ -48,23 +46,25 @@ const StreamMeetProvider = nextDynamic(
     async () => {
         const [providerModule, _] = await Promise.all([
             import('@/providers/meetProvider'),
-            preloadAssets()
+            preloadAssets(),
         ]);
         storage.set(CACHE_KEYS.MEETING.PROVIDER, true, 86400);
         return providerModule.StreamMeetProvider;
     },
     {
         ssr: false,
-        loading: () => <LoadingOverlay text="We beseech thee to hold fast, for thy session is nigh prepared...." />,
-        suspense: true
+        loading: () => (
+            <LoadingOverlay text="We beseech thee to hold fast, for thy session is nigh prepared...." />
+        ),
+        suspense: true,
     }
 );
 
 const ErrorBoundary = nextDynamic(
     () => import('@/components/pod/errorBoundary').then(mod => mod.ErrorBoundary),
-    { 
+    {
         ssr: false,
-        suspense: true 
+        suspense: true,
     }
 );
 
@@ -96,12 +96,12 @@ const StreamLayout = memo(({ children }: { children: ReactNode }) => {
     // Cache layout state with debouncing
     useEffect(() => {
         let timeoutId: NodeJS.Timeout;
-        
+
         const cacheState = () => {
             const layoutState = {
                 id,
                 isValidId,
-                timestamp: Date.now()
+                timestamp: Date.now(),
             };
             storage.set(CACHE_KEYS.MEETING.LAYOUT(id as string), layoutState, 3600);
         };
@@ -124,7 +124,7 @@ const StreamLayout = memo(({ children }: { children: ReactNode }) => {
 
             const isValid = /^[a-z]{3}-[a-z]{4}-[a-z]{3}$/.test(id as string);
             setIsValidId(isValid);
-            
+
             // Cache validation result
             storage.set(CACHE_KEYS.MEETING.ID(id as string), isValid, 7200); // 2h cache
 
@@ -142,7 +142,11 @@ const StreamLayout = memo(({ children }: { children: ReactNode }) => {
 
     return (
         <div className="max-h-screen bg-[#121212]">
-            <Suspense fallback={<LoadingOverlay text="We beseech thee to hold fast, for thy session is nigh prepared...." />}>
+            <Suspense
+                fallback={
+                    <LoadingOverlay text="We beseech thee to hold fast, for thy session is nigh prepared...." />
+                }
+            >
                 <ErrorBoundary fallback={<div>Failed to load meeting. Please try again.</div>}>
                     <StreamMeetProvider meetingId={id as string} language="en">
                         {children}

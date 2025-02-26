@@ -1,12 +1,12 @@
-"use client"
+'use client';
 
-import Image from "next/image"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import Logo from "@/components/ui/logo"
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import Logo from '@/components/ui/logo';
 
 export default function NotFound() {
-    const router = useRouter()
+    const router = useRouter();
 
     return (
         <div className="min-h-screen bg-[#151515] flex flex-col items-center justify-between p-8 relative">
@@ -16,7 +16,7 @@ export default function NotFound() {
                 style={{
                     backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
                            linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
-                    backgroundSize: "50px 50px",
+                    backgroundSize: '50px 50px',
                     opacity: 0.1,
                 }}
             />
@@ -42,7 +42,10 @@ export default function NotFound() {
                     </div>
                 </div>
                 <h1 className="text-white text-2xl font-semibold">404 Error</h1>
-                <Button className="bg-[#DDB958] hover:bg-[#DDB958]/90 text-black px-8" onClick={() => router.push("/")}>
+                <Button
+                    className="bg-[#DDB958] hover:bg-[#DDB958]/90 text-black px-8"
+                    onClick={() => router.push('/')}
+                >
                     Return home
                 </Button>
             </div>
@@ -50,6 +53,5 @@ export default function NotFound() {
             {/* Bottom Spacing */}
             <div className="h-20" />
         </div>
-    )
+    );
 }
-

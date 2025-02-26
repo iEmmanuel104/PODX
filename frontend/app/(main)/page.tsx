@@ -15,33 +15,35 @@ const CACHE_KEYS = {
     AUTH_STATE: 'auth_state',
     COMPONENTS_LOADED: 'components_loaded',
     UI: {
-        COMPONENTS: 'ui_components'
+        COMPONENTS: 'ui_components',
     },
-    REDIRECT: 'main_redirect_state'
+    REDIRECT: 'main_redirect_state',
 };
 
 // Dynamically import components with caching
 const DynamicComponents = {
-    Footer: dynamic(() => 
-        import('@/components/common/Footer').then(mod => {
-            storage.set(CACHE_KEYS.UI.COMPONENTS, { footer: true }, 3600);
-            return mod;
-        }),
-        { 
+    Footer: dynamic(
+        () =>
+            import('@/components/common/Footer').then(mod => {
+                storage.set(CACHE_KEYS.UI.COMPONENTS, { footer: true }, 3600);
+                return mod;
+            }),
+        {
             loading: () => <LoadingSpinner size="sm" />,
-            suspense: true 
+            suspense: true,
         }
     ),
-    RetroGrid: dynamic(() => 
-        import('@/components/ui/retro-grid').then(mod => {
-            storage.set(CACHE_KEYS.UI.COMPONENTS, { grid: true }, 3600);
-            return mod;
-        }),
-        { 
+    RetroGrid: dynamic(
+        () =>
+            import('@/components/ui/retro-grid').then(mod => {
+                storage.set(CACHE_KEYS.UI.COMPONENTS, { grid: true }, 3600);
+                return mod;
+            }),
+        {
             loading: () => <LoadingSpinner size="sm" />,
-            suspense: true 
+            suspense: true,
         }
-    )
+    ),
 };
 
 const Footer = DynamicComponents.Footer;

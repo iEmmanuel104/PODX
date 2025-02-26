@@ -2,7 +2,13 @@ const isArray = Array.isArray;
 const isObject = (value: unknown): boolean =>
     typeof value === 'object' && !isArray(value) && value !== null;
 
-type CaseType = 'camelCase' | 'constantCase' | 'kebabCase' | 'sentenceCase' | 'snakeCase' | 'upperCase';
+type CaseType =
+    | 'camelCase'
+    | 'constantCase'
+    | 'kebabCase'
+    | 'sentenceCase'
+    | 'snakeCase'
+    | 'upperCase';
 
 // Native implementations of case conversions
 const toCamelCase = (str: string): string => {
@@ -63,7 +69,7 @@ export const convertKeysCase = (data: unknown, type?: caseType): object => {
         return Object.fromEntries(
             Object.entries(data as object).map(([key, val]) => [
                 type === 'snakeCase' ? convertCamelToSnakeCase(key) : convertSnakeToCamelCase(key),
-                convertKeysCase(val, type)
+                convertKeysCase(val, type),
             ])
         );
     }

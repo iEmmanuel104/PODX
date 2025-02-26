@@ -1,5 +1,5 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { CallStats, CallStatsAnalytics, CallStatsReport, CallStatsState } from "./types";
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { CallStats, CallStatsAnalytics, CallStatsReport, CallStatsState } from './types';
 
 const initialState: CallStatsState = {
     basicStats: null,

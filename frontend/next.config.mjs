@@ -56,7 +56,7 @@ const nextConfig = {
                             name: 'retro-grid',
                             priority: 1,
                             reuseExistingChunk: true,
-                            enforce: true
+                            enforce: true,
                         },
                     },
                 },

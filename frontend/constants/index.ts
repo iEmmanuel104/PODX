@@ -1,4 +1,4 @@
-import localFont from "next/font/local";
+import localFont from 'next/font/local';
 
 export const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL as string;
 
@@ -30,20 +30,20 @@ export const streamCallType = {
 
 export const clashGrotesk = localFont({
     src: [
-      {
-        path: '../app/fonts/clashGrotesk/regular.ttf',
-        weight: '400',
-        style: 'normal',
-      },
-      {
-        path: '../app/fonts/clashGrotesk/medium.ttf',
-        weight: '500',
-        style: 'normal',
-      },
-      {
-        path: '../app/fonts/clashGrotesk/bold.ttf',
-        weight: '700',
-        style: 'normal',
-      },
+        {
+            path: '../app/fonts/clashGrotesk/regular.ttf',
+            weight: '400',
+            style: 'normal',
+        },
+        {
+            path: '../app/fonts/clashGrotesk/medium.ttf',
+            weight: '500',
+            style: 'normal',
+        },
+        {
+            path: '../app/fonts/clashGrotesk/bold.ttf',
+            weight: '700',
+            style: 'normal',
+        },
     ],
-  });
+});

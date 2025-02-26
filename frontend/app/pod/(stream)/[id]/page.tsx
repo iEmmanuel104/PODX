@@ -46,7 +46,7 @@ const DynamicComponents = {
     SpeakerLayout: React.lazy(() => import('@/components/pod/speakerLayout')),
     GridLayout: React.lazy(() => import('@/components/pod/gridLayout')),
     MeetingFooter: React.lazy(() => import('@/components/meeting/meetingFooter')),
-    TipNotification: React.lazy(() => import('@/components/meeting/tip-notification'))
+    TipNotification: React.lazy(() => import('@/components/meeting/tip-notification')),
 };
 
 // Create a loading fallback component
@@ -74,9 +74,9 @@ const MeetingInterface = memo(({ params }: MeetingProps) => {
     const participantComparator = useMemo(() => {
         return combineComparators(
             // First sort by screen sharing
-            (a, b) => hasScreenShare(b) ? 1 : hasScreenShare(a) ? -1 : 0,
+            (a, b) => (hasScreenShare(b) ? 1 : hasScreenShare(a) ? -1 : 0),
             // Then by pinned status
-            (a, b) => isPinned(b) ? 1 : isPinned(a) ? -1 : 0,
+            (a, b) => (isPinned(b) ? 1 : isPinned(a) ? -1 : 0),
             // Then by role
             role('host', 'cohost', 'user', 'listener'),
             // Then by speaking status
@@ -146,7 +146,8 @@ const MeetingInterface = memo(({ params }: MeetingProps) => {
 
     useEffect(() => {
         if (call) {
-            call.microphone.disable()
+            call.microphone
+                .disable()
                 .then(() => console.log('Mic disabled by default'))
                 .catch(console.error);
         }
@@ -167,7 +168,7 @@ const MeetingInterface = memo(({ params }: MeetingProps) => {
     type CallEventHandler = (event: StreamVideoEvent) => void;
 
     // Update the event handler with proper type checking
-    const handleCallEvent: CallEventHandler = (event) => {
+    const handleCallEvent: CallEventHandler = event => {
         switch (event.type) {
             case 'call.permission_request': {
                 const permissionEvent = event as PermissionRequestEvent;
@@ -188,7 +189,7 @@ const MeetingInterface = memo(({ params }: MeetingProps) => {
 
     useEffect(() => {
         if (!call || !('on' in call)) return;
-        
+
         const unsubscribe = (call as unknown as Call).on('custom', handleCallEvent);
         return () => unsubscribe();
     }, [call, handleCallEvent]);
@@ -199,7 +200,8 @@ const MeetingInterface = memo(({ params }: MeetingProps) => {
         const needsToJoin = [CallingState.IDLE, CallingState.UNKNOWN].includes(callingState);
 
         if (needsToJoin && !live) {
-            call.microphone.disable()
+            call.microphone
+                .disable()
                 .then(() => {
                     console.log('Microphone disabled before join');
                     router.push(`/pod/join/${id}`);
@@ -279,8 +281,8 @@ const MeetingInterface = memo(({ params }: MeetingProps) => {
     // Optimize layout determination
     const layoutType = useMemo(() => {
         if (!participantInSpotlight) return 'grid';
-        return hasScreenShare(participantInSpotlight) || isPinned(participantInSpotlight) 
-            ? 'speaker' 
+        return hasScreenShare(participantInSpotlight) || isPinned(participantInSpotlight)
+            ? 'speaker'
             : 'grid';
     }, [participantInSpotlight]);
 
@@ -290,7 +292,7 @@ const MeetingInterface = memo(({ params }: MeetingProps) => {
             const imports = [
                 import('@/components/meeting/header'),
                 import('@/components/pod/gridLayout'),
-                import('@/components/pod/speakerLayout')
+                import('@/components/pod/speakerLayout'),
             ];
             await Promise.all(imports);
         };
@@ -308,26 +310,26 @@ const MeetingInterface = memo(({ params }: MeetingProps) => {
     useEffect(() => {
         const initializeMedia = async () => {
             if (!call) return;
-            
+
             try {
                 // Start with microphone disabled
                 await call.microphone.disable();
-                
+
                 // Only enable camera
                 await call.camera.enable();
-                
+
                 // Setup speaker
                 if (devices?.length > 0) {
                     await speaker.select(devices[0].deviceId);
                     speaker.setVolume(1.0);
                 }
-                
+
                 console.log('Media devices initialized with muted mic');
             } catch (error) {
                 console.error('Media initialization failed:', error);
             }
         };
-        
+
         initializeMedia();
     }, [call, speaker, devices]);
 
@@ -348,16 +350,24 @@ const MeetingInterface = memo(({ params }: MeetingProps) => {
                     />
                 </Suspense>
 
-                <div className={clsx(
-                    "flex-grow flex overflow-hidden relative",
-                    "mb-[60px] sm:mb-20"
-                )}>
-                    <div className={clsx(
-                        'flex-1 transition-all duration-300 ease-in-out',
-                        showParticipants ? 'sm:mr-[224px] lg:mr-[256px] xl:mr-[320px]' : ''
-                    )}>
+                <div
+                    className={clsx(
+                        'flex-grow flex overflow-hidden relative',
+                        'mb-[60px] sm:mb-20'
+                    )}
+                >
+                    <div
+                        className={clsx(
+                            'flex-1 transition-all duration-300 ease-in-out',
+                            showParticipants ? 'sm:mr-[224px] lg:mr-[256px] xl:mr-[320px]' : ''
+                        )}
+                    >
                         <Suspense fallback={<ComponentLoader />}>
-                            {layoutType === 'speaker' ? <DynamicComponents.SpeakerLayout /> : <DynamicComponents.GridLayout />}
+                            {layoutType === 'speaker' ? (
+                                <DynamicComponents.SpeakerLayout />
+                            ) : (
+                                <DynamicComponents.GridLayout />
+                            )}
                         </Suspense>
                     </div>
 

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useEffect } from 'react';
 import Image from 'next/image';
@@ -43,7 +43,9 @@ export default function TipNotification({ tip, onClose }: TipNotificationProps) 
                             </div>
                         </div>
                         <div className="space-y-0.5">
-                            <p className="text-white text-base font-medium">You just got tipped 🎉</p>
+                            <p className="text-white text-base font-medium">
+                                You just got tipped 🎉
+                            </p>
                             <p className="text-sm">
                                 <span className="text-[#B3B3B3]">{tip.from}</span> just tipped you{' '}
                                 <span className="text-[#DDB958]">{tip.amount}</span>

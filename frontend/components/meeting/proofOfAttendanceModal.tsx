@@ -24,10 +24,10 @@ const ProofOfAttendanceModal: React.FC<ProofOfAttendanceModalProps> = ({
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="box-border flex flex-col justify-end items-start p-6 gap-6 isolate w-[340px] h-[288px] bg-[#1D1D1D] rounded-[20px] relative overflow-hidden">
                 <div className="absolute inset-0 bg-[radial-gradient(#3E3E3E_1px,transparent_1px)] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
-                
+
                 <DialogHeader className="items-start relative">
                     <div className="w-12 h-12 rounded-full bg-[#6032F6]/20 flex items-center justify-center mb-6">
-                        <Image 
+                        <Image
                             src="/icons/proof-icon.png"
                             alt="Proof of attendance"
                             width={24}
@@ -42,7 +42,7 @@ const ProofOfAttendanceModal: React.FC<ProofOfAttendanceModalProps> = ({
                         You've received a proof of attendance
                     </p>
                 </DialogHeader>
-                
+
                 <div className="space-y-6 w-full">
                     <div className="flex gap-4 justify-start">
                         <button
@@ -51,9 +51,7 @@ const ProofOfAttendanceModal: React.FC<ProofOfAttendanceModalProps> = ({
                         >
                             Close
                         </button>
-                        <button
-                            className="w-[138px] h-[36px] bg-[#D5B255] rounded-[10px] text-[#151515] text-[16px] flex items-center justify-center"
-                        >
+                        <button className="w-[138px] h-[36px] bg-[#D5B255] rounded-[10px] text-[#151515] text-[16px] flex items-center justify-center">
                             Check it out
                         </button>
                     </div>

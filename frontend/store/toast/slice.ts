@@ -1,5 +1,5 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { toastState } from "./types";
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { toastState } from './types';
 
 const initialState: toastState = {
     message: null,

@@ -17,7 +17,7 @@ const defaultAvatars = [
     '/icons/Avatar/Oval-9.png',
     '/icons/Avatar/Oval-10.png',
     '/icons/Avatar/Oval.png',
-    
+
     // Group series (32-67)
     '/icons/Avatar/Group 32.png',
     '/icons/Avatar/Group 33.png',
@@ -54,7 +54,7 @@ const defaultAvatars = [
     '/icons/Avatar/Group 64.png',
     '/icons/Avatar/Group 65.png',
     '/icons/Avatar/Group 66.png',
-    '/icons/Avatar/Group 67.png'
+    '/icons/Avatar/Group 67.png',
 ];
 
 export const getAvatars = async (): Promise<string[]> => {
@@ -68,7 +68,7 @@ let lastUsedIndices: number[] = [];
 
 export const getRandomAvatar = async (seed: string): Promise<string> => {
     const avatars = await getAvatars();
-    const index = seed.split('').reduce((acc, char) => 
-        acc + char.charCodeAt(0), 0) % avatars.length;
+    const index =
+        seed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % avatars.length;
     return avatars[index];
-}; 
+};

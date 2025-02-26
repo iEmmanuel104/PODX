@@ -7,9 +7,7 @@ interface ModalProps {
 
 export const Modal: React.FC<ModalProps> = ({ children }) => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-[#1E1E1E] p-6 rounded-[10px] w-full max-w-md">
-            {children}
-        </div>
+        <div className="bg-[#1E1E1E] p-6 rounded-[10px] w-full max-w-md">{children}</div>
     </div>
 );
 
@@ -62,7 +60,7 @@ const TipModal: React.FC<TipModalProps> = ({
                         type="text"
                         placeholder="Enter tip amount"
                         value={tipAmount}
-                        onChange={(e) => setTipAmount(e.target.value)}
+                        onChange={e => setTipAmount(e.target.value)}
                         className="w-full bg-[#2C2C2C] text-white text-sm rounded-lg px-4 py-2.5 
                                    focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
                     />
@@ -110,7 +108,9 @@ const TipModal: React.FC<TipModalProps> = ({
                 </button>
             </div>
             {/* Balance Display */}
-            <p className="text-white text-sm">Balance: {balance} {selectedCurrency}</p>
+            <p className="text-white text-sm">
+                Balance: {balance} {selectedCurrency}
+            </p>
         </Modal>
     );
 };

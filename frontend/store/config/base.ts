@@ -1,19 +1,26 @@
-import { BaseQueryFn, createApi, FetchArgs, fetchBaseQuery, FetchBaseQueryError, retry } from "@reduxjs/toolkit/query/react";
+import {
+    BaseQueryFn,
+    createApi,
+    FetchArgs,
+    fetchBaseQuery,
+    FetchBaseQueryError,
+    retry,
+} from '@reduxjs/toolkit/query/react';
 import { RootState } from './store';
-import { logOut, setSignature } from "../auth/slice";
-import { ApiResponse } from "../callStats/types";
+import { logOut, setSignature } from '../auth/slice';
+import { ApiResponse } from '../callStats/types';
 
 const API_TAG_CONFIG = {
-    User: { prefixes: ["userId"] as const },
-    Pod: { prefixes: ["podId"] as const },
-    Calls: { prefixes: ["callsId"] as const },
-    ScheduledCalls: { prefixes: ["scheduledCallsId"] as const },
-    CallStats: { prefixes: ["callStatsId"] as const },
-    DetailedCallStats: { prefixes: ["detailedCallStatsId"] as const },
-    UserCalls: { prefixes: ["userCallsId"] as const },
-    CallDetails: { prefixes: ["callDetailsId"] as const },
-    Leaderboard: { prefixes: ["leaderboardId"] as const },
-    UserTips: { prefixes: ["userTipsId"] as const },
+    User: { prefixes: ['userId'] as const },
+    Pod: { prefixes: ['podId'] as const },
+    Calls: { prefixes: ['callsId'] as const },
+    ScheduledCalls: { prefixes: ['scheduledCallsId'] as const },
+    CallStats: { prefixes: ['callStatsId'] as const },
+    DetailedCallStats: { prefixes: ['detailedCallStatsId'] as const },
+    UserCalls: { prefixes: ['userCallsId'] as const },
+    CallDetails: { prefixes: ['callDetailsId'] as const },
+    Leaderboard: { prefixes: ['leaderboardId'] as const },
+    UserTips: { prefixes: ['userTipsId'] as const },
 } as const;
 
 // Use native Object.keys instead of lodash.keys
@@ -32,7 +39,7 @@ const baseQuery = fetchBaseQuery({
         }
 
         return headers;
-    }
+    },
 });
 
 const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (
@@ -43,8 +50,10 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
     let result = await baseQuery(args, api, extraOptions);
 
     // Handle 401 and token expiration
-    if (result.error?.status === 401 &&
-        (result.error.data as ApiResponse<unknown>).message === 'Token expired') {
+    if (
+        result.error?.status === 401 &&
+        (result.error.data as ApiResponse<unknown>).message === 'Token expired'
+    ) {
         const { user } = (api.getState() as RootState).auth;
 
         if (user?.walletAddress) {
@@ -55,11 +64,15 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
 
                 const refreshResult = await fetchBaseQuery({
                     baseUrl: process.env.NEXT_PUBLIC_SERVER_URL,
-                })({
-                    url: '/user/validate',
-                    method: 'POST',
-                    body,
-                }, api, extraOptions);
+                })(
+                    {
+                        url: '/user/validate',
+                        method: 'POST',
+                        body,
+                    },
+                    api,
+                    extraOptions
+                );
 
                 if (refreshResult.data) {
                     const refreshData = refreshResult.data as ApiResponse<{ signature: string }>;
@@ -90,7 +103,8 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
 // Configure retry with backoff
 const baseQueryWithRetry = retry(baseQueryWithReauth, {
     maxRetries: 3,
-    backoff: (attempt) => new Promise((resolve) => setTimeout(resolve, Math.min(1000 * (2 ** attempt), 30000)))
+    backoff: attempt =>
+        new Promise(resolve => setTimeout(resolve, Math.min(1000 * 2 ** attempt, 30000))),
 });
 
 export const api = createApi({

@@ -58,9 +58,7 @@ export const truncateUsername = async (name: string, userId: string, isMobile: b
         try {
             const basename = await getBasename(userId as `0x${string}`);
             if (basename) {
-                return isMobile && basename.length > 12 
-                    ? `${basename.slice(0, 12)}...` 
-                    : basename;
+                return isMobile && basename.length > 12 ? `${basename.slice(0, 12)}...` : basename;
             }
         } catch (error) {
             console.error('Error fetching basename:', error);
@@ -68,15 +66,15 @@ export const truncateUsername = async (name: string, userId: string, isMobile: b
         return `${userId.slice(0, 5)}...${userId.slice(-5)}`;
     }
     return isMobile
-        ? name.length > 8 ? `${name.slice(0, 3)}...${name.slice(-5)}` : name
-        : name.length > 12 ? `${name.slice(0, 12)}...` : name;
+        ? name.length > 8
+            ? `${name.slice(0, 3)}...${name.slice(-5)}`
+            : name
+        : name.length > 12
+          ? `${name.slice(0, 12)}...`
+          : name;
 };
 
-export const useParticipantConsistentAvatar = (
-    userId: string,
-    name: string,
-    image?: string
-) => {
+export const useParticipantConsistentAvatar = (userId: string, name: string, image?: string) => {
     const [avatarUrl, setAvatarUrl] = useState<string>('');
     const [avatars, setAvatars] = useState<string[]>([]);
     const basenameAvatar = useParticipantAvatar(userId);
@@ -97,17 +95,17 @@ export const useParticipantConsistentAvatar = (
                 setAvatarUrl(basenameAvatar);
                 return;
             }
-            
+
             if (image) {
                 setAvatarUrl(image);
                 return;
             }
-            
+
             const seed = userId || name || '';
             const randomAvatar = await getRandomAvatar(seed);
             setAvatarUrl(randomAvatar);
         };
-        
+
         getAvatar();
     }, [basenameAvatar, image, userId, name]);
 
@@ -116,4 +114,4 @@ export const useParticipantConsistentAvatar = (
     };
 
     return { avatarUrl, getFallbackAvatar };
-}; 
+};

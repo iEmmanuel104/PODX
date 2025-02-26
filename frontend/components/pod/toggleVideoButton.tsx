@@ -30,16 +30,16 @@ const ToggleVideoButton = () => {
                     disabled={!hasBrowserPermission}
                 />
             }
-        // icons={
-        //     <div title="Apply visual effects">
-        //         <VisualEffects className="w-5 h-5 sm:w-6 sm:h-6" />
-        //     </div>
-        // }
+            // icons={
+            //     <div title="Apply visual effects">
+            //         <VisualEffects className="w-5 h-5 sm:w-6 sm:h-6" />
+            //     </div>
+            // }
         >
             <CallControlButton
                 icon={
                     isCameraMute ? (
-                        <div className='bg-red-500 rounded-full p-2.5'>
+                        <div className="bg-red-500 rounded-full p-2.5">
                             <VideoCallMuted />
                         </div>
                     ) : (

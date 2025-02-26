@@ -19,7 +19,6 @@ interface StreakDialogProps {
     onToggleCreateSession: () => void;
 }
 
-
 export function StreakDialog({ user, onToggleCreateSession }: StreakDialogProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [animatedStreak, setAnimatedStreak] = useState(0);
@@ -138,9 +137,9 @@ export function StreakDialog({ user, onToggleCreateSession }: StreakDialogProps)
                                 animate={
                                     streakInfo.status === 'active' || streakInfo.status === 'peak'
                                         ? {
-                                            rotate: [0, 20, 0],
-                                            scale: [1, 1.2, 1],
-                                        }
+                                              rotate: [0, 20, 0],
+                                              scale: [1, 1.2, 1],
+                                          }
                                         : {}
                                 }
                                 transition={{ duration: 2, repeat: Infinity }}
@@ -177,14 +176,15 @@ export function StreakDialog({ user, onToggleCreateSession }: StreakDialogProps)
                                     <motion.div
                                         className="h-[52px] w-[52px]"
                                         animate={
-                                            streakInfo.status === 'active' || streakInfo.status === 'peak'
+                                            streakInfo.status === 'active' ||
+                                            streakInfo.status === 'peak'
                                                 ? {
-                                                    scale: [1, 1.2, 1],
-                                                    rotate: [0, 10, -10, 0],
-                                                }
+                                                      scale: [1, 1.2, 1],
+                                                      rotate: [0, 10, -10, 0],
+                                                  }
                                                 : {
-                                                    scale: [1, 1.1, 1],
-                                                }
+                                                      scale: [1, 1.1, 1],
+                                                  }
                                         }
                                         transition={{
                                             duration: 2,
@@ -219,11 +219,13 @@ export function StreakDialog({ user, onToggleCreateSession }: StreakDialogProps)
                                             {user?.streak?.longestStreak &&
                                                 user.streak.longestStreak > 0 && (
                                                     <div className="text-[#DDB958] font-semibold text-base sm:text-lg">
-                                                        Best Streak: {user.streak.longestStreak} days 🏆
+                                                        Best Streak: {user.streak.longestStreak}{' '}
+                                                        days 🏆
                                                     </div>
                                                 )}
                                             <div className="text-[#A3A3A3] text-base">
-                                                Total Creator Points: {user?.streak?.totalPoints || 0} ⭐️
+                                                Total Creator Points:{' '}
+                                                {user?.streak?.totalPoints || 0} ⭐️
                                             </div>
                                         </div>
 

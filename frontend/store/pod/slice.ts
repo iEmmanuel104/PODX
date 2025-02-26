@@ -1,6 +1,6 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { CoHostRequest, JoinRequest, PodState, Error } from "./types";
-import { sessionType, streamCallType } from "@/constants";
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { CoHostRequest, JoinRequest, PodState, Error } from './types';
+import { sessionType, streamCallType } from '@/constants';
 
 const initialState: PodState = {
     podId: null,
@@ -215,7 +215,7 @@ const podSlice = createSlice({
         setIsNewMeeting: (state, action: PayloadAction<boolean>) => {
             state.isNewMeeting = action.payload;
         },
-        resetMeetingState: (state) => {
+        resetMeetingState: state => {
             state.isNewMeeting = false;
         },
     },
@@ -246,7 +246,8 @@ export const {
     clearPodState,
     setSessionInfo,
     clearSessionInfo,
-    setIsNewMeeting, resetMeetingState
+    setIsNewMeeting,
+    resetMeetingState,
 } = podSlice.actions;
 
 export default podSlice.reducer;

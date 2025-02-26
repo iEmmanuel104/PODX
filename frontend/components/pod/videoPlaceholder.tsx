@@ -24,10 +24,7 @@ const VideoPlaceholder = forwardRef<HTMLDivElement, VideoPlaceholderProps>(
                 style={style}
                 className="absolute inset-0 bg-[#2A2A2A] flex items-center justify-center"
             >
-                <Avatar
-                    participant={participant}
-                    width={80}
-                />
+                <Avatar participant={participant} width={80} />
             </div>
         );
     }

@@ -22,7 +22,7 @@ export interface UpdateUsernameResponse {
 
 export interface ValidateUserResponse {
     data: UserInfo & { signature?: string };
-};
+}
 
 export interface ValidateUserArgs {
     walletAddress: string;
@@ -37,7 +37,6 @@ export interface UpdateUsernameArgs {
 export interface QueryParams {
     [key: string]: number | string;
 }
-
 
 export interface CallMember {
     userId: {
@@ -90,7 +89,6 @@ export interface GetUserCallsArgs {
 export interface GetUserTipHistoryArgs {
     filter?: 'sent' | 'received';
 }
-
 
 export interface CallInfo {
     _id: string;

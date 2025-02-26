@@ -1,7 +1,12 @@
 import { useEffect } from 'react';
 import type { StreamCallData } from '@/components/pod/streamCallData';
 import { useAppDispatch, useTypedSelector } from '@/store/config/store';
-import { GetCallResponse, scheduledCallsApiSlice, useListUserScheduledCallsQuery, useScheduleCallMutation } from '@/store/callStats/scheduledCallsApiSlice';
+import {
+    GetCallResponse,
+    scheduledCallsApiSlice,
+    useListUserScheduledCallsQuery,
+    useScheduleCallMutation,
+} from '@/store/callStats/scheduledCallsApiSlice';
 import { ApiResponse, ScheduleCallArgs } from '@/store/callStats/types';
 import { clearScheduledSessions, setScheduledSessions } from '@/store/scheduleSession/slice';
 
@@ -18,7 +23,8 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
 
     // RTK Query hooks
     const [scheduleCallMutation, { isLoading: isScheduling }] = useScheduleCallMutation();
-    const { data: userScheduledCalls, isLoading: isLoadingCalls } = useListUserScheduledCallsQuery();
+    const { data: userScheduledCalls, isLoading: isLoadingCalls } =
+        useListUserScheduledCallsQuery();
 
     // Update local state when user scheduled calls change
     useEffect(() => {

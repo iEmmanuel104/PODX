@@ -10,7 +10,7 @@ export const storage = {
             const data: CacheData = {
                 value,
                 timestamp: Date.now(),
-                expiry: expiry * 1000 // Convert to milliseconds
+                expiry: expiry * 1000, // Convert to milliseconds
             };
             sessionStorage.setItem(key, JSON.stringify(data));
         } catch (error) {
@@ -35,5 +35,5 @@ export const storage = {
 
     clear: (key: string) => {
         sessionStorage.removeItem(key);
-    }
-}; 
+    },
+};

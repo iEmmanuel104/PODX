@@ -1,85 +1,91 @@
-import { api } from "../config/base";
-import { USER_ENDPOINTS } from "./endpoint";
+import { api } from '../config/base';
+import { USER_ENDPOINTS } from './endpoint';
 import type {
-    UpdateUsernameArgs, UpdateUsernameResponse, UserInfo, ValidateUserArgs,
-    ValidateUserResponse, GetUserCallsResponse, GetUserCallsArgs, GetUserTipHistoryArgs,
-    GetUserTipHistoryResponse
-} from "./types";
-import { createTag } from "../config/tags";
+    UpdateUsernameArgs,
+    UpdateUsernameResponse,
+    UserInfo,
+    ValidateUserArgs,
+    ValidateUserResponse,
+    GetUserCallsResponse,
+    GetUserCallsArgs,
+    GetUserTipHistoryArgs,
+    GetUserTipHistoryResponse,
+} from './types';
+import { createTag } from '../config/tags';
 
 export const userSlice = api.injectEndpoints({
-    endpoints: (builder) => ({
+    endpoints: builder => ({
         validateUser: builder.mutation<ValidateUserResponse, ValidateUserArgs>({
             query: ({ walletAddress, hash }) => ({
                 body: { walletAddress, ...(hash ? { hash: 'true' } : {}) },
                 method: 'POST',
-                url: USER_ENDPOINTS.validateUser()
+                url: USER_ENDPOINTS.validateUser(),
             }),
             invalidatesTags: [createTag('User')],
-            transformResponse: (response: ValidateUserResponse) => response
+            transformResponse: (response: ValidateUserResponse) => response,
         }),
         updateUsername: builder.mutation<UpdateUsernameResponse, UpdateUsernameArgs>({
             query: ({ username }) => ({
                 body: { username },
                 method: 'PATCH',
-                url: USER_ENDPOINTS.updateUsername()
+                url: USER_ENDPOINTS.updateUsername(),
             }),
             invalidatesTags: [createTag('User')],
         }),
         retrieveUser: builder.query<UserInfo, string>({
-            query: (id) => ({
+            query: id => ({
                 method: 'GET',
-                url: USER_ENDPOINTS.retrieveUser(id)
+                url: USER_ENDPOINTS.retrieveUser(id),
             }),
             providesTags: [createTag('User')],
         }),
         getUserCalls: builder.query<GetUserCallsResponse, GetUserCallsArgs | void>({
-            query: (args) => ({
+            query: args => ({
                 method: 'GET',
                 url: USER_ENDPOINTS.getUserCalls(args?.filter),
             }),
-            providesTags: (result) =>
+            providesTags: result =>
                 result
                     ? [
-                        ...result.data.calls.map(call =>
-                            createTag({
-                                type: 'UserCalls',
-                                prefix: 'userCallsId',
-                                id: call.callId
-                            })
-                        ),
-                        createTag('UserCalls')
-                    ]
+                          ...result.data.calls.map(call =>
+                              createTag({
+                                  type: 'UserCalls',
+                                  prefix: 'userCallsId',
+                                  id: call.callId,
+                              })
+                          ),
+                          createTag('UserCalls'),
+                      ]
                     : [createTag('UserCalls')],
             transformResponse: (response: GetUserCallsResponse) => response,
         }),
         getUserTipHistory: builder.query<GetUserTipHistoryResponse, GetUserTipHistoryArgs | void>({
-            query: (args) => ({
+            query: args => ({
                 method: 'GET',
                 url: USER_ENDPOINTS.getUserTipHistory(args?.filter),
             }),
-            providesTags: (result) =>
+            providesTags: result =>
                 result
                     ? [
-                        ...result.data.tips.map(tip =>
-                            createTag({
-                                type: 'UserTips',
-                                prefix: 'userTipsId',
-                                id: tip._id
-                            })
-                        ),
-                        createTag('UserTips')
-                    ]
+                          ...result.data.tips.map(tip =>
+                              createTag({
+                                  type: 'UserTips',
+                                  prefix: 'userTipsId',
+                                  id: tip._id,
+                              })
+                          ),
+                          createTag('UserTips'),
+                      ]
                     : [createTag('UserTips')],
             transformResponse: (response: GetUserTipHistoryResponse) => response,
         }),
     }),
-})
+});
 
 export const {
     useRetrieveUserQuery,
     useUpdateUsernameMutation,
-    useValidateUserMutation, 
+    useValidateUserMutation,
     useGetUserTipHistoryQuery,
-    useGetUserCallsQuery
+    useGetUserCallsQuery,
 } = userSlice;

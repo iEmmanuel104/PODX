@@ -17,7 +17,6 @@ export const NotWhitelistedScreen: React.FC<NotWhitelistedScreenProps> = ({ titl
         <div className="min-h-screen bg-[#151515] text-white">
             <div className="container mx-auto px-4 py-6 sm:py-8 md:py-12 flex flex-col min-h-screen">
                 <div className="flex-grow flex flex-col items-center justify-center">
-
                     <div className="max-w-md mx-auto text-center space-y-6">
                         <div className="p-4 rounded-full bg-[#2C2C2C] inline-flex">
                             <svg

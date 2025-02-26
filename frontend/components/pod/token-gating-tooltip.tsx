@@ -3,10 +3,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import Twinkle from '@/public/images/icons/Twinkle';
 import Retry from '@/public/images/icons/Retry';
 
-const DEFAULT_EXPLANATION = "PodX uses Proof of Attendance NFTs to restrict access. Attendees earn these onchain NFTs, which can grant entry to future exclusive events";
+const DEFAULT_EXPLANATION =
+    'PodX uses Proof of Attendance NFTs to restrict access. Attendees earn these onchain NFTs, which can grant entry to future exclusive events';
 
 const LoadingSkeleton = () => (
-    <div className="animate-pulse space-y-2 w-[280px]"> {/* Fixed width to match content */}
+    <div className="animate-pulse space-y-2 w-[280px]">
+        {' '}
+        {/* Fixed width to match content */}
         <div className="h-4 bg-gray-700 rounded w-full"></div>
         <div className="h-4 bg-gray-700 rounded w-4/5"></div>
     </div>
@@ -33,8 +36,8 @@ const TokenGatingTooltip = () => {
                 },
                 body: JSON.stringify({
                     prompt: "Explain token gating in a simple, brief way that's easy for users to understand",
-                    currentExplanation: explanation
-                })
+                    currentExplanation: explanation,
+                }),
             });
 
             if (!response.ok) {
@@ -72,7 +75,7 @@ const TokenGatingTooltip = () => {
             </PopoverTrigger>
             <PopoverContent
                 className="bg-[#2B2B2B] rounded-xl border-none min-w-[329px] p-0"
-                onOpenAutoFocus={(e) => e.preventDefault()}
+                onOpenAutoFocus={e => e.preventDefault()}
             >
                 <div className="flex items-center justify-between p-2">
                     <div className="flex items-center gap-2">
@@ -86,22 +89,19 @@ const TokenGatingTooltip = () => {
                         disabled={isLoading}
                         className={`
               text-sm text-white flex items-center gap-2 px-2 py-1 rounded-full transition-colors
-              ${error
-                                ? 'bg-red-900/50 hover:bg-red-900/70'
-                                : 'bg-[#444343] hover:bg-[#515151]'
-                            }
+              ${error ? 'bg-red-900/50 hover:bg-red-900/70' : 'bg-[#444343] hover:bg-[#515151]'}
               disabled:opacity-50 disabled:cursor-not-allowed
             `}
                     >
-                        <Retry className={isLoading ? "animate-spin" : ""} />
-                        {isLoading ? "Thinking..." : error ? "Try again" : "Reexplain"}
+                        <Retry className={isLoading ? 'animate-spin' : ''} />
+                        {isLoading ? 'Thinking...' : error ? 'Try again' : 'Reexplain'}
                     </button>
                 </div>
                 <div className="p-4">
-                    <p className="text-base font-medium text-white mb-2">
-                        What is Token Gating
-                    </p>
-                    <div className="min-h-[48px] w-[280px]"> {/* Fixed width container */}
+                    <p className="text-base font-medium text-white mb-2">What is Token Gating</p>
+                    <div className="min-h-[48px] w-[280px]">
+                        {' '}
+                        {/* Fixed width container */}
                         {isLoading ? (
                             <LoadingSkeleton />
                         ) : (

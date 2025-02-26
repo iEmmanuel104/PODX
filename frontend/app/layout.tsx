@@ -11,7 +11,8 @@ import { AlertCircle, CheckCircle2, DollarSign } from 'lucide-react';
 import { clashGrotesk } from '@/constants';
 
 const APP_NAME = 'Pod X';
-const APP_DESCRIPTION = 'Real-time meetings by Podx on chain Using your browser, share your video, desktop.';
+const APP_DESCRIPTION =
+    'Real-time meetings by Podx on chain Using your browser, share your video, desktop.';
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.podx.fun';
 
 export const metadata: Metadata = {
@@ -33,12 +34,12 @@ export const metadata: Metadata = {
         'crypto video conferencing',
         'on-chain meetings',
         'blockchain video platform',
-        'web3 collaboration'
+        'web3 collaboration',
     ],
     referrer: 'origin-when-cross-origin',
     themeColor: [
         { media: '(prefers-color-scheme: dark)', color: '#1E1E1E' },
-        { media: '(prefers-color-scheme: light)', color: '#ffffff' }
+        { media: '(prefers-color-scheme: light)', color: '#ffffff' },
     ],
     colorScheme: 'dark',
     viewport: {
@@ -64,7 +65,7 @@ export const metadata: Metadata = {
                 width: 1200,
                 height: 630,
                 alt: 'Pod X - Collaborate Like Web2, Own Like Web3',
-            }
+            },
         ],
     },
 
@@ -86,9 +87,7 @@ export const metadata: Metadata = {
             { url: '/icon-192.png', type: 'image/png', sizes: '192x192' },
             { url: '/icon-512.png', type: 'image/png', sizes: '512x512' },
         ],
-        apple: [
-            { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
-        ],
+        apple: [{ url: '/apple-icon.png', sizes: '180x180', type: 'image/png' }],
         other: [
             {
                 rel: 'mask-icon',

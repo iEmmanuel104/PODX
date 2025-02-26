@@ -1,5 +1,5 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { MediaState } from "./types";
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { MediaState } from './types';
 
 const initialState: MediaState = {
     isAudioEnabled: true,

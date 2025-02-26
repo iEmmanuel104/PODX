@@ -35,7 +35,6 @@ export const useAuth = () => {
 
             // Optional: Clear any other app-specific state here
             // e.g., clear local storage, cookies, etc.
-
         } catch (error) {
             console.error('Logout failed:', error);
             // Even if there's an error, try to clear local state
@@ -62,6 +61,6 @@ export const useAuth = () => {
         logout,
         connect,
         ready,
-        authenticated
+        authenticated,
     };
 };

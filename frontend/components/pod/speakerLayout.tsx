@@ -13,7 +13,7 @@ import {
     Audio,
 } from '@stream-io/video-react-sdk';
 import clsx from 'clsx';
-import { Mic, MicOff, MoreHorizontal } from "lucide-react";
+import { Mic, MicOff, MoreHorizontal } from 'lucide-react';
 import Image from 'next/image';
 import type { ComponentType as ReactComponentType } from 'react';
 import avatar1 from '/images/avatars/Oval-1.png';
@@ -31,11 +31,11 @@ import ParticipantViewUI from './participantViewUI';
 import useAnimateVideoLayout from '../../hooks/useAnimateVideoLayout';
 import VideoPlaceholder from './videoPlaceholder';
 import { getBasename, getBasenameAvatar } from '@/app/apis/basenames';
-import { 
-    useIsMobile, 
-    useDebounceSpeak, 
+import {
+    useIsMobile,
+    useDebounceSpeak,
     useParticipantAvatar,
-    truncateUsername 
+    truncateUsername,
 } from '../../hooks/useParticipantUtils';
 
 const avatars = [
@@ -48,7 +48,7 @@ const avatars = [
     '/icons/Avatar/Oval-7.png',
     '/icons/Avatar/Oval-8.png',
     '/icons/Avatar/Oval-9.png',
-    '/icons/Avatar/Oval-10.png'
+    '/icons/Avatar/Oval-10.png',
 ];
 
 interface ScreenShareUIProps {
@@ -58,9 +58,7 @@ interface ScreenShareUIProps {
 
 // Add display name to the inline component
 const ParticipantViewUIComponent = memo((props: ScreenShareUIProps) => (
-    <div className="w-full h-full">
-        {props.children}
-    </div>
+    <div className="w-full h-full">{props.children}</div>
 ));
 ParticipantViewUIComponent.displayName = 'ParticipantViewUIComponent';
 
@@ -72,11 +70,7 @@ interface ParticipantViewUIProps {
 
 // First define ScreenShareUI
 const ScreenShareUI = memo<ScreenShareUIProps>(({ children, participant }) => {
-    return (
-        <div className="relative w-full h-full">
-            {children}
-        </div>
-    );
+    return <div className="relative w-full h-full">{children}</div>;
 });
 ScreenShareUI.displayName = 'ScreenShareUI';
 
@@ -94,7 +88,7 @@ ParticipantViewUIWrapper.displayName = 'ParticipantViewUIWrapper';
 // Move CustomParticipantViewUI outside the SpeakerLayout component and export it
 const CustomParticipantViewUI = memo(() => {
     const { participant } = useParticipantViewContext();
-    
+
     return (
         <div className="relative w-full h-full">
             <Audio participant={participant} />
@@ -143,7 +137,7 @@ const SpeakerLayout = memo(() => {
 
             return 0;
         });
-        
+
         return sortedParticipants;
     }, [participants]);
 
@@ -154,7 +148,7 @@ const SpeakerLayout = memo(() => {
             try {
                 // Wait for call state to be ready
                 await new Promise(resolve => setTimeout(resolve, 500));
-                
+
                 // Set up sorting preset using Stream's API
                 const customSortingPreset = combineComparators(screenSharing, pinned);
                 await call.setSortParticipantsBy(customSortingPreset);
@@ -219,99 +213,96 @@ const SpeakerLayout = memo(() => {
         style?: React.CSSProperties;
     }
 
-    const ParticipantTile = React.memo(({
-        participant,
-        totalParticipants,
-        index,
-        style
-    }: ParticipantTileProps) => {
-        const isAudioEnabled = participant.publishedTracks.includes(1);
-        const isSpeaking = participant.isSpeaking;
-        const debouncedSpeaking = useDebounceSpeak(isSpeaking);
-        const [displayName, setDisplayName] = useState(participant.name || participant.userId);
-        const isMobile = useIsMobile();
-        
-        // Show all elements for first tile on mobile or all tiles on desktop
-        const shouldShowAllElements = !isMobile || index === 0;
-        // Show only mic and more options for second tile on mobile
-        const shouldShowMinimalElements = isMobile && index === 1;
+    const ParticipantTile = React.memo(
+        ({ participant, totalParticipants, index, style }: ParticipantTileProps) => {
+            const isAudioEnabled = participant.publishedTracks.includes(1);
+            const isSpeaking = participant.isSpeaking;
+            const debouncedSpeaking = useDebounceSpeak(isSpeaking);
+            const [displayName, setDisplayName] = useState(participant.name || participant.userId);
+            const isMobile = useIsMobile();
 
-        useEffect(() => {
-            const updateDisplayName = async () => {
-                const name = participant.name || participant.userId;
-                if (participant.userId.startsWith('0x')) {
-                    try {
-                        const basename = await getBasename(participant.userId as `0x${string}`);
-                        if (basename) {
-                            setDisplayName(basename);
-                            return;
+            // Show all elements for first tile on mobile or all tiles on desktop
+            const shouldShowAllElements = !isMobile || index === 0;
+            // Show only mic and more options for second tile on mobile
+            const shouldShowMinimalElements = isMobile && index === 1;
+
+            useEffect(() => {
+                const updateDisplayName = async () => {
+                    const name = participant.name || participant.userId;
+                    if (participant.userId.startsWith('0x')) {
+                        try {
+                            const basename = await getBasename(participant.userId as `0x${string}`);
+                            if (basename) {
+                                setDisplayName(basename);
+                                return;
+                            }
+                        } catch (error) {
+                            console.error('Error fetching basename:', error);
                         }
-                    } catch (error) {
-                        console.error('Error fetching basename:', error);
                     }
-                }
-                // If no basename or not an ethereum address, truncate
-                const truncated = await truncateUsername(name, participant.userId, isMobile);
-                setDisplayName(truncated);
-            };
+                    // If no basename or not an ethereum address, truncate
+                    const truncated = await truncateUsername(name, participant.userId, isMobile);
+                    setDisplayName(truncated);
+                };
 
-            updateDisplayName();
-        }, [participant.name, participant.userId, isMobile]);
+                updateDisplayName();
+            }, [participant.name, participant.userId, isMobile]);
 
-        return (
-            <div 
-                className={clsx(
-                    "relative w-full h-full",
-                    "flex items-center justify-center",
-                    "bg-[#2A2A2A] rounded-xl overflow-hidden"
-                )}
-                style={style}
-            >
-                {/* Status indicator */}
-                {(shouldShowAllElements || shouldShowMinimalElements) && (
-                    <div
-                        className="absolute left-[14px] top-[13px] flex items-center p-[6px] bg-[rgba(75,75,75,0.5)] backdrop-blur-[5.7px] rounded-[1000px] z-10"
-                    >
-                        <div
-                            style={{
-                                background: !isAudioEnabled ? "#FF3B30" : debouncedSpeaking ? "#5E5CE6" : "#808080",
-                                borderRadius: "50%",
-                                padding: "6px",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                            }}
-                        >
-                            {!isAudioEnabled ? (
-                                <MicOff className="h-3 w-3 text-white" />
-                            ) : (
-                                <Mic className="h-3 w-3 text-white" />
-                            )}
+            return (
+                <div
+                    className={clsx(
+                        'relative w-full h-full',
+                        'flex items-center justify-center',
+                        'bg-[#2A2A2A] rounded-xl overflow-hidden'
+                    )}
+                    style={style}
+                >
+                    {/* Status indicator */}
+                    {(shouldShowAllElements || shouldShowMinimalElements) && (
+                        <div className="absolute left-[14px] top-[13px] flex items-center p-[6px] bg-[rgba(75,75,75,0.5)] backdrop-blur-[5.7px] rounded-[1000px] z-10">
+                            <div
+                                style={{
+                                    background: !isAudioEnabled
+                                        ? '#FF3B30'
+                                        : debouncedSpeaking
+                                          ? '#5E5CE6'
+                                          : '#808080',
+                                    borderRadius: '50%',
+                                    padding: '6px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                }}
+                            >
+                                {!isAudioEnabled ? (
+                                    <MicOff className="h-3 w-3 text-white" />
+                                ) : (
+                                    <Mic className="h-3 w-3 text-white" />
+                                )}
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {/* More Options */}
-                {(shouldShowAllElements || shouldShowMinimalElements) && (
-                    <button
-                        aria-label="More options"
-                        className="absolute right-[14px] top-[13px] bg-transparent border-none cursor-pointer p-1 z-10"
-                    >
-                        <MoreHorizontal className="h-5 w-5 text-white/80" />
-                    </button>
-                )}
+                    {/* More Options */}
+                    {(shouldShowAllElements || shouldShowMinimalElements) && (
+                        <button
+                            aria-label="More options"
+                            className="absolute right-[14px] top-[13px] bg-transparent border-none cursor-pointer p-1 z-10"
+                        >
+                            <MoreHorizontal className="h-5 w-5 text-white/80" />
+                        </button>
+                    )}
 
-                {/* Name Label */}
-                {shouldShowAllElements && (
-                    <div className="absolute left-[14px] bottom-[13px] flex items-center p-[6px] gap-2 bg-[rgba(75,75,75,0.5)] backdrop-blur-[5.7px] rounded-[1000px]">
-                        <span className="text-white text-sm px-1.5">
-                            {displayName}
-                        </span>
-                    </div>
-                )}
-            </div>
-        );
-    });
+                    {/* Name Label */}
+                    {shouldShowAllElements && (
+                        <div className="absolute left-[14px] bottom-[13px] flex items-center p-[6px] gap-2 bg-[rgba(75,75,75,0.5)] backdrop-blur-[5.7px] rounded-[1000px]">
+                            <span className="text-white text-sm px-1.5">{displayName}</span>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+    );
     ParticipantTile.displayName = 'ParticipantTile';
 
     // First, let's properly type the MinimalParticipantUI component
@@ -321,20 +312,14 @@ const SpeakerLayout = memo(() => {
     }
 
     const MinimalParticipantUI = memo(({ children }: MinimalParticipantUIProps) => {
-        return (
-            <div className="str-video__participant-view w-full h-full">
-                {children}
-            </div>
-        );
+        return <div className="str-video__participant-view w-full h-full">{children}</div>;
     });
     MinimalParticipantUI.displayName = 'MinimalParticipantUI';
 
     // First, add the OverflowIndicator component from GridLayout
     const OverflowIndicator = ({ count }: { count: number }) => {
         return (
-            <div 
-                className="flex items-center p-[6px_12px] gap-2 bg-[rgba(75,75,75,0.5)] backdrop-blur-[5.7px] rounded-[1000px]"
-            >
+            <div className="flex items-center p-[6px_12px] gap-2 bg-[rgba(75,75,75,0.5)] backdrop-blur-[5.7px] rounded-[1000px]">
                 {/* Container for overlapping avatars */}
                 <div className="flex items-center bg-transparent p-0.5">
                     {[...Array(3)].map((_, index) => (
@@ -360,9 +345,7 @@ const SpeakerLayout = memo(() => {
                     ))}
                 </div>
                 {/* Overflow Count */}
-                <span className="text-white text-sm">
-                    +{count}
-                </span>
+                <span className="text-white text-sm">+{count}</span>
             </div>
         );
     };
@@ -374,7 +357,7 @@ const SpeakerLayout = memo(() => {
             // Speaking participants first
             if (a.isSpeaking && !b.isSpeaking) return -1;
             if (!a.isSpeaking && b.isSpeaking) return 1;
-            
+
             // Then basename users
             const aHasBasename = a.userId.startsWith('0x');
             const bHasBasename = b.userId.startsWith('0x');
@@ -410,13 +393,13 @@ const SpeakerLayout = memo(() => {
                         <div className="w-full h-full">
                             <div className="w-full h-full relative">
                                 <div className="absolute inset-0">
-                            <ParticipantView
-                                participant={screenSharingParticipant}
-                                trackType="videoTrack"
-                                ParticipantViewUI={CustomParticipantViewUI}
-                                VideoPlaceholder={VideoPlaceholder}
-                                muteAudio={true}
-                            />
+                                    <ParticipantView
+                                        participant={screenSharingParticipant}
+                                        trackType="videoTrack"
+                                        ParticipantViewUI={CustomParticipantViewUI}
+                                        VideoPlaceholder={VideoPlaceholder}
+                                        muteAudio={true}
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -432,17 +415,17 @@ const SpeakerLayout = memo(() => {
                                 {/* Show visible participants */}
                                 <div className="flex gap-4">
                                     {visibleParticipants.map((participant, index) => (
-                                    <div
-                                        key={participant.sessionId}
+                                        <div
+                                            key={participant.sessionId}
                                             className="h-full aspect-[4/3] flex-shrink-0 bg-[#2A2A2A] rounded-xl overflow-hidden"
-                                    >
+                                        >
                                             <ParticipantTile
-                                            participant={participant}
+                                                participant={participant}
                                                 totalParticipants={2}
                                                 index={index}
-                                        />
-                                    </div>
-                                ))}
+                                            />
+                                        </div>
+                                    ))}
                                 </div>
 
                                 {/* Show overflow indicator for remaining participants */}
@@ -519,7 +502,9 @@ const SpeakerLayout = memo(() => {
                         <ParticipantView
                             participant={{
                                 ...participantInSpotlight,
-                                name: truncateNameTo6Chars(participantInSpotlight.name || participantInSpotlight.userId)
+                                name: truncateNameTo6Chars(
+                                    participantInSpotlight.name || participantInSpotlight.userId
+                                ),
                             }}
                             trackType="videoTrack"
                             ParticipantViewUI={CustomParticipantViewUI}
@@ -539,12 +524,12 @@ const SpeakerLayout = memo(() => {
                             {/* Show visible participants */}
                             <div className="flex gap-4">
                                 {visibleParticipants.map((participant, index) => (
-                                <div
-                                    key={participant.sessionId}
+                                    <div
+                                        key={participant.sessionId}
                                         className="h-full aspect-[4/3] flex-shrink-0 bg-[#2A2A2A] rounded-xl overflow-hidden"
-                                >
+                                    >
                                         <ParticipantTile
-                                        participant={participant}
+                                            participant={participant}
                                             totalParticipants={2}
                                             index={index}
                                         />

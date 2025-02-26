@@ -8,7 +8,7 @@ import { LoadingOverlay } from '@/components/ui/loading';
 
 // Cache keys
 const CACHE_KEYS = {
-    REDIRECT: 'main_redirect_state'
+    REDIRECT: 'main_redirect_state',
 };
 
 export default function MainLayoutClient({ children }: { children: React.ReactNode }) {
@@ -41,4 +41,4 @@ export default function MainLayoutClient({ children }: { children: React.ReactNo
             </Suspense>
         </div>
     );
-} 
+}

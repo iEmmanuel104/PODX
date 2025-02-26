@@ -65,7 +65,7 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
             }
 
             if (!sendTransactionWagmi) {
-                toast.error("Wallet not connected properly", { id: notification });
+                toast.error('Wallet not connected properly', { id: notification });
                 return;
             }
 
@@ -81,7 +81,6 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
             toast.success('Tip sent successfully!', { id: notification });
 
             return { hash }; // Return transaction hash
-
         } catch (error) {
             console.error('Error sending ETH:', error);
             let errorMessage = 'Failed to send tip. Please try again.';
@@ -108,7 +107,7 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
             }
 
             if (!sendTransactionWagmi) {
-                toast.error("Wallet not connected properly", { id: notification });
+                toast.error('Wallet not connected properly', { id: notification });
                 return;
             }
 
@@ -124,12 +123,11 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
             const hash = await sendTransactionWagmi({
                 to: USDC_CONTRACT_ADDRESS as `0x${string}`,
                 data: data as `0x${string}`,
-                chainId: 8453
+                chainId: 8453,
             });
 
             toast.success('USDC tip sent successfully!', { id: notification });
             return { hash };
-
         } catch (error) {
             console.error('Error sending USDC:', error);
             let errorMessage = 'Failed to send USDC tip. Please try again.';
@@ -163,11 +161,10 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
 
             toast.success('tip successful', { id: notification });
             return { hash: response.transactionHash };
-
         } catch (error) {
             console.error('Error sending ETH:', error);
             toast.error('Failed to send tip. Please try again.', { id: notification });
-            throw Error(error as string)
+            throw Error(error as string);
         }
     };
 
@@ -270,7 +267,7 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
             setState(prev => ({
                 ...prev,
                 showTipModal: false,
-                showTipSuccess: true
+                showTipSuccess: true,
             }));
 
             // Send tip event with transaction hash
@@ -279,7 +276,6 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
             setTimeout(() => {
                 setState(prev => ({ ...prev, showTipSuccess: false }));
             }, 5000);
-
         } catch (error) {
             console.error('Error sending tip:', error);
         }
@@ -298,7 +294,10 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
                 if (to.id === connectedUser?.id) {
                     setState(prev => ({
                         ...prev,
-                        receivedTips: [...prev.receivedTips, { from: senderName, amount, currency }],
+                        receivedTips: [
+                            ...prev.receivedTips,
+                            { from: senderName, amount, currency },
+                        ],
                     }));
                 }
             }
@@ -307,7 +306,7 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
     );
 
     const openTipModal = (participant: MemberResponse) => {
-        console.log("opening tip modal and setting recipient to", { participant })
+        console.log('opening tip modal and setting recipient to', { participant });
         setState(prev => ({
             ...prev,
             selectedTipRecipient: participant,

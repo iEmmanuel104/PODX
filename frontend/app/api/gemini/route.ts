@@ -13,10 +13,7 @@ export async function POST(request: Request) {
 
         // Validate the request
         if (!prompt || !currentExplanation) {
-            return NextResponse.json(
-                { error: 'Missing required fields' },
-                { status: 400 }
-            );
+            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
         // Initialize the model
@@ -47,15 +44,12 @@ export async function POST(request: Request) {
         const response = await result.response;
         // console.log({ result })
         const explanation = response.text();
-        // console.log({ explanation })        
+        // console.log({ explanation })
 
         // Return the response
         return NextResponse.json({ explanation });
     } catch (error) {
         console.error('Gemini API error:', error);
-        return NextResponse.json(
-            { error: 'Failed to generate explanation' },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: 'Failed to generate explanation' }, { status: 500 });
     }
 }
