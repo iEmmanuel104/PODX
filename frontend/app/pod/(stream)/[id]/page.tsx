@@ -36,6 +36,19 @@ interface MeetingProps {
     };
 }
 
+interface ApplaudEventData {
+    userId: string;
+    timestamp: number;
+}
+
+interface StreamCustomEvent extends Omit<CustomVideoEvent, 'type'> {
+    type: 'custom';
+    custom: {
+        type: 'applaud' | 'tip';
+        data: ApplaudEventData;
+    };
+}
+
 // Optimize imports with dynamic loading
 const DynamicComponents = {
     TipModal: React.lazy(() => import('@/components/meeting/tips')),
@@ -56,7 +69,7 @@ const ComponentLoader = memo(() => (
 ComponentLoader.displayName = 'ComponentLoader';
 
 // Memoize the main interface component
-const MeetingInterface = memo(({ params }: MeetingProps) => {
+const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
     const call = useStreamCall();
     const { id } = params;
     const router = useRouter();
@@ -167,9 +180,20 @@ const MeetingInterface = memo(({ params }: MeetingProps) => {
     // Add type definition for CallEventHandler
     type CallEventHandler = (event: StreamVideoEvent) => void;
 
-    // Update the event handler with proper type checking
-    const handleCallEvent: CallEventHandler = event => {
+    // Update the event handler with useCallback and proper typing
+    const handleCallEvent = useCallback<CallEventHandler>(event => {
         switch (event.type) {
+            case 'custom': {
+                const customEvent = event as unknown as StreamCustomEvent;
+                if (customEvent.custom.type === 'applaud') {
+                    if (customEvent.custom.data.userId !== connectedUser?.id) {
+                        const clapSound = new Audio('/sounds/clap-sound.mp3');
+                        clapSound.play().catch(console.error);
+                    }
+                }
+                handleTipEvent(event as CustomVideoEvent);
+                break;
+            }
             case 'call.permission_request': {
                 const permissionEvent = event as PermissionRequestEvent;
                 setSpeakRequests(prev => [...prev, permissionEvent.user.id]);
@@ -180,12 +204,27 @@ const MeetingInterface = memo(({ params }: MeetingProps) => {
                 setJoinRequests(prev => [...prev, ringEvent.user.id]);
                 break;
             }
-            case 'custom': {
-                handleTipEvent(event as CustomVideoEvent);
-                break;
-            }
         }
-    };
+    }, [connectedUser?.id, handleTipEvent]);
+
+    // Remove duplicate custom case and update the sendCustomEvent call
+    const handleApplaud = useCallback(() => {
+        if (!call || !connectedUser) return;
+
+        const clapSound = new Audio('/sounds/clap-sound.mp3');
+        clapSound.play().catch(console.error);
+
+        call.sendCustomEvent({
+            type: 'custom',
+            custom: {
+                type: 'applaud',
+                data: {
+                    userId: connectedUser.id,
+                    timestamp: Date.now()
+                }
+            }
+        });
+    }, [call, connectedUser]);
 
     useEffect(() => {
         if (!call || !('on' in call)) return;

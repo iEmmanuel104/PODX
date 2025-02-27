@@ -10,29 +10,18 @@ export const useApplaud = (participantId: string) => {
 
     const handleApplaud = useCallback(() => {
         setIsApplauding(true);
-        clapSound.play();
+        clapSound.play().catch(console.error);
 
+        // Broadcast event with type 'applaud'
         call?.sendCustomEvent({
             type: 'applaud',
-            data: { participantId },
+            data: {
+                participantId,
+                timestamp: Date.now(),
+            },
         });
 
         setTimeout(() => setIsApplauding(false), 3000);
-    }, [call, participantId]);
-
-    useEffect(() => {
-        if (!call) return;
-
-        const handleCustomEvent = (event: any) => {
-            if (event.type === 'applaud' && event.data.participantId === participantId) {
-                setIsApplauding(true);
-                clapSound.play();
-                setTimeout(() => setIsApplauding(false), 3000);
-            }
-        };
-
-        call.on('custom', handleCustomEvent);
-        return () => call.off('custom', handleCustomEvent);
     }, [call, participantId]);
 
     return { isApplauding, handleApplaud };

@@ -45,8 +45,8 @@ interface ParticipantTileProps {
     onStopScreenShare?: () => void;
 }
 
-const ParticipantTile = memo(
-    ({
+const ParticipantTile = memo((
+    {
         name,
         isMuted,
         isSpeaking,
@@ -96,27 +96,21 @@ const ParticipantTile = memo(
         //    - This is one of the first 3 tiles when there are more than 4 participants
         const shouldShowName = !isMobile || totalParticipants <= 4 || index < 3;
 
+        // Remove the applaud button and related code from CustomParticipantUI
         const CustomParticipantUI = () => {
             return (
                 <>
                     {/* Status indicator */}
                     <div className="absolute left-[14px] top-[13px] flex items-center p-[6px] gap-2 bg-[rgba(75,75,75,0.5)] backdrop-blur-[5.7px] rounded-[1000px] z-10">
-                        <div
-                            className={clsx(
-                                'rounded-full p-[6px] flex items-center justify-center',
-                                isApplauding
-                                    ? 'bg-[#FFD700]'
-                                    : isMuted
-                                      ? 'bg-[#FF3B30]'
-                                      : isActuallySpeaking
-                                        ? 'bg-[#5E5CE6]'
-                                        : 'bg-[#808080]'
-                            )}
-                        >
+                        <div className={clsx(
+                            "rounded-full p-[6px] flex items-center justify-center",
+                            isApplauding ? "bg-[#FFD700]" : // Gold color for applauding
+                            isMuted ? "bg-[#FF3B30]" : 
+                            isActuallySpeaking ? "bg-[#5E5CE6]" : 
+                            "bg-[#808080]"
+                        )}>
                             {isApplauding ? (
-                                <span role="img" aria-label="applaud" className="text-lg">
-                                    👏
-                                </span>
+                                <span role="img" aria-label="applaud" className="text-lg">👏</span>
                             ) : isMuted ? (
                                 <MicOff className="h-3 w-3 text-white" />
                             ) : (
@@ -125,27 +119,14 @@ const ParticipantTile = memo(
                         </div>
                         {!isMobile && (
                             <span className="text-white text-sm pr-[6px]">
-                                {isApplauding
-                                    ? 'Applauding'
-                                    : isMuted
-                                      ? 'Muted'
-                                      : isActuallySpeaking
-                                        ? 'Speaking...'
-                                        : 'Not Speaking'}
+                                {isApplauding ? "Applauding" : 
+                                 isMuted ? "Muted" : 
+                                 isActuallySpeaking ? "Speaking..." : 
+                                 "Not Speaking"}
                             </span>
                         )}
                     </div>
-
-                    {/* Applaud button */}
-                    <button
-                        onClick={handleApplaud}
-                        className="absolute right-[14px] top-[13px] bg-[#5E5CE6] backdrop-blur-[5.7px] rounded-full p-2 cursor-pointer z-20 hover:bg-[#4A48B6] transition-colors"
-                    >
-                        <span role="img" aria-label="applaud" className="text-white">
-                            👏
-                        </span>
-                    </button>
-
+        
                     {/* Control buttons */}
                     {isScreenSharing ? (
                         <button
@@ -159,7 +140,7 @@ const ParticipantTile = memo(
                             <MoreHorizontal className="h-5 w-5 text-white/80" />
                         </button>
                     )}
-
+        
                     {/* Name Label */}
                     {shouldShowName && (
                         <div className="absolute left-[14px] bottom-[13px] flex items-center p-[6px] gap-2 bg-[rgba(75,75,75,0.5)] backdrop-blur-[5.7px] rounded-[1000px]">

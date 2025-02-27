@@ -6,7 +6,7 @@ import ToggleVideoButton from '@/components/pod/toggleVideoButton';
 import CallControlButton from '@/components/pod/callControlButton';
 import ShareScreen from '@/public/images/icons/ShareScreen';
 import EndCallIcon from '@/public/images/icons/EndCallIcon';
-import ReactionIcon from '@/public/images/icons/ReactionIcon';
+import { useApplaud } from '@/hooks/useApplaud';
 
 interface MeetingFooterProps {
     leaveCall: () => void;
@@ -16,23 +16,24 @@ interface MeetingFooterProps {
 
 const MeetingFooter = memo<MeetingFooterProps>(({ leaveCall, toggleScreenShare, customData }) => {
     const isAudioSession = customData?.type === 'Audio Session';
+    const { handleApplaud } = useApplaud('all');
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 bg-[#151515] z-50">
+        <div className="fixed bottom-0 left-0 right-0 bg-[#151515] z-30">
             <div className="max-w-screen-xl mx-auto px-4 py-4">
                 <div className="flex items-center justify-center gap-3 sm:gap-4">
-                    {/* Audio Control */}
                     <ToggleAudioButton />
 
-                    {/* Video Control - Only show if not an audio session */}
                     {!isAudioSession && <ToggleVideoButton />}
 
-                    {/* Replace Mood button with ReactionButton */}
-                    <div className="flex bg-[#6032F6] hover:[#6032F6] h-14 w-14 rounded-full items-center justify-center hover:cursor-pointer">
-                        <ReactionIcon />
-                    </div>
+                    {/* Replace Reaction button with Clap button */}
+                    <CallControlButton
+                        onClick={handleApplaud}
+                        icon={<span className="text-2xl">👏</span>}
+                        title="Applaud"
+                        className="bg-[#6032F6] hover:bg-[#4C28C4]"
+                    />
 
-                    {/* Screen Share */}
                     <CallControlButton
                         onClick={toggleScreenShare}
                         icon={<ShareScreen />}
@@ -40,7 +41,6 @@ const MeetingFooter = memo<MeetingFooterProps>(({ leaveCall, toggleScreenShare, 
                         className="bg-[#2D2D2D] hover:bg-[#3D3D3D]"
                     />
 
-                    {/* Leave Call */}
                     <CallControlButton
                         onClick={leaveCall}
                         icon={<EndCallIcon />}

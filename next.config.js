@@ -1,9 +1,11 @@
-module.exports = {
-    images: {
-        domains: [
-            'localhost',        // For local development
-            'your-production-domain.com',  // Add your production domain
-            'cdn.stream-io-video.com'       // Add Stream video CDN if used
-        ],
-    },
-}; 
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  images: {
+    domains: [
+      'zku9gdedgba48lmr.public.blob.vercel-storage.com'
+    ],
+  },
+  // ... other existing config options
+}
+
+module.exports = nextConfig
