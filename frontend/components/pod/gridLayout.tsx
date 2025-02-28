@@ -168,8 +168,41 @@ const ParticipantTile = memo((
 
 ParticipantTile.displayName = 'ParticipantTile';
 
+const OverflowParticipantAvatar = memo(({ participant }: { participant: StreamVideoParticipant }) => {
+    const { avatarUrl, getFallbackAvatar } = useParticipantConsistentAvatar(
+        participant.userId,
+        participant.name || participant.userId,
+        participant.image
+    );
+
+    return (
+        <div
+            style={{
+                width: '24px',
+                height: '24px',
+                borderRadius: '50%',
+                overflow: 'hidden',
+                border: '1px solid #1D1D1D',
+            }}
+        >
+            <Image
+                src={avatarUrl || getFallbackAvatar()}
+                width={24}
+                height={24}
+                alt={`${participant.name || participant.userId}'s avatar`}
+                className="object-cover"
+                onError={(e) => {
+                    e.currentTarget.src = getFallbackAvatar();
+                }}
+            />
+        </div>
+    );
+});
+
+OverflowParticipantAvatar.displayName = 'OverflowParticipantAvatar';
+
 const OverflowIndicator = memo(
-    ({ count, style }: { count: number; style: React.CSSProperties }) => {
+    ({ count, style, participants }: { count: number; style?: React.CSSProperties; participants: StreamVideoParticipant[] }) => {
         return (
             <div
                 style={{
@@ -183,44 +216,16 @@ const OverflowIndicator = memo(
                     ...style,
                 }}
             >
-                {/* Container for overlapping avatars */}
-                <div
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        background: 'transparent',
-                        padding: '2px',
-                    }}
-                >
-                    {[...Array(3)].map((_, index) => (
+                <div style={{ display: 'flex', alignItems: 'center', background: 'transparent', padding: '2px' }}>
+                    {participants.slice(0, 3).map((participant, index) => (
                         <div
-                            key={index}
+                            key={participant.sessionId}
                             style={{
-                                width: '24px',
-                                height: '24px',
-                                borderRadius: '50%',
-                                background: '#2A2A2A',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
                                 marginLeft: index > 0 ? '-6px' : '0',
                                 zIndex: 3 - index,
-                                border: '1px solid #1D1D1D',
                             }}
                         >
-                            <svg
-                                width="14"
-                                height="14"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="1"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                style={{ color: '#808080' }}
-                            >
-                                <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
+                            <OverflowParticipantAvatar participant={participant} />
                         </div>
                     ))}
                 </div>
@@ -275,15 +280,33 @@ const GridLayout = () => {
     }, [participants]);
 
     const [visibleParticipants, overflowParticipants] = useMemo(() => {
+        // First get speaking participants
         const speakingParticipants = sortedParticipants.filter(p => p.isSpeaking);
-        const nonSpeaking = sortedParticipants.filter(p => !p.isSpeaking);
+        const nonSpeakingParticipants = sortedParticipants.filter(p => !p.isSpeaking);
+
+        // Show up to 4 participants
         const visible = [...speakingParticipants];
         if (visible.length < 4) {
-            visible.push(...nonSpeaking.slice(0, 4 - visible.length));
+            visible.push(...nonSpeakingParticipants.slice(0, 4 - visible.length));
+        } else {
+            visible.splice(4); // Limit to 4 participants
         }
+
+        // Rest go to overflow
         const overflow = sortedParticipants.filter(p => !visible.includes(p));
         return [visible, overflow];
     }, [sortedParticipants]);
+
+    // Update the overflow indicator rendering
+    {overflowParticipants.length > 0 && (
+        <div className="absolute bottom-4 right-4 z-10">
+            <OverflowIndicator
+                count={overflowParticipants.length}
+                style={{ display: 'flex', alignItems: 'center' }}
+                participants={overflowParticipants}
+            />
+        </div>
+    )}
 
     const getGridContainerStyles = (count: number) => {
         switch (count) {
@@ -375,33 +398,31 @@ const GridLayout = () => {
 
     return (
         <div ref={ref} className="w-full relative overflow-hidden flex items-center justify-center">
-            <div
-                className={clsx(
-                    'flex flex-col items-start w-full bg-[#1D1D1D] rounded-[20px] relative',
-                    'p-2 sm:p-3',
-                    'gap-4 sm:gap-6',
-                    'sm:max-w-[1249px]',
-                    'mx-4',
-                    'h-[calc(100vh-270px)]',
-                    'sm:h-[calc(100vh-250px)]',
-                    'mt-[50px] mb-[100px]',
-                    'sm:mt-[42px] sm:mb-[120px]'
-                )}
+            <div className={clsx(
+                'flex flex-col items-start w-full bg-[#1D1D1D] rounded-[20px] relative',
+                'p-2 sm:p-3',
+                'gap-4 sm:gap-6',
+                'sm:max-w-[1249px]',
+                'mx-4',
+                'h-[calc(100vh-270px)]',
+                'sm:h-[calc(100vh-250px)]',
+                'mt-[50px] mb-[100px]',
+                'sm:mt-[42px] sm:mb-[120px]'
+            )}
             >
-                <div
-                    className={clsx(
-                        'grid w-full h-full',
-                        'gap-2 sm:gap-6',
-                        visibleParticipants.length === 1 && 'grid-cols-1',
-                        visibleParticipants.length === 2 && 'grid-cols-2',
-                        visibleParticipants.length === 3 && 'grid-cols-2 grid-rows-2',
-                        visibleParticipants.length >= 4 && 'grid-cols-2 grid-rows-2'
-                    )}
-                >
+                <div className={clsx(
+                    'grid w-full h-full',
+                    'gap-2 sm:gap-6',
+                    visibleParticipants.length === 1 && 'grid-cols-1',
+                    visibleParticipants.length === 2 && 'grid-cols-2',
+                    visibleParticipants.length === 3 && 'grid-cols-2 grid-rows-2',
+                    visibleParticipants.length >= 4 && 'grid-cols-2 grid-rows-2'
+                )}>
                     {visibleParticipants.slice(0, 4).map((participant, index) => {
                         const isAudioEnabled = participant.publishedTracks.includes(1);
                         const isSpeaking = participant.isSpeaking;
                         const isScreenSharing = hasScreenShare(participant);
+                        
                         return (
                             <ParticipantTile
                                 key={participant.sessionId}
@@ -430,11 +451,12 @@ const GridLayout = () => {
                         );
                     })}
 
-                    {visibleParticipants.length > 4 && (
-                        <div className="absolute bottom-4 right-4">
+                    {overflowParticipants.length > 0 && (
+                        <div className="absolute bottom-4 right-4 z-10">
                             <OverflowIndicator
-                                count={visibleParticipants.length - 4}
+                                count={overflowParticipants.length}
                                 style={{ display: 'flex', alignItems: 'center' }}
+                                participants={overflowParticipants}
                             />
                         </div>
                     )}

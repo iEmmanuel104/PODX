@@ -254,10 +254,15 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
     }, [handleJoinSession]);
 
     const leaveCall = async () => {
-        if (call && 'leave' in call) {
-            await (call as unknown as Call).leave();
+        try {
+            if (call && 'leave' in call && callingState !== CallingState.OFFLINE) {
+                await (call as unknown as Call).leave();
+            }
+            router.push(`/pod/end`);
+        } catch (error) {
+            console.error('Error leaving call:', error);
+            router.push(`/pod/end`);
         }
-        router.push(`/pod/end`);
     };
 
     const toggleScreenShare = useCallback(async () => {
