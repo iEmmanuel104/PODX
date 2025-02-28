@@ -373,11 +373,13 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                                 <span className="text-white/70">Loading previous sessions...</span>
                             </div>
                         ) : (
+                            <div className="max-h-60 overflow-y-auto">
                             <MultiSelect
                                 sessions={transformedSessions}
                                 isLoading={isLoadingCalls}
                                 onSelectionChange={handleSessionSelectionChange}
                             />
+                            </div>
                         ))}
 
                     <div className="flex justify-between items-center gap-6 pt-3">
