@@ -29,6 +29,7 @@ import {
     useParticipantConsistentAvatar,
 } from '../../hooks/useParticipantUtils';
 import { useApplaud } from '../../hooks/useApplaud';
+import { ParticipantMenuDropdown } from './participantMenuDropdown';
 
 // In ParticipantTile component
 // Add after imports, before ParticipantTile component
@@ -136,9 +137,14 @@ const ParticipantTile = memo((
                             <ScreenShareOff className="h-5 w-5 text-white" />
                         </button>
                     ) : (
-                        <button className="absolute right-[14px] top-[13px] bg-transparent border-none cursor-pointer p-1 z-10">
-                            <MoreHorizontal className="h-5 w-5 text-white/80" />
-                        </button>
+                        <ParticipantMenuDropdown
+                            participant={participant}
+                            trigger={
+                                <button className="absolute right-[14px] top-[13px] bg-transparent border-none cursor-pointer p-1 z-10">
+                                    <MoreHorizontal className="h-5 w-5 text-white/80" />
+                                </button>
+                            }
+                        />
                     )}
         
                     {/* Name Label */}
