@@ -395,7 +395,7 @@ const SpeakerLayout = memo(() => {
                                 <div className="absolute inset-0">
                                     <ParticipantView
                                         participant={screenSharingParticipant}
-                                        trackType="videoTrack"
+                                        trackType="screenShareTrack"
                                         ParticipantViewUI={CustomParticipantViewUI}
                                         VideoPlaceholder={VideoPlaceholder}
                                         muteAudio={true}
