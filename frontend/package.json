@@ -8,7 +8,10 @@
         "start": "next start",
         "lint": "next lint",
         "format": "prettier --write .",
-        "lint:fix": "eslint . --fix"
+        "lint:fix": "eslint . --fix",
+        "pages:build": "npx @cloudflare/next-on-pages",
+        "preview": "npm run pages:build && wrangler pages dev",
+        "deploy": "npm run pages:build && wrangler pages deploy"
     },
     "dependencies": {
         "@coinbase/onchainkit": "^0.33.6",
@@ -60,6 +63,7 @@
         "wagmi": "^2.12.20"
     },
     "devDependencies": {
+        "@cloudflare/next-on-pages": "^1.13.8",
         "@types/node": "^20",
         "@types/react": "^18",
         "@types/react-dom": "^18",
