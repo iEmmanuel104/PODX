@@ -385,58 +385,55 @@ const SpeakerLayout = memo(() => {
 
     // Then update the screen sharing section:
     if (hasOngoingScreenShare && screenSharingParticipant) {
+        // Calculate visible and overflow participants for grid layout
+        const maxVisibleParticipants = 3;
+        const visibleGridParticipants = otherParticipants.slice(0, maxVisibleParticipants);
+        const overflowGridParticipants = otherParticipants.slice(maxVisibleParticipants);
+
         return (
             <div ref={ref} className="w-full h-full relative overflow-hidden">
-                <div className="h-full flex flex-col">
-                    {/* Main content area with screen share */}
-                    <div className="flex-1 min-h-0 w-full p-2 md:p-4">
-                        <div className="w-full h-full">
-                            <div className="w-full h-full relative">
-                                <div className="absolute inset-0">
+                <div className="h-full flex flex-col md:flex-row">
+                    {/* Grid layout - horizontal on mobile, vertical on desktop */}
+                    <div className="w-full md:w-1/4 md:min-w-[250px] h-28 md:h-full p-2 relative">
+                        <div className="flex flex-row md:flex-col gap-2 h-full">
+                            {visibleGridParticipants.map((participant, index) => (
+                                <div
+                                    key={participant.sessionId}
+                                    className="h-full w-[calc(33.333%-5.333px)] md:w-full md:h-[calc(33.333%-5.333px)] flex-shrink-0 bg-[#2A2A2A] rounded-xl overflow-hidden"
+                                >
                                     <ParticipantView
-                                        participant={screenSharingParticipant}
-                                        trackType="screenShareTrack"
+                                        participant={participant}
+                                        trackType="videoTrack"
                                         ParticipantViewUI={CustomParticipantViewUI}
                                         VideoPlaceholder={VideoPlaceholder}
-                                        muteAudio={true}
+                                        muteAudio={false}
                                     />
                                 </div>
+                            ))}
+                        </div>
+
+                        {/* Overflow indicator */}
+                        {overflowGridParticipants.length > 0 && (
+                            <div className="absolute right-4 bottom-4 z-10">
+                                <OverflowIndicator count={overflowGridParticipants.length} />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Main content area with screen share */}
+                    <div className="flex-1 min-h-0 w-full p-2">
+                        <div className="w-full h-full flex items-center justify-center">
+                            <div className="w-full h-full relative rounded-xl overflow-hidden">
+                                <ParticipantView
+                                    participant={screenSharingParticipant}
+                                    trackType="screenShareTrack"
+                                    ParticipantViewUI={CustomParticipantViewUI}
+                                    VideoPlaceholder={VideoPlaceholder}
+                                    muteAudio={false}
+                                />
                             </div>
                         </div>
                     </div>
-
-                    {/* Participants bar */}
-                    {otherParticipants.length > 0 && (
-                        <div className="h-32 sm:h-36 flex-shrink-0">
-                            <div
-                                ref={setParticipantsBar}
-                                className="flex gap-4 h-full overflow-x-auto justify-center px-2 relative"
-                            >
-                                {/* Show visible participants */}
-                                <div className="flex gap-4">
-                                    {visibleParticipants.map((participant, index) => (
-                                        <div
-                                            key={participant.sessionId}
-                                            className="h-full aspect-[4/3] flex-shrink-0 bg-[#2A2A2A] rounded-xl overflow-hidden"
-                                        >
-                                            <ParticipantTile
-                                                participant={participant}
-                                                totalParticipants={2}
-                                                index={index}
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {/* Show overflow indicator for remaining participants */}
-                                {overflowParticipants.length > 0 && (
-                                    <div className="absolute right-4 bottom-4 z-10">
-                                        <OverflowIndicator count={overflowParticipants.length} />
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
                 </div>
             </div>
         );
