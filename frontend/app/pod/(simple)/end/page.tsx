@@ -1,5 +1,7 @@
 'use client';
 
+export const runtime = "edge";
+
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 

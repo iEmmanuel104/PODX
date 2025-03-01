@@ -1,6 +1,8 @@
 // app/pod/(simple)/activity/page.tsx
 'use client';
 
+export const runtime = "edge";
+
 import React, { useEffect, useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import {

@@ -1,5 +1,8 @@
 // app/pod/(stream)/layout.tsx
 'use client';
+
+export const runtime = "edge";
+
 import React, { useEffect, useState, memo, Suspense } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
