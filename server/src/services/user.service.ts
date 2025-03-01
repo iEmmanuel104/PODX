@@ -137,7 +137,8 @@ export default class UserService {
         let userQuery = User.findOne(query);
 
         if (attributes) {
-            userQuery = userQuery.select(attributes.join(' '));
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            userQuery = userQuery.select(attributes.join(' ')) as any;
         }
 
         const user = await userQuery.populate('settings');
