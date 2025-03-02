@@ -5,6 +5,7 @@ import { useCall } from '@stream-io/video-react-sdk';
 import { useCallStateHooks } from '@stream-io/video-react-sdk';
 import { OwnCapability } from '@stream-io/video-react-sdk';
 import { useParticipantActions } from './useParticipantActions';
+import { BadgeDollarSign, Mic, MicOff, Video, VideoOff, Monitor, ScreenShareOff, LogOut } from 'lucide-react';
 
 interface ParticipantMenuDropdownProps {
     participant: StreamVideoParticipant;
@@ -22,12 +23,10 @@ export const ParticipantMenuDropdown = ({ participant, trigger }: ParticipantMen
         canSendAudio,
         canSendVideo,
         canScreenShare,
-        isPinned,
         toggleAudioPermission,
         toggleVideoPermission,
         toggleScreenSharePermission,
         removeParticipant,
-        togglePin,
         requestAudioPermission
     } = useParticipantActions(participant);
 
@@ -58,9 +57,10 @@ export const ParticipantMenuDropdown = ({ participant, trigger }: ParticipantMen
                 >
                     {/* Common action for all cases: Tip User */}
                     <DropdownMenu.Item 
-                        className="text-white text-sm px-3 py-2 outline-none cursor-pointer hover:bg-[#3D3D3D] rounded-md"
+                        className="text-white text-sm px-3 py-2 outline-none cursor-pointer hover:bg-[#3D3D3D] rounded-md flex items-center gap-2"
                         onClick={handleTipUser}
                     >
+                        <BadgeDollarSign className="h-4 w-4" />
                         Tip {participant.name || participant.userId}
                     </DropdownMenu.Item>
 
@@ -68,37 +68,34 @@ export const ParticipantMenuDropdown = ({ participant, trigger }: ParticipantMen
                     {isHost && !isParticipantHost && (
                         <>
                             <DropdownMenu.Item 
-                                className="text-white text-sm px-3 py-2 outline-none cursor-pointer hover:bg-[#3D3D3D] rounded-md"
-                                onClick={togglePin}
-                            >
-                                {isPinned ? 'Unpin' : 'Pin'} {participant.name || participant.userId}
-                            </DropdownMenu.Item>
-                            
-                            <DropdownMenu.Item 
-                                className="text-white text-sm px-3 py-2 outline-none cursor-pointer hover:bg-[#3D3D3D] rounded-md"
+                                className="text-white text-sm px-3 py-2 outline-none cursor-pointer hover:bg-[#3D3D3D] rounded-md flex items-center gap-2"
                                 onClick={toggleAudioPermission}
                             >
+                                {canSendAudio ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                                 {canSendAudio ? 'Disable Audio' : 'Enable Audio'}
                             </DropdownMenu.Item>
                             
                             <DropdownMenu.Item 
-                                className="text-white text-sm px-3 py-2 outline-none cursor-pointer hover:bg-[#3D3D3D] rounded-md"
+                                className="text-white text-sm px-3 py-2 outline-none cursor-pointer hover:bg-[#3D3D3D] rounded-md flex items-center gap-2"
                                 onClick={toggleVideoPermission}
                             >
+                                {canSendVideo ? <VideoOff className="h-4 w-4" /> : <Video className="h-4 w-4" />}
                                 {canSendVideo ? 'Freeze Video' : 'Grant Camera Access'}
                             </DropdownMenu.Item>
                             
                             <DropdownMenu.Item 
-                                className="text-white text-sm px-3 py-2 outline-none cursor-pointer hover:bg-[#3D3D3D] rounded-md"
+                                className="text-white text-sm px-3 py-2 outline-none cursor-pointer hover:bg-[#3D3D3D] rounded-md flex items-center gap-2"
                                 onClick={toggleScreenSharePermission}
                             >
+                                {canScreenShare ? <ScreenShareOff className="h-4 w-4" /> : <Monitor className="h-4 w-4" />}
                                 {canScreenShare ? 'Disable Screensharing' : 'Allow Screensharing'}
                             </DropdownMenu.Item>
                             
                             <DropdownMenu.Item 
-                                className="text-[#FF3B30] text-sm px-3 py-2 outline-none cursor-pointer hover:bg-[#3D3D3D] rounded-md"
+                                className="text-[#FF3B30] text-sm px-3 py-2 outline-none cursor-pointer hover:bg-[#3D3D3D] rounded-md flex items-center gap-2"
                                 onClick={removeParticipant}
                             >
+                                <LogOut className="h-4 w-4" />
                                 Kick {participant.name || participant.userId}
                             </DropdownMenu.Item>
                         </>
@@ -109,9 +106,10 @@ export const ParticipantMenuDropdown = ({ participant, trigger }: ParticipantMen
                         <>
                             {!canSendAudio && (
                                 <DropdownMenu.Item 
-                                    className="text-white text-sm px-3 py-2 outline-none cursor-pointer hover:bg-[#3D3D3D] rounded-md"
+                                    className="text-white text-sm px-3 py-2 outline-none cursor-pointer hover:bg-[#3D3D3D] rounded-md flex items-center gap-2"
                                     onClick={requestAudioPermission}
                                 >
+                                    <Mic className="h-4 w-4" />
                                     Request Mic
                                 </DropdownMenu.Item>
                             )}

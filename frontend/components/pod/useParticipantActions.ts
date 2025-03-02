@@ -87,24 +87,22 @@ export const useParticipantActions = (participant: StreamVideoParticipant) => {
   const removeParticipant = async () => {
     if (!call || !canUpdatePermissions) return;
     try {
-      // Revoke all critical permissions to effectively remove the participant
-      const permissions = [
-        OwnCapability.SEND_AUDIO,
-        OwnCapability.SEND_VIDEO,
-        OwnCapability.SCREENSHARE,
-        OwnCapability.JOIN_CALL
-      ];
-      await call.revokePermissions(participant.userId, permissions);
+      // Block/kick the user from the call 
+      // In Stream SDK 4.x+ use blockUser if available
+      if (call.blockUser) {
+        await call.blockUser(participant.userId);
+      } else {
+        // Fallback approach: revoke critical permissions to effectively kick them
+        await call.revokePermissions(participant.userId, [
+          OwnCapability.SEND_AUDIO,
+          OwnCapability.SEND_VIDEO,
+          OwnCapability.SCREENSHARE,
+          OwnCapability.JOIN_CALL
+        ]);
+      }
     } catch (error) {
       console.error('Failed to remove participant:', error);
     }
-  };
-
-  // Client-side pin state, as Stream doesn't track this server-side
-  const [isPinned, setIsPinned] = useState(false);
-  const togglePin = () => {
-    setIsPinned(!isPinned);
-    // You would implement the UI logic to show this participant as pinned
   };
 
   // For users to request permissions
@@ -126,14 +124,12 @@ export const useParticipantActions = (participant: StreamVideoParticipant) => {
     canSendAudio: audioEnabled,
     canSendVideo: videoEnabled,
     canScreenShare: screenShareEnabled, 
-    isPinned,
     
     // Actions
     toggleAudioPermission,
     toggleVideoPermission,
     toggleScreenSharePermission,
     removeParticipant,
-    togglePin,
     requestAudioPermission
   };
 }; 
