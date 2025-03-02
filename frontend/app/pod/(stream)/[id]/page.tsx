@@ -1,6 +1,6 @@
 //app/pod/[id]/page.tsx
 'use client';
-
+export const runtime = "edge";
 
 
 import '@stream-io/video-react-sdk/dist/css/styles.css';
