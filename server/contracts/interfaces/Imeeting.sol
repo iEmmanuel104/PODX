@@ -9,5 +9,5 @@ interface IMeeting {
     function sessionName() external view returns (string memory);
     function metadataURL() external view returns (string memory);
     function creator() external view returns (address);
-    function isMinter(address account) external view returns (bool); // New function
+    function isMinter(address account) external view returns (bool);
 }

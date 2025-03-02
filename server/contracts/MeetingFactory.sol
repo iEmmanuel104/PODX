@@ -6,34 +6,17 @@ import "./interfaces/IMeeting.sol";
 
 contract MeetingFactory {
     address[] public allMeetings;
-    
-    // Track all transactions for each meeting
-    struct Transaction {
-        address meetingAddress;
-        address from;
-        address to;
-        uint256 tokenId;
-        uint256 timestamp;
-        string transactionType; // "mint", "transfer", etc.
-    }
-    
-    // Store transactions by meeting address
+
+    // Store transactions for each meeting
     mapping(address => Transaction[]) public meetingTransactions;
-    
-    // Store all transactions chronologically
+
+    // Track all transactions globally
     Transaction[] public allTransactions;
-    
-    // Track all minters across all meetings
-    mapping(address => mapping(address => bool)) public isMinterForMeeting;
-    
-    // Events
-    event MeetingCreated(
-        address indexed meetingAddress,
-        string sessionName,
-        address creator,
-        string metadataURL
-    );
-    
+
+    // Event when a new meeting is created
+    event MeetingCreated(address indexed meetingAddress, address creator);
+
+    // Event when a transaction (mint or transfer) is recorded
     event TransactionRecorded(
         address indexed meetingAddress,
         address indexed from,
@@ -42,88 +25,65 @@ contract MeetingFactory {
         string transactionType
     );
 
-    // Create meeting function with improved tracking
+    struct Transaction {
+        address from;
+        address to;
+        uint256 tokenId;
+        uint256 timestamp;
+        string transactionType;
+    }
+
+    // Create a new meeting
     function createMeeting(
         string memory sessionName,
         string memory metadataURL,
         address creator,
         address[] memory minters
     ) public returns (address) {
-        Meeting newMeeting = new Meeting(
-            sessionName,
-            creator,
-            metadataURL,
-            minters
-        );
-        
+        Meeting newMeeting = new Meeting(sessionName, creator, metadataURL, minters);
         address meetingAddress = address(newMeeting);
         allMeetings.push(meetingAddress);
-        
-        // Record minters
-        for (uint256 i = 0; i < minters.length; i++) {
-            isMinterForMeeting[meetingAddress][minters[i]] = true;
-        }
-        
-        emit MeetingCreated(
-            meetingAddress,
-            sessionName,
-            creator,
-            metadataURL
-        );
-        
+
+        emit MeetingCreated(meetingAddress, creator);
         return meetingAddress;
     }
-    
-    // Record mint transaction (called by Meeting contract)
+
+    // Record a mint transaction
     function recordMint(address from, address to, uint256 tokenId) external {
         require(isMeeting(msg.sender), "Only deployed meetings can record");
-        
+
         Transaction memory newTx = Transaction({
-            meetingAddress: msg.sender,
             from: from,
             to: to,
             tokenId: tokenId,
             timestamp: block.timestamp,
             transactionType: "mint"
         });
-        
+
         meetingTransactions[msg.sender].push(newTx);
         allTransactions.push(newTx);
-        
-        emit TransactionRecorded(
-            msg.sender,
-            from,
-            to,
-            tokenId,
-            "mint"
-        );
+
+        emit TransactionRecorded(msg.sender, from, to, tokenId, "mint");
     }
-    
-    // Record transfer transaction (called by Meeting contract)
+
+    // Record a transfer transaction
     function recordTransfer(address from, address to, uint256 tokenId) external {
         require(isMeeting(msg.sender), "Only deployed meetings can record");
-        
+
         Transaction memory newTx = Transaction({
-            meetingAddress: msg.sender,
             from: from,
             to: to,
             tokenId: tokenId,
             timestamp: block.timestamp,
             transactionType: "transfer"
         });
-        
+
         meetingTransactions[msg.sender].push(newTx);
         allTransactions.push(newTx);
-        
-        emit TransactionRecorded(
-            msg.sender,
-            from,
-            to,
-            tokenId,
-            "transfer"
-        );
+
+        emit TransactionRecorded(msg.sender, from, to, tokenId, "transfer");
     }
-    
+
     // Check if an address is a deployed meeting
     function isMeeting(address addr) public view returns (bool) {
         for (uint256 i = 0; i < allMeetings.length; i++) {
@@ -133,56 +93,26 @@ contract MeetingFactory {
         }
         return false;
     }
-    
-    // Get all transactions for a specific meeting
-    function getMeetingTransactions(address meetingAddress) 
-        external 
-        view 
-        returns (Transaction[] memory) 
-    {
-        return meetingTransactions[meetingAddress];
-    }
-    
-    // Get all transactions (with pagination)
-    function getAllTransactions(uint256 offset, uint256 limit) 
-        external 
-        view 
-        returns (Transaction[] memory) 
-    {
-        uint256 total = allTransactions.length;
-        uint256 count = offset >= total ? 0 : (
-            (offset + limit > total) ? (total - offset) : limit
-        );
-        
-        Transaction[] memory result = new Transaction[](count);
-        for (uint256 i = 0; i < count; i++) {
-            result[i] = allTransactions[offset + i];
-        }
-        
-        return result;
-    }
-    
+
     // Get all meetings
     function getAllMeetings() external view returns (address[] memory) {
         return allMeetings;
     }
-    
-    // Get meeting count
-    function getMeetingCount() external view returns (uint256) {
-        return allMeetings.length;
-    }
-    
-    // Get transaction count for a meeting
-    function getMeetingTransactionCount(address meetingAddress) 
-        external 
-        view 
-        returns (uint256) 
+
+    // Get all transactions (with pagination)
+    function getAllTransactions(uint256 offset, uint256 limit)
+        external
+        view
+        returns (Transaction[] memory)
     {
-        return meetingTransactions[meetingAddress].length;
-    }
-    
-    // Get total transaction count
-    function getTotalTransactionCount() external view returns (uint256) {
-        return allTransactions.length;
+        uint256 total = allTransactions.length;
+        uint256 count = offset >= total ? 0 : ((offset + limit > total) ? (total - offset) : limit);
+
+        Transaction[] memory result = new Transaction[](count);
+        for (uint256 i = 0; i < count; i++) {
+            result[i] = allTransactions[offset + i];
+        }
+
+        return result;
     }
 }
