@@ -439,12 +439,15 @@ export default function PodPage() {
 
                 {/* Scheduled sessions */}
                 <div className="w-full mb-8 sm:mb-12" id="scheduled-sessions-list">
-                    {console.log("[PodPage] Rendering ScheduledPods component with:", {
-                        scheduledSessions,
-                        foundSession: state.foundSession,
-                        isLoading,
-                        scheduledSessionsCount: scheduledSessions?.length
-                    })}
+                    {(() => {
+                        console.log("[PodPage] Rendering ScheduledPods component with:", {
+                            scheduledSessions,
+                            foundSession: state.foundSession,
+                            isLoading,
+                            scheduledSessionsCount: scheduledSessions?.length
+                        });
+                        return null;
+                    })()}
                     <ScheduledPods
                         sessions={scheduledSessions}
                         foundSession={state.foundSession}
