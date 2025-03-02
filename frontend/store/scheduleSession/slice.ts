@@ -16,12 +16,19 @@ const scheduledSessionsSlice = createSlice({
         addScheduledSession: (state, action: PayloadAction<StreamCallData>) => {
             state.sessions.push(action.payload);
         },
+        removeScheduledSession: (state, action: PayloadAction<string>) => {
+            state.sessions = state.sessions.filter(session => session.id !== action.payload);
+        },
         clearScheduledSessions: state => {
             state.sessions = [];
         },
     },
 });
 
-export const { setScheduledSessions, addScheduledSession, clearScheduledSessions } =
-    scheduledSessionsSlice.actions;
+export const {
+    setScheduledSessions,
+    addScheduledSession,
+    removeScheduledSession,
+    clearScheduledSessions
+} = scheduledSessionsSlice.actions;
 export default scheduledSessionsSlice.reducer;

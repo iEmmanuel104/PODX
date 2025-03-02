@@ -1,6 +1,6 @@
 import React, { useState, useMemo, memo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Calendar, Link, Copy, Check, Share2, Search, X } from 'lucide-react';
+import { Calendar, Link, Copy, Check, Share2, Search, X, Trash } from 'lucide-react';
 import { format, differenceInMinutes } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { StreamCallData } from './streamCallData';
 interface ScheduledPodsProps {
     sessions: StreamCallData[];
     onJoinSession: (session: StreamCallData) => void;
+    onDeleteSession?: (session: StreamCallData) => void;
     currentUserId: string;
     isLoading?: boolean;
     foundSession?: StreamCallData;
@@ -154,12 +155,62 @@ const ShareDialog = memo(function ShareDialog({
     );
 });
 
-// SessionCard component
+// DeleteConfirmDialog componen
+const DeleteConfirmDialog = memo(function DeleteConfirmDialog({
+    isOpen,
+    onClose,
+    onConfirm,
+    sessionTitle,
+}: {
+    isOpen: boolean;
+    onClose: () => void;
+    onConfirm: () => void;
+    sessionTitle: string;
+}) {
+    return (
+        <Dialog open={isOpen} onOpenChange={onClose} modal>
+            <DialogContent className="bg-[#1E1E1E] text-white rounded-[10px] p-6 w-full max-w-md">
+                <DialogHeader>
+                    <DialogTitle className="text-xl font-semibold mb-4">Cancel Session</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                    <p className="text-white">
+                        Are you sure you want to cancel the session "{sessionTitle}"?
+                    </p>
+                    <p className="text-sm text-[#A3A3A3]">
+                        This action cannot be undone.
+                    </p>
+                    <div className="flex justify-end gap-3 pt-2">
+                        <Button
+                            variant="outline"
+                            onClick={onClose}
+                            className="bg-transparent hover:bg-[#2C2C2C] text-white border-[#3c3c3c]"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={() => {
+                                onConfirm();
+                                onClose();
+                            }}
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                            Delete Session
+                        </Button>
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+});
+
+// SessionCard componen
 const SessionCard = memo(function SessionCard({
     session,
     currentUserId,
     onJoinSession,
     onShareSession,
+    onDeleteSession,
     showFoundBadge = false,
     onClose, // Add this prop
 }: {
@@ -167,9 +218,11 @@ const SessionCard = memo(function SessionCard({
     currentUserId: string;
     onJoinSession: (session: StreamCallData) => void;
     onShareSession: (data: ShareSessionState) => void;
+    onDeleteSession?: (session: StreamCallData) => void;
     showFoundBadge?: boolean;
     onClose?: () => void;
 }) {
+    const [confirmDelete, setConfirmDelete] = useState(false);
     const isCreator = session.created_by.id === currentUserId;
     const startsAt = session.starts_at ? new Date(session.starts_at) : null;
     const status = startsAt ? getSessionStatus(session.starts_at) : null;
@@ -186,6 +239,10 @@ const SessionCard = memo(function SessionCard({
         }
 
         onJoinSession(session);
+    };
+
+    const handleDeleteClick = () => {
+        setConfirmDelete(true);
     };
 
     return (
@@ -231,22 +288,33 @@ const SessionCard = memo(function SessionCard({
                 </div>
                 <div className="flex items-center gap-2">
                     {isCreator && (
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-[#6032F6] hover:text-[#4C28C4] hover:bg-[#2C2C2C]"
-                            onClick={() =>
-                                onShareSession({
-                                    isOpen: true,
-                                    sessionId: session.id,
-                                    sessionTitle: session.custom.title,
-                                    startTime: new Date(session.starts_at),
-                                })
-                            }
-                            title="Share session"
-                        >
-                            <Share2 className="h-5 w-5" />
-                        </Button>
+                        <>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-red-500 hover:text-red-400 hover:bg-[#2C2C2C]"
+                                onClick={handleDeleteClick}
+                                title="Cancel session"
+                            >
+                                <Trash className="h-5 w-5" />
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-[#6032F6] hover:text-[#4C28C4] hover:bg-[#2C2C2C]"
+                                onClick={() =>
+                                    onShareSession({
+                                        isOpen: true,
+                                        sessionId: session.id,
+                                        sessionTitle: session.custom.title,
+                                        startTime: new Date(session.starts_at),
+                                    })
+                                }
+                                title="Share session"
+                            >
+                                <Share2 className="h-5 w-5" />
+                            </Button>
+                        </>
                     )}
                     <Button
                         className={`
@@ -264,15 +332,24 @@ const SessionCard = memo(function SessionCard({
                     </Button>
                 </div>
             </div>
+
+            {/* Delete confirmation dialog */}
+            <DeleteConfirmDialog
+                isOpen={confirmDelete}
+                onClose={() => setConfirmDelete(false)}
+                onConfirm={() => onDeleteSession && onDeleteSession(session)}
+                sessionTitle={session.custom.title}
+            />
         </div>
     );
 });
 
-// Main component
+// Main componen
 export default function ScheduledPods({
     sessions,
     foundSession,
     onJoinSession,
+    onDeleteSession,
     currentUserId,
     isLoading,
     onClearFoundSession,
@@ -323,6 +400,7 @@ export default function ScheduledPods({
                             currentUserId={currentUserId}
                             onJoinSession={onJoinSession}
                             onShareSession={setShareSession}
+                            onDeleteSession={onDeleteSession}
                             showFoundBadge={true}
                             onClose={onClearFoundSession}
                         />
@@ -358,6 +436,7 @@ export default function ScheduledPods({
                                     currentUserId={currentUserId}
                                     onJoinSession={onJoinSession}
                                     onShareSession={setShareSession}
+                                    onDeleteSession={onDeleteSession}
                                 />
                             ))}
                         </div>
@@ -379,6 +458,7 @@ export default function ScheduledPods({
                                     currentUserId={currentUserId}
                                     onJoinSession={onJoinSession}
                                     onShareSession={setShareSession}
+                                    onDeleteSession={onDeleteSession}
                                     showFoundBadge={true}
                                     onClose={onClearFoundSession}
                                 />
@@ -397,6 +477,7 @@ export default function ScheduledPods({
                                         currentUserId={currentUserId}
                                         onJoinSession={onJoinSession}
                                         onShareSession={setShareSession}
+                                        onDeleteSession={onDeleteSession}
                                     />
                                 ))}
                             </div>

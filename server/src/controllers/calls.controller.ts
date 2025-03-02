@@ -13,7 +13,7 @@ export default class CallsController {
 
     // all call controllers
     static async scheduleCall(req: AuthenticatedRequest, res: Response) {
-        const { title, type, sessionId, starts_at, tokenGateContract } = req.body;
+        const { title, type, sessionId, starts_at, tokenGateContract, scheduledDuration = 60 } = req.body;
 
         const startTime = new Date(starts_at);
         const expiryTime = new Date(startTime.getTime() + 5 * 60 * 1000);
@@ -59,7 +59,20 @@ export default class CallsController {
         const userScheduledCallsKey = `user_scheduled_calls:${req.user.id}`;
         await redisClient.sadd(userScheduledCallsKey, sessionId);
 
-        await Call.create(callData);
+        // Create proper Call document with all required fields
+        await Call.create({
+            callId: sessionId,
+            type: type,
+            createdById: req.user.id,
+            scheduledDuration: scheduledDuration,
+            custom: {
+                title,
+                type,
+                sessionId,
+                tokenGateInfo,
+            },
+            startTime: startTime,
+        });
 
         res.status(200).json({
             status: 'success',

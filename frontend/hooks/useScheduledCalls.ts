@@ -6,13 +6,15 @@ import {
     scheduledCallsApiSlice,
     useListUserScheduledCallsQuery,
     useScheduleCallMutation,
+    useDeleteScheduledCallMutation,
 } from '@/store/callStats/scheduledCallsApiSlice';
 import { ApiResponse, ScheduleCallArgs } from '@/store/callStats/types';
-import { clearScheduledSessions, setScheduledSessions } from '@/store/scheduleSession/slice';
+import { clearScheduledSessions, setScheduledSessions, removeScheduledSession } from '@/store/scheduleSession/slice';
 
 interface UseScheduledCallsReturn {
     scheduledSessions: StreamCallData[];
     scheduleCall: (args: ScheduleCallArgs) => Promise<{ data: ApiResponse<StreamCallData> }>;
+    deleteCall: (sessionId: string) => Promise<{ success: boolean; message: string }>;
     isLoading: boolean;
     retrieveCall: (sessionId: string) => Promise<ApiResponse<GetCallResponse | null>>;
 }
@@ -23,6 +25,7 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
 
     // RTK Query hooks
     const [scheduleCallMutation, { isLoading: isScheduling }] = useScheduleCallMutation();
+    const [deleteCallMutation, { isLoading: isDeleting }] = useDeleteScheduledCallMutation();
     const { data: userScheduledCalls, isLoading: isLoadingCalls } =
         useListUserScheduledCallsQuery();
 
@@ -33,7 +36,7 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
         }
     }, [userScheduledCalls, dispatch]);
 
-    // Cleanup on unmount
+    // Cleanup on unmoun
     useEffect(() => {
         return () => {
             dispatch(clearScheduledSessions());
@@ -60,6 +63,27 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
         }
     };
 
+    // Delete a scheduled call
+    const deleteCall = async (
+        sessionId: string
+    ): Promise<{ success: boolean; message: string }> => {
+        try {
+            const result = await deleteCallMutation({ callId: sessionId });
+
+            if ('error' in result) {
+                throw new Error('Failed to delete call');
+            }
+
+            // Remove from local state
+            dispatch(removeScheduledSession(sessionId));
+
+            return { success: true, message: 'Session has been canceled' };
+        } catch (error) {
+            console.error('Failed to delete call:', error);
+            return { success: false, message: 'Failed to cancel the session' };
+        }
+    };
+
     return {
         scheduledSessions,
         scheduleCall: async (args: ScheduleCallArgs) => {
@@ -69,7 +93,8 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
             }
             return { data: result.data as ApiResponse<StreamCallData> };
         },
-        isLoading: isLoadingCalls || isScheduling,
+        deleteCall,
+        isLoading: isLoadingCalls || isScheduling || isDeleting,
         retrieveCall,
     };
 };

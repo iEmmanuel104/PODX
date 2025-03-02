@@ -15,6 +15,8 @@ import { setSessionInfo, clearSessionInfo } from '@/store/pod/slice';
 import { updateUser } from '@/store/auth/slice';
 import { useAppDispatch, useTypedSelector } from '@/store/config/store';
 import { useScheduledCalls } from '@/hooks/useScheduledCalls';
+import { scheduledCallsApiSlice } from '@/store/callStats/scheduledCallsApiSlice';
+import { addScheduledSession } from '@/store/scheduleSession/slice';
 
 // Dynamic imports
 const CreateSessionModal = dynamic(() => import('@/components/pod/createSessionModal'), {
@@ -29,7 +31,7 @@ const UserOnboardingFlow = dynamic(() => import('@/components/user/userOnboardin
 
 const ScheduledPods = dynamic(() => import('@/components/pod/scheduledPods'), { ssr: false });
 
-// Error Message Component
+// Error Message Componen
 const ErrorMessage = ({ message, onClear }: { message: string; onClear: () => void }) => {
     useEffect(() => {
         const timer = setTimeout(onClear, 3000);
@@ -61,7 +63,7 @@ export default function PodPage() {
     const { setNewMeeting } = React.useContext(AppContext);
     const { isLoggedIn, user } = useTypedSelector(state => state.auth);
     const sessionInfo = useTypedSelector(state => state.pod);
-    const { scheduledSessions, scheduleCall, retrieveCall, isLoading } = useScheduledCalls();
+    const { scheduledSessions, scheduleCall, retrieveCall, deleteCall, isLoading } = useScheduledCalls();
 
     const [state, setState] = useState({
         meetingCode: '',
@@ -75,7 +77,15 @@ export default function PodPage() {
         showUsernameModal: false,
         isOpenDialogue: false,
         foundSession: undefined as StreamCallData | undefined,
+        justScheduledSession: false,
     });
+
+    useEffect(() => {
+        if (state.justScheduledSession) {
+            dispatch(scheduledCallsApiSlice.endpoints.listUserScheduledCalls.initiate(undefined, { forceRefetch: true }));
+            setState(prev => ({ ...prev, justScheduledSession: false }));
+        }
+    }, [state.justScheduledSession, dispatch]);
 
     useEffect(() => {
         if (isLoggedIn && user?.username?.startsWith('guest-')) {
@@ -101,6 +111,41 @@ export default function PodPage() {
         [dispatch, router, state.meetingCode]
     );
 
+    const handleDeleteSession = useCallback(async (session: StreamCallData) => {
+        if (!session.id) {
+            setState(prev => ({
+                ...prev,
+                error: 'Cannot delete this session. Invalid session ID.',
+            }));
+            return;
+        }
+
+        try {
+            const result = await deleteCall(session.id);
+
+            if (result.success) {
+                setState(prev => ({
+                    ...prev,
+                    error: '',
+                }));
+
+                // Refresh the sessions list after deletion
+                dispatch(scheduledCallsApiSlice.endpoints.listUserScheduledCalls.initiate(undefined, { forceRefetch: true }));
+            } else {
+                setState(prev => ({
+                    ...prev,
+                    error: result.message || 'Failed to cancel session',
+                }));
+            }
+        } catch (error) {
+            console.error('Delete session error:', error);
+            setState(prev => ({
+                ...prev,
+                error: error instanceof Error ? error.message : 'Failed to cancel session',
+            }));
+        }
+    }, [deleteCall, dispatch]);
+
     const handleCreateSession = useCallback(
         async (title: string, type: sessionType, scheduledDate?: Date, tokenGate?: string[]) => {
             dispatch(clearSessionInfo());
@@ -119,6 +164,25 @@ export default function PodPage() {
                 const startDate = new Date(Math.max(scheduledDate.getTime(), Date.now() + 60000));
                 sessionData.starts_at = startDate.toISOString();
 
+                // Check for time conflicts with existing scheduled sessions
+                const hasTimeConflict = scheduledSessions.some(session => {
+                    if (!session.starts_at) return false;
+
+                    const existingStartTime = new Date(session.starts_at);
+                    const newStartTime = startDate;
+
+                    // Check if sessions are scheduled at exactly the same time
+                    return existingStartTime.getTime() === newStartTime.getTime();
+                });
+
+                if (hasTimeConflict) {
+                    setState(prev => ({
+                        ...prev,
+                        error: 'Cannot schedule a session at this time. There is already a session scheduled at exactly the same time.',
+                    }));
+                    return;
+                }
+
                 try {
                     const result = await scheduleCall({
                         title,
@@ -126,6 +190,7 @@ export default function PodPage() {
                         sessionId: newSessionCode,
                         starts_at: startDate.toISOString(),
                         tokenGate,
+                        scheduledDuration: 60, // Set a default duration of 60 minutes
                     });
 
                     if (!result.data) {
@@ -133,12 +198,21 @@ export default function PodPage() {
                     }
 
                     dispatch(setSessionInfo(sessionData));
+
+                    if (result.data && result.data.data) {
+                        dispatch(addScheduledSession(result.data.data));
+                    }
+
                     setState(prev => ({
                         ...prev,
+                        inviteLink: `https://www.podx.fun/pod/join/${newSessionCode}`,
+                        sessionCode: newSessionCode,
                         isCreateModalOpen: false,
+                        isCreatedModalOpen: true,
+                        justScheduledSession: true,
+                        error: '', // Clear any previous errors
                     }));
 
-                    // Don't redirect for scheduled sessions
                     return;
                 } catch (error) {
                     console.error('Failed to schedule call:', error);
@@ -150,7 +224,6 @@ export default function PodPage() {
                 }
             }
 
-            // Only set invite link and show created modal for instant sessions
             setState(prev => ({
                 ...prev,
                 inviteLink: `https://www.podx.fun/pod/join/${newSessionCode}`,
@@ -161,7 +234,7 @@ export default function PodPage() {
 
             dispatch(setSessionInfo(sessionData));
         },
-        [dispatch, setNewMeeting, scheduleCall]
+        [dispatch, setNewMeeting, scheduleCall, scheduledSessions]
     );
 
     const handleJoinSession = useCallback(async () => {
@@ -230,9 +303,22 @@ export default function PodPage() {
     }
 
     return (
-        <div className="flex flex-col justify-center items-center max-h-screen w-full px-4 sm:px-6 py-4 sm:py-8">
+        <div className="flex flex-col items-center w-full px-4 sm:px-6 py-4 sm:py-8">
             {/* Main Content Container */}
-            <div className="w-full max-w-[720px] mx-auto flex flex-col gap-6 sm:gap-8">
+            <div className="w-full max-w-[720px] mx-auto flex flex-col gap-6 sm:gap-8 pb-12">
+                {/* Display error message if present */}
+                {state.error && (
+                    <div className="w-full bg-red-500/10 border border-red-500/20 rounded-lg p-4 text-red-500 text-sm">
+                        {state.error}
+                        <button
+                            className="ml-2 text-red-400 hover:text-red-300 font-medium"
+                            onClick={() => setState(prev => ({ ...prev, error: '' }))}
+                        >
+                            Dismiss
+                        </button>
+                    </div>
+                )}
+
                 {/* Main Cards Section */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     {/* Join Session Card */}
@@ -258,15 +344,15 @@ export default function PodPage() {
                                     onChange={e =>
                                         setState(prev => ({ ...prev, meetingCode: e.target.value }))
                                     }
-                                    className="flex-1 bg-[#2C2C2C] rounded-[10px] px-4 py-2 text-sm border-[#3c3c3c] 
-                                             focus-within:border-[#3c3c3c] focus:border-[#3c3c3c] focus:ring-[#3c3c3c] 
+                                    className="flex-1 bg-[#2C2C2C] rounded-[10px] px-4 py-2 text-sm border-[#3c3c3c]
+                                             focus-within:border-[#3c3c3c] focus:border-[#3c3c3c] focus:ring-[#3c3c3c]
                                              text-white placeholder-[#6C6C6C] transition-all duration-200"
                                 />
                                 <Button
                                     onClick={handleJoinSession}
                                     disabled={!state.meetingCode || state.isJoining}
-                                    className="w-fit sm:w-auto bg-[#6032F6] text-white px-8 py-2.5 rounded-[10px] 
-                                             hover:bg-[#4C28C4] transition-all duration-200 text-sm font-medium 
+                                    className="w-fit sm:w-auto bg-[#6032F6] text-white px-8 py-2.5 rounded-[10px]
+                                             hover:bg-[#4C28C4] transition-all duration-200 text-sm font-medium
                                              disabled:bg-gray-500 disabled:cursor-not-allowed"
                                 >
                                     {state.isJoining ? 'Joining...' : 'Join'}
@@ -326,13 +412,14 @@ export default function PodPage() {
                 </div>
 
                 {/* Scheduled sessions */}
-                <div className="w-full mb-8 sm:mb-12">
+                <div className="w-full mb-8 sm:mb-12" id="scheduled-sessions-list">
                     <ScheduledPods
                         sessions={scheduledSessions}
                         foundSession={state.foundSession}
                         onJoinSession={session => {
                             handleStreamCall(session);
                         }}
+                        onDeleteSession={handleDeleteSession}
                         currentUserId={user?.id}
                         isLoading={isLoading}
                         onClearFoundSession={handleClearFoundSession}
@@ -347,6 +434,7 @@ export default function PodPage() {
                         isOpen={state.isCreateModalOpen}
                         onClose={() => setState(prev => ({ ...prev, isCreateModalOpen: false }))}
                         onCreateSession={handleCreateSession}
+                        scheduledSessions={scheduledSessions}
                     />
                 )}
 

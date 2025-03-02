@@ -25,6 +25,14 @@ export const scheduledCallsApiSlice = api.injectEndpoints({
             }),
             invalidatesTags: [createTag('ScheduledCalls')],
         }),
+        deleteScheduledCall: builder.mutation<ApiResponse<any>, { callId: string }>({
+            query: payload => ({
+                body: payload,
+                method: 'POST',
+                url: CALLS_ENDPOINTS.endCall(),
+            }),
+            invalidatesTags: [createTag('ScheduledCalls')],
+        }),
         retrieveCall: builder.query<ApiResponse<GetCallResponse | null>, string>({
             query: sessionId => ({
                 method: 'GET',
@@ -49,5 +57,9 @@ export const scheduledCallsApiSlice = api.injectEndpoints({
     }),
 });
 
-export const { useRetrieveCallQuery, useListUserScheduledCallsQuery, useScheduleCallMutation } =
-    scheduledCallsApiSlice;
+export const {
+    useRetrieveCallQuery,
+    useListUserScheduledCallsQuery,
+    useScheduleCallMutation,
+    useDeleteScheduledCallMutation
+} = scheduledCallsApiSlice;

@@ -7,6 +7,7 @@ export const CALLS_ENDPOINTS = {
     scheduleCall: (): string => formatEndpoint('schedule', namespace),
     retrieveCall: (sessionId: string): string => formatEndpoint(`info/${sessionId}`, namespace),
     listUserScheduledCalls: (): string => formatEndpoint('scheduled', namespace),
+    endCall: (): string => formatEndpoint('end', namespace),
     listCallStats: (queryParams: QueryParams): string =>
         formatEndpoint(
             'stats',
