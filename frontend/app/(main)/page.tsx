@@ -60,6 +60,29 @@ export default function LandingPage() {
     const { connect, ready } = useAuth();
     const router = useRouter();
 
+    // Check for pending session code in both localStorage and cookies
+    useEffect(() => {
+        // Get pendingSessionCode from both localStorage and cookies
+        const storedSessionCode = localStorage.getItem('pendingSessionCode');
+        const cookieSessionCode = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('pendingSessionCode='))
+            ?.split('=')[1];
+        
+        // Use either source for the session code
+        const pendingSessionCode = storedSessionCode || cookieSessionCode;
+        
+        if (pendingSessionCode) {
+            // Store it in localStorage for the auth provider to find
+            localStorage.setItem('pendingSessionCode', pendingSessionCode);
+            
+            // Clear the cookie since we've moved it to localStorage
+            if (cookieSessionCode) {
+                document.cookie = 'pendingSessionCode=; path=/; max-age=0';
+            }
+        }
+    }, []);
+
     // Cache auth state
     useEffect(() => {
         if (ready) {
@@ -72,10 +95,17 @@ export default function LandingPage() {
             await connect();
             // Cache successful connection
             storage.set(CACHE_KEYS.AUTH_STATE, { connected: true, timestamp: Date.now() });
+            
+            // Check if there's a pending session to redirect to
+            const pendingSessionCode = localStorage.getItem('pendingSessionCode');
+            if (pendingSessionCode) {
+                router.replace(`/pod/join/${pendingSessionCode}`);
+                // Don't remove it from localStorage yet, that will be handled by the auth provider
+            }
         } catch (error) {
             console.error('Error connecting wallet:', error);
         }
-    }, [connect]);
+    }, [connect, router]);
 
     useEffect(() => {
         // If we somehow end up here, redirect immediately

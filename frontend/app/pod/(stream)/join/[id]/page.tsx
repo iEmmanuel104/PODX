@@ -1,6 +1,6 @@
 'use client';
 
-export const runtime = "edge";
+
 import React, { useState, useCallback, useEffect, useMemo, Suspense, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
@@ -18,6 +18,7 @@ import { AppContext } from '@/providers/appProvider';
 import { useScheduledCalls } from '@/hooks/useScheduledCalls';
 import { setSessionInfo } from '@/store/pod/slice';
 import { useAppDispatch, useTypedSelector } from '@/store/config/store';
+import { usePrivy } from '@privy-io/react-auth';
 
 // Types
 interface JoinSessionProps {
@@ -131,6 +132,48 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
     const dispatch = useAppDispatch();
     const { retrieveCall } = useScheduledCalls();
     const hasCheckedSchedule = useRef(false);
+    const { isLoggedIn, user } = useTypedSelector(state => state.auth);
+    const { ready, authenticated } = usePrivy();
+    const authChecked = useRef(false);
+
+    // Strong authentication check - runs immediately and again after Privy is ready
+    useEffect(() => {
+        // Immediate check on component mount
+        if (!isLoggedIn || !authenticated) {
+            // Save the session code for after login
+            localStorage.setItem('pendingSessionCode', code);
+            // Redirect to home page
+            router.replace('/');
+            // Show informative message
+            toast.error('Please login to join this session', {
+                duration: 5000,
+            });
+            return;
+        }
+
+        // Set the flag so we don't redirect after authentication
+        authChecked.current = true;
+    }, [authenticated, isLoggedIn, code, router]);
+
+    // Second check that waits for Privy to be ready
+    useEffect(() => {
+        if (ready && !authChecked.current) {
+            if (!authenticated || !isLoggedIn) {
+                // Save the session code for after login
+                localStorage.setItem('pendingSessionCode', code);
+                // Redirect to home page
+                router.replace('/');
+                // Show informative message
+                toast.error('Please login to join this session', {
+                    duration: 5000,
+                });
+                console.log('Redirecting from JoinSession - user not authenticated', { authenticated, isLoggedIn });
+                return;
+            }
+            // Mark as checked if authenticated
+            authChecked.current = true;
+        }
+    }, [ready, authenticated, isLoggedIn, code, router]);
 
     // State
     const [state, setState] = useState<JoinSessionState>({
@@ -148,7 +191,6 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
     const { sessionTitle, sessionType, isScheduled, starts_at, tokenGate } = useTypedSelector(
         state => state.pod
     );
-    const { isLoggedIn, user } = useTypedSelector(state => state.auth);
     const { newMeeting, setNewMeeting } = useContext(AppContext);
     // const { client: chatClient } = useChatContext();
 

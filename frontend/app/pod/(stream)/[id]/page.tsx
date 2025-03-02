@@ -1,10 +1,10 @@
 //app/pod/[id]/page.tsx
 'use client';
 
-export const runtime = "edge";
+
 
 import '@stream-io/video-react-sdk/dist/css/styles.css';
-import React, { useState, useEffect, useMemo, useCallback, Suspense, memo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, Suspense, memo, useRef } from 'react';
 import { CheckCircle2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useBalance } from 'wagmi';
@@ -31,6 +31,8 @@ import {
     PermissionRequestEvent,
     CallRingEvent,
 } from '@stream-io/video-react-sdk';
+import { usePrivy } from '@privy-io/react-auth';
+import { toast } from 'react-hot-toast';
 
 interface MeetingProps {
     params: {
@@ -75,6 +77,9 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
     const call = useStreamCall();
     const { id } = params;
     const router = useRouter();
+    const { isLoggedIn, user } = useTypedSelector(state => state.auth);
+    const { authenticated, ready } = usePrivy();
+    const authChecked = useRef(false);
     const {
         useCallMembers,
         useParticipants,
@@ -85,6 +90,45 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
         useSpeakerState,
         useMicrophoneState,
     } = useCallStateHooks();
+
+    // Strong authentication check - runs immediately
+    useEffect(() => {
+        // Immediate check on component mount
+        if (!isLoggedIn || !authenticated) {
+            // Save the session code for after login
+            localStorage.setItem('pendingSessionCode', id);
+            // Redirect to home page
+            router.replace('/');
+            // Show informative message
+            toast('Authentication required', {
+                icon: '🔐',
+                duration: 5000,
+            });
+            console.log('Redirecting from pod page - user not authenticated', { authenticated, isLoggedIn });
+            return;
+        }
+
+        // Set the flag so we don't redirect after authentication
+        authChecked.current = true;
+    }, [authenticated, isLoggedIn, id, router]);
+
+    // Second check that waits for Privy to be ready
+    useEffect(() => {
+        if (ready && !authChecked.current) {
+            if (!authenticated || !isLoggedIn) {
+                // Save the session code for after login
+                localStorage.setItem('pendingSessionCode', id);
+                // Redirect to home page
+                router.replace('/');
+                // Show informative message
+                toast('Please login to join this session', {
+                    icon: '🔐',
+                    duration: 5000,
+                });
+                return;
+            }
+        }
+    }, [ready, authenticated, isLoggedIn, id, router]);
 
     const participantComparator = useMemo(() => {
         return combineComparators(
@@ -118,7 +162,6 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
     const [showParticipants, setShowParticipants] = useState(false);
     const [joinRequests, setJoinRequests] = useState<string[]>([]);
     const [speakRequests, setSpeakRequests] = useState<string[]>([]);
-    const { user } = useTypedSelector(state => state.auth);
     const userAddress = user?.walletAddress as `0x${string}`;
     const [participantInSpotlight, _] = participants;
     const walletClientType = useTypedSelector(state => state.auth.user?.walletType);

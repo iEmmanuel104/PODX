@@ -67,11 +67,63 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
     // Handle authentication and redirection without useEffect
     const handleAuthFlow = useCallback(async () => {
+        // Check if we're on a pod page, even before Privy is ready
+        const isPodJoinPage = pathname && pathname.startsWith('/pod/join/');
+        const isDirectPodPage = pathname && pathname.startsWith('/pod/') && !isPodJoinPage && pathname !== '/pod';
+        
+        // Safety check for pod pages before Privy is ready
+        if ((isPodJoinPage || isDirectPodPage) && !ready) {
+            console.log('Pod page detected but Privy not ready yet - checking local login state');
+            // If we're on a pod page but Privy isn't ready yet, check local state
+            if (!isLoggedIn && pathname) {
+                // Save the session code
+                let sessionCode;
+                if (isPodJoinPage) {
+                    sessionCode = pathname.split('/pod/join/')[1];
+                } else if (isDirectPodPage) {
+                    sessionCode = pathname.split('/pod/')[1];
+                }
+                
+                if (sessionCode) {
+                    localStorage.setItem('pendingSessionCode', sessionCode);
+                }
+                
+                // Redirect to home
+                router.replace('/');
+                console.log('Redirecting from pod page before Privy ready - not logged in');
+                return;
+            }
+        }
+
+        // Skip further processing if not ready
         if (!ready || isLoading) return;
 
-        // Only handle auth flow for non-pod pages
+        // Skip auth checks only if pathname is not available
         if (!pathname) return;
-        if (pathname.startsWith('/pod')) return;
+
+        // If user is on any pod page but not authenticated, redirect to home
+        if ((isPodJoinPage || isDirectPodPage) && !authenticated) {
+            // Extract the session code
+            let sessionCode;
+            if (isPodJoinPage) {
+                sessionCode = pathname.split('/pod/join/')[1];
+            } else if (isDirectPodPage) {
+                sessionCode = pathname.split('/pod/')[1];
+            }
+
+            if (sessionCode) {
+                localStorage.setItem('pendingSessionCode', sessionCode);
+            }
+
+            // Redirect to home page
+            router.replace('/');
+            console.log('Redirecting unauthenticated user from pod page to home', { pathname });
+            return;
+        }
+
+        // Skip further authentication for active pod sessions if user is already authenticated
+        const isActivePodPage = pathname.startsWith('/pod/') && authenticated;
+        if (isActivePodPage && pathname !== '/pod' && isLoggedIn) return;
 
         if (authenticated && !isLoggedIn) {
             setIsLoading(true);
@@ -94,6 +146,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         handleAuthentication,
         redirectToPod,
         dispatch,
+        router,
     ]);
 
     // Call handleAuthFlow when necessary
