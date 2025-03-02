@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
       image: postgres:latest
@@ -8,9 +6,9 @@ services:
       ports:
         - "5432:5432"
       environment:
-        POSTGRES_USER: myuser
-        POSTGRES_PASSWORD: mypassword
-        POSTGRES_DB: mydatabase
+        POSTGRES_USER: podx_admin
+        POSTGRES_PASSWORD: podx_admin
+        POSTGRES_DB: podx_db
       volumes:
         - pgdata:/var/lib/postgresql/data
 
