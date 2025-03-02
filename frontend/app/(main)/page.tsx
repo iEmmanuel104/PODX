@@ -80,6 +80,8 @@ export default function LandingPage() {
             if (cookieSessionCode) {
                 document.cookie = 'pendingSessionCode=; path=/; max-age=0';
             }
+            
+            console.log('Stored pending session code for redirect after login:', pendingSessionCode);
         }
     }, []);
 
@@ -99,9 +101,24 @@ export default function LandingPage() {
             // Check if there's a pending session to redirect to
             const pendingSessionCode = localStorage.getItem('pendingSessionCode');
             if (pendingSessionCode) {
-                router.replace(`/pod/join/${pendingSessionCode}`);
-                // Don't remove it from localStorage yet, that will be handled by the auth provider
+                console.log('Redirecting to session after login:', pendingSessionCode);
+                
+                // Clear the pending session code
+                localStorage.removeItem('pendingSessionCode');
+                
+                // Clear the cookie too
+                document.cookie = 'pendingSessionCode=; path=/; max-age=0';
+                
+                // Short delay to ensure auth state is fully processed
+                setTimeout(() => {
+                    router.replace(`/pod/join/${pendingSessionCode}`);
+                }, 1000);
+                return;
             }
+            
+            // If no pending session, redirect to pod page
+            router.replace('/pod');
+            
         } catch (error) {
             console.error('Error connecting wallet:', error);
         }

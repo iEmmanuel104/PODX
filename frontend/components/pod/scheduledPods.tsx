@@ -345,7 +345,7 @@ const SessionCard = memo(function SessionCard({
 });
 
 // Main componen
-export default function ScheduledPods({
+const ScheduledPods: React.FC<ScheduledPodsProps> = ({
     sessions,
     foundSession,
     onJoinSession,
@@ -353,12 +353,26 @@ export default function ScheduledPods({
     currentUserId,
     isLoading,
     onClearFoundSession,
-}: ScheduledPodsProps) {
+}) => {
+    console.log("[ScheduledPods] Component rendered with:", {
+        sessionsCount: sessions?.length,
+        sessions,
+        hasFoundSession: !!foundSession,
+        isLoading
+    });
+
     const [showAllSessions, setShowAllSessions] = useState(false);
     const [shareSession, setShareSession] = useState<ShareSessionState | null>(null);
 
     // Memoize session calculations
     const { upcomingSessions } = useMemo(() => {
+        if (!sessions || sessions.length === 0) {
+            console.log("[ScheduledPods] No sessions available to sort");
+            return { upcomingSessions: [] };
+        }
+
+        console.log("[ScheduledPods] Processing sessions:", sessions);
+
         const userSessions = sessions.filter(
             session =>
                 session.created_by.id === currentUserId ||
@@ -374,6 +388,8 @@ export default function ScheduledPods({
         const upcoming = sorted.filter(
             session => differenceInMinutes(new Date(session.starts_at), new Date()) > -60
         );
+
+        console.log("[ScheduledPods] Filtered upcoming sessions:", upcoming);
 
         return { upcomingSessions: upcoming };
     }, [sessions, currentUserId]);
@@ -519,3 +535,5 @@ function getButtonText(isCreator: boolean, canJoin: boolean, status?: string): s
     }
     return 'Join session';
 }
+
+export default ScheduledPods;

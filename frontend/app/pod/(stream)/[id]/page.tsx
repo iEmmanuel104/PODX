@@ -95,10 +95,15 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
     useEffect(() => {
         // Immediate check on component mount
         if (!isLoggedIn || !authenticated) {
-            // Save the session code for after login
+            // Save the session code for after login in both localStorage and cookie
             localStorage.setItem('pendingSessionCode', id);
+            
+            // Also store in a cookie for more reliable persistence
+            document.cookie = `pendingSessionCode=${id}; path=/; max-age=3600`;
+            
             // Redirect to home page
             router.replace('/');
+            
             // Show informative message
             toast('Authentication required', {
                 icon: '🔐',

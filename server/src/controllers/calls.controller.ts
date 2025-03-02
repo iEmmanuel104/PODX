@@ -330,7 +330,42 @@ export default class CallsController {
         try {
             const { callId } = req.body;
             
-            // Get full call details
+            // Check Redis first for scheduled calls
+            const callKey = `scheduled_call:${callId}`;
+            const callData = await redisClient.get(callKey);
+            
+            if (callData) {
+                // This is a scheduled call in Redis
+                const parsedCallData = JSON.parse(callData);
+                
+                // Verify requester is creator
+                if (parsedCallData.created_by.id !== req.user.id) {
+                    res.status(403).json({ 
+                        success: false, 
+                        message: "Only call creator can cancel the session" 
+                    });
+                    return;
+                }
+                
+                // Delete from Redis
+                await redisClient.del(callKey);
+                await redisClient.srem('all_scheduled_sessions', callId);
+                await redisClient.srem(`user_scheduled_calls:${parsedCallData.created_by.id}`, callId);
+                
+                // Try to delete the MongoDB record if it exists
+                await Call.findOneAndUpdate(
+                    { callId },
+                    { $set: { status: "ended", endTime: new Date() } }
+                );
+                
+                res.status(200).json({
+                    success: true,
+                    message: "Scheduled call canceled successfully",
+                });
+                return;
+            }
+            
+            // If not in Redis, check MongoDB
             const call = await Call.findOne({ callId });
             if (!call) {
                 res.status(404).json({ success: false, message: "Call not found" });
@@ -338,7 +373,7 @@ export default class CallsController {
             }
 
             // Verify requester is creator
-            if (call.createdById.toString() !== req.user?.id) {
+            if (call.createdById.toString() !== req.user.id) {
                 res.status(403).json({ 
                     success: false, 
                     message: "Only call creator can end the session" 
@@ -349,7 +384,7 @@ export default class CallsController {
             // Immediate update to ended status
             const endedCall = await Call.findOneAndUpdate(
                 { callId },
-                { $set: { status: "ended", endedAt: new Date() } },
+                { $set: { status: "ended", endTime: new Date() } },
                 { new: true, lean: true }  // Add lean for faster response
             );
 

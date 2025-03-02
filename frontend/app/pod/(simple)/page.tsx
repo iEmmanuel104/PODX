@@ -95,20 +95,29 @@ export default function PodPage() {
 
     const handleStreamCall = useCallback(
         (response: StreamCallData) => {
-            if (response.id && state.meetingCode === response.custom.sessionId) {
-                dispatch(
-                    setSessionInfo({
-                        title: response.custom.title,
-                        type: response.custom.type as sessionType,
-                        sessionId: state.meetingCode,
-                        starts_at: response.starts_at,
-                        tokenGate: response.custom.whitelistedUsers ?? undefined,
-                    })
-                );
-                router.push(`/pod/join/${state.meetingCode}`);
-            }
+            // For scheduled sessions from the list, we need to ensure we're using the correct ID
+            // The sessionId from custom data is what we need for joining scheduled sessions
+            const sessionId = response.custom?.sessionId || response.id;
+            
+            console.log('Joining session with ID:', sessionId);
+            console.log('Session data:', response);
+            
+            dispatch(
+                setSessionInfo({
+                    title: response.custom.title,
+                    type: response.custom.type as sessionType,
+                    sessionId: sessionId,
+                    starts_at: response.starts_at,
+                    tokenGate: response.custom.whitelistedUsers ?? undefined,
+                    isScheduled: !!response.starts_at
+                })
+            );
+            
+            // Set new meeting to false since we're joining an existing session
+            setNewMeeting(false);
+            router.push(`/pod/join/${sessionId}`);
         },
-        [dispatch, router, state.meetingCode]
+        [dispatch, router, setNewMeeting]
     );
 
     const handleDeleteSession = useCallback(async (session: StreamCallData) => {
@@ -148,6 +157,7 @@ export default function PodPage() {
 
     const handleCreateSession = useCallback(
         async (title: string, type: sessionType, scheduledDate?: Date, tokenGate?: string[]) => {
+            console.log("[handleCreateSession] Creating session with:", { title, type, scheduledDate, hasTokenGate: !!tokenGate });
             dispatch(clearSessionInfo());
             setNewMeeting(true);
             const newSessionCode = getMeetingId();
@@ -176,6 +186,7 @@ export default function PodPage() {
                 });
 
                 if (hasTimeConflict) {
+                    console.log("[handleCreateSession] Found time conflict with existing session");
                     setState(prev => ({
                         ...prev,
                         error: 'Cannot schedule a session at this time. There is already a session scheduled at exactly the same time.',
@@ -184,6 +195,15 @@ export default function PodPage() {
                 }
 
                 try {
+                    console.log("[handleCreateSession] Calling scheduleCall API with:", {
+                        title,
+                        type,
+                        sessionId: newSessionCode,
+                        starts_at: startDate.toISOString(),
+                        tokenGate,
+                        scheduledDuration: 60
+                    });
+                    
                     const result = await scheduleCall({
                         title,
                         type,
@@ -193,14 +213,20 @@ export default function PodPage() {
                         scheduledDuration: 60, // Set a default duration of 60 minutes
                     });
 
+                    console.log("[handleCreateSession] Schedule call API response:", result);
+
                     if (!result.data) {
+                        console.error("[handleCreateSession] Failed to schedule call - no data returned");
                         throw new Error('Failed to schedule call');
                     }
 
                     dispatch(setSessionInfo(sessionData));
 
                     if (result.data && result.data.data) {
+                        console.log("[handleCreateSession] Adding scheduled session to Redux store:", result.data.data);
                         dispatch(addScheduledSession(result.data.data));
+                    } else {
+                        console.error("[handleCreateSession] No session data to add to Redux store");
                     }
 
                     setState(prev => ({
@@ -215,7 +241,7 @@ export default function PodPage() {
 
                     return;
                 } catch (error) {
-                    console.error('Failed to schedule call:', error);
+                    console.error('[handleCreateSession] Failed to schedule call:', error);
                     setState(prev => ({
                         ...prev,
                         error: 'Failed to schedule the call',
@@ -413,6 +439,12 @@ export default function PodPage() {
 
                 {/* Scheduled sessions */}
                 <div className="w-full mb-8 sm:mb-12" id="scheduled-sessions-list">
+                    {console.log("[PodPage] Rendering ScheduledPods component with:", {
+                        scheduledSessions,
+                        foundSession: state.foundSession,
+                        isLoading,
+                        scheduledSessionsCount: scheduledSessions?.length
+                    })}
                     <ScheduledPods
                         sessions={scheduledSessions}
                         foundSession={state.foundSession}

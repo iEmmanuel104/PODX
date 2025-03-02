@@ -19,6 +19,7 @@ import { useScheduledCalls } from '@/hooks/useScheduledCalls';
 import { setSessionInfo } from '@/store/pod/slice';
 import { useAppDispatch, useTypedSelector } from '@/store/config/store';
 import { usePrivy } from '@privy-io/react-auth';
+import { sessionType } from '@/constants';
 
 // Types
 interface JoinSessionProps {
@@ -125,6 +126,9 @@ const JoinButton = React.memo(
 
 JoinButton.displayName = 'JoinButton';
 
+// Break circular dependency with forward reference
+let initializeCallImpl: any = null;
+
 // Main Component
 const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
     const router = useRouter();
@@ -140,10 +144,15 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
     useEffect(() => {
         // Immediate check on component mount
         if (!isLoggedIn || !authenticated) {
-            // Save the session code for after login
+            // Save the session code for after login in both localStorage and cookie
             localStorage.setItem('pendingSessionCode', code);
+
+            // Also store in a cookie for more reliable persistence
+            document.cookie = `pendingSessionCode=${code}; path=/; max-age=3600`;
+
             // Redirect to home page
             router.replace('/');
+
             // Show informative message
             toast.error('Please login to join this session', {
                 duration: 5000,
@@ -159,10 +168,15 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
     useEffect(() => {
         if (ready && !authChecked.current) {
             if (!authenticated || !isLoggedIn) {
-                // Save the session code for after login
+                // Save the session code for after login in both localStorage and cookie
                 localStorage.setItem('pendingSessionCode', code);
+
+                // Also store in a cookie for more reliable persistence
+                document.cookie = `pendingSessionCode=${code}; path=/; max-age=3600`;
+
                 // Redirect to home page
                 router.replace('/');
+
                 // Show informative message
                 toast.error('Please login to join this session', {
                     duration: 5000,
@@ -188,17 +202,15 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
     const [participants, setParticipants] = useState<CallParticipantResponse[]>([]);
 
     // Selectors and Context
-    const { sessionTitle, sessionType, isScheduled, starts_at, tokenGate } = useTypedSelector(
+    const { sessionTitle, sessionType: sessionTypeFromStore, isScheduled, starts_at, tokenGate } = useTypedSelector(
         state => state.pod
     );
     const { newMeeting, setNewMeeting } = useContext(AppContext);
-    // const { client: chatClient } = useChatContext();
 
     // Stream Video Hooks
     const call = useCall();
     const { useCallCallingState } = useCallStateHooks();
     const callingState = useCallCallingState();
-    // const tokenProvider = useStreamTokenProvider();
 
     // Initialize call function
     const initializeCall = useCallback(async () => {
@@ -209,7 +221,11 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                 await call?.leave();
             }
 
+            const isScheduledCall = isScheduled || (state.scheduledMeetData !== null);
+            console.log('Initializing call with newMeeting:', newMeeting, 'isScheduled:', isScheduledCall, 'code:', code);
+
             if (newMeeting) {
+                console.log('Creating new call with ID:', code);
                 const members = [{ user_id: user.id, role: 'host' }];
                 if (tokenGate && tokenGate.length > 0) {
                     tokenGate.forEach(userId => {
@@ -219,13 +235,14 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                     });
                 }
 
-                await call?.getOrCreate({
+                try {
+                    const callResponse = await call?.getOrCreate({
                     data: {
                         members,
                         custom: {
                             sessionId: code,
                             title: sessionTitle || 'New Call',
-                            type: sessionType || 'Video Session',
+                                type: sessionTypeFromStore || sessionType.POD,
                             isTokenGated: tokenGate && tokenGate.length > 0,
                             whitelistedUsers: tokenGate || [],
                         },
@@ -235,13 +252,38 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                                 max_duration_seconds: 3600,
                             },
                         },
-                        ...(isScheduled && { starts_at }),
+                            ...(isScheduledCall && { starts_at }),
                     },
                     members_limit: 20,
-                    ...(sessionType === 'Audio Session' && { video: false }),
-                });
+                        ...(sessionTypeFromStore === sessionType.AUDIO && { video: false }),
+                    });
+                    console.log('Call created successfully:', callResponse);
+                    
+                    // If we successfully created a call, set newMeeting to false to avoid recreating
+                    if (callResponse?.call) {
+                        setNewMeeting(false);
+                    }
+                    
+                    return callResponse;
+                } catch (createError) {
+                    console.error('Error creating call:', createError);
+                    throw createError;
+                }
             } else {
-                const callData = await call?.get();
+                // For existing calls, whether scheduled or not
+                console.log('Trying to get existing call with ID:', code);
+                let callData;
+                try {
+                    callData = await call?.get();
+                    console.log('Retrieved call data:', callData);
+                } catch (getError) {
+                    console.error('Error getting call data:', getError);
+                    
+                    // If the call doesn't exist but we thought it did, let's create it
+                    console.log('Call not found but expected, attempting to create it now');
+                    setNewMeeting(true);
+                    return initializeCall();
+                }
 
                 if (callData?.call) {
                     // Check if user is not the creator
@@ -264,21 +306,53 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                     }
 
                     setParticipants(callData.call.session?.participants || []);
+
+                    // Get session type safely and ensure it's a valid type
+                    let callSessionType = sessionType.POD; // Default to POD
+                    const customType = callData.call.custom?.type;
+                    if (customType === sessionType.AUDIO) {
+                        callSessionType = sessionType.AUDIO;
+                    }
+
+                    // Check for required custom data and use defaults if missing
+                    const callTitle = callData.call.custom?.title || 'Untitled Session';
+                    const whitelistedUsers = callData.call.custom?.whitelistedUsers || [];
+                    const startsAt = callData.call.starts_at;
+
                     dispatch(
                         setSessionInfo({
-                            title: callData.call.custom.title,
-                            type: callData.call.custom.type,
+                            title: callTitle,
+                            type: callSessionType,
                             sessionId: code,
-                            tokenGate: callData.call.custom.whitelistedUsers || [],
+                            tokenGate: whitelistedUsers,
+                            isScheduled: !!startsAt,
+                            starts_at: startsAt,
                         })
                     );
+                    
+                    return callData;
+                } else {
+                    // If the call doesn't exist yet, try to create it
+                    // This might happen for scheduled calls that haven't been created yet
+                    console.log('Call not found, attempting to create it for scheduled session');
+
+                    // Set newMeeting to true to force creation
+                    setNewMeeting(true);
+
+                    // Call initializeCall again with newMeeting set to true
+                    return initializeCall();
                 }
             }
         } catch (error) {
             const err = error as ErrorFromResponse<GetCallResponse>;
-            console.error(err.message);
-            router.push('/pod');
-            toast.error('Error fetching meeting');
+            console.error('Error initializing call:', err);
+            // Log full error details
+            console.error('Error details:', JSON.stringify(error, null, 2));
+            toast.error('Failed to initialize the session. Please try again.');
+
+            // Don't redirect immediately, give user a chance to retry
+            setState(prev => ({ ...prev, loading: false }));
+            throw error; // Rethrow to allow caller to handle
         } finally {
             setState(prev => ({ ...prev, loading: false }));
         }
@@ -291,33 +365,72 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
         newMeeting,
         router,
         sessionTitle,
-        sessionType,
+        sessionTypeFromStore,
         starts_at,
         state.joining,
+        state.scheduledMeetData,
         tokenGate,
         user,
+        setNewMeeting,
     ]);
+
+    // Assign implementation for forward reference
+    initializeCallImpl = initializeCall;
 
     // Check scheduled meeting
     const checkScheduledMeeting = useCallback(async () => {
         if (!code || !user || hasCheckedSchedule.current) return;
         hasCheckedSchedule.current = true;
 
+        try {
+            console.log('Checking for scheduled meeting with code:', code);
         const response = await retrieveCall(code);
-        console.log('querying for call response:', response);
+            console.log('Retrieve call response:', response);
+
         if (
             response.status === 'success' &&
             response.data?.call &&
             response.data.source === 'scheduled'
         ) {
             const { call } = response.data;
+                console.log('Found scheduled call:', call);
+
+                // Verify required data exists
+                if (!call.custom) {
+                    console.error('Missing custom data in scheduled call');
+                    call.custom = {
+                        title: 'Untitled Session',
+                        type: sessionType.POD,
+                        sessionId: code,
+                        whitelistedUsers: []
+                    };
+                }
+
+                // For scheduled sessions, determine the session type
+                let callSessionType = sessionType.POD; // Default
+                if (call.custom?.type === sessionType.AUDIO) {
+                    callSessionType = sessionType.AUDIO;
+                }
+
+                // Store the session info in Redux before initializing
+                dispatch(
+                    setSessionInfo({
+                        title: call.custom.title || 'Untitled Session',
+                        type: callSessionType,
+                        sessionId: call.custom.sessionId || code,
+                        starts_at: call.starts_at,
+                        tokenGate: call.custom.whitelistedUsers || [],
+                        isScheduled: true
+                    })
+                );
+
             setState(prev => ({
                 ...prev,
                 loading: false,
                 showScheduledDialog: true,
                 scheduledMeetData: {
-                    title: call.custom.title,
-                    startTime: call.starts_at,
+                        title: call.custom.title || 'Untitled Session',
+                        startTime: call.starts_at || new Date().toISOString(),
                     creator: call.created_by
                         ? {
                               id: call.created_by.id,
@@ -328,18 +441,21 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                                   'Unknown',
                           }
                         : undefined,
-                    type: call.custom.type,
-                    sessionId: call.custom.sessionId,
-                    createdAt: call.created_at,
+                        type: call.custom.type || sessionType.POD,
+                        sessionId: call.custom.sessionId || code,
+                        createdAt: call.created_at || new Date().toISOString(),
                 },
             }));
-        } else {
-            if (
+
+                // Even for scheduled sessions, initialize the call but don't wait
+                initializeCall();
+            } else if (
                 response.status === 'success' &&
                 response.data?.call &&
                 response.data.source === 'stream'
             ) {
                 const { call } = response.data;
+                console.log('Found stream call:', call);
 
                 // Check if user is not the creator
                 if (call.created_by.id !== user.id) {
@@ -358,7 +474,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                                 loading: false,
                                 isWhitelisted: false,
                                 callInfo: {
-                                    title: call.custom.title,
+                                    title: call.custom?.title || 'Unknown Session',
                                     creator: {
                                         username:
                                             call.created_by.custom?.username ||
@@ -371,11 +487,95 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                         }
                     }
                 }
+            } else {
+                console.log('No call found for code:', code);
             }
             // No scheduled call found, proceed with normal call initialization
             await initializeCall();
+        } catch (error) {
+            console.error('Error checking scheduled meeting:', error);
+            // Still try to initialize call as a fallback
+            await initializeCall();
         }
-    }, [code, user, retrieveCall, initializeCall]);
+    }, [code, user, retrieveCall, initializeCall, dispatch]);
+
+    // Join session handler
+    const handleJoinSession = useCallback(async () => {
+        if (!code) return;
+
+        setState(prev => ({ ...prev, joining: true }));
+
+        try {
+            console.log('Attempting to join session with ID:', code);
+            console.log('Current callingState:', callingState);
+            console.log('Session info:', {
+                title: sessionTitle,
+                type: sessionTypeFromStore,
+                isScheduled: isScheduled,
+                starts_at: starts_at
+            });
+
+            // Try to get call data first
+            let callExists = false;
+            try {
+                const callData = await call?.get();
+                console.log('Call data before joining:', callData);
+                callExists = !!callData?.call;
+            } catch (getError) {
+                console.log('Call does not exist, will create it:', getError);
+                callExists = false;
+            }
+
+            // If the call doesn't exist, create it now
+            if (!callExists) {
+                console.log('Call not found on server, will create it now');
+                // Set newMeeting to true to force creation
+                setNewMeeting(true);
+                
+                try {
+                    // Create the call
+                    await initializeCall();
+                    console.log('Call created successfully');
+                } catch (createError) {
+                    console.error('Error creating call:', createError);
+                    throw createError;
+                }
+            }
+
+            // Get the call again to verify it was created
+            try {
+                const refreshedCallData = await call?.get();
+                console.log('Refreshed call data after initialization:', refreshedCallData);
+                
+                if (!refreshedCallData?.call) {
+                    console.error('Call still does not exist after creation attempt');
+                    throw new Error('Failed to create call. Please try again.');
+                }
+            } catch (verifyError) {
+                console.error('Error verifying call creation:', verifyError);
+                throw verifyError;
+            }
+
+            // Now join the call
+            if (callingState !== CallingState.JOINED) {
+                console.log('Joining call now...');
+                const joinResponse = await call?.join({
+                    data: {
+                        members: [{ user_id: user?.id! }],
+                    },
+                    ...(sessionTypeFromStore === sessionType.AUDIO && { video: false }),
+                });
+                console.log('Join response:', joinResponse);
+            }
+
+            router.push(`/pod/${code}`);
+        } catch (error) {
+            console.error('Join session error:', error);
+            console.error('Error details:', JSON.stringify(error, null, 2));
+            toast.error('Failed to join session, please check your connection and try again');
+            setState(prev => ({ ...prev, joining: false }));
+        }
+    }, [code, user, call, callingState, router, sessionTypeFromStore, isScheduled, sessionTitle, starts_at, setNewMeeting, initializeCall]);
 
     // Effects
     useEffect(() => {
@@ -397,31 +597,6 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
             setNewMeeting(false);
         };
     }, [newMeeting, setNewMeeting]);
-
-    // Join session handler
-    const handleJoinSession = useCallback(async () => {
-        if (!code) return;
-
-        setState(prev => ({ ...prev, joining: true }));
-
-        try {
-            if (callingState !== CallingState.JOINED) {
-                await call?.join({
-                    data: {
-                        members: [{ user_id: user?.id! }],
-                    },
-                    ...(sessionType === 'Audio Session' && { video: false }),
-                });
-                // await call?.updateCallMembers({ update_members: [{ user_id: user?.id! }] });
-            }
-
-            router.push(`/pod/${code}`);
-        } catch (error) {
-            console.error(error);
-            toast.error('Failed to join session, please check your connection and try again');
-            setState(prev => ({ ...prev, joining: false }));
-        }
-    }, [code, user, call, callingState, router, sessionType]);
 
     // Memoized UI elements
     const participantsUI = useMemo(() => {
@@ -468,7 +643,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                         <p className="text-white text-base sm:text-lg md:text-xl font-medium">
                             {sessionTitle || 'Base Live Build Session'}
                             <span className="text-gray-400">
-                                ({sessionType || 'Video Session'})
+                                ({sessionTypeFromStore || sessionType.POD})
                             </span>
                         </p>
                     </div>

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { StreamCallData } from '@/components/pod/streamCallData';
 import { useAppDispatch, useTypedSelector } from '@/store/config/store';
 import {
@@ -22,6 +22,7 @@ interface UseScheduledCallsReturn {
 export const useScheduledCalls = (): UseScheduledCallsReturn => {
     const dispatch = useAppDispatch();
     const scheduledSessions = useTypedSelector(state => state.scheduleSession.sessions);
+    const [forceLoading, setForceLoading] = useState(true);
 
     // RTK Query hooks
     const [scheduleCallMutation, { isLoading: isScheduling }] = useScheduleCallMutation();
@@ -31,31 +32,60 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
 
     // Update local state when user scheduled calls change
     useEffect(() => {
-        if (userScheduledCalls?.data?.calls) {
-            dispatch(setScheduledSessions(userScheduledCalls.data.calls));
-        }
-    }, [userScheduledCalls, dispatch]);
+        console.log("[useScheduledCalls] userScheduledCalls data received:", userScheduledCalls);
 
-    // Cleanup on unmoun
+        if (userScheduledCalls?.data?.calls) {
+            console.log("[useScheduledCalls] Setting scheduled sessions in Redux store:",
+                userScheduledCalls.data.calls);
+            dispatch(setScheduledSessions(userScheduledCalls.data.calls));
+
+            // Ensure we exit loading state after data is loaded
+            if (forceLoading) {
+                setTimeout(() => {
+                    console.log("[useScheduledCalls] Forcing exit from loading state");
+                    setForceLoading(false);
+                }, 300);
+            }
+        } else {
+            console.log("[useScheduledCalls] No scheduled calls data available or empty calls array");
+        }
+    }, [userScheduledCalls, dispatch, forceLoading]);
+
+    // Cleanup on unmount
     useEffect(() => {
         return () => {
+            console.log("[useScheduledCalls] Cleaning up scheduled sessions");
             dispatch(clearScheduledSessions());
         };
     }, [dispatch]);
+
+    // Ensure we exit loading state if we have data but loading flags are stuck
+    useEffect(() => {
+        if (scheduledSessions.length > 0 && forceLoading) {
+            const timer = setTimeout(() => {
+                console.log("[useScheduledCalls] Data available but still loading, forcing exit from loading state");
+                setForceLoading(false);
+            }, 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [scheduledSessions, forceLoading]);
 
     // Get a call using RTK Query (checks both stream and scheduled calls)
     const retrieveCall = async (
         sessionId: string
     ): Promise<ApiResponse<GetCallResponse | null>> => {
         try {
+            console.log(`[useScheduledCalls] Retrieving call with ID: ${sessionId}`);
             const result = await dispatch(
                 scheduledCallsApiSlice.endpoints.retrieveCall.initiate(sessionId)
             );
 
             if ('error' in result) {
+                console.error(`[useScheduledCalls] Error retrieving call: ${result.error}`);
                 throw new Error('Failed to fetch call');
             }
 
+            console.log(`[useScheduledCalls] Call retrieval result:`, result.data);
             return result.data as ApiResponse<GetCallResponse | null>;
         } catch (error) {
             console.error('Failed to get call:', error);
@@ -68,13 +98,16 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
         sessionId: string
     ): Promise<{ success: boolean; message: string }> => {
         try {
+            console.log(`[useScheduledCalls] Deleting call with ID: ${sessionId}`);
             const result = await deleteCallMutation({ callId: sessionId });
 
             if ('error' in result) {
+                console.error(`[useScheduledCalls] Error deleting call: ${result.error}`);
                 throw new Error('Failed to delete call');
             }
 
             // Remove from local state
+            console.log(`[useScheduledCalls] Removing deleted call from Redux store`);
             dispatch(removeScheduledSession(sessionId));
 
             return { success: true, message: 'Session has been canceled' };
@@ -87,14 +120,20 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
     return {
         scheduledSessions,
         scheduleCall: async (args: ScheduleCallArgs) => {
+            console.log(`[useScheduledCalls] Scheduling call with ID: ${args.sessionId}`, args);
+            // Ensure we show loading while scheduling a new call
+            setForceLoading(true);
             const result = await scheduleCallMutation(args);
             if ('error' in result) {
+                console.error(`[useScheduledCalls] Error scheduling call: ${result.error}`);
                 throw result.error;
             }
+            console.log(`[useScheduledCalls] Call scheduled successfully:`, result.data);
             return { data: result.data as ApiResponse<StreamCallData> };
         },
         deleteCall,
-        isLoading: isLoadingCalls || isScheduling || isDeleting,
+        // Use our custom loading state alongside the RTK Query states
+        isLoading: (isLoadingCalls || isScheduling || isDeleting || forceLoading) && scheduledSessions.length === 0,
         retrieveCall,
     };
 };
