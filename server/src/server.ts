@@ -1,10 +1,13 @@
 import http from 'http';
 import app from './app';
 import { initiateMongoDB } from './models/Mongodb';
-// import { initiateDB } from './models/Postgres';
-// import { initializeSocketIO } from './socket';
 import { logger } from './utils/logger';
 import { redisClient } from './utils/redis';
+
+// Example function where 'err' is used
+function handleError(err: Error) { // Explicitly type 'err'
+  console.error(err);
+}
 
 // Asynchronous function to start the server
 async function startServer(): Promise<void> {
@@ -12,22 +15,22 @@ async function startServer(): Promise<void> {
         await redisClient.on('connect', () => {
             logger.info('Connection to REDIS database successful');
         });
-        // Initiate a connection to the database
-        // await initiateDB();
+
+        // Initiate MongoDB connection
         await initiateMongoDB();
 
-        // Start the server and listen on port 8080
+        // Start the server
         const server = http.createServer(app);
-        // initializeSocketIO(server);
-
         const port = process.env.PORT || 8090;
+
         server.listen(port, () => {
             logger.info(`Server is running on Port ${port}`);
         });
     } catch (err) {
         console.log(err);
         logger.error(err);
-        // exit redis client
+
+        // Clean up Redis connection
         redisClient.quit((err, result) => {
             if (err) {
                 logger.error('Error quitting Redis:', err);
@@ -35,10 +38,11 @@ async function startServer(): Promise<void> {
                 logger.info('Redis instance has been stopped:', result);
             }
         });
-        // Exit the process with a non-zero status code to indicate an error
+
+        // Exit the process with error
         process.exit(1);
     }
 }
 
-// Call the function to start the server
+// Start the server
 startServer();

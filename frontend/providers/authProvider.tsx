@@ -1,99 +1,164 @@
-"use client";
-import { useEffect, useState } from "react";
-import { usePrivy } from "@privy-io/react-auth";
-import { useAppSelector, useAppDispatch } from "@/store/hooks";
-import { setUser, setSignature, logOut } from "@/store/slices/userSlice";
-import { useRouter, usePathname } from "next/navigation";
-import { useFindOrCreateUserMutation, UserInfo } from "@/store/api/userApi";
-import { LoadingOverlay } from "@/components/ui/loading";
-import toast from "react-hot-toast";
+'use client';
+import { useEffect, useState, useCallback } from 'react';
+import { usePrivy } from '@privy-io/react-auth';
+import { useRouter, usePathname } from 'next/navigation';
+import { LoadingOverlay } from '@/components/ui/loading';
+import { useTypedSelector, useAppDispatch } from '@/store/config/store';
+import { setUser, setSignature, logOut } from '@/store/auth/slice';
+import { UserInfo } from '@/store/user/types';
+import { useValidateUserMutation } from '@/store/user/slice';
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
     const { user: privyUser, authenticated, ready, logout } = usePrivy();
-    const storeUser = useAppSelector((state) => state.user);
+    const { isLoggedIn } = useTypedSelector(state => state.auth);
     const dispatch = useAppDispatch();
     const router = useRouter();
     const pathname = usePathname();
-    const [findOrCreateUser] = useFindOrCreateUserMutation();
-    const [isAuthenticating, setIsAuthenticating] = useState(false);
+    const [validateUser, { isLoading: isValidating }] = useValidateUserMutation();
 
-    useEffect(() => {
-        if (!ready || isAuthenticating) return;
+    // Simplified state management
+    const [isLoading, setIsLoading] = useState(false);
 
-        const handleAuth = async () => {
-            setIsAuthenticating(true);
-            try {
-                if (authenticated && privyUser && privyUser.wallet) {
-                    console.log("Authenticated user detected");
-                    if (!storeUser.user || !storeUser.isLoggedIn) {
-                        console.log("Authenticating user to get store data");
+    // Handle authentication
+    const handleAuthentication = useCallback(async () => {
+        if (!privyUser?.wallet?.address) return false;
 
-                        const walletAddress = privyUser?.wallet?.address;
-                        const walletClientType = privyUser?.wallet?.walletClientType;
+        try {
+            const result = await validateUser({
+                walletAddress: privyUser.wallet.address,
+                hash: true,
+            }).unwrap();
 
-                        if (!walletAddress) throw new Error("No wallet address found");
+            dispatch(
+                setUser({
+                    ...result.data,
+                    walletType: privyUser.wallet.walletClientType,
+                } as UserInfo)
+            );
 
-                        console.log({ walletToUseAuthprovider: walletAddress });
+            if (result.data?.signature) {
+                console.log('Setting signature:', result.data);
 
-                        const result = await findOrCreateUser({ walletAddress, hash: true }).unwrap();
-                        const userData = result.data as UserInfo;
-                        dispatch(setUser(userData));
-                        if (userData?.signature) {
-                            dispatch(setSignature(userData.signature));
-                        }
-
-                        // Always redirect to pod page after authentication
-                        router.push("/pod");
-                    } else {
-                        console.log("Store user found, redirecting");
-                        redirectUser();
-                    }
-                }
-            } catch (error) {
-                toast.error("Authentication error");
-                console.error("Authentication error:", error);
-                logout();
-                dispatch(logOut());
-                router.push("/");
-            } finally {
-                setIsAuthenticating(false);
+                dispatch(setSignature(result.data.signature));
             }
-        };
 
-        handleAuth();
-    }, [authenticated, dispatch, logout, ready, privyUser, router, storeUser]);
-
-    const redirectUser = () => {
-        console.log("Redirecting user");
-        const pendingSessionCode = localStorage.getItem("pendingSessionCode");
-        if (pendingSessionCode) {
-            console.log("Redirecting to pending session");
-            localStorage.removeItem("pendingSessionCode");
-            router.push(`/pod/join/${pendingSessionCode}`);
-        } else if (pathname && !pathname.startsWith("/pod")) {
-            console.log("Redirecting to pod page for path:", pathname);
-            router.push("/pod");
+            // Don't redirect here, let the effect handle it
+            return true;
+        } catch (error) {
+            console.error('Authentication error:', error);
+            logout();
+            dispatch(logOut());
+            return false;
         }
-        //  else {
-        //     logout();
-        //     dispatch(logOut());
-        //     router.push("/");
-        // }
-    };
+    }, [privyUser, validateUser, dispatch, logout]);
 
-    if (!ready || isAuthenticating) {
-        console.log("Displaying loading overlay");
-        let loadingText = "";
+    // Handle redirection
+    const redirectToPod = useCallback(async () => {
+        const pendingSessionCode = localStorage.getItem('pendingSessionCode');
+        const targetPath = pendingSessionCode ? `/pod/join/${pendingSessionCode}` : '/pod';
 
-        if (!ready) {
-            loadingText = "Initializing...";
-        } else if (isAuthenticating) {
-            loadingText = "Authenticating...";
+        if (pathname !== targetPath) {
+            router.replace(targetPath);
+            if (pendingSessionCode) {
+                localStorage.removeItem('pendingSessionCode');
+            }
+        }
+    }, [pathname, router]);
+
+    // Handle authentication and redirection without useEffect
+    const handleAuthFlow = useCallback(async () => {
+        // Check if we're on a pod page, even before Privy is ready
+        const isPodJoinPage = pathname && pathname.startsWith('/pod/join/');
+        const isDirectPodPage = pathname && pathname.startsWith('/pod/') && !isPodJoinPage && pathname !== '/pod';
+        
+        // Safety check for pod pages before Privy is ready
+        if ((isPodJoinPage || isDirectPodPage) && !ready) {
+            console.log('Pod page detected but Privy not ready yet - checking local login state');
+            // If we're on a pod page but Privy isn't ready yet, check local state
+            if (!isLoggedIn && pathname) {
+                // Save the session code
+                let sessionCode;
+                if (isPodJoinPage) {
+                    sessionCode = pathname.split('/pod/join/')[1];
+                } else if (isDirectPodPage) {
+                    sessionCode = pathname.split('/pod/')[1];
+                }
+                
+                if (sessionCode) {
+                    localStorage.setItem('pendingSessionCode', sessionCode);
+                }
+                
+                // Redirect to home
+                router.replace('/');
+                console.log('Redirecting from pod page before Privy ready - not logged in');
+                return;
+            }
         }
 
+        // Skip further processing if not ready
+        if (!ready || isLoading) return;
+
+        // Skip auth checks only if pathname is not available
+        if (!pathname) return;
+
+        // If user is on any pod page but not authenticated, redirect to home
+        if ((isPodJoinPage || isDirectPodPage) && !authenticated) {
+            // Extract the session code
+            let sessionCode;
+            if (isPodJoinPage) {
+                sessionCode = pathname.split('/pod/join/')[1];
+            } else if (isDirectPodPage) {
+                sessionCode = pathname.split('/pod/')[1];
+            }
+
+            if (sessionCode) {
+                localStorage.setItem('pendingSessionCode', sessionCode);
+            }
+
+            // Redirect to home page
+            router.replace('/');
+            console.log('Redirecting unauthenticated user from pod page to home', { pathname });
+            return;
+        }
+
+        // Skip further authentication for active pod sessions if user is already authenticated
+        const isActivePodPage = pathname.startsWith('/pod/') && authenticated;
+        if (isActivePodPage && pathname !== '/pod' && isLoggedIn) return;
+
+        if (authenticated && !isLoggedIn) {
+            setIsLoading(true);
+            const success = await handleAuthentication();
+            if (success) {
+                await redirectToPod();
+            }
+            setIsLoading(false);
+        } else if (authenticated && isLoggedIn && pathname === '/') {
+            await redirectToPod();
+        } else if (!authenticated && isLoggedIn) {
+            dispatch(logOut());
+        }
+    }, [
+        ready,
+        isLoading,
+        pathname,
+        authenticated,
+        isLoggedIn,
+        handleAuthentication,
+        redirectToPod,
+        dispatch,
+        router,
+    ]);
+
+    // Call handleAuthFlow when necessary
+    useEffect(() => {
+        handleAuthFlow();
+    }, [handleAuthFlow]);
+
+    // Show loading overlay
+    if (isLoading || isValidating) {
         return (
-            <div className="h-screen w-screen bg-[#121212]">
-                <LoadingOverlay text={loadingText} />
+            <div className="fixed inset-0 bg-[#121212] bg-opacity-90 backdrop-blur-sm">
+                <LoadingOverlay text={`${isLoading ? 'Signing in...' : 'Validating User...'}`} />
             </div>
         );
     }

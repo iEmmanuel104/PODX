@@ -41,7 +41,7 @@ export function AdminAuthenticatedController<T = AdminAuthenticatedRequest>(
 export async function authenticateUser(token: string): Promise<IUser> {
     const decoded = AuthUtil.verifyTokenWithHash(token);
 
-    const user = await UserService.viewSingleUserByWalletAddress(decoded.user.walletAddress);
+    const user = await UserService.viewSingleUserByWalletAddressWithoutStreak(decoded.user.walletAddress);
 
     if (!user || !user.walletAddress) {
         throw new UnauthorizedError('Invalid user');
@@ -72,17 +72,9 @@ export const basicAuth = function () {
             return next(new UnauthorizedError('Missing token'));
         }
 
-        try {
-            const user = await authenticateUser(token);
-            (req as AuthenticatedRequest).user = user;
-            next();
-        } catch (error) {
-            if (error instanceof UnauthorizedError || error instanceof ForbiddenError) {
-                next(error);
-            } else {
-                next(new UnauthorizedError('Authentication failed'));
-            }
-        }
+        const user = await authenticateUser(token);
+        (req as AuthenticatedRequest).user = user;
+        next();
     };
 };
 

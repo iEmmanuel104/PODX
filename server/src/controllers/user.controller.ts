@@ -5,6 +5,7 @@ import { AuthenticatedRequest } from '../middlewares/authMiddleware';
 import CloudinaryClientConfig from '../clients/cloudinary.config';
 import StreamIOConfig from '../clients/streamio.config';
 import { AuthUtil } from '../utils/token';
+import { TipService } from '../services/tip.service';
 
 export default class UserController {
 
@@ -32,15 +33,20 @@ export default class UserController {
         }
 
         const users = await UserService.viewUsers(queryParams);
+
         res.status(200).json({
             status: 'success',
             message: 'Users retrieved successfully',
-            data: { ...users },
+            data: users,
         });
     }
 
     static async getUser(req: AuthenticatedRequest, res: Response) {
         const { id } = req.query;
+
+        if (!id) {
+            throw new BadRequestError('User ID is required');
+        }
 
         const user = await UserService.viewSingleUser(id as string);
 
@@ -110,30 +116,30 @@ export default class UserController {
         });
     }
 
-    static async findOrCreateUser(req: Request, res: Response) {
+    static async validateUser(req: Request, res: Response) {
         const { walletAddress, hash } = req.body;
 
         if (!walletAddress) {
             throw new BadRequestError('Wallet address is required');
         }
 
-        let user = await UserService.viewSingleUserByWalletAddress(walletAddress);
+        let userData = await UserService.viewSingleUserByWalletAddress(walletAddress);
+        let firstTimeUser = false;
 
-        if (!user) {
+        if (!userData) {
             // Create a new user
             const username = `guest-${walletAddress.slice(0, 8)}`;
-            user = await UserService.addUser({ walletAddress, username });
+            await UserService.addUser({ walletAddress, username });
+            // Fetch the complete user data after creation
+            userData = await UserService.viewSingleUserByWalletAddress(walletAddress);
+            if (!userData) {
+                throw new Error('Failed to retrieve user data after creation');
+            }
+            firstTimeUser = true;
         }
 
-        const streamToken = await StreamIOConfig.generateToken(user.id);
+        const streamToken = await StreamIOConfig.generateToken(userData.id);
 
-        // Convert Mongoose document to a plain JavaScript object
-        const userObject = user.toObject();
-
-        // Remove any fields you don't want to send to the client
-        delete userObject.__v;
-
-        console.log({ user: userObject, streamToken });
         let signature = undefined;
 
         if (hash === 'true') {
@@ -141,22 +147,116 @@ export default class UserController {
             signature = await AuthUtil.generateTokenWithHash({
                 type: 'access',
                 user: {
-                    id: user.id,
-                    walletAddress: user.walletAddress,
+                    id: userData.id,
+                    walletAddress: userData.walletAddress,
                 },
             });
         }
 
-        console.log({ user: userObject, streamToken, signature });
+        console.log('user data retrieved for: ', userData.username);
 
         res.status(200).json({
             status: 'success',
-            message: userObject.username.startsWith('guest-') ? 'New user created' : 'Existing user found',
+            message: firstTimeUser ? 'New user created' : 'Existing user found',
             data: {
-                ...userObject,
+                ...userData,
                 streamToken,
                 signature,
+                firstTimeUser,
             },
         });
+    }
+
+    static async getUserStreakStats(req: AuthenticatedRequest, res: Response): Promise<void> {
+        try {
+            const stats = await UserService.getUserStreakStats(req.user.id);
+            res.status(200).json({
+                status: 'success',
+                data: stats,
+            });
+        } catch (error) {
+            console.error('Error fetching user stats:', error);
+            res.status(500).json({
+                status: 'error',
+                message: 'Error fetching user statistics',
+            });
+        }
+    }
+
+    static async getUserCalls(req: AuthenticatedRequest, res: Response) {
+        const { calls, error } = await StreamIOConfig.getCallsByUser(req.user.id);
+
+        if (error) {
+            throw new BadRequestError(error.message);
+        }
+
+        res.status(200).json({
+            status: 'success',
+            message: 'User calls retrieved successfully',
+            data: { calls },
+        });
+    }
+
+    static async getUserCallsLocal(req: AuthenticatedRequest, res: Response) {
+        try {
+            const { filter } = req.query;
+
+            // Validate filter if provided
+            if (filter && !['creator', 'member', 'tokengate'].includes(filter as string)) {
+                throw new BadRequestError('Invalid filter value. Must be either "creator" or "member"');
+            }
+
+            const calls = await UserService.getUserCallsFromDb(
+                req.user.walletAddress,
+                filter as 'creator' | 'member' | 'tokengate' | undefined
+            );
+
+            res.status(200).json({
+                status: 'success',
+                message: 'User calls retrieved successfully',
+                data: {
+                    calls,
+                    total: calls.length,
+                    filter: filter || 'all',
+                },
+            });
+        } catch (error) {
+            if (error instanceof BadRequestError) {
+                throw error;
+            }
+            console.error('Error retrieving user calls:', error);
+            throw new BadRequestError('Failed to retrieve user calls');
+        }
+    }
+
+    static async getUserTips(req: AuthenticatedRequest, res: Response) {
+        try {
+            const { filter } = req.query;
+
+            // Validate filter if provided
+            if (filter && !['sent', 'received'].includes(filter as string)) {
+                throw new BadRequestError('Invalid filter value. Must be either "sent" or "received"');
+            }
+
+            const tipsData = await TipService.getUserTipsWithCallInfo(
+                req.user.walletAddress,
+                filter as 'sent' | 'received' | undefined
+            );
+
+            res.status(200).json({
+                status: 'success',
+                message: 'User tips retrieved successfully',
+                data: {
+                    ...tipsData,
+                    filter: filter || 'all',
+                },
+            });
+        } catch (error) {
+            if (error instanceof BadRequestError) {
+                throw error;
+            }
+            console.error('Error retrieving user tips:', error);
+            throw new BadRequestError('Failed to retrieve user tips');
+        }
     }
 }

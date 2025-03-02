@@ -1,24 +1,33 @@
-import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useUpdateUsernameMutation } from "@/store/api/userApi";
-import { useAppSelector, useAppDispatch } from "@/store/hooks";
-import { updateUser } from "@/store/slices/userSlice";
-import toast from "react-hot-toast";
-import { Loader2 } from "lucide-react";
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import toast from 'react-hot-toast';
+import { Loader2 } from 'lucide-react';
+import DotPattern from '../ui/dot-pattern';
+import { cn } from '@/lib/utils';
+import { useAppDispatch, useTypedSelector } from '@/store/config/store';
+import { useUpdateUsernameMutation } from '@/store/user/slice';
+import { updateUser } from '@/store/auth/slice';
 
 interface UsernameUpdateModalProps {
     isOpen: boolean;
     onClose: () => void;
     initialUsername: string;
     onUpdate: (newUsername: string) => void;
+    firstTimeUser: boolean;
 }
 
-export default function UserInfoModal({ isOpen, onClose, initialUsername, onUpdate }: UsernameUpdateModalProps) {
+export default function UserInfoModal({
+    isOpen,
+    onClose,
+    initialUsername,
+    onUpdate,
+    firstTimeUser,
+}: UsernameUpdateModalProps) {
     const [username, setUsername] = useState(initialUsername);
     const [updateUsername] = useUpdateUsernameMutation();
-    const userId = useAppSelector((state) => state.user.user?.id);
+    const userId = useTypedSelector(state => state.auth.user?.id);
     const dispatch = useAppDispatch();
     const [isLoading, setIsLoading] = useState(false);
 
@@ -34,8 +43,8 @@ export default function UserInfoModal({ isOpen, onClose, initialUsername, onUpda
                     onClose();
                 }
             } catch (error) {
-                toast.error("Username update error");
-                console.error("Failed to update username:", error);
+                toast.error('Username update error');
+                console.error('Failed to update username:', error);
             } finally {
                 setIsLoading(false);
             }
@@ -44,22 +53,32 @@ export default function UserInfoModal({ isOpen, onClose, initialUsername, onUpda
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="bg-[#1E1E1E] text-white rounded-lg p-6 w-full max-w-md">
-                <DialogHeader>
-                    <DialogTitle className="text-2xl font-semibold">Edit Profile</DialogTitle>
+            <DialogContent className="text-white rounded-[20px] p-[32px] w-full max-w-[500px] flex flex-col gap-[8px] bg-[#1d1d1d] overflow-hidden">
+                <DotPattern
+                    width={20}
+                    height={20}
+                    cx={2}
+                    cy={2}
+                    cr={1}
+                    className={cn(
+                        '[mask-image:radial-gradient(to_bottom_right,white,transparent,transparent)] rounded-[20px] top-[6px] left-[8px] px-[10px]'
+                    )}
+                />
+                <DialogHeader className="z-10">
+                    <DialogTitle className="text-xl font-medium">Set your username</DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label htmlFor="username" className="block text-[#A3A3A3] mb-2">
-                            Username
+                <form onSubmit={handleSubmit} className="space-y-4 z-10 bg-transparent">
+                    <div className="flex flex-col gap-[32px]">
+                        <label htmlFor="username" className="text-sm text-[#8c8c8c] mb-2">
+                            Pick a unique username
                         </label>
                         <Input
                             id="username"
                             type="text"
                             value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            className="w-full bg-[#2C2C2C] rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6032F6] text-white placeholder-[#6C6C6C]"
-                            placeholder="Enter your new username"
+                            onChange={e => setUsername(e.target.value)}
+                            className="w-full border border-[#3C3C3C] bg-[#2B2B2B] rounded-[10px] px-[16px] py-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#6032F6] text-white placeholder-[#6C6C6C]"
+                            placeholder="Enter username"
                             disabled={isLoading}
                         />
                     </div>
@@ -67,14 +86,14 @@ export default function UserInfoModal({ isOpen, onClose, initialUsername, onUpda
                         <Button
                             type="button"
                             onClick={onClose}
-                            className="bg-[#2C2C2C] text-white px-4 py-2 rounded-md hover:bg-[#3C3C3C] transition-all duration-300 ease-in-out text-sm font-medium"
+                            className="bg-[#2C2C2C] text-white px-4 py-2 rounded-[10px] hover:bg-[#3C3C3C] transition-all duration-300 ease-in-out text-sm font-medium"
                             disabled={isLoading}
                         >
                             Cancel
                         </Button>
                         <Button
                             type="submit"
-                            className="bg-[#6032F6] text-white px-4 py-2 rounded-md hover:bg-[#4C28C4] transition-all duration-300 ease-in-out text-sm font-medium"
+                            className="bg-[#6032F6] text-white px-4 py-2 rounded-[10px] hover:bg-[#4C28C4] transition-all duration-300 ease-in-out text-sm font-medium"
                             disabled={isLoading}
                         >
                             {isLoading ? (
@@ -88,6 +107,7 @@ export default function UserInfoModal({ isOpen, onClose, initialUsername, onUpda
                         </Button>
                     </div>
                 </form>
+                <div className="absolute w-[217px] h-[217px] left-[330px] top-[-89.58px] bg-[rgba(53,53,53)] blur-[50px]"></div>
             </DialogContent>
         </Dialog>
     );

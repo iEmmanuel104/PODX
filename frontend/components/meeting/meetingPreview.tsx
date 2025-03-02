@@ -1,82 +1,162 @@
-import React, { useEffect, useCallback, useState } from "react";
-import { VideoPreview, useCallStateHooks, useConnectedUser, createSoundDetector } from "@stream-io/video-react-sdk";
-import { useAppSelector, useAppDispatch } from "@/store/hooks";
-import { setAudioEnabled, setVideoEnabled, setSoundDetected } from "@/store/slices/mediaSlice";
-import { setToast } from "@/store/slices/toastSlice";
-import SpeechIndicator from "./speechIndicator";
-import { Mic, MicOff, Video, VideoOff, MoreVertical, Sparkles, Volume2 } from "lucide-react";
-import { AudioInputDeviceSelector, AudioOutputDeviceSelector, VideoInputDeviceSelector } from "./deviceSelector";
-import DeviceSelectorPopover from "@/components/join/deviceSelectorPopover";
-import { Button } from "@/components/ui/button";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import React, { useEffect, useCallback, useState } from 'react';
+import {
+    VideoPreview,
+    useCallStateHooks,
+    useConnectedUser,
+    createSoundDetector,
+} from '@stream-io/video-react-sdk';
+import SpeechIndicator from './speechIndicator';
+import { Mic, MicOff, Video, VideoOff, MoreVertical, Sparkles, Volume2 } from 'lucide-react';
+import {
+    AudioInputDeviceSelector,
+    AudioOutputDeviceSelector,
+    VideoInputDeviceSelector,
+} from './deviceSelector';
+import DeviceSelectorPopover from '@/components/join/deviceSelectorPopover';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { setAudioEnabled, setSoundDetected, setVideoEnabled } from '@/store/media/slice';
+import { useAppDispatch, useTypedSelector } from '@/store/config/store';
+import { setToast } from '@/store/toast/slice';
 
 const MeetingPreview: React.FC = () => {
     const user = useConnectedUser();
     const dispatch = useAppDispatch();
-    const { isAudioEnabled, isVideoEnabled, isSoundDetected } = useAppSelector((state) => state.media);
-    const toast = useAppSelector((state) => state.toast);
-    const [videoPreviewText, setVideoPreviewText] = useState("");
+    const { isAudioEnabled, isVideoEnabled, isSoundDetected } = useTypedSelector(
+        state => state.media
+    );
+    const { streamCallType } = useTypedSelector(state => state.pod);
+    const isAudioSession = streamCallType === 'audio_room';
+    const toast = useTypedSelector(state => state.toast);
+    const [videoPreviewText, setVideoPreviewText] = useState('');
+    const [isInitializing, setIsInitializing] = useState(true);
 
     const { useCameraState, useMicrophoneState, useSpeakerState } = useCallStateHooks();
     const { camera, hasBrowserPermission: hasCameraPermission } = useCameraState();
-    const { microphone, hasBrowserPermission: hasMicrophonePermission, status: microphoneStatus, mediaStream } = useMicrophoneState();
+    const {
+        microphone,
+        hasBrowserPermission: hasMicrophonePermission,
+        status: microphoneStatus,
+        mediaStream,
+    } = useMicrophoneState();
     const { speaker } = useSpeakerState();
 
+    // Initialize devices
     useEffect(() => {
-        const enableMicAndCam = async () => {
+        const initializeDevices = async () => {
+            setIsInitializing(true);
+
             try {
-                await camera.enable();
-                dispatch(setVideoEnabled(true));
+                // Camera initialization
+                if (!isAudioSession && hasCameraPermission && camera) {
+                    await camera.enable();
+                    dispatch(setVideoEnabled(true));
+                }
+
+                // Microphone initialization
+                if (hasMicrophonePermission && microphone) {
+                    await microphone.enable();
+                    dispatch(setAudioEnabled(true));
+                }
             } catch (error) {
-                console.error(error);
-                dispatch(setVideoEnabled(false));
-                dispatch(setToast("Camera error: " + (error instanceof Error ? error.message : String(error))));
-            }
-            try {
-                await microphone.enable();
-                dispatch(setAudioEnabled(true));
-            } catch (error) {
-                console.error(error);
-                dispatch(setAudioEnabled(false));
-                dispatch(setToast("Microphone error: " + (error instanceof Error ? error.message : String(error))));
+                console.error('Device initialization error:', error);
+                dispatch(
+                    setToast(
+                        `Device error: ${error instanceof Error ? error.message : String(error)}`
+                    )
+                );
+            } finally {
+                setIsInitializing(false);
             }
         };
 
-        enableMicAndCam();
-    }, [camera, microphone, dispatch]);
-
-    useEffect(() => {
-        if (microphoneStatus !== "enabled" || !mediaStream) return;
-
-        const disposeSoundDetector = createSoundDetector(mediaStream, ({ isSoundDetected: sd }) => dispatch(setSoundDetected(sd)), {
-            detectionFrequencyInMs: 80,
-            destroyStreamOnStop: false,
-        });
+        initializeDevices();
 
         return () => {
-            disposeSoundDetector().catch((error) => dispatch(setToast("Sound detector error: " + String(error))));
+            if (camera?.enabled) camera.disable().catch(console.error);
+            if (microphone?.enabled) microphone.disable().catch(console.error);
         };
-    }, [microphoneStatus, mediaStream, dispatch]);
+    }, [
+        camera,
+        microphone,
+        hasCameraPermission,
+        hasMicrophonePermission,
+        dispatch,
+        isAudioSession,
+    ]);
 
-    const toggleAudio = useCallback(() => {
-        microphone
-            .toggle()
-            .then(() => {
-                dispatch(setAudioEnabled(!isAudioEnabled));
-            })
-            .catch((error) => dispatch(setToast("Microphone toggle error: " + String(error))));
-    }, [microphone, dispatch, isAudioEnabled]);
+    const AudioSessionPreview = () => (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-[#6032F6]/20 to-[#381D90]/20">
+            <div className="w-20 h-20 rounded-full bg-[#6032F6]/20 flex items-center justify-center mb-4">
+                <Mic className="w-10 h-10 text-white/80" />
+            </div>
+            <div className="text-xl text-white/90 font-medium">Audio Session</div>
+            <div className="text-sm text-white/60 mt-2">
+                {isAudioEnabled ? 'Your microphone is enabled' : 'Your microphone is muted'}
+            </div>
+        </div>
+    );
 
-    const toggleVideo = useCallback(() => {
-        setVideoPreviewText(isVideoEnabled ? "Camera is off" : "Camera is starting");
-        camera
-            .toggle()
-            .then(() => {
-                dispatch(setVideoEnabled(!isVideoEnabled));
-                setVideoPreviewText(isVideoEnabled ? "Camera is off" : "");
-            })
-            .catch((error) => dispatch(setToast("Camera toggle error: " + String(error))));
-    }, [camera, dispatch, isVideoEnabled]);
+    // Sound detector setup
+    useEffect(() => {
+        if (!hasMicrophonePermission || microphoneStatus !== 'enabled' || !mediaStream) return;
+
+        let isMounted = true;
+        const disposeSoundDetector = createSoundDetector(
+            mediaStream,
+            ({ isSoundDetected: sd }) => {
+                if (isMounted) dispatch(setSoundDetected(sd));
+            },
+            {
+                detectionFrequencyInMs: 80,
+                destroyStreamOnStop: false,
+            }
+        );
+
+        return () => {
+            isMounted = false;
+            disposeSoundDetector().catch(console.error);
+        };
+    }, [microphoneStatus, mediaStream, dispatch, hasMicrophonePermission]);
+
+    const toggleAudio = useCallback(async () => {
+        if (!hasMicrophonePermission) {
+            dispatch(setToast('Microphone permission not granted'));
+            return;
+        }
+
+        try {
+            await microphone.toggle();
+            dispatch(setAudioEnabled(!isAudioEnabled));
+        } catch (error) {
+            dispatch(setToast(`Microphone toggle error: ${String(error)}`));
+        }
+    }, [microphone, dispatch, isAudioEnabled, hasMicrophonePermission]);
+
+    const toggleVideo = useCallback(async () => {
+        if (!hasCameraPermission) {
+            dispatch(setToast('Camera permission not granted'));
+            return;
+        }
+
+        setVideoPreviewText(isVideoEnabled ? 'Camera is off' : 'Camera is starting');
+        try {
+            await camera.toggle();
+            dispatch(setVideoEnabled(!isVideoEnabled));
+            setVideoPreviewText(isVideoEnabled ? 'Camera is off' : '');
+        } catch (error) {
+            dispatch(setToast(`Camera toggle error: ${String(error)}`));
+            setVideoPreviewText('Camera error occurred');
+        }
+    }, [camera, dispatch, isVideoEnabled, hasCameraPermission]);
+
+    if (isInitializing) {
+        return (
+            <div className="w-full max-w-3xl lg:pr-2 lg:mt-8 flex items-center justify-center min-h-[200px]">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white" />
+            </div>
+        );
+    }
 
     return (
         <div className="w-full max-w-3xl lg:pr-2 lg:mt-8">
@@ -86,30 +166,42 @@ const MeetingPreview: React.FC = () => {
                     <AlertDescription>{toast.message}</AlertDescription>
                 </Alert>
             )}
-            <div className="relative w-full rounded-lg aspect-video mx-auto shadow-md overflow-hidden">
+            <div className="relative w-full rounded-[10px] aspect-video mx-auto shadow-md overflow-hidden">
                 <div className="absolute inset-0 bg-[#121212]" />
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[rgba(0,0,0,0.4)]" />
-                <div className="absolute inset-0 flex items-center justify-center [&_video]:-scale-x-100">
-                    <VideoPreview
-                        DisabledVideoPreview={() => (
-                            <div className="text-2xl text-white">
-                                {videoPreviewText || (isVideoEnabled ? "Camera is starting..." : "Camera is off")}
-                            </div>
-                        )}
-                    />
-                </div>
 
-                {/* User name with camera and speech indicator*/}
+                {/* Conditional rendering based on session type */}
+                {isAudioSession ? (
+                    <AudioSessionPreview />
+                ) : (
+                    <div className="absolute inset-0 flex items-center justify-center [&_video]:-scale-x-100">
+                        <VideoPreview
+                            DisabledVideoPreview={() => (
+                                <div className="text-2xl text-white">
+                                    {videoPreviewText ||
+                                        (isVideoEnabled
+                                            ? 'Camera is starting...'
+                                            : 'Camera is off')}
+                                </div>
+                            )}
+                        />
+                    </div>
+                )}
+
+                {/* User name with speech indicator */}
                 <div className="absolute left-2 top-2 max-w-[80%] flex items-center">
-                    <SpeechIndicator isSpeaking={isSoundDetected} isMicrophoneEnabled={microphoneStatus === "enabled"} />
+                    <SpeechIndicator
+                        isSpeaking={isSoundDetected}
+                        isMicrophoneEnabled={microphoneStatus === 'enabled'}
+                    />
                     <span className="relative mr-2 text-white text-xs font-thin truncate max-w-[120px]">
                         {(() => {
-                            const name = user?.name || "Anonymous";
+                            const name = user?.name || 'Anonymous';
                             return name.length > 12 ? `${name.slice(0, 12)}...` : name;
                         })()}
                         <span
                             className={`absolute -right-2 top-1/2 transform -translate-y-1/2 w-1.5 h-1.5 rounded-full ${
-                                hasCameraPermission ? "bg-[#6032F6]-500" : "bg-red-500"
+                                hasMicrophonePermission ? 'bg-[#6032F6]' : 'bg-red-500'
                             }`}
                         ></span>
                     </span>
@@ -135,47 +227,40 @@ const MeetingPreview: React.FC = () => {
 
                 {/* Bottom controls */}
                 <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center space-x-4">
-                    <DeviceSelectorPopover
-                        icon={
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                className="w-full h-8 rounded-full bg-black/20 border-white/10 hover:bg-black/30 hover:border-white/20"
-                                onClick={toggleVideo}
-                            >
-                                {isVideoEnabled ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
-                            </Button>
-                        }
-                    >
-                        <VideoInputDeviceSelector disabled={!hasCameraPermission} />
-                    </DeviceSelectorPopover>
+                    {!isAudioSession && (
+                        <DeviceSelectorPopover
+                            icon={
+                                isVideoEnabled ? (
+                                    <Video className="w-4 h-4" />
+                                ) : (
+                                    <VideoOff className="w-4 h-4" />
+                                )
+                            }
+                            onClick={toggleVideo}
+                            className="w-full h-8 rounded-full bg-black/20 border-white/10 hover:bg-black/30 hover:border-white/20"
+                        >
+                            <VideoInputDeviceSelector disabled={!hasCameraPermission} />
+                        </DeviceSelectorPopover>
+                    )}
 
                     <DeviceSelectorPopover
                         icon={
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                className="w-full h-8 rounded-full bg-black/20 border-white/10 hover:bg-black/30 hover:border-white/20"
-                                onClick={toggleAudio}
-                            >
-                                {isAudioEnabled ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
-                            </Button>
+                            isAudioEnabled ? (
+                                <Mic className="w-4 h-4" />
+                            ) : (
+                                <MicOff className="w-4 h-4" />
+                            )
                         }
+                        onClick={toggleAudio}
+                        className="w-full h-8 rounded-full bg-black/20 border-white/10 hover:bg-black/30 hover:border-white/20"
                     >
                         <AudioInputDeviceSelector disabled={!hasMicrophonePermission} />
                     </DeviceSelectorPopover>
 
                     <DeviceSelectorPopover
-                        icon={
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                className="w-full h-8 rounded-full bg-black/20 border-white/10 hover:bg-black/30 hover:border-white/20"
-                                onClick={toggleAudio}
-                            >
-                                {isAudioEnabled ? <Volume2 className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
-                            </Button>
-                        }
+                        icon={<Volume2 className="w-4 h-4" />}
+                        onClick={toggleAudio}
+                        className="w-full h-8 rounded-full bg-black/20 border-white/10 hover:bg-black/30 hover:border-white/20"
                     >
                         <AudioOutputDeviceSelector disabled={!hasMicrophonePermission} />
                     </DeviceSelectorPopover>

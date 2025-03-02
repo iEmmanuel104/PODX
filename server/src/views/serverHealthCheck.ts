@@ -14,9 +14,9 @@ export async function getServerHealth(req: Request, res: Response): Promise<void
     };
 
     try {
-        const html = await serverHealth(data);
-        res.send(html);
-
+        const jsonResponse = await serverHealth(data);
+        res.setHeader('Content-Type', 'application/json');
+        res.send(jsonResponse);
     } catch (error) {
         console.error(error);
         handleError(res);

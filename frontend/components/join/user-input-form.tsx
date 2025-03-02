@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle2, LogIn } from "lucide-react";
+import { AlertCircle, CheckCircle2, LogIn } from 'lucide-react';
 
 interface UserInputFormProps {
     name: string;
@@ -8,7 +8,13 @@ interface UserInputFormProps {
     handleJoinSession: () => void;
 }
 
-const UserInputForm: React.FC<UserInputFormProps> = ({ name, setName, isBasenameConfirmed, setIsBasenameConfirmed, handleJoinSession }) => (
+const UserInputForm: React.FC<UserInputFormProps> = ({
+    name,
+    setName,
+    isBasenameConfirmed,
+    setIsBasenameConfirmed,
+    handleJoinSession,
+}) => (
     <div className="w-full md:w-1/2 flex flex-col justify-center">
         <div className="mb-2">
             <label htmlFor="name" className="block text-[#A3A3A3] mb-2">
@@ -18,8 +24,8 @@ const UserInputForm: React.FC<UserInputFormProps> = ({ name, setName, isBasename
                 id="name"
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full bg-[#2C2C2C] rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#6032F6]"
+                onChange={e => setName(e.target.value)}
+                className="w-full bg-[#2C2C2C] rounded-[10px] px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#6032F6]"
             />
         </div>
 
@@ -29,7 +35,7 @@ const UserInputForm: React.FC<UserInputFormProps> = ({ name, setName, isBasename
                 <p>Basename confirmed</p>
             </div>
         ) : (
-            <div className="flex items-start text-yellow-600 text-xs mb-6">
+            <div className="flex items-start text-[#DDB958] text-xs mb-6">
                 <AlertCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
                 <p>For better experience, connect your wallet and get a base name</p>
             </div>

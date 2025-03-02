@@ -8,4 +8,4 @@ export const config = createConfig({
         [base.id]: http(),
         [baseSepolia.id]: http(),
     },
-})
+});

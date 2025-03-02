@@ -1,139 +1,166 @@
-"use client";
-import React, { useEffect, useState, useRef, useCallback } from "react";
-import { nanoid } from "nanoid";
-import { Call, StreamCall, StreamVideo, StreamVideoClient, User } from "@stream-io/video-react-sdk";
-import { User as ChatUser, StreamChat } from "stream-chat";
-import { Chat } from "stream-chat-react";
-import { useAppSelector } from "@/store/hooks";
-import { STREAM_API_KEY } from "@/constants";
-import { LoadingOverlay } from "@/components/ui/loading";
-import { useStreamTokenProvider } from "@/hooks/useStreamTokenProvider";
-import { useRouter } from "next/navigation";
+'use client';
+import dynamic from 'next/dynamic';
+import React, { useEffect, useState, useRef, useCallback, memo, ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
+import { STREAM_API_KEY } from '@/constants';
+import { LoadingOverlay } from '@/components/ui/loading';
+import { useStreamTokenProvider } from '@/hooks/useStreamTokenProvider';
+import type { StreamChat } from 'stream-chat';
+import type { Call, StreamVideoClient } from '@stream-io/video-react-sdk';
+import { ErrorBoundary } from '@/components/pod/errorBoundary';
+import { StreamConnectionPool } from './streamConnectionPool';
+import { useTypedSelector } from '@/store/config/store';
+const DynamicStreamVideo = dynamic(
+    () => import('@stream-io/video-react-sdk').then(mod => mod.StreamVideo),
+    { ssr: false }
+);
 
-export const CALL_TYPE = "default";
-export const API_KEY = STREAM_API_KEY as string;
-export const GUEST_ID = `guest_${nanoid(15)}`;
+const DynamicStreamCall = dynamic(
+    () => import('@stream-io/video-react-sdk').then(mod => mod.StreamCall),
+    { ssr: false }
+);
 
-type MeetProviderProps = {
-    meetingId?: string;
-    children: React.ReactNode;
-    language?: string;
+const DynamicChat = dynamic(() => import('stream-chat-react').then(mod => mod.Chat), {
+    ssr: false,
+});
+
+type StreamMeetProviderProps = {
+    meetingId: string;
+    children: ReactNode;
+    language: string;
 };
 
-const SimpleMeetProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    return <>{children}</>;
-};
+const connectionPool = new StreamConnectionPool();
 
-const StreamMeetProvider: React.FC<{ meetingId: string; children: React.ReactNode; language: string }> = ({ meetingId, children, language }) => {
-    const { user: appUser, isLoggedIn } = useAppSelector((state) => state.user);
-    const [loading, setLoading] = useState(true);
-    const chatClientRef = useRef<StreamChat>();
-    const videoClientRef = useRef<StreamVideoClient>();
-    const callRef = useRef<Call>();
-    const tokenProvider = useStreamTokenProvider();
-    const router = useRouter();
+export const StreamMeetProvider = memo<StreamMeetProviderProps>(
+    ({ meetingId, children, language }) => {
+        const { auth, pod } = useTypedSelector(state => state);
+        const { user, isLoggedIn } = auth;
+        const { streamCallType } = pod;
+        const [loading, setLoading] = useState(true);
+        const [isMounted, setIsMounted] = useState(false);
+        const chatClientRef = useRef<StreamChat>();
+        const videoClientRef = useRef<StreamVideoClient>();
+        const callRef = useRef<Call>();
+        const tokenProvider = useStreamTokenProvider();
+        const router = useRouter();
 
-    const connectChatClient = useCallback(
-        async (token: string) => {
-            if (!chatClientRef.current) {
-                chatClientRef.current = StreamChat.getInstance(API_KEY);
-            }
+        useEffect(() => {
+            setIsMounted(true);
+            return () => {
+                connectionPool.disconnectAll();
+            };
+        }, []);
 
-            if (!chatClientRef.current.userID) {
-                await chatClientRef.current.connectUser(
-                    {
-                        id: appUser!.id,
-                        username: appUser!.username,
-                    },
-                    token
-                );
-            }
-        },
-        [appUser]
-    );
+        const connectChatClient = useCallback(
+            async (token: string) => {
+                if (!chatClientRef.current) {
+                    chatClientRef.current = await connectionPool.getChatClient(
+                        STREAM_API_KEY as string
+                    );
+                }
 
-    const connectVideoClient = useCallback(
-        async (token: string) => {
-            if (!videoClientRef.current) {
-                videoClientRef.current = new StreamVideoClient({
-                    apiKey: API_KEY,
-                    user: {
-                        id: appUser!.id,
-                        name: appUser!.username,
-                        image: appUser!.displayImage,
-                        custom: {
-                            walletAddress: appUser!.walletAddress,
+                if (!chatClientRef.current.userID && user) {
+                    await chatClientRef.current.connectUser(
+                        {
+                            id: user.id,
+                            username: user.username,
                         },
-                    },
-                    tokenProvider: async () => token,
-                });
-            }
-
-            if (!callRef.current) {
-                callRef.current = videoClientRef.current.call(CALL_TYPE, meetingId);
-            }
-        },
-        [appUser, meetingId]
-    );
-
-    useEffect(() => {
-        console.log("MeetProvider mounted");
-        const setupClients = async () => {
-            if (isLoggedIn && appUser) {
-                try {
-                    const token = await tokenProvider(appUser.walletAddress);
-                    await connectChatClient(token);
-                    await connectVideoClient(token);
-                    setLoading(false);
-                } catch (error) {
-                    console.error("Error setting up clients:", error);
-                    setLoading(false);
+                        token
+                    );
                 }
-            } else {
-                // Store the pending session code in local storage
-                if (meetingId) {
-                    localStorage.setItem("pendingSessionCode", meetingId);
+            },
+            [user]
+        );
+
+        const connectVideoClient = useCallback(
+            async (token: string) => {
+                if (!videoClientRef.current && user) {
+                    videoClientRef.current = await connectionPool.getVideoClient({
+                        apiKey: STREAM_API_KEY as string,
+                        user: {
+                            id: user.id,
+                            name: user.username,
+                            image: user.displayImage,
+                            custom: {
+                                walletAddress: user.walletAddress,
+                            },
+                        },
+                        tokenProvider: async () => token,
+                    });
                 }
-                // Redirect to login page
-                router.push("/");
-            }
-        };
 
-        setupClients();
+                if (!callRef.current && videoClientRef.current && meetingId) {
+                    const callType = streamCallType || 'default';
+                    console.log({ callType, meetingId, streamCallType });
+                    callRef.current = videoClientRef.current.call(callType, meetingId);
+                }
+            },
+            [user, meetingId, streamCallType]
+        );
 
-        return () => {
-            chatClientRef.current?.disconnectUser();
-            videoClientRef.current?.disconnectUser();
-        };
-    }, [isLoggedIn, appUser, tokenProvider, connectChatClient, connectVideoClient, router, meetingId]);
+        useEffect(() => {
+            if (!isMounted) return;
 
-    if (loading || !chatClientRef.current || !videoClientRef.current || !callRef.current) {
+            const setupClients = async () => {
+                if (isLoggedIn && user) {
+                    try {
+                        const token = await tokenProvider(user.walletAddress);
+                        await Promise.all([connectChatClient(token), connectVideoClient(token)]);
+                        setLoading(false);
+                    } catch (error) {
+                        console.error('Error setting up clients:', error);
+                        setLoading(false);
+                    }
+                } else {
+                    if (meetingId) {
+                        localStorage.setItem('pendingSessionCode', meetingId);
+                    }
+                    router.push('/');
+                }
+            };
+
+            setupClients();
+        }, [
+            isMounted,
+            isLoggedIn,
+            user,
+            tokenProvider,
+            connectChatClient,
+            connectVideoClient,
+            router,
+            meetingId,
+        ]);
+
+        if (
+            !isMounted ||
+            loading ||
+            !chatClientRef.current ||
+            !videoClientRef.current ||
+            !callRef.current
+        ) {
+            return (
+                <div className="w-full h-full">
+                    <LoadingOverlay text="We beseech thee to hold fast, for thy session is nigh prepared...." />
+                </div>
+            );
+        }
+
         return (
-            <div className="h-screen w-screen bg-[#121212]">
-                <LoadingOverlay text="Preparing your meeting space..." />
-            </div>
+            <ErrorBoundary
+                fallback={
+                    <div>Something went wrong with the stream connection. Please try again.</div>
+                }
+            >
+                <div className="w-full h-full">
+                    <DynamicChat client={chatClientRef.current}>
+                        <DynamicStreamVideo client={videoClientRef.current}>
+                            <DynamicStreamCall call={callRef.current}>{children}</DynamicStreamCall>
+                        </DynamicStreamVideo>
+                    </DynamicChat>
+                </div>
+            </ErrorBoundary>
         );
     }
-
-    return (
-        <Chat client={chatClientRef.current}>
-            <StreamVideo client={videoClientRef.current}>
-                <StreamCall call={callRef.current}>{children}</StreamCall>
-            </StreamVideo>
-        </Chat>
-    );
-};
-
-const MeetProvider: React.FC<MeetProviderProps> = ({ meetingId, children, language = "en" }) => {
-    if (!meetingId) {
-        return <SimpleMeetProvider>{children}</SimpleMeetProvider>;
-    }
-
-    return (
-        <StreamMeetProvider meetingId={meetingId} language={language}>
-            {children}
-        </StreamMeetProvider>
-    );
-};
-
-export default MeetProvider;
+);
+StreamMeetProvider.displayName = 'StreamMeetProvider';

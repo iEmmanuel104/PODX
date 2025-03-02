@@ -1,13 +1,12 @@
-import { Button } from "@/components/ui/button"
-import { LogOut } from "lucide-react"
-import Logo from "../ui/logo"
-import { Modal } from "./tips";
-import { UserInfo } from "@/store/api/userApi";
-
+import { Button } from '@/components/ui/button';
+import { LogOut } from 'lucide-react';
+import Logo from '../ui/logo';
+import { Modal } from './tips';
+import { UserInfo } from '@/store/user/types';
 
 interface EndScreenProps {
     onClose: () => void;
-    user: UserInfo | null
+    user: UserInfo | null;
 }
 
 export default function EndScreen({ onClose, user }: EndScreenProps) {
@@ -20,7 +19,8 @@ export default function EndScreen({ onClose, user }: EndScreenProps) {
                         <h1 className="text-2xl font-semibold mb-8">The session has ended</h1>
                         <Button
                             onClick={onClose}
-                            className="bg-[#6032f6] hover:bg-[#4C28C4] text-white font-medium py-2 px-4 rounded-full w-full max-w-xs">
+                            className="bg-[#6032f6] hover:bg-[#4C28C4] text-white font-medium py-2 px-4 rounded-full w-full max-w-xs"
+                        >
                             Return to home screen
                         </Button>
                     </div>
@@ -32,15 +32,12 @@ export default function EndScreen({ onClose, user }: EndScreenProps) {
                         </div>
                         <span className="text-gray-400">{user?.username}</span>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="text-red-500 flex items-center"
-                    >
+                    <button onClick={onClose} className="text-red-500 flex items-center">
                         <LogOut className="w-4 h-4 mr-1" />
                         Logout
                     </button>
                 </div>
             </div>
         </Modal>
-    )
+    );
 }

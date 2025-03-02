@@ -10,9 +10,13 @@ const upload = uploadMiddleware(UploadType.Single, 'file');
 
 router
     .get('/', AuthenticatedController(UserController.getAllUsers))
-    .get('/info', AuthenticatedController(UserController.getUser))
-    .post('/validate', UserController.findOrCreateUser)
+    .get('/info', basicAuth(), AuthenticatedController(UserController.getUser))
+    .get('/streak-stats', basicAuth(), AuthenticatedController(UserController.getUserStreakStats))
+    .post('/validate', UserController.validateUser)
+    .get('/calls', basicAuth(), AuthenticatedController(UserController.getUserCalls))
+    .get('/calls/local', basicAuth(), AuthenticatedController(UserController.getUserCallsLocal))
+    .get('/calls/tips', basicAuth(), AuthenticatedController(UserController.getUserTips))
     .patch('/update', basicAuth(), upload, AuthenticatedController(UserController.updateUser));
-    
+
 export default router;
 

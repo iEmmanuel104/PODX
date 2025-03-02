@@ -1,10 +1,10 @@
-import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { AlertCircle, CheckCircle2, LogIn } from "lucide-react";
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { AlertCircle, CheckCircle2, LogIn } from 'lucide-react';
 
 const JoinSessionForm: React.FC = () => {
-    const [name, setName] = useState("");
+    const [name, setName] = useState('');
     const [isBasenameConfirmed, setIsBasenameConfirmed] = useState(false);
 
     const handleJoinSession = () => {
@@ -17,7 +17,13 @@ const JoinSessionForm: React.FC = () => {
                 <label htmlFor="name" className="block text-sm font-medium text-gray-400 mb-2">
                     What shall we call you?
                 </label>
-                <Input id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full" />
+                <Input
+                    id="name"
+                    type="text"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    className="w-full"
+                />
             </div>
 
             {isBasenameConfirmed ? (
@@ -26,13 +32,13 @@ const JoinSessionForm: React.FC = () => {
                     <p>Basename confirmed</p>
                 </div>
             ) : (
-                <div className="flex items-start text-yellow-600 text-xs mb-6">
+                <div className="flex items-start text-[#DDB958] text-xs mb-6">
                     <AlertCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
                     <p>For better experience, connect your wallet and get a base name</p>
                 </div>
             )}
 
-            <Button className="w-full" onClick={handleJoinSession}>
+            <Button className="w-full bg-[#DDB958] text-black" onClick={handleJoinSession}>
                 <LogIn className="w-5 h-5 mr-2" />
                 Join session
             </Button>

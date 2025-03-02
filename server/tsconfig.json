@@ -1,22 +1,25 @@
 {
     "compilerOptions": {
-        "target": "es2018",
-        "experimentalDecorators": true,
-        "emitDecoratorMetadata": true,
-        "module": "commonjs",
-        "rootDir": "./src",
-        "outDir": "./dist",
-        "esModuleInterop": true,
-        "forceConsistentCasingInFileNames": true,
-        "strict": true,
-        "strictPropertyInitialization": false,
-        "resolveJsonModule": true,
-        "skipLibCheck": true,
-        "baseUrl": "src",
-        "paths": {
-            "*": ["*", "../node_modules/*", "types/*"]
-        }
+      "module": "NodeNext",       // ✅ Supports both ESM and CommonJS
+      "moduleResolution": "NodeNext",
+      "declaration": true,
+      "removeComments": true,
+      "emitDecoratorMetadata": true,
+      "experimentalDecorators": true,
+      "allowSyntheticDefaultImports": true,
+      "target": "ES2021",
+      "sourceMap": true,
+      "outDir": "./dist",
+      "baseUrl": "./",
+      "incremental": true,
+      "skipLibCheck": true,
+      "strictNullChecks": false,
+      "noImplicitAny": false,
+      "strictBindCallApply": false,
+      "forceConsistentCasingInFileNames": false,
+      "noFallthroughCasesInSwitch": false,
+      "strict": true // Added to enable strict type checking
     },
-    "include": ["src/**/*", "src/global.d.ts", "migrations", "src/models/.model.ts", "src/middlewares/**/*"],
-    "exclude": ["node_modules"]
-}
+    "exclude": ["esm-wrapper.mjs"]
+  }
+  
