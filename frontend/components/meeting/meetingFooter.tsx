@@ -19,7 +19,7 @@ const MeetingFooter = memo<MeetingFooterProps>(({ leaveCall, toggleScreenShare, 
     const { handleApplaud } = useApplaud('all');
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 bg-[#151515] z-30">
+        <div className="fixed bottom-0 left-0 right-0 bg-transparent z-10">
             <div className="max-w-screen-xl mx-auto px-4 py-4">
                 <div className="flex items-center justify-center gap-3 sm:gap-4">
                     <ToggleAudioButton />
