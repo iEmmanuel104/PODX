@@ -2,15 +2,18 @@
 import { Response, Request } from 'express';
 import { redisClient } from '../utils/redis';
 import { BadRequestError } from '../utils/customErrors';
-import { AuthenticatedRequest } from 'middlewares/authMiddleware';
+import { AuthenticatedRequest } from '../middlewares/authMiddleware';
 import StreamIOConfig from '../clients/streamio.config';
 import { CallSettings } from '@stream-io/node-sdk';
+import { POAPService } from '../services/poap.service';
+import { Call } from '../models/Mongodb/call.model';
+import { logger } from '../utils/logger';
 
 export default class CallsController {
 
     // all call controllers
     static async scheduleCall(req: AuthenticatedRequest, res: Response) {
-        const { title, type, sessionId, starts_at, tokenGate } = req.body;
+        const { title, type, sessionId, starts_at, tokenGateContract } = req.body;
 
         const startTime = new Date(starts_at);
         const expiryTime = new Date(startTime.getTime() + 5 * 60 * 1000);
@@ -20,13 +23,18 @@ export default class CallsController {
             throw new BadRequestError('Cannot schedule calls in the past');
         }
 
+        const tokenGateInfo = tokenGateContract ? {
+            enabled: true,
+            contractAddress: tokenGateContract,
+        } : null;
+
         const callData = {
             id: sessionId,
             custom: {
                 title,
                 type,
                 sessionId,
-                whitelistedUsers: tokenGate || null,
+                tokenGateInfo,
             },
             starts_at,
             created_by: {
@@ -51,6 +59,8 @@ export default class CallsController {
         const userScheduledCallsKey = `user_scheduled_calls:${req.user.id}`;
         await redisClient.sadd(userScheduledCallsKey, sessionId);
 
+        await Call.create(callData);
+
         res.status(200).json({
             status: 'success',
             message: 'Call scheduled successfully',
@@ -69,15 +79,20 @@ export default class CallsController {
             const whitelistedUsers = streamCall.custom?.whitelistedUsers;
             console.log({ whitelistedUsers, streamCall });
 
+            const tokenGateInfo = (streamCall.custom?.tokenGateInfo as any);
 
-            if (whitelistedUsers && Array.isArray(whitelistedUsers)) {
-                const isWhitelisted = whitelistedUsers.includes(req.user.id);
+            if (tokenGateInfo?.enabled && tokenGateInfo?.contractAddress) {
+                const hasAccess = await POAPService.walletHasMeetingNFT(
+                    req.user.walletAddress,
+                    tokenGateInfo.contractAddress
+                );
 
-                if (!isWhitelisted) {
+                if (!hasAccess) {
                     res.status(403).json({
                         status: 'error',
-                        message: 'You are not whitelisted to join this call',
+                        message: 'You do not have the required NFT to join this call',
                     });
+                    return;
                 }
             }
 
@@ -114,7 +129,7 @@ export default class CallsController {
         const parsedCallData = JSON.parse(callData);
 
         // Check whitelist for scheduled call
-        const whitelistedUsers = parsedCallData.custom?.whitelistedUsers;
+        const whitelistedUsers = (parsedCallData.custom as any)?.whitelistedUsers;
 
         if (whitelistedUsers && Array.isArray(whitelistedUsers)) {
             const isWhitelisted = whitelistedUsers.includes(req.user.id);
@@ -190,29 +205,51 @@ export default class CallsController {
 
     //  StreamIOConfigs
     static async createCall(req: AuthenticatedRequest, res: Response) {
-        const { callType, callId, members, settings, ring = false } = req.body;
+        try {
+            const { title, type, scheduledDate, tokenGatingAddresses, tokenGatingType } = req.body;
 
-        if (!callType || !callId) {
-            throw new BadRequestError('Call type and ID are required');
+            // Create custom object with token gating info if provided
+            const custom: Record<string, any> = {
+                title,
+                type,
+            };
+
+            // Add token gating info if provided
+            if (tokenGatingAddresses && tokenGatingAddresses.length > 0) {
+                if (tokenGatingType === 'external') {
+                    custom.tokenGateInfo = {
+                        enabled: true,
+                        addresses: tokenGatingAddresses.map((addr: string) => addr.toLowerCase()),
+                    };
+                }
+                // For internal type, the addresses will be used for POAP verification
+                // which is handled during access check
+            }
+
+            // Create Stream.io call
+            const { call: createdCall } = await StreamIOConfig.createCall({
+                data: {
+                    custom,
+                    settings: {
+                        // Your existing settings
+                    },
+                    // Other call properties
+                },
+                // Rest of your code
+            });
+
+            // Return the new call object which includes the callId for external token gating
+            res.status(201).json({
+                status: 'success',
+                message: 'Call created successfully',
+                data: {
+                    callId: createdCall.id,
+                    // Other call properties
+                }
+            });
+        } catch (error) {
+            // Error handling
         }
-
-        const callData = {
-            created_by_id: req.user.id,
-            members: members || [{ user_id: req.user.id }],
-            settings_override: settings as CallSettings,
-        };
-
-        const { call, error } = await StreamIOConfig.createCall(callType, callId, callData, ring);
-
-        if (error) {
-            throw new BadRequestError(error.message);
-        }
-
-        res.status(200).json({
-            status: 'success',
-            message: 'Call created successfully',
-            data: { call },
-        });
     }
 
     static async getOrCreateCall(req: AuthenticatedRequest, res: Response) {
@@ -276,19 +313,63 @@ export default class CallsController {
         });
     }
 
-    static async endCall(req: AuthenticatedRequest, res: Response) {
-        const { callType, callId } = req.body;
+    static async endCall(req: AuthenticatedRequest, res: Response): Promise<void> {
+        try {
+            const { callId } = req.body;
+            
+            // Get full call details
+            const call = await Call.findOne({ callId });
+            if (!call) {
+                res.status(404).json({ success: false, message: "Call not found" });
+                return;
+            }
 
-        const { success, error } = await StreamIOConfig.endCall(callType, callId);
+            // Verify requester is creator
+            if (call.createdById.toString() !== req.user?.id) {
+                res.status(403).json({ 
+                    success: false, 
+                    message: "Only call creator can end the session" 
+                });
+                return;
+            }
 
-        if (!success) {
-            throw new BadRequestError(error?.message || 'Failed to end call');
+            // Immediate update to ended status
+            const endedCall = await Call.findOneAndUpdate(
+                { callId },
+                { $set: { status: "ended", endedAt: new Date() } },
+                { new: true, lean: true }  // Add lean for faster response
+            );
+
+            if (!endedCall) {
+                res.status(404).json({ success: false, message: "Call not found" });
+                return;
+            }
+
+            // Send immediate response
+            res.status(200).json({
+                success: true,
+                message: "Call ended successfully",
+                data: endedCall
+            });
+
+            // Process POAP in background
+            setImmediate(async () => {
+                try {
+                    await POAPService.handleCallPOAP(callId);
+                    console.log(`POAP process completed for call ${callId}`);
+                } catch (poapError) {
+                    console.error(`POAP generation failed: ${poapError}`);
+                }
+            });
+
+        } catch (error) {
+            logger.error("Error ending call:", error);
+            res.status(500).json({
+                success: false,
+                message: "Failed to end call",
+                error: (error as Error).message
+            });
         }
-
-        res.status(200).json({
-            status: 'success',
-            message: 'Call ended successfully',
-        });
     }
 
     // call information

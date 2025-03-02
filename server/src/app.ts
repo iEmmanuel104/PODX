@@ -10,6 +10,7 @@ import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
 import { getServerHealth } from './views/serverHealthCheck';
 import cookieParser from 'cookie-parser';
+// import { poapManagementService } from './services/poap_management_service';
 // import corsOptions from './utils/cors';
 
 const app = express();
@@ -26,7 +27,12 @@ app.use(mongoSanitize());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 // app.use(cors(corsOptions));
-app.use(cors());
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? 'https://podx.fun' 
+    : 'http://localhost:3000',
+  credentials: true
+}));
 app.use(morgan('dev'));
 app.use(cookieParser());
 
@@ -39,6 +45,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 // server health check
+app.get('/api/health', getServerHealth);
 app.get('/serverhealth', getServerHealth);
 
 app.use('/api/v0', router);

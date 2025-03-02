@@ -4,7 +4,7 @@ import { User } from '../models/Mongodb/user.model';
 import { Tip, ITip } from '../models/Mongodb/tip.model';
 import { Types } from 'mongoose';
 import { PopulatedTip, TipSummary, TipsWithSummary, UserBasicInfo } from '../utils/interface';
-import { ICall } from 'models/Mongodb/call.model';
+import { ICall } from '../models/Mongodb/call.model';
 
 export class TipService {
     static async createTip(
