@@ -25,6 +25,7 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
+        "@aa-sdk/core": "^4.14.0",
         "@account-kit/infra": "^4.13.0",
         "@account-kit/smart-contracts": "^4.13.0",
         "@alchemy/aa-alchemy": "^3.19.0",
