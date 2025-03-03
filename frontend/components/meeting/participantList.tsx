@@ -13,6 +13,10 @@ import {
     X,
     MoreHorizontal,
     Pin,
+    BadgeDollarSign,
+    Monitor,
+    ScreenShareOff,
+    LogOut,
 } from 'lucide-react';
 import type {
     StreamVideoParticipant,
@@ -39,6 +43,7 @@ import {
     truncateUsername,
     useParticipantConsistentAvatar,
 } from '../../hooks/useParticipantUtils';
+import { useParticipantActions } from '../pod/useParticipantActions';
 
 // Types
 export interface ParticipantsSidebarProps {
@@ -341,7 +346,21 @@ const ParticipantItem = memo<ParticipantItemProps>(
             member.user.image ?? ''
         );
 
+        const {
+            isHost,
+            isLocalUser,
+            canSendAudio,
+            canSendVideo,
+            canScreenShare,
+            toggleAudioPermission,
+            toggleVideoPermission,
+            toggleScreenSharePermission,
+            removeParticipant,
+            requestAudioPermission
+        } = useParticipantActions(participant);
+
         const isCurrentUser = participant.userId === currentUser?.id;
+        const isParticipantHost = participant.roles.includes('host');
 
         // Move the role definition before we use it
         const role = useMemo(() => {
@@ -418,21 +437,69 @@ const ParticipantItem = memo<ParticipantItemProps>(
                                     onClick={() => onTip(member)}
                                     className="flex items-center px-3 py-2 text-sm text-white hover:bg-[#383838] rounded-md cursor-pointer"
                                 >
-                                    <DollarSign className="w-4 h-4 mr-2" />
-                                    Tip {formatName(participant.name || participant.userId)}...
+                                    <BadgeDollarSign className="w-4 h-4 mr-2" />
+                                    Tip {formatName(participant.name || participant.userId)}
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="flex items-center px-3 py-2 text-sm text-white hover:bg-[#383838] rounded-md cursor-pointer">
-                                    <Pin className="w-4 h-4 mr-2" />
-                                    Pin
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="flex items-center px-3 py-2 text-sm text-white hover:bg-[#383838] rounded-md cursor-pointer">
-                                    <MicOff className="w-4 h-4 mr-2" />
-                                    Mute audio
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="flex items-center px-3 py-2 text-sm text-white hover:bg-[#383838] rounded-md cursor-pointer">
-                                    <VideoOff className="w-4 h-4 mr-2" />
-                                    Disable video
-                                </DropdownMenuItem>
+
+                                {/* Host controls for non-host participants */}
+                                {isHost && !isParticipantHost && (
+                                    <>
+                                        <DropdownMenuItem
+                                            onClick={toggleAudioPermission}
+                                            className="flex items-center px-3 py-2 text-sm text-white hover:bg-[#383838] rounded-md cursor-pointer"
+                                        >
+                                            {canSendAudio ? (
+                                                <MicOff className="w-4 h-4 mr-2" />
+                                            ) : (
+                                                <Mic className="w-4 h-4 mr-2" />
+                                            )}
+                                            {canSendAudio ? 'Disable Audio' : 'Enable Audio'}
+                                        </DropdownMenuItem>
+
+                                        <DropdownMenuItem
+                                            onClick={toggleVideoPermission}
+                                            className="flex items-center px-3 py-2 text-sm text-white hover:bg-[#383838] rounded-md cursor-pointer"
+                                        >
+                                            {canSendVideo ? (
+                                                <VideoOff className="w-4 h-4 mr-2" />
+                                            ) : (
+                                                <Video className="w-4 h-4 mr-2" />
+                                            )}
+                                            {canSendVideo ? 'Freeze Video' : 'Grant Camera Access'}
+                                        </DropdownMenuItem>
+
+                                        <DropdownMenuItem
+                                            onClick={toggleScreenSharePermission}
+                                            className="flex items-center px-3 py-2 text-sm text-white hover:bg-[#383838] rounded-md cursor-pointer"
+                                        >
+                                            {canScreenShare ? (
+                                                <ScreenShareOff className="w-4 h-4 mr-2" />
+                                            ) : (
+                                                <Monitor className="w-4 h-4 mr-2" />
+                                            )}
+                                            {canScreenShare ? 'Disable Screensharing' : 'Allow Screensharing'}
+                                        </DropdownMenuItem>
+
+                                        <DropdownMenuItem
+                                            onClick={removeParticipant}
+                                            className="flex items-center px-3 py-2 text-sm text-[#FF3B30] hover:bg-[#383838] rounded-md cursor-pointer"
+                                        >
+                                            <LogOut className="w-4 h-4 mr-2" />
+                                            Kick {formatName(participant.name || participant.userId)}
+                                        </DropdownMenuItem>
+                                    </>
+                                )}
+
+                                {/* User controls for requesting permissions from host */}
+                                {!isHost && isParticipantHost && !canSendAudio && (
+                                    <DropdownMenuItem
+                                        onClick={requestAudioPermission}
+                                        className="flex items-center px-3 py-2 text-sm text-white hover:bg-[#383838] rounded-md cursor-pointer"
+                                    >
+                                        <Mic className="w-4 h-4 mr-2" />
+                                        Request Mic
+                                    </DropdownMenuItem>
+                                )}
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
