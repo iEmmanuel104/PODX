@@ -61,7 +61,13 @@ export default function PodPage() {
     const { setNewMeeting } = React.useContext(AppContext);
     const { isLoggedIn, user } = useTypedSelector(state => state.auth);
     const sessionInfo = useTypedSelector(state => state.pod);
-    const { scheduledSessions, scheduleCall, retrieveCall, isLoading } = useScheduledCalls();
+    const { 
+        scheduledSessions, 
+        scheduleCall, 
+        retrieveCall, 
+        isLoading, 
+        getOrCreateCall 
+    } = useScheduledCalls();
 
     const [state, setState] = useState({
         meetingCode: '',
@@ -84,21 +90,68 @@ export default function PodPage() {
     }, [isLoggedIn, user]);
 
     const handleStreamCall = useCallback(
-        (response: StreamCallData) => {
-            if (response.id && state.meetingCode === response.custom.sessionId) {
+        async (response: StreamCallData) => {
+            // Check if this is a valid session
+            if (!response.id || !response.custom?.sessionId) {
+                console.error('Invalid session data:', response);
+                setState(prev => ({
+                    ...prev,
+                    error: 'Invalid session data. Please try again.',
+                }));
+                return;
+            }
+            try {
+                // For scheduled sessions, we need to create a real Stream call first
+                // Scheduled sessions will have a starts_at time but might not have an actual Stream call created yet
+                // We can detect this by checking the source from retrieveCall endpoint
+                const { data } = await retrieveCall(response.custom.sessionId);
+                if (data?.source === 'scheduled') {
+                    console.log('Creating real Stream call for scheduled session:', response.custom.sessionId);
+                    
+                    // Use one of the allowed Stream call types
+                    // Stream API only allows these call types: "audio_room", "default", "development", "livestream"
+                    // Rather than trying to sanitize a custom type, use a known valid type
+                    const callType = "default"; // Use 'default' as the safe choice
+                    console.log('Using Stream API compatible call type:', callType);
+                    
+                    // Call the API to create a real Stream call
+                    const result = await getOrCreateCall({
+                        callType: callType,
+                        callId: response.custom.sessionId,
+                        members: user?.id ? [{ user_id: user.id }] : [],
+                        settings: {
+                            // Copy relevant settings from the scheduled session
+                        }
+                    });
+                    
+                    // Re-fetch the call to get the Stream call details
+                    const refreshedData = await retrieveCall(response.custom.sessionId);
+                    if (refreshedData?.data?.call) {
+                        // Update response with the fresh data
+                        response = refreshedData.data.call;
+                    }
+                }
+                // Update session info and navigate
                 dispatch(
                     setSessionInfo({
                         title: response.custom.title,
                         type: response.custom.type as sessionType,
-                        sessionId: state.meetingCode,
+                        sessionId: response.custom.sessionId,
                         starts_at: response.starts_at,
                         tokenGate: response.custom.whitelistedUsers ?? undefined,
                     })
                 );
-                router.push(`/pod/join/${state.meetingCode}`);
+                // Navigate to join page
+                router.push(`/pod/join/${response.custom.sessionId}`);
+            } catch (error) {
+                console.error('Error joining session:', error);
+                setState(prev => ({
+                    ...prev,
+                    error: 'Failed to join session. Please try again.',
+                }));
             }
         },
-        [dispatch, router, state.meetingCode]
+        [dispatch, router, retrieveCall, user?.id, getOrCreateCall]
     );
 
     const handleCreateSession = useCallback(
