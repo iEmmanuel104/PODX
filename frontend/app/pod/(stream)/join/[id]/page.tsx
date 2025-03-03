@@ -19,6 +19,7 @@ import { useScheduledCalls } from '@/hooks/useScheduledCalls';
 import { setSessionInfo } from '@/store/pod/slice';
 import { useAppDispatch, useTypedSelector } from '@/store/config/store';
 import { usePrivy } from '@privy-io/react-auth';
+import { UsersRound, Clock } from 'lucide-react';
 
 // Types
 interface JoinSessionProps {
@@ -231,13 +232,13 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                         },
                         settings_override: {
                             limits: {
-                                max_participants: 20,
-                                max_duration_seconds: 3600,
+                                max_participants: 100,
+                                max_duration_seconds: 5400,
                             },
                         },
                         ...(isScheduled && { starts_at }),
                     },
-                    members_limit: 20,
+                    members_limit: 100,
                     ...(sessionType === 'Audio Session' && { video: false }),
                 });
             } else {
@@ -276,9 +277,14 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
             }
         } catch (error) {
             const err = error as ErrorFromResponse<GetCallResponse>;
-            console.error(err.message);
+            console.error('Call initialization error:', {
+                message: err.message,
+                details: err.response?.data,
+                status: err.response?.status,
+                error: err
+            });
             router.push('/pod');
-            toast.error('Error fetching meeting');
+            toast.error(`Error fetching meeting: ${err.message || 'Unknown error'}`);
         } finally {
             setState(prev => ({ ...prev, loading: false }));
         }
@@ -471,6 +477,16 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                                 ({sessionType || 'Video Session'})
                             </span>
                         </p>
+                        <div className="flex items-center justify-center gap-4 mt-2">
+                            <div className="flex items-center text-gray-400 text-sm">
+                                <UsersRound className="w-4 h-4 mr-1" />
+                                <span>Up to 100 participants</span>
+                            </div>
+                            <div className="flex items-center text-gray-400 text-sm">
+                                <Clock className="w-4 h-4 mr-1" />
+                                <span>1.5 hour duration</span>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="w-full max-w-6xl">
