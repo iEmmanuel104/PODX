@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, Suspense } from 'react';
+import { useCallback, useEffect, Suspense, useMemo } from 'react';
 import localFont from 'next/font/local';
 import dynamic from 'next/dynamic';
 import Logo from '@/public/images/icons/Logo';
@@ -9,6 +9,7 @@ import { storage } from '@/utils/storage';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { useRouter } from 'next/navigation';
 import { LoadingOverlay } from '@/components/ui/loading';
+import { CachId } from '@/constants';
 
 // Cache keys
 const CACHE_KEYS = {
@@ -60,77 +61,97 @@ export default function LandingPage() {
     const { connect, ready } = useAuth();
     const router = useRouter();
 
+    // const pendingSessionCode = localStorage.getItem('pendingSessionCode');
     // Check for pending session code in both localStorage and cookies
-    useEffect(() => {
-        // Get pendingSessionCode from both localStorage and cookies
-        const storedSessionCode = localStorage.getItem('pendingSessionCode');
+    const pendingSessionCode = useMemo(() => {
+        const storedSessionCode = localStorage.getItem(CachId);
         const cookieSessionCode = document.cookie
             .split('; ')
-            .find(row => row.startsWith('pendingSessionCode='))
+            .find(row => row.startsWith(`${CachId}=`))
             ?.split('=')[1];
-        
-        // Use either source for the session code
-        const pendingSessionCode = storedSessionCode || cookieSessionCode;
-        
-        if (pendingSessionCode) {
-            // Store it in localStorage for the auth provider to find
-            localStorage.setItem('pendingSessionCode', pendingSessionCode);
-            
-            // Clear the cookie since we've moved it to localStorage
-            if (cookieSessionCode) {
-                document.cookie = 'pendingSessionCode=; path=/; max-age=0';
-            }
-            
-            console.log('Stored pending session code for redirect after login:', pendingSessionCode);
+        const sessionCode = storedSessionCode || cookieSessionCode;
+
+        if (sessionCode) {
+            localStorage.setItem(CachId, sessionCode);
         }
+
+        // Clear the cookie since we've moved it to localStorage
+        if (cookieSessionCode) {
+            document.cookie = `${CachId}=; path=/; max-age=0`;
+        }
+
+        console.debug('Stored pending session code for redirect after login:', sessionCode);
+
+        return sessionCode;
     }, []);
 
     // Cache auth state
+    const handleConnect = useCallback(async () => {
+        try {
+            await connect();
+            // Cache successful connection
+            storage.set(CACHE_KEYS.AUTH_STATE, { connected: true, timestamp: Date.now() });
+
+            // Check if there's a pending session to redirect to
+            // const pendingSessionCode = localStorage.getItem('pendingSessionCode');
+            // console.debug('Found session code:', pendingSessionCode);
+
+            // if (pendingSessionCode) {
+            //     console.debug('Redirecting to session after login:', pendingSessionCode);
+
+            //     // clearStoredValue();
+
+            //     // Short delay to ensure auth state is fully processed
+            //     setTimeout(() => {
+            //         router.replace(`/pod/join/${pendingSessionCode}`);
+            //     }, 1000);
+            //     return;
+            // }
+
+            // If no pending session, redirect to pod page
+            // router.replace('/pod');
+            console.debug("Should move to POD page");
+        } catch (error) {
+            console.error('Error connecting wallet:', error);
+        }
+    }, [connect]);
+
+
     useEffect(() => {
         if (ready) {
             storage.set(CACHE_KEYS.AUTH_STATE, { ready, timestamp: Date.now() });
         }
     }, [ready]);
 
-    const handleConnect = useCallback(async () => {
-        try {
-            await connect();
-            // Cache successful connection
-            storage.set(CACHE_KEYS.AUTH_STATE, { connected: true, timestamp: Date.now() });
-            
-            // Check if there's a pending session to redirect to
-            const pendingSessionCode = localStorage.getItem('pendingSessionCode');
-            if (pendingSessionCode) {
-                console.log('Redirecting to session after login:', pendingSessionCode);
-                
-                // Clear the pending session code
-                localStorage.removeItem('pendingSessionCode');
-                
-                // Clear the cookie too
-                document.cookie = 'pendingSessionCode=; path=/; max-age=0';
-                
-                // Short delay to ensure auth state is fully processed
-                setTimeout(() => {
-                    router.replace(`/pod/join/${pendingSessionCode}`);
-                }, 1000);
-                return;
-            }
-            
-            // If no pending session, redirect to pod page
-            router.replace('/pod');
-            
-        } catch (error) {
-            console.error('Error connecting wallet:', error);
-        }
-    }, [connect, router]);
 
     useEffect(() => {
-        // If we somehow end up here, redirect immediately
-        if (!storage.get(CACHE_KEYS.REDIRECT)) {
-            storage.set(CACHE_KEYS.REDIRECT, true, 3600);
-            router.replace('/pod');
+
+        async function attemptLogin() {
+            const shouldAutoLogin = new URL(window.location.href).searchParams.get('ou');
+            // Attempt auto login
+            if (!Boolean(shouldAutoLogin)) {
+                console.debug("Not attempting auto login!: reason =", shouldAutoLogin);
+                return;
+            };
+    
+            if (Boolean(pendingSessionCode)) {
+                console.debug('Attempt Auto Login');
+                // handleConnect();
+                await connect();
+                console.debug('Attempted Auto Login', pendingSessionCode);
+                return;
+            }
         }
-    }, [router]);
+
+
+        attemptLogin();
+
+        // If we somehow end up here, redirect immediately
+        // if (!storage.get(CACHE_KEYS.REDIRECT)) {
+        //     storage.set(CACHE_KEYS.REDIRECT, true, 3600);
+        //     router.replace('/pod');
+        // }
+    }, []);
 
     if (!ready) return <LoadingOverlay text="Redirecting..." />;
 

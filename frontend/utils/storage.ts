@@ -37,3 +37,13 @@ export const storage = {
         sessionStorage.removeItem(key);
     },
 };
+
+
+
+export function clearStoredValue(key: string) {
+    // Clear the pending session code
+    localStorage.removeItem(key);
+
+    // Clear the cookie too
+    document.cookie = `${key}=; path=/; max-age=0`;
+}

@@ -64,7 +64,7 @@ export default function PodPage() {
     const { isLoggedIn, user } = useTypedSelector(state => state.auth);
     const sessionInfo = useTypedSelector(state => state.pod);
     const { scheduledSessions, scheduleCall, retrieveCall, deleteCall, isLoading } = useScheduledCalls();
-
+    const currentUrl = window.location.origin || 'https://www.podx.fun';
     const [state, setState] = useState({
         meetingCode: '',
         error: '',
@@ -231,7 +231,7 @@ export default function PodPage() {
 
                     setState(prev => ({
                         ...prev,
-                        inviteLink: `https://www.podx.fun/pod/join/${newSessionCode}`,
+                        inviteLink: `${currentUrl}/pod/join/${newSessionCode}`,
                         sessionCode: newSessionCode,
                         isCreateModalOpen: false,
                         isCreatedModalOpen: true,
@@ -252,7 +252,7 @@ export default function PodPage() {
 
             setState(prev => ({
                 ...prev,
-                inviteLink: `https://www.podx.fun/pod/join/${newSessionCode}`,
+                inviteLink: `${currentUrl}/pod/join/${newSessionCode}`,
                 sessionCode: newSessionCode,
                 isCreateModalOpen: false,
                 isCreatedModalOpen: true,

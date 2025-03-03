@@ -55,6 +55,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     // Handle redirection
     const redirectToPod = useCallback(async () => {
         const pendingSessionCode = localStorage.getItem('pendingSessionCode');
+        console.debug("Redirect To Prod!", pendingSessionCode);
         const targetPath = pendingSessionCode ? `/pod/join/${pendingSessionCode}` : '/pod';
 
         if (pathname !== targetPath) {

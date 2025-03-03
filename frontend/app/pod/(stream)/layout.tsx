@@ -132,7 +132,8 @@ const StreamLayout = memo(({ children }: { children: ReactNode }) => {
             storage.set(CACHE_KEYS.MEETING.ID(id as string), isValid, 7200); // 2h cache
 
             if (!isValid) {
-                router.replace('/pod');
+                console.debug("Intercepted direct to /pod!");
+                // router.replace('/pod');
             }
         };
 
@@ -140,7 +141,7 @@ const StreamLayout = memo(({ children }: { children: ReactNode }) => {
     }, [id, router]);
 
     // Early returns
-    if (!isLoggedIn) return null;
+    // if (!isLoggedIn) return null;
     if (!isValidId) return <LoadingOverlay text="Validating session..." />;
 
     return (

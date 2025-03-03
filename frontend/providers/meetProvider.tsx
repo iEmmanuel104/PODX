@@ -10,6 +10,10 @@ import type { Call, StreamVideoClient } from '@stream-io/video-react-sdk';
 import { ErrorBoundary } from '@/components/pod/errorBoundary';
 import { StreamConnectionPool } from './streamConnectionPool';
 import { useTypedSelector } from '@/store/config/store';
+import toast from 'react-hot-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { storage } from '@/utils/storage';
+
 const DynamicStreamVideo = dynamic(
     () => import('@stream-io/video-react-sdk').then(mod => mod.StreamVideo),
     { ssr: false }
@@ -30,18 +34,33 @@ type StreamMeetProviderProps = {
     language: string;
 };
 
+
+const CACHE_KEYS = {
+    AUTH_STATE: 'auth_state',
+    COMPONENTS_LOADED: 'components_loaded',
+    UI: {
+        COMPONENTS: 'ui_components',
+    },
+    REDIRECT: 'main_redirect_state',
+};
+
 const connectionPool = new StreamConnectionPool();
 
 export const StreamMeetProvider = memo<StreamMeetProviderProps>(
-    ({ meetingId, children, language }) => {
+    ({ meetingId, children, language}) => {
+        // const { connect, ready } = useAuth();
         const { auth, pod } = useTypedSelector(state => state);
         const { user, isLoggedIn } = auth;
         const { streamCallType } = pod;
+
         const [loading, setLoading] = useState(true);
         const [isMounted, setIsMounted] = useState(false);
+        const [shouldAuthenticate, setShouldAuthenticate] = useState(false);
+
         const chatClientRef = useRef<StreamChat>();
         const videoClientRef = useRef<StreamVideoClient>();
         const callRef = useRef<Call>();
+
         const tokenProvider = useStreamTokenProvider();
         const router = useRouter();
 
@@ -99,6 +118,75 @@ export const StreamMeetProvider = memo<StreamMeetProviderProps>(
             [user, meetingId, streamCallType]
         );
 
+        // const handleConnect = useCallback(async () => {
+        //     try {
+        //         await connect();
+        //         // Cache successful connection
+        //         storage.set(CACHE_KEYS.AUTH_STATE, { connected: true, timestamp: Date.now() });
+
+        //         // Check if there's a pending session to redirect to
+        //         // const pendingSessionCode = localStorage.getItem('pendingSessionCode');
+        //         // if (pendingSessionCode) {
+        //         //     console.log('Redirecting to session after login:', pendingSessionCode);
+
+        //         //     // Clear the pending session code
+        //         //     localStorage.removeItem('pendingSessionCode');
+
+        //         //     // Clear the cookie too
+        //         //     document.cookie = 'pendingSessionCode=; path=/; max-age=0';
+
+        //         //     // Short delay to ensure auth state is fully processed
+        //         //     setTimeout(() => {
+        //         //         router.replace(`/pod/join/${pendingSessionCode}`);
+        //         //     }, 1000);
+        //         //     return;
+        //         // }
+
+        //         // If no pending session, redirect to pod page
+        //         // router.replace('/pod');
+        //         router.refresh();
+        //     } catch (error) {
+        //         const msg = 'Error connecting wallet:'
+        //         console.error(msg, error);
+        //         toast.error(msg, {
+        //             duration: 5000,
+        //         });
+        //     }
+        // }, [connect, router]);
+
+        const podId = (()=>{
+            const path = window.location.pathname;
+
+            // .pathname.split('/pod/join/')[1]
+
+            if (path.startsWith('/pod/join/')) {
+                return path.split('/pod/join/')[1];
+            }
+
+            return undefined;
+        })()
+
+        useEffect(() => {
+            async function attemptAuthentication() {
+                if (!shouldAuthenticate) return;
+
+                if (isLoggedIn && user) return;
+
+                console.debug('Attempt Authentication!', podId);
+
+                if (podId) {
+                    localStorage.setItem('pendingSessionCode', podId);
+                    document.cookie = `pendingSessionCode=${podId}; path=/; max-age=3600`;
+                    router.replace('/?ou=1');
+                }else {
+                    console.debug("No Meeting Id!");
+                }
+                // await handleConnect();
+            }
+
+            attemptAuthentication();
+        }, [shouldAuthenticate, isLoggedIn, user, podId, router]);
+
         useEffect(() => {
             if (!isMounted) return;
 
@@ -116,7 +204,14 @@ export const StreamMeetProvider = memo<StreamMeetProviderProps>(
                     if (meetingId) {
                         localStorage.setItem('pendingSessionCode', meetingId);
                     }
-                    router.push('/');
+                    // router.push('/');
+
+                    // Initiate 
+                    toast.error('Please login to join this session', {
+                        duration: 5000,
+                    });
+
+                    setShouldAuthenticate(true);
                 }
             };
 

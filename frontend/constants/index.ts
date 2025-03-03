@@ -47,3 +47,6 @@ export const clashGrotesk = localFont({
         },
     ],
 });
+
+
+export const CachId = 'pendingSessionCode';
