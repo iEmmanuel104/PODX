@@ -36,6 +36,7 @@ import {
     useDebounceSpeak,
     useParticipantAvatar,
     truncateUsername,
+    useParticipantConsistentAvatar,
 } from '../../hooks/useParticipantUtils';
 
 const avatars = [
@@ -220,6 +221,11 @@ const SpeakerLayout = memo(() => {
             const debouncedSpeaking = useDebounceSpeak(isSpeaking);
             const [displayName, setDisplayName] = useState(participant.name || participant.userId);
             const isMobile = useIsMobile();
+            const { avatarUrl, getFallbackAvatar } = useParticipantConsistentAvatar(
+                participant.userId,
+                participant.name || participant.userId,
+                participant.image
+            );
 
             // Show all elements for first tile on mobile or all tiles on desktop
             const shouldShowAllElements = !isMobile || index === 0;
@@ -248,6 +254,23 @@ const SpeakerLayout = memo(() => {
                 updateDisplayName();
             }, [participant.name, participant.userId, isMobile]);
 
+            // Custom video placeholder that shows the avatar
+            const VideoPlaceholder = () => (
+                <div className="flex items-center justify-center w-full h-full bg-[#2A2A2A]">
+                    <Image
+                        src={avatarUrl || getFallbackAvatar()}
+                        width={80}
+                        height={80}
+                        alt="Participant avatar"
+                        className="rounded-full"
+                        priority
+                        onError={e => {
+                            e.currentTarget.src = getFallbackAvatar();
+                        }}
+                    />
+                </div>
+            );
+
             return (
                 <div
                     className={clsx(
@@ -257,6 +280,13 @@ const SpeakerLayout = memo(() => {
                     )}
                     style={style}
                 >
+                    {/* Participant Video or Avatar */}
+                    <ParticipantView
+                        participant={participant}
+                        VideoPlaceholder={VideoPlaceholder}
+                        className="w-full h-full"
+                    />
+
                     {/* Status indicator */}
                     {(shouldShowAllElements || shouldShowMinimalElements) && (
                         <div className="absolute left-[14px] top-[13px] flex items-center p-[6px] bg-[rgba(75,75,75,0.5)] backdrop-blur-[5.7px] rounded-[1000px] z-10">

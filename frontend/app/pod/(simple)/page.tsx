@@ -63,7 +63,13 @@ export default function PodPage() {
     const { setNewMeeting } = React.useContext(AppContext);
     const { isLoggedIn, user } = useTypedSelector(state => state.auth);
     const sessionInfo = useTypedSelector(state => state.pod);
-    const { scheduledSessions, scheduleCall, retrieveCall, deleteCall, isLoading } = useScheduledCalls();
+    const { 
+        scheduledSessions, 
+        scheduleCall, 
+        retrieveCall, 
+        isLoading, 
+        getOrCreateCall 
+    } = useScheduledCalls();
     const currentUrl = window.location.origin || 'https://www.podx.fun';
     const [state, setState] = useState({
         meetingCode: '',
@@ -94,66 +100,69 @@ export default function PodPage() {
     }, [isLoggedIn, user]);
 
     const handleStreamCall = useCallback(
-        (response: StreamCallData) => {
-            // For scheduled sessions from the list, we need to ensure we're using the correct ID
-            // The sessionId from custom data is what we need for joining scheduled sessions
-            const sessionId = response.custom?.sessionId || response.id;
-            
-            console.log('Joining session with ID:', sessionId);
-            console.log('Session data:', response);
-            
-            dispatch(
-                setSessionInfo({
-                    title: response.custom.title,
-                    type: response.custom.type as sessionType,
-                    sessionId: sessionId,
-                    starts_at: response.starts_at,
-                    tokenGate: response.custom.whitelistedUsers ?? undefined,
-                    isScheduled: !!response.starts_at
-                })
-            );
-            
-            // Set new meeting to false since we're joining an existing session
-            setNewMeeting(false);
-            router.push(`/pod/join/${sessionId}`);
-        },
-        [dispatch, router, setNewMeeting]
-    );
-
-    const handleDeleteSession = useCallback(async (session: StreamCallData) => {
-        if (!session.id) {
-            setState(prev => ({
-                ...prev,
-                error: 'Cannot delete this session. Invalid session ID.',
-            }));
-            return;
-        }
-
-        try {
-            const result = await deleteCall(session.id);
-
-            if (result.success) {
+        async (response: StreamCallData) => {
+            // Check if this is a valid session
+            if (!response.id || !response.custom?.sessionId) {
+                console.error('Invalid session data:', response);
                 setState(prev => ({
                     ...prev,
-                    error: '',
+                    error: 'Invalid session data. Please try again.',
                 }));
-
-                // Refresh the sessions list after deletion
-                dispatch(scheduledCallsApiSlice.endpoints.listUserScheduledCalls.initiate(undefined, { forceRefetch: true }));
-            } else {
+                return;
+            }
+            try {
+                // For scheduled sessions, we need to create a real Stream call first
+                // Scheduled sessions will have a starts_at time but might not have an actual Stream call created yet
+                // We can detect this by checking the source from retrieveCall endpoint
+                const { data } = await retrieveCall(response.custom.sessionId);
+                if (data?.source === 'scheduled') {
+                    console.log('Creating real Stream call for scheduled session:', response.custom.sessionId);
+                    
+                    // Use one of the allowed Stream call types
+                    // Stream API only allows these call types: "audio_room", "default", "development", "livestream"
+                    // Rather than trying to sanitize a custom type, use a known valid type
+                    const callType = "default"; // Use 'default' as the safe choice
+                    console.log('Using Stream API compatible call type:', callType);
+                    
+                    // Call the API to create a real Stream call
+                    const result = await getOrCreateCall({
+                        callType: callType,
+                        callId: response.custom.sessionId,
+                        members: user?.id ? [{ user_id: user.id }] : [],
+                        settings: {
+                            // Copy relevant settings from the scheduled session
+                        }
+                    });
+                    
+                    // Re-fetch the call to get the Stream call details
+                    const refreshedData = await retrieveCall(response.custom.sessionId);
+                    if (refreshedData?.data?.call) {
+                        // Update response with the fresh data
+                        response = refreshedData.data.call;
+                    }
+                }
+                // Update session info and navigate
+                dispatch(
+                    setSessionInfo({
+                        title: response.custom.title,
+                        type: response.custom.type as sessionType,
+                        sessionId: response.custom.sessionId,
+                        starts_at: response.starts_at,
+                        tokenGate: response.custom.whitelistedUsers ?? undefined,
+                    })
+                );
+                // Navigate to join page
+                router.push(`/pod/join/${response.custom.sessionId}`);
+            } catch (error) {
+                console.error('Error joining session:', error);
                 setState(prev => ({
                     ...prev,
-                    error: result.message || 'Failed to cancel session',
+                    error: 'Failed to join session. Please try again.',
                 }));
             }
-        } catch (error) {
-            console.error('Delete session error:', error);
-            setState(prev => ({
-                ...prev,
-                error: error instanceof Error ? error.message : 'Failed to cancel session',
-            }));
-        }
-    }, [deleteCall, dispatch]);
+        },
+        [dispatch, router, retrieveCall, user?.id, getOrCreateCall]
+    );
 
     const handleCreateSession = useCallback(
         async (title: string, type: sessionType, scheduledDate?: Date, tokenGate?: string[]) => {
@@ -440,11 +449,11 @@ export default function PodPage() {
                 {/* Scheduled sessions */}
                 <div className="w-full mb-8 sm:mb-12" id="scheduled-sessions-list">
                     {(() => {
-                        console.log("[PodPage] Rendering ScheduledPods component with:", {
+                        console.log('[PodPage] Rendering ScheduledPods component with:', {
                             scheduledSessions,
                             foundSession: state.foundSession,
                             isLoading,
-                            scheduledSessionsCount: scheduledSessions?.length
+                            scheduledSessionsCount: scheduledSessions?.length,
                         });
                         return null;
                     })()}
@@ -454,7 +463,7 @@ export default function PodPage() {
                         onJoinSession={session => {
                             handleStreamCall(session);
                         }}
-                        onDeleteSession={handleDeleteSession}
+                        onDeleteSession={()=>{}}
                         currentUserId={user?.id}
                         isLoading={isLoading}
                         onClearFoundSession={handleClearFoundSession}

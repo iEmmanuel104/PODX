@@ -15,6 +15,14 @@ export interface GetUserScheduledCallsResponse {
     calls: StreamCallData[];
 }
 
+// Interface for get-or-create call arguments
+export interface GetOrCreateCallArgs {
+    callType: string;
+    callId: string;
+    members?: Array<{ user_id: string }>;
+    settings?: any;
+}
+
 export const scheduledCallsApiSlice = api.injectEndpoints({
     endpoints: builder => ({
         scheduleCall: builder.mutation<ApiResponse<StreamCallData>, ScheduleCallArgs>({
@@ -25,14 +33,23 @@ export const scheduledCallsApiSlice = api.injectEndpoints({
             }),
             invalidatesTags: [createTag('ScheduledCalls')],
         }),
-        deleteScheduledCall: builder.mutation<ApiResponse<any>, { callId: string }>({
-            query: payload => ({
-                body: payload,
-                method: 'POST',
-                url: CALLS_ENDPOINTS.endCall(),
+
+        deleteScheduledCall: builder.mutation<ApiResponse<{status: string; message: string}>, string>({
+            query: sessionId => ({
+                method: 'DELETE',
+                url: CALLS_ENDPOINTS.deleteScheduledCall(sessionId),
             }),
             invalidatesTags: [createTag('ScheduledCalls')],
         }),
+
+        getOrCreateCall: builder.mutation<ApiResponse<{ call: StreamCallData }>, GetOrCreateCallArgs>({
+            query: payload => ({
+                body: payload,
+                method: 'POST',
+                url: CALLS_ENDPOINTS.getOrCreateCall(),
+            }),
+        }),
+
         retrieveCall: builder.query<ApiResponse<GetCallResponse | null>, string>({
             query: sessionId => ({
                 method: 'GET',
@@ -61,5 +78,6 @@ export const {
     useRetrieveCallQuery,
     useListUserScheduledCallsQuery,
     useScheduleCallMutation,
-    useDeleteScheduledCallMutation
+    useDeleteScheduledCallMutation,
+    useGetOrCreateCallMutation,
 } = scheduledCallsApiSlice;

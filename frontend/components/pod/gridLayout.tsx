@@ -62,25 +62,12 @@ const ParticipantTile = memo((
         const isActuallySpeaking = useDebounceSpeak(isSpeaking || false);
         const isMobile = useIsMobile();
         const [displayName, setDisplayName] = useState(name);
-        const { isApplauding, handleApplaud } = useApplaud(participant.sessionId); // Add this line
+        const { isApplauding, handleApplaud } = useApplaud(participant.sessionId);
         const { avatarUrl, getFallbackAvatar } = useParticipantConsistentAvatar(
             userId,
             name,
             participant.image
         );
-
-        // Your custom avatar implementation
-        <Image
-            src={avatarUrl || getFallbackAvatar()}
-            width={48}
-            height={48}
-            alt="Participant avatar"
-            className="rounded-full"
-            priority
-            onError={e => {
-                e.currentTarget.src = getFallbackAvatar();
-            }}
-        />;
 
         useEffect(() => {
             const updateDisplayName = async () => {
@@ -96,6 +83,23 @@ const ParticipantTile = memo((
         //    - Total participants <= 4 OR
         //    - This is one of the first 3 tiles when there are more than 4 participants
         const shouldShowName = !isMobile || totalParticipants <= 4 || index < 3;
+
+        // Custom video placeholder that shows the avatar
+        const VideoPlaceholder = () => (
+            <div className="flex items-center justify-center w-full h-full bg-[#2A2A2A]">
+                <Image
+                    src={avatarUrl || getFallbackAvatar()}
+                    width={80}
+                    height={80}
+                    alt="Participant avatar"
+                    className="rounded-full"
+                    priority
+                    onError={e => {
+                        e.currentTarget.src = getFallbackAvatar();
+                    }}
+                />
+            </div>
+        );
 
         // Remove the applaud button and related code from CustomParticipantUI
         const CustomParticipantUI = () => {
@@ -132,6 +136,7 @@ const ParticipantTile = memo((
                     {isScreenSharing ? (
                         <button
                             onClick={onStopScreenShare}
+                            aria-label="Stop screen sharing"
                             className="absolute right-[14px] top-[13px] bg-[rgba(75,75,75,0.5)] backdrop-blur-[5.7px] rounded-full p-2 cursor-pointer z-20 hover:bg-[rgba(95,95,95,0.5)] transition-colors"
                         >
                             <ScreenShareOff className="h-5 w-5 text-white" />
@@ -140,7 +145,10 @@ const ParticipantTile = memo((
                         <ParticipantMenuDropdown
                             participant={participant}
                             trigger={
-                                <button className="absolute right-[14px] top-[13px] bg-transparent border-none cursor-pointer p-1 z-10">
+                                <button 
+                                    className="absolute right-[14px] top-[13px] bg-transparent border-none cursor-pointer p-1 z-10"
+                                    aria-label="More options"
+                                >
                                     <MoreHorizontal className="h-5 w-5 text-white/80" />
                                 </button>
                             }

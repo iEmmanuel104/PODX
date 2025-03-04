@@ -195,20 +195,37 @@ export default class CallsController {
     static async getUserScheduledCalls(req: AuthenticatedRequest, res: Response) {
         const userScheduledCallsKey = `user_scheduled_calls:${req.user.id}`;
         const sessionIds = await redisClient.smembers(userScheduledCallsKey);
+        console.log(`Found ${sessionIds.length} scheduled call IDs for user ${req.user.id}`);
 
         const calls = [];
+        const missingSessionIds = [];
+
         for (const sessionId of sessionIds) {
             const callKey = `scheduled_call:${sessionId}`;
             const callData = await redisClient.get(callKey);
 
             if (callData) {
                 calls.push(JSON.parse(callData));
+            } else {
+                console.log(`Session ${sessionId} referenced in user's list but not found in Redis`);
+                missingSessionIds.push(sessionId);
+            }
+        }
+
+        // Clean up missing sessions from user's list
+        if (missingSessionIds.length > 0) {
+            console.log(`Cleaning up ${missingSessionIds.length} missing sessions from user ${req.user.id}'s list`);
+            for (const sessionId of missingSessionIds) {
+                await redisClient.srem(userScheduledCallsKey, sessionId);
+                await redisClient.srem('all_scheduled_sessions', sessionId);
+                console.log(`Removed missing session ${sessionId} from user's list`);
             }
         }
 
         // Sort calls by start time
         calls.sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
 
+        console.log(`Returning ${calls.length} valid scheduled calls for user ${req.user.id}`);
         res.status(200).json({
             status: 'success',
             message: 'User scheduled calls retrieved successfully',
@@ -615,6 +632,84 @@ export default class CallsController {
             }
             console.error('Error querying call members:', error);
             throw new BadRequestError('Failed to query call members');
+        }
+    }
+
+    static async deleteScheduledCall(req: AuthenticatedRequest, res: Response) {
+        const { sessionId } = req.params;
+        console.log(`Attempting to delete session ${sessionId} by user ${req.user.id}`);
+
+        try {
+            // Get the call data
+            const callKey = `scheduled_call:${sessionId}`;
+            const callData = await redisClient.get(callKey);
+
+            if (!callData) {
+                console.log(`Session ${sessionId} not found in Redis`);
+
+                // Check if the session ID exists in user's scheduled calls
+                const userScheduledCallsKey = `user_scheduled_calls:${req.user.id}`;
+                const isInUserList = await redisClient.sismember(userScheduledCallsKey, sessionId);
+
+                if (isInUserList) {
+                    console.log(`Session ID ${sessionId} found in user's list but not in Redis, cleaning up...`);
+                    // Clean up the reference if it exists in the user's list
+                    await redisClient.srem(userScheduledCallsKey, sessionId);
+                    await redisClient.srem('all_scheduled_sessions', sessionId);
+
+                    res.status(200).json({
+                        status: 'success',
+                        message: 'Session reference cleaned up successfully',
+                    });
+                    return;
+                }
+
+                // Session not found anywhere
+                res.status(404).json({
+                    status: 'error',
+                    message: 'Scheduled call not found',
+                    code: 'SESSION_NOT_FOUND'
+                });
+                return;
+            }
+
+            const parsedCallData = JSON.parse(callData);
+            console.log(`Found session ${sessionId}, created by ${parsedCallData.created_by.id}`);
+
+            // Check if the current user is the creator
+            if (parsedCallData.created_by.id !== req.user.id) {
+                console.log(`Unauthorized deletion attempt: user ${req.user.id} is not the creator ${parsedCallData.created_by.id}`);
+                res.status(403).json({
+                    status: 'error',
+                    message: 'You are not authorized to delete this scheduled call',
+                });
+                return;
+            }
+
+            // Delete the call
+            console.log(`Deleting session ${sessionId} from Redis...`);
+
+            const delResult = await redisClient.del(callKey);
+            console.log(`Redis DEL result for ${callKey}: ${delResult}`);
+
+            const sremResult1 = await redisClient.srem('all_scheduled_sessions', sessionId);
+            console.log(`Redis SREM result for all_scheduled_sessions: ${sremResult1}`);
+
+            const sremResult2 = await redisClient.srem(`user_scheduled_calls:${req.user.id}`, sessionId);
+            console.log(`Redis SREM result for user_scheduled_calls:${req.user.id}: ${sremResult2}`);
+
+            console.log(`Successfully deleted session ${sessionId}`);
+            res.status(200).json({
+                status: 'success',
+                message: 'Scheduled call deleted successfully',
+            });
+        } catch (error) {
+            console.error(`Error deleting session ${sessionId}:`, error);
+            res.status(500).json({
+                status: 'error',
+                message: 'Failed to delete scheduled call',
+                error: error instanceof Error ? error.message : String(error),
+            });
         }
     }
 }

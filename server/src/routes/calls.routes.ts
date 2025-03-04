@@ -9,6 +9,7 @@ router
     .post('/schedule', basicAuth(), AuthenticatedController(CallsController.scheduleCall))
     .get('/scheduled', basicAuth(), AuthenticatedController(CallsController.getUserScheduledCalls))
     .get('/info/:sessionId', basicAuth(), AuthenticatedController(CallsController.getCall))
+    .delete('/scheduled/:sessionId', basicAuth(), AuthenticatedController(CallsController.deleteScheduledCall))
 
 // Stream call management routes
 
