@@ -19,7 +19,7 @@ import { useScheduledCalls } from '@/hooks/useScheduledCalls';
 import { setSessionInfo } from '@/store/pod/slice';
 import { useAppDispatch, useTypedSelector } from '@/store/config/store';
 import { usePrivy } from '@privy-io/react-auth';
-import { sessionType } from '@/constants';
+import { CachId, sessionType } from '@/constants';
 import { useNavigate } from '@/hooks/useNavigate';
 
 // Types
@@ -147,7 +147,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
         // Immediate check on component mount
         if (!isLoggedIn || !authenticated) {
             // Save the session code for after login in both localStorage and cookie
-            localStorage.setItem('pendingSessionCode', code);
+            localStorage.setItem(CachId, code);
 
             // Also store in a cookie for more reliable persistence
             document.cookie = `pendingSessionCode=${code}; path=/; max-age=3600`;
@@ -172,7 +172,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
         if (ready && !authChecked.current) {
             if (!authenticated || !isLoggedIn) {
                 // Save the session code for after login in both localStorage and cookie
-                localStorage.setItem('pendingSessionCode', code);
+                localStorage.setItem(CachId, code);
 
                 // Also store in a cookie for more reliable persistence
                 document.cookie = `pendingSessionCode=${code}; path=/; max-age=3600`;

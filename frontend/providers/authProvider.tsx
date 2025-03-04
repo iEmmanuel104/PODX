@@ -81,7 +81,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
     // Handle redirection
     const redirectToPod = useCallback(async () => {
-        // const pendingSessionCode = localStorage.getItem('pendingSessionCode');
+        // const pendingSessionCode = localStorage.getItem(CachId);
 
         console.debug('Redirect To Prod!', pendingSessionCode);
         const targetPath = pendingSessionCode ? `/pod/join/${pendingSessionCode}` : '/pod';
@@ -91,7 +91,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
             // router.replace(targetPath);
             if (pendingSessionCode) {
                 toast.success(`Proceeding to meeting: ${pendingSessionCode}`);
-                localStorage.removeItem('pendingSessionCode');
+                localStorage.removeItem(CachId);
             }
             navigate(targetPath, { replace: true });
         }

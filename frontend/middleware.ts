@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { CachId } from './constants';
 
 export function middleware(request: NextRequest) {
     const response = NextResponse.next();
@@ -30,7 +31,7 @@ export function middleware(request: NextRequest) {
             
             // Store the session ID to redirect back after authentication
             if (sessionId) {
-                redirectResponse.cookies.set('pendingSessionCode', sessionId, {
+                redirectResponse.cookies.set(CachId, sessionId, {
                     path: '/',
                     maxAge: 3600 // 1 hour
                 });

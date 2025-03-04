@@ -129,7 +129,7 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
         if (ready && !authChecked.current) {
             if (!authenticated || !isLoggedIn) {
                 // Save the session code for after login
-                localStorage.setItem('pendingSessionCode', id);
+                localStorage.setItem(CachId, id);
                 // Redirect to home page
                 // router.replace('/');
                 navigate('/');

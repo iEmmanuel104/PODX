@@ -4,6 +4,7 @@ import { usePrivy } from '@privy-io/react-auth';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch } from '@/store/config/store';
 import { logOut } from '@/store/auth/slice';
+import { CachId } from '@/constants';
 
 export const useAuth = () => {
     const { login: privyLogin, logout: privyLogout, ready, authenticated } = usePrivy();
@@ -22,7 +23,7 @@ export const useAuth = () => {
     const logout = useCallback(async () => {
         try {
             // Clear local storage
-            localStorage.removeItem('pendingSessionCode');
+            localStorage.removeItem(CachId);
 
             // Clear Redux state
             dispatch(logOut());
