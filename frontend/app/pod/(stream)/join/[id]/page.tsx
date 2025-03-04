@@ -20,6 +20,7 @@ import { setSessionInfo } from '@/store/pod/slice';
 import { useAppDispatch, useTypedSelector } from '@/store/config/store';
 import { usePrivy } from '@privy-io/react-auth';
 import { sessionType } from '@/constants';
+import { useNavigate } from '@/hooks/useNavigate';
 
 // Types
 interface JoinSessionProps {
@@ -131,7 +132,8 @@ let initializeCallImpl: any = null;
 
 // Main Component
 const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
-    const router = useRouter();
+    // const router = useRouter();
+    const navigate = useNavigate();
     const code = params.id;
     const dispatch = useAppDispatch();
     const { retrieveCall } = useScheduledCalls();
@@ -151,7 +153,8 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
             document.cookie = `pendingSessionCode=${code}; path=/; max-age=3600`;
 
             // Redirect to home page
-            router.replace('/');
+            // router.replace('/');
+            navigate("/");
 
             // Show informative message
             toast.error('Please login to join this session', {
@@ -162,7 +165,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
 
         // Set the flag so we don't redirect after authentication
         authChecked.current = true;
-    }, [authenticated, isLoggedIn, code, router]);
+    }, [authenticated, isLoggedIn, code, navigate]);
 
     // Second check that waits for Privy to be ready
     useEffect(() => {
@@ -175,19 +178,20 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                 document.cookie = `pendingSessionCode=${code}; path=/; max-age=3600`;
 
                 // Redirect to home page
-                router.replace('/');
+                // router.replace('/');
+                navigate('/');
 
                 // Show informative message
                 toast.error('Please login to join this session', {
                     duration: 5000,
                 });
-                console.log('Redirecting from JoinSession - user not authenticated', { authenticated, isLoggedIn });
+                console.debug('Redirecting from JoinSession - user not authenticated', { authenticated, isLoggedIn });
                 return;
             }
             // Mark as checked if authenticated
             authChecked.current = true;
         }
-    }, [ready, authenticated, isLoggedIn, code, router]);
+    }, [ready, authenticated, isLoggedIn, code, navigate]);
 
     // State
     const [state, setState] = useState<JoinSessionState>({
@@ -222,10 +226,10 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
             }
 
             const isScheduledCall = isScheduled || (state.scheduledMeetData !== null);
-            console.log('Initializing call with newMeeting:', newMeeting, 'isScheduled:', isScheduledCall, 'code:', code);
+            console.debug('Initializing call with newMeeting:', newMeeting, 'isScheduled:', isScheduledCall, 'code:', code);
 
             if (newMeeting) {
-                console.log('Creating new call with ID:', code);
+                console.debug('Creating new call with ID:', code);
                 const members = [{ user_id: user.id, role: 'host' }];
                 if (tokenGate && tokenGate.length > 0) {
                     tokenGate.forEach(userId => {
@@ -257,7 +261,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                     members_limit: 20,
                         ...(sessionTypeFromStore === sessionType.AUDIO && { video: false }),
                     });
-                    console.log('Call created successfully:', callResponse);
+                    console.debug('Call created successfully:', callResponse);
                     
                     // If we successfully created a call, set newMeeting to false to avoid recreating
                     if (callResponse?.call) {
@@ -271,16 +275,16 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                 }
             } else {
                 // For existing calls, whether scheduled or not
-                console.log('Trying to get existing call with ID:', code);
+                console.debug('Trying to get existing call with ID:', code);
                 let callData;
                 try {
                     callData = await call?.get();
-                    console.log('Retrieved call data:', callData);
+                    console.debug('Retrieved call data:', callData);
                 } catch (getError) {
                     console.error('Error getting call data:', getError);
                     
                     // If the call doesn't exist but we thought it did, let's create it
-                    console.log('Call not found but expected, attempting to create it now');
+                    console.debug('Call not found but expected, attempting to create it now');
                     setNewMeeting(true);
                     return initializeCall();
                 }
@@ -299,7 +303,8 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
 
                             if (!isWhitelisted) {
                                 toast.error('You are not whitelisted to join this call');
-                                router.push('/pod');
+                                // router.push('/pod');
+                                navigate('/pod');
                                 return;
                             }
                         }
@@ -334,7 +339,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                 } else {
                     // If the call doesn't exist yet, try to create it
                     // This might happen for scheduled calls that haven't been created yet
-                    console.log('Call not found, attempting to create it for scheduled session');
+                    console.debug('Call not found, attempting to create it for scheduled session');
 
                     // Set newMeeting to true to force creation
                     setNewMeeting(true);
@@ -363,7 +368,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
         dispatch,
         isScheduled,
         newMeeting,
-        router,
+        navigate,
         sessionTitle,
         sessionTypeFromStore,
         starts_at,
@@ -383,9 +388,9 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
         hasCheckedSchedule.current = true;
 
         try {
-            console.log('Checking for scheduled meeting with code:', code);
+            console.debug('Checking for scheduled meeting with code:', code);
         const response = await retrieveCall(code);
-            console.log('Retrieve call response:', response);
+            console.debug('Retrieve call response:', response);
 
         if (
             response.status === 'success' &&
@@ -393,7 +398,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
             response.data.source === 'scheduled'
         ) {
             const { call } = response.data;
-                console.log('Found scheduled call:', call);
+                console.debug('Found scheduled call:', call);
 
                 // Verify required data exists
                 if (!call.custom) {
@@ -455,7 +460,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                 response.data.source === 'stream'
             ) {
                 const { call } = response.data;
-                console.log('Found stream call:', call);
+                console.debug('Found stream call:', call);
 
                 // Check if user is not the creator
                 if (call.created_by.id !== user.id) {
@@ -488,7 +493,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                     }
                 }
             } else {
-                console.log('No call found for code:', code);
+                console.debug('No call found for code:', code);
             }
             // No scheduled call found, proceed with normal call initialization
             await initializeCall();
@@ -506,9 +511,9 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
         setState(prev => ({ ...prev, joining: true }));
 
         try {
-            console.log('Attempting to join session with ID:', code);
-            console.log('Current callingState:', callingState);
-            console.log('Session info:', {
+            console.debug('Attempting to join session with ID:', code);
+            console.debug('Current callingState:', callingState);
+            console.debug('Session info:', {
                 title: sessionTitle,
                 type: sessionTypeFromStore,
                 isScheduled: isScheduled,
@@ -519,23 +524,23 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
             let callExists = false;
             try {
                 const callData = await call?.get();
-                console.log('Call data before joining:', callData);
+                console.debug('Call data before joining:', callData);
                 callExists = !!callData?.call;
             } catch (getError) {
-                console.log('Call does not exist, will create it:', getError);
+                console.debug('Call does not exist, will create it:', getError);
                 callExists = false;
             }
 
             // If the call doesn't exist, create it now
             if (!callExists) {
-                console.log('Call not found on server, will create it now');
+                console.debug('Call not found on server, will create it now');
                 // Set newMeeting to true to force creation
                 setNewMeeting(true);
                 
                 try {
                     // Create the call
                     await initializeCall();
-                    console.log('Call created successfully');
+                    console.debug('Call created successfully');
                 } catch (createError) {
                     console.error('Error creating call:', createError);
                     throw createError;
@@ -545,7 +550,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
             // Get the call again to verify it was created
             try {
                 const refreshedCallData = await call?.get();
-                console.log('Refreshed call data after initialization:', refreshedCallData);
+                console.debug('Refreshed call data after initialization:', refreshedCallData);
                 
                 if (!refreshedCallData?.call) {
                     console.error('Call still does not exist after creation attempt');
@@ -558,24 +563,25 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
 
             // Now join the call
             if (callingState !== CallingState.JOINED) {
-                console.log('Joining call now...');
+                console.debug('Joining call now...');
                 const joinResponse = await call?.join({
                     data: {
                         members: [{ user_id: user?.id! }],
                     },
                     ...(sessionTypeFromStore === sessionType.AUDIO && { video: false }),
                 });
-                console.log('Join response:', joinResponse);
+                console.debug('Join response:', joinResponse);
             }
 
-            router.push(`/pod/${code}`);
+            // router.push(`/pod/${code}`);
+            navigate(`/pod/${code}`);
         } catch (error) {
             console.error('Join session error:', error);
             console.error('Error details:', JSON.stringify(error, null, 2));
             toast.error('Failed to join session, please check your connection and try again');
             setState(prev => ({ ...prev, joining: false }));
         }
-    }, [code, user, call, callingState, router, sessionTypeFromStore, isScheduled, sessionTitle, starts_at, setNewMeeting, initializeCall]);
+    }, [code, user, call, callingState, navigate, sessionTypeFromStore, isScheduled, sessionTitle, starts_at, setNewMeeting, initializeCall]);
 
     // Effects
     useEffect(() => {

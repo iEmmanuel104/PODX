@@ -33,6 +33,9 @@ import {
 } from '@stream-io/video-react-sdk';
 import { usePrivy } from '@privy-io/react-auth';
 import { toast } from 'react-hot-toast';
+import { CachId } from '@/constants';
+import { cacheValue } from '@/utils/storage';
+import { useNavigate } from '@/hooks/useNavigate';
 
 interface MeetingProps {
     params: {
@@ -76,7 +79,8 @@ ComponentLoader.displayName = 'ComponentLoader';
 const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
     const call = useStreamCall();
     const { id } = params;
-    const router = useRouter();
+    // const router = useRouter();
+    const navigate = useNavigate();
     const { isLoggedIn, user } = useTypedSelector(state => state.auth);
     const { authenticated, ready } = usePrivy();
     const authChecked = useRef(false);
@@ -96,26 +100,29 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
         // Immediate check on component mount
         if (!isLoggedIn || !authenticated) {
             // Save the session code for after login in both localStorage and cookie
-            localStorage.setItem('pendingSessionCode', id);
+            // localStorage.setItem(CachId, id);
             
-            // Also store in a cookie for more reliable persistence
-            document.cookie = `pendingSessionCode=${id}; path=/; max-age=3600`;
+            // // Also store in a cookie for more reliable persistence
+            // document.cookie = `${CachId}=${id}; path=/; max-age=3600`;
+
+            cacheValue(CachId, id);
             
             // Redirect to home page
-            router.replace('/');
+            // router.replace('/');
+            navigate("/");
             
             // Show informative message
             toast('Authentication required', {
                 icon: '🔐',
                 duration: 5000,
             });
-            console.log('Redirecting from pod page - user not authenticated', { authenticated, isLoggedIn });
+            console.debug('Redirecting from pod page - user not authenticated', { authenticated, isLoggedIn });
             return;
         }
 
         // Set the flag so we don't redirect after authentication
         authChecked.current = true;
-    }, [authenticated, isLoggedIn, id, router]);
+    }, [authenticated, isLoggedIn, id, navigate]);
 
     // Second check that waits for Privy to be ready
     useEffect(() => {
@@ -124,7 +131,8 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
                 // Save the session code for after login
                 localStorage.setItem('pendingSessionCode', id);
                 // Redirect to home page
-                router.replace('/');
+                // router.replace('/');
+                navigate('/');
                 // Show informative message
                 toast('Please login to join this session', {
                     icon: '🔐',
@@ -133,7 +141,7 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
                 return;
             }
         }
-    }, [ready, authenticated, isLoggedIn, id, router]);
+    }, [ready, authenticated, isLoggedIn, id, navigate]);
 
     const participantComparator = useMemo(() => {
         return combineComparators(
@@ -211,7 +219,7 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
         if (call) {
             call.microphone
                 .disable()
-                .then(() => console.log('Mic disabled by default'))
+                .then(() => console.debug('Mic disabled by default'))
                 .catch(console.error);
         }
     }, [call]);
@@ -219,13 +227,14 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
     useEffect(() => {
         const startup = async () => {
             if (isUnkownOrIdle) {
-                router.push(`/pod/join/${id}`);
+                // router.push(`/pod/join/${id}`);
+                navigate(`/pod/join/${id}`);
                 return;
             }
         };
 
         startup();
-    }, [call, router, id, isUnkownOrIdle]);
+    }, [call, navigate, id, isUnkownOrIdle]);
 
     // Add type definition for CallEventHandler
     type CallEventHandler = (event: StreamVideoEvent) => void;
@@ -292,12 +301,13 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
             call.microphone
                 .disable()
                 .then(() => {
-                    console.log('Microphone disabled before join');
-                    router.push(`/pod/join/${id}`);
+                    console.debug('Microphone disabled before join');
+                    // router.push(`/pod/join/${id}`);
+                    navigate(`/pod/join/${id}`);
                 })
                 .catch(console.error);
         }
-    }, [id, callingState, call, connectedUser, router, live]);
+    }, [id, callingState, call, connectedUser, navigate, live]);
 
     useEffect(() => {
         handleJoinSession();
@@ -308,16 +318,18 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
             if (call && 'leave' in call && callingState !== CallingState.OFFLINE) {
                 await (call as unknown as Call).leave();
             }
-            router.push(`/pod/end`);
+            // router.push(`/pod/end`);
+            navigate(`/pod/end`);
         } catch (error) {
             console.error('Error leaving call:', error);
-            router.push(`/pod/end`);
+            // router.push(`/pod/end`);
+            navigate(`/pod/end`);
         }
     };
 
     const toggleScreenShare = useCallback(async () => {
         if (!call || !screenShare) {
-            console.log('Call or screen share not available');
+            console.debug('Call or screen share not available');
             return;
         }
 
@@ -333,11 +345,12 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
     }, []);
 
     const confirmLeave = async () => {
-        router.push('/pod');
+        // router.push('/pod');
+        navigate('/pod');
     };
 
     const updateParticipantRole = (userId: string, newRole: string) => {
-        console.log(`Updating ${userId} to ${newRole}`);
+        console.debug(`Updating ${userId} to ${newRole}`);
     };
 
     const handleJoinRequest = (userId: string, accept: boolean) => {
@@ -418,7 +431,7 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
                     speaker.setVolume(1.0);
                 }
 
-                console.log('Media devices initialized with muted mic');
+                console.debug('Media devices initialized with muted mic');
             } catch (error) {
                 console.error('Media initialization failed:', error);
             }

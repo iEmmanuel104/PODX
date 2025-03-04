@@ -36,7 +36,7 @@ export function middleware(request: NextRequest) {
                 });
             }
             
-            console.log('Middleware redirecting unauthenticated user from pod page to home');
+            console.debug('Middleware redirecting unauthenticated user from pod page to home');
             return redirectResponse;
         }
     }

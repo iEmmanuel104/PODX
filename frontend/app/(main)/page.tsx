@@ -1,13 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, Suspense, useMemo } from 'react';
+import { useCallback, useEffect, Suspense } from 'react';
 import localFont from 'next/font/local';
 import dynamic from 'next/dynamic';
 import Logo from '@/public/images/icons/Logo';
 import { useAuth } from '@/hooks/useAuth';
 import { storage } from '@/utils/storage';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import { useRouter } from 'next/navigation';
 import { LoadingOverlay } from '@/components/ui/loading';
 import { CachId } from '@/constants';
 
@@ -59,31 +58,10 @@ const balige = localFont({
 
 export default function LandingPage() {
     const { connect, ready } = useAuth();
-    const router = useRouter();
 
-    // const pendingSessionCode = localStorage.getItem('pendingSessionCode');
-    // Check for pending session code in both localStorage and cookies
-    const pendingSessionCode = useMemo(() => {
-        const storedSessionCode = localStorage.getItem(CachId);
-        const cookieSessionCode = document.cookie
-            .split('; ')
-            .find(row => row.startsWith(`${CachId}=`))
-            ?.split('=')[1];
-        const sessionCode = storedSessionCode || cookieSessionCode;
-
-        if (sessionCode) {
-            localStorage.setItem(CachId, sessionCode);
-        }
-
-        // Clear the cookie since we've moved it to localStorage
-        if (cookieSessionCode) {
-            document.cookie = `${CachId}=; path=/; max-age=0`;
-        }
-
-        console.debug('Stored pending session code for redirect after login:', sessionCode);
-
-        return sessionCode;
-    }, []);
+    const getPendingSessionCode = useCallback(()=>{
+        return localStorage.getItem(CachId);
+    },[])
 
     // Cache auth state
     const handleConnect = useCallback(async () => {
@@ -91,26 +69,6 @@ export default function LandingPage() {
             await connect();
             // Cache successful connection
             storage.set(CACHE_KEYS.AUTH_STATE, { connected: true, timestamp: Date.now() });
-
-            // Check if there's a pending session to redirect to
-            // const pendingSessionCode = localStorage.getItem('pendingSessionCode');
-            // console.debug('Found session code:', pendingSessionCode);
-
-            // if (pendingSessionCode) {
-            //     console.debug('Redirecting to session after login:', pendingSessionCode);
-
-            //     // clearStoredValue();
-
-            //     // Short delay to ensure auth state is fully processed
-            //     setTimeout(() => {
-            //         router.replace(`/pod/join/${pendingSessionCode}`);
-            //     }, 1000);
-            //     return;
-            // }
-
-            // If no pending session, redirect to pod page
-            // router.replace('/pod');
-            console.debug("Should move to POD page");
         } catch (error) {
             console.error('Error connecting wallet:', error);
         }
@@ -127,20 +85,20 @@ export default function LandingPage() {
     useEffect(() => {
 
         async function attemptLogin() {
-            const shouldAutoLogin = new URL(window.location.href).searchParams.get('ou');
+            // const shouldAutoLogin = new URL(window.location.href).searchParams.get('ou');
+            const pendingSessionCode = getPendingSessionCode();
+            const shouldAutoLogin = Boolean(pendingSessionCode);
+
             // Attempt auto login
             if (!Boolean(shouldAutoLogin)) {
                 console.debug("Not attempting auto login!: reason =", shouldAutoLogin);
                 return;
             };
-    
-            if (Boolean(pendingSessionCode)) {
-                console.debug('Attempt Auto Login');
-                // handleConnect();
-                await connect();
-                console.debug('Attempted Auto Login', pendingSessionCode);
-                return;
-            }
+
+            console.debug('Attempt Auto Login');
+            await connect();
+            console.debug('Attempted Auto Login', pendingSessionCode);
+            return;
         }
 
 
@@ -151,7 +109,7 @@ export default function LandingPage() {
         //     storage.set(CACHE_KEYS.REDIRECT, true, 3600);
         //     router.replace('/pod');
         // }
-    }, []);
+    }, [connect, getPendingSessionCode]);
 
     if (!ready) return <LoadingOverlay text="Redirecting..." />;
 

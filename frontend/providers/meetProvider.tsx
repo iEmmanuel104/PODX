@@ -1,8 +1,7 @@
 'use client';
 import dynamic from 'next/dynamic';
 import React, { useEffect, useState, useRef, useCallback, memo, ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
-import { STREAM_API_KEY } from '@/constants';
+import { CachId, STREAM_API_KEY } from '@/constants';
 import { LoadingOverlay } from '@/components/ui/loading';
 import { useStreamTokenProvider } from '@/hooks/useStreamTokenProvider';
 import type { StreamChat } from 'stream-chat';
@@ -11,8 +10,6 @@ import { ErrorBoundary } from '@/components/pod/errorBoundary';
 import { StreamConnectionPool } from './streamConnectionPool';
 import { useTypedSelector } from '@/store/config/store';
 import toast from 'react-hot-toast';
-import { useAuth } from '@/hooks/useAuth';
-import { storage } from '@/utils/storage';
 
 const DynamicStreamVideo = dynamic(
     () => import('@stream-io/video-react-sdk').then(mod => mod.StreamVideo),
@@ -62,7 +59,6 @@ export const StreamMeetProvider = memo<StreamMeetProviderProps>(
         const callRef = useRef<Call>();
 
         const tokenProvider = useStreamTokenProvider();
-        const router = useRouter();
 
         useEffect(() => {
             setIsMounted(true);
@@ -111,81 +107,12 @@ export const StreamMeetProvider = memo<StreamMeetProviderProps>(
 
                 if (!callRef.current && videoClientRef.current && meetingId) {
                     const callType = streamCallType || 'default';
-                    console.log({ callType, meetingId, streamCallType });
+                    console.debug({ callType, meetingId, streamCallType });
                     callRef.current = videoClientRef.current.call(callType, meetingId);
                 }
             },
             [user, meetingId, streamCallType]
         );
-
-        // const handleConnect = useCallback(async () => {
-        //     try {
-        //         await connect();
-        //         // Cache successful connection
-        //         storage.set(CACHE_KEYS.AUTH_STATE, { connected: true, timestamp: Date.now() });
-
-        //         // Check if there's a pending session to redirect to
-        //         // const pendingSessionCode = localStorage.getItem('pendingSessionCode');
-        //         // if (pendingSessionCode) {
-        //         //     console.log('Redirecting to session after login:', pendingSessionCode);
-
-        //         //     // Clear the pending session code
-        //         //     localStorage.removeItem('pendingSessionCode');
-
-        //         //     // Clear the cookie too
-        //         //     document.cookie = 'pendingSessionCode=; path=/; max-age=0';
-
-        //         //     // Short delay to ensure auth state is fully processed
-        //         //     setTimeout(() => {
-        //         //         router.replace(`/pod/join/${pendingSessionCode}`);
-        //         //     }, 1000);
-        //         //     return;
-        //         // }
-
-        //         // If no pending session, redirect to pod page
-        //         // router.replace('/pod');
-        //         router.refresh();
-        //     } catch (error) {
-        //         const msg = 'Error connecting wallet:'
-        //         console.error(msg, error);
-        //         toast.error(msg, {
-        //             duration: 5000,
-        //         });
-        //     }
-        // }, [connect, router]);
-
-        const podId = (()=>{
-            const path = window.location.pathname;
-
-            // .pathname.split('/pod/join/')[1]
-
-            if (path.startsWith('/pod/join/')) {
-                return path.split('/pod/join/')[1];
-            }
-
-            return undefined;
-        })()
-
-        useEffect(() => {
-            async function attemptAuthentication() {
-                if (!shouldAuthenticate) return;
-
-                if (isLoggedIn && user) return;
-
-                console.debug('Attempt Authentication!', podId);
-
-                if (podId) {
-                    localStorage.setItem('pendingSessionCode', podId);
-                    document.cookie = `pendingSessionCode=${podId}; path=/; max-age=3600`;
-                    router.replace('/?ou=1');
-                }else {
-                    console.debug("No Meeting Id!");
-                }
-                // await handleConnect();
-            }
-
-            attemptAuthentication();
-        }, [shouldAuthenticate, isLoggedIn, user, podId, router]);
 
         useEffect(() => {
             if (!isMounted) return;
@@ -202,7 +129,7 @@ export const StreamMeetProvider = memo<StreamMeetProviderProps>(
                     }
                 } else {
                     if (meetingId) {
-                        localStorage.setItem('pendingSessionCode', meetingId);
+                        localStorage.setItem(CachId, meetingId);
                     }
                     // router.push('/');
 
@@ -210,8 +137,6 @@ export const StreamMeetProvider = memo<StreamMeetProviderProps>(
                     toast.error('Please login to join this session', {
                         duration: 5000,
                     });
-
-                    setShouldAuthenticate(true);
                 }
             };
 
@@ -223,7 +148,6 @@ export const StreamMeetProvider = memo<StreamMeetProviderProps>(
             tokenProvider,
             connectChatClient,
             connectVideoClient,
-            router,
             meetingId,
         ]);
 

@@ -348,7 +348,7 @@ const SessionCard = memo(function SessionCard({
             
             // Call the delete function and get the result
             const deleteSuccessful = await deleteScheduledCall(session.id);
-            console.log('Delete operation result:', deleteSuccessful);
+            console.debug('Delete operation result:', deleteSuccessful);
             
             if (deleteSuccessful) {
                 // If delete was successful, trigger a refresh if available
@@ -496,7 +496,7 @@ const ScheduledPods: React.FC<ScheduledPodsProps> = ({
     isLoading: isLoadingProp,
     onClearFoundSession,
 }) => {
-    console.log('[ScheduledPods] Component rendered with:', {
+    console.debug('[ScheduledPods] Component rendered with:', {
         sessionsCount: sessions?.length,
         sessions,
         hasFoundSession: !!foundSession,
@@ -511,14 +511,14 @@ const ScheduledPods: React.FC<ScheduledPodsProps> = ({
 
     // Function to force refresh sessions data
     const handleRefresh = useCallback(async () => {
-        console.log('Manually refreshing sessions list...');
+        console.debug('Manually refreshing sessions list...');
         setLastRefresh(new Date());
         await refreshSessions();
     }, [refreshSessions]);
 
     // Set up auto-refresh on component mount/unmount and visibility changes
     useEffect(() => {
-        console.log('Setting up session refresh behaviors');
+        console.debug('Setting up session refresh behaviors');
 
         // Refresh when the component mounts
         handleRefresh();
@@ -526,7 +526,7 @@ const ScheduledPods: React.FC<ScheduledPodsProps> = ({
         // Set up visibility change listener to refresh when tab becomes active
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'visible') {
-                console.log('Tab became visible, refreshing sessions');
+                console.debug('Tab became visible, refreshing sessions');
                 refetchSessions();
             }
         };
@@ -546,7 +546,7 @@ const ScheduledPods: React.FC<ScheduledPodsProps> = ({
 
     // Function to force open the dialog
     const openViewAllDialog = useCallback(() => {
-        console.log('Opening view all dialog');
+        console.debug('Opening view all dialog');
         // Refresh sessions data before showing all sessions
         refreshSessions().then(() => {
             setShowAllSessions(true);
@@ -576,15 +576,15 @@ const ScheduledPods: React.FC<ScheduledPodsProps> = ({
             session => differenceInMinutes(new Date(session.starts_at), new Date()) > -60
         );
 
-        console.log("[ScheduledPods] Filtered upcoming sessions:", upcoming);
+        console.debug("[ScheduledPods] Filtered upcoming sessions:", upcoming);
 
         return { upcomingSessions: upcoming };
     }, [sessions, currentUserId]);
 
     // Debug logs to check session data
     useEffect(() => {
-        console.log('Total Scheduled Sessions:', sessions.length);
-        console.log('Upcoming Sessions for User:', upcomingSessions.length);
+        console.debug('Total Scheduled Sessions:', sessions.length);
+        console.debug('Upcoming Sessions for User:', upcomingSessions.length);
     }, [sessions, upcomingSessions]);
 
     if (isLoadingProp) {

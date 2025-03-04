@@ -1,3 +1,4 @@
+
 type CacheData = {
     value: any;
     timestamp: number;
@@ -46,4 +47,30 @@ export function clearStoredValue(key: string) {
 
     // Clear the cookie too
     document.cookie = `${key}=; path=/; max-age=0`;
+}
+
+export function cacheValue(key: string, value: string) {
+    // Save the session code for after login in both localStorage and cookie
+    localStorage.setItem(key, value);
+    
+    // Also store in a cookie for more reliable persistence
+    document.cookie = `${key}=${value}; path=/; max-age=3600`;
+}
+
+
+export function getSessionCode(pathname: string, option:{isPodJoinPage: boolean, isDirectPodPage: boolean}): string | undefined {
+    let sessionCode;
+    const {isPodJoinPage, isDirectPodPage} = option;
+
+    if (isPodJoinPage) {
+        sessionCode = pathname.split('/pod/join/')[1];
+    } else if (isDirectPodPage) {
+        sessionCode = pathname.split('/pod/')[1];
+    }
+
+    if (sessionCode) {
+        localStorage.setItem('pendingSessionCode', sessionCode);
+    }
+
+    return sessionCode;
 }

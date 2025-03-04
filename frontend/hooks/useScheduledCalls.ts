@@ -45,13 +45,13 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
 
     // Simple function to trigger a refetch
     const refetchSessions = useCallback(() => {
-        console.log('Manually refetching scheduled sessions...');
+        console.debug('Manually refetching scheduled sessions...');
         refetchScheduledCalls();
     }, [refetchScheduledCalls]);
 
     // Manual refresh that forces a new API call and updates redux state
     const refreshSessions = useCallback(async (): Promise<void> => {
-        console.log('Refreshing scheduled sessions with direct API call...');
+        console.debug('Refreshing scheduled sessions with direct API call...');
         try {
             const result = await dispatch(
                 scheduledCallsApiSlice.endpoints.listUserScheduledCalls.initiate(undefined, {
@@ -79,7 +79,7 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
                 
                 // Update Redux state directly
                 dispatch(setScheduledSessions(validSessions));
-                console.log('Scheduled sessions refreshed successfully with', validSessions.length, 'valid sessions');
+                console.debug('Scheduled sessions refreshed successfully with', validSessions.length, 'valid sessions');
             }
         } catch (error) {
             console.error('Failed to refresh sessions:', error);
@@ -88,7 +88,7 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
 
     // Update local state when user scheduled calls change
     useEffect(() => {
-        console.log("[useScheduledCalls] userScheduledCalls data received:", userScheduledCalls);
+        console.debug("[useScheduledCalls] userScheduledCalls data received:", userScheduledCalls);
 
         if (userScheduledCalls?.data?.calls) {
             // Filter out any invalid sessions (those without required fields)
@@ -105,14 +105,14 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
                 const expiryTime = new Date(startTime.getTime() + 5 * 60 * 1000); // 5 minutes after start
                 
                 if (now > expiryTime) {
-                    console.log(`Filtering out expired session: ${session.id}`);
+                    console.debug(`Filtering out expired session: ${session.id}`);
                     return false;
                 }
                 
                 return true;
             });
             
-            console.log(`Filtered ${userScheduledCalls.data.calls.length - validSessions.length} invalid/expired sessions`);
+            console.debug(`Filtered ${userScheduledCalls.data.calls.length - validSessions.length} invalid/expired sessions`);
             dispatch(setScheduledSessions(validSessions));
         }
     }, [userScheduledCalls, dispatch]);
@@ -120,7 +120,7 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
     // Cleanup on unmount
     useEffect(() => {
         return () => {
-            console.log("[useScheduledCalls] Cleaning up scheduled sessions");
+            console.debug("[useScheduledCalls] Cleaning up scheduled sessions");
             dispatch(clearScheduledSessions());
         };
     }, [dispatch]);
@@ -129,7 +129,7 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
     useEffect(() => {
         if (scheduledSessions.length > 0 && forceLoading) {
             const timer = setTimeout(() => {
-                console.log("[useScheduledCalls] Data available but still loading, forcing exit from loading state");
+                console.debug("[useScheduledCalls] Data available but still loading, forcing exit from loading state");
                 setForceLoading(false);
             }, 1000);
             return () => clearTimeout(timer);
@@ -141,7 +141,7 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
         sessionId: string
     ): Promise<ApiResponse<GetCallResponse | null>> => {
         try {
-            console.log(`[useScheduledCalls] Retrieving call with ID: ${sessionId}`);
+            console.debug(`[useScheduledCalls] Retrieving call with ID: ${sessionId}`);
             const result = await dispatch(
                 scheduledCallsApiSlice.endpoints.retrieveCall.initiate(sessionId)
             );
@@ -151,7 +151,7 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
                 throw new Error('Failed to fetch call');
             }
 
-            console.log(`[useScheduledCalls] Call retrieval result:`, result.data);
+            console.debug(`[useScheduledCalls] Call retrieval result:`, result.data);
             return result.data as ApiResponse<GetCallResponse | null>;
         } catch (error) {
             console.error('Failed to get call:', error);
@@ -164,7 +164,7 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
         sessionId: string
     ): Promise<{ success: boolean; message: string }> => {
         try {
-            console.log(`[useScheduledCalls] Deleting call with ID: ${sessionId}`);
+            console.debug(`[useScheduledCalls] Deleting call with ID: ${sessionId}`);
             // const result = await deleteCallMutation({ callId: sessionId });
             const result = await deleteCallMutation(sessionId);
 
@@ -174,7 +174,7 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
             }
 
             // Remove from local state
-            console.log(`[useScheduledCalls] Removing deleted call from Redux store`);
+            console.debug(`[useScheduledCalls] Removing deleted call from Redux store`);
             dispatch(removeScheduledSession(sessionId));
 
             return { success: true, message: 'Session has been canceled' };
@@ -187,15 +187,15 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
     // Delete a scheduled call
     const deleteScheduledCall = async (sessionId: string): Promise<boolean> => {
         try {
-            console.log(`Attempting to delete session: ${sessionId}`);
+            console.debug(`Attempting to delete session: ${sessionId}`);
             const result = await deleteCallMutation(sessionId);
-            console.log('Delete call response:', result);
+            console.debug('Delete call response:', result);
             
             if ('error' in result) {
                 // If the error is 404 Not Found, we consider it successful
                 // because the session is already gone from Redis
                 if (result.error && 'status' in result.error && result.error.status === 404) {
-                    console.log('Session not found in Redis, considering deletion successful');
+                    console.debug('Session not found in Redis, considering deletion successful');
                     // Force refresh to make sure UI is updated
                     await refreshSessions();
                     return true;
@@ -206,7 +206,7 @@ export const useScheduledCalls = (): UseScheduledCallsReturn => {
             
             // Check the API response for success
             if (result.data?.status === 'success') {
-                console.log('Session deleted successfully on the server');
+                console.debug('Session deleted successfully on the server');
                 // Force refresh to make sure UI is updated
                 await refreshSessions();
                 return true;

@@ -242,7 +242,7 @@ const Header = memo<HeaderProps>(
         }, [userAddress]);
 
         const withdrawFunds = () => {
-            console.log('withdrawing funds');
+            console.debug('withdrawing funds');
         };
 
         return (

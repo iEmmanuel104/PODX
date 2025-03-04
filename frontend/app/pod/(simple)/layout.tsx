@@ -25,9 +25,9 @@ function SimpleLayout({ children }: { children: ReactNode }) {
     useLayoutEffect(() => {
         if (mounted && !isLoggedIn) {
             setVisible(false);
-            router.replace('/');
+            // router.replace('/');
         }
-    }, [isLoggedIn, router, mounted]);
+    }, [isLoggedIn, mounted]);
 
     if (!mounted) return null;
 

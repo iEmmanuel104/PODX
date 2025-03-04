@@ -17,6 +17,7 @@ import { useAppDispatch, useTypedSelector } from '@/store/config/store';
 import { useScheduledCalls } from '@/hooks/useScheduledCalls';
 import { scheduledCallsApiSlice } from '@/store/callStats/scheduledCallsApiSlice';
 import { addScheduledSession } from '@/store/scheduleSession/slice';
+import { useNavigate } from '@/hooks/useNavigate';
 
 // Dynamic imports
 const CreateSessionModal = dynamic(() => import('@/components/pod/createSessionModal'), {
@@ -58,7 +59,8 @@ interface SessionData {
 }
 
 export default function PodPage() {
-    const router = useRouter();
+    // const router = useRouter();
+    const navigate = useNavigate();
     const dispatch = useAppDispatch();
     const { setNewMeeting } = React.useContext(AppContext);
     const { isLoggedIn, user } = useTypedSelector(state => state.auth);
@@ -116,13 +118,13 @@ export default function PodPage() {
                 // We can detect this by checking the source from retrieveCall endpoint
                 const { data } = await retrieveCall(response.custom.sessionId);
                 if (data?.source === 'scheduled') {
-                    console.log('Creating real Stream call for scheduled session:', response.custom.sessionId);
+                    console.debug('Creating real Stream call for scheduled session:', response.custom.sessionId);
                     
                     // Use one of the allowed Stream call types
                     // Stream API only allows these call types: "audio_room", "default", "development", "livestream"
                     // Rather than trying to sanitize a custom type, use a known valid type
                     const callType = "default"; // Use 'default' as the safe choice
-                    console.log('Using Stream API compatible call type:', callType);
+                    console.debug('Using Stream API compatible call type:', callType);
                     
                     // Call the API to create a real Stream call
                     const result = await getOrCreateCall({
@@ -152,7 +154,8 @@ export default function PodPage() {
                     })
                 );
                 // Navigate to join page
-                router.push(`/pod/join/${response.custom.sessionId}`);
+                // router.push(`/pod/join/${response.custom.sessionId}`);
+                navigate(`/pod/join/${response.custom.sessionId}`);
             } catch (error) {
                 console.error('Error joining session:', error);
                 setState(prev => ({
@@ -161,12 +164,12 @@ export default function PodPage() {
                 }));
             }
         },
-        [dispatch, router, retrieveCall, user?.id, getOrCreateCall]
+        [dispatch, navigate, retrieveCall, user?.id, getOrCreateCall]
     );
 
     const handleCreateSession = useCallback(
         async (title: string, type: sessionType, scheduledDate?: Date, tokenGate?: string[]) => {
-            console.log("[handleCreateSession] Creating session with:", { title, type, scheduledDate, hasTokenGate: !!tokenGate });
+            console.debug("[handleCreateSession] Creating session with:", { title, type, scheduledDate, hasTokenGate: !!tokenGate });
             dispatch(clearSessionInfo());
             setNewMeeting(true);
             const newSessionCode = getMeetingId();
@@ -195,7 +198,7 @@ export default function PodPage() {
                 });
 
                 if (hasTimeConflict) {
-                    console.log("[handleCreateSession] Found time conflict with existing session");
+                    console.debug("[handleCreateSession] Found time conflict with existing session");
                     setState(prev => ({
                         ...prev,
                         error: 'Cannot schedule a session at this time. There is already a session scheduled at exactly the same time.',
@@ -204,7 +207,7 @@ export default function PodPage() {
                 }
 
                 try {
-                    console.log("[handleCreateSession] Calling scheduleCall API with:", {
+                    console.debug("[handleCreateSession] Calling scheduleCall API with:", {
                         title,
                         type,
                         sessionId: newSessionCode,
@@ -222,7 +225,7 @@ export default function PodPage() {
                         scheduledDuration: 60, // Set a default duration of 60 minutes
                     });
 
-                    console.log("[handleCreateSession] Schedule call API response:", result);
+                    console.debug("[handleCreateSession] Schedule call API response:", result);
 
                     if (!result.data) {
                         console.error("[handleCreateSession] Failed to schedule call - no data returned");
@@ -232,7 +235,7 @@ export default function PodPage() {
                     dispatch(setSessionInfo(sessionData));
 
                     if (result.data && result.data.data) {
-                        console.log("[handleCreateSession] Adding scheduled session to Redux store:", result.data.data);
+                        console.debug("[handleCreateSession] Adding scheduled session to Redux store:", result.data.data);
                         dispatch(addScheduledSession(result.data.data));
                     } else {
                         console.error("[handleCreateSession] No session data to add to Redux store");
@@ -269,7 +272,7 @@ export default function PodPage() {
 
             dispatch(setSessionInfo(sessionData));
         },
-        [dispatch, setNewMeeting, scheduleCall, scheduledSessions]
+        [dispatch, setNewMeeting, scheduleCall, scheduledSessions, currentUrl]
     );
 
     const handleJoinSession = useCallback(async () => {
@@ -308,7 +311,8 @@ export default function PodPage() {
     const handleJoinCreatedSession = useCallback(async () => {
         setState(prev => ({ ...prev, isJoiningCreated: true }));
         try {
-            router.push(`/pod/join/${state.sessionCode}`);
+            // router.push(`/pod/join/${state.sessionCode}`);
+            navigate(`/pod/join/${state.sessionCode}`);
         } catch (error) {
             console.error('Failed to join created session:', error);
             setState(prev => ({
@@ -318,7 +322,7 @@ export default function PodPage() {
         } finally {
             setState(prev => ({ ...prev, isJoiningCreated: false }));
         }
-    }, [state.sessionCode]);
+    }, [state.sessionCode, navigate]);
 
     const handleUpdateUsername = useCallback(
         (newUsername: string) => {
@@ -333,7 +337,8 @@ export default function PodPage() {
     }, []);
 
     if (!isLoggedIn || !user) {
-        router.push('/');
+        // router.push('/');
+        // navigate('/');
         return null;
     }
 
@@ -449,7 +454,7 @@ export default function PodPage() {
                 {/* Scheduled sessions */}
                 <div className="w-full mb-8 sm:mb-12" id="scheduled-sessions-list">
                     {(() => {
-                        console.log('[PodPage] Rendering ScheduledPods component with:', {
+                        console.debug('[PodPage] Rendering ScheduledPods component with:', {
                             scheduledSessions,
                             foundSession: state.foundSession,
                             isLoading,

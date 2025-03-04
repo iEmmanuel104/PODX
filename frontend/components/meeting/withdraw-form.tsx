@@ -19,7 +19,7 @@ export default function WithdrawForm({ onClose }: WithdrawFormProps) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        console.log('Withdraw', { amount, address });
+        console.debug('Withdraw', { amount, address });
         onClose();
     };
 
