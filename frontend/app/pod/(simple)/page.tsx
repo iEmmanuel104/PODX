@@ -1,7 +1,7 @@
 // app/pod/page.tsx
 'use client';
 import React, { useState, useCallback, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { customAlphabet } from 'nanoid';
@@ -94,7 +94,7 @@ export default function PodPage() {
             setState(prev => ({ ...prev, justScheduledSession: false }));
         }
     }, [state.justScheduledSession, dispatch]);
-
+    // Effect if there is no user name
     useEffect(() => {
         if (isLoggedIn && user?.username?.startsWith('guest-')) {
             setState(prev => ({ ...prev, showUsernameModal: true }));
@@ -477,27 +477,23 @@ export default function PodPage() {
             </div>
 
             {/* Modals */}
-            <React.Suspense fallback={null}>
-                {state.isCreateModalOpen && (
-                    <CreateSessionModal
-                        isOpen={state.isCreateModalOpen}
-                        onClose={() => setState(prev => ({ ...prev, isCreateModalOpen: false }))}
-                        onCreateSession={handleCreateSession}
-                        scheduledSessions={scheduledSessions}
-                    />
-                )}
+            <React.Suspense fallback={null}>                
+                <CreateSessionModal
+                    isOpen={state.isCreateModalOpen}
+                    onClose={() => setState(prev => ({ ...prev, isCreateModalOpen: false }))}
+                    onCreateSession={handleCreateSession}
+                    scheduledSessions={scheduledSessions}
+                />
 
-                {state.isCreatedModalOpen && (
-                    <CreatedSessionModal
-                        isOpen={state.isCreatedModalOpen}
-                        onClose={() => setState(prev => ({ ...prev, isCreatedModalOpen: false }))}
-                        inviteLink={state.inviteLink}
-                        sessionCode={state.sessionCode}
-                        isJoining={state.isJoiningCreated}
-                        onJoinSession={handleJoinCreatedSession}
-                        scheduledTime={sessionInfo.starts_at}
-                    />
-                )}
+                <CreatedSessionModal
+                    isOpen={state.isCreatedModalOpen}
+                    onClose={() => setState(prev => ({ ...prev, isCreatedModalOpen: false }))}
+                    inviteLink={state.inviteLink}
+                    sessionCode={state.sessionCode}
+                    isJoining={state.isJoiningCreated}
+                    onJoinSession={handleJoinCreatedSession}
+                    scheduledTime={sessionInfo.starts_at}
+                />
 
                 {user && state.showUsernameModal && (
                     <UserOnboardingFlow

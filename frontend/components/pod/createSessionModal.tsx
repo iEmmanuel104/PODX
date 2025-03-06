@@ -209,8 +209,11 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
         }
     };
 
+
+    if (!isOpen) return null;
+
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
+        <Dialog open={true} onOpenChange={onClose}>
             <DialogContent
                 className={`
                 bg-[#1d1d1d] text-white rounded-[20px] sm:rounded-[20px] p-4 sm:p-8 
