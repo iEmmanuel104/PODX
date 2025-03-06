@@ -251,8 +251,12 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
                 const customEvent = event as unknown as StreamCustomEvent;
                 if (customEvent.custom.type === 'applaud') {
                     if (customEvent.custom.data.userId !== connectedUser?.id) {
-                        const clapSound = new Audio('/sounds/clap-sound.mp3');
-                        clapSound.play().catch(console.error);
+                        // const clapSound = new Audio('/sounds/clap-sound.mp3');
+                        // clapSound.play().catch(console.error);
+
+                        const toastId = `${connectedUser?.id || Date.now()}-${customEvent.custom.data.timestamp}`;
+                        const name = connectedUser?.name || "A guest";
+                        toast.success(`${name} is clapping`, {icon: "👏", id: toastId, duration: 6000});
                     }
                 }
                 handleTipEvent(event as CustomVideoEvent);
@@ -269,7 +273,7 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
                 break;
             }
         }
-    }, [connectedUser?.id, handleTipEvent]);
+    }, [connectedUser?.id,connectedUser?.name,handleTipEvent]);
 
     // Remove duplicate custom case and update the sendCustomEvent call
     const handleApplaud = useCallback(() => {
