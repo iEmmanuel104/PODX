@@ -275,25 +275,6 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
         }
     }, [connectedUser?.id,connectedUser?.name,handleTipEvent]);
 
-    // Remove duplicate custom case and update the sendCustomEvent call
-    const handleApplaud = useCallback(() => {
-        if (!call || !connectedUser) return;
-
-        const clapSound = new Audio('/sounds/clap-sound.mp3');
-        clapSound.play().catch(console.error);
-
-        call.sendCustomEvent({
-            type: 'custom',
-            custom: {
-                type: 'applaud',
-                data: {
-                    userId: connectedUser.id,
-                    timestamp: Date.now()
-                }
-            }
-        });
-    }, [call, connectedUser]);
-
     useEffect(() => {
         if (!call || !('on' in call)) return;
 

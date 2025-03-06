@@ -563,6 +563,11 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                     },
                     ...(sessionTypeFromStore === sessionType.AUDIO && { video: false }),
                 });
+
+                const name = user?.username || 'A guest';
+                const id = `${name}-${Date.now()}`;
+                toast.custom(`${name} joined the call`, { id, duration: 4000 });
+
                 console.debug('Join response:', joinResponse);
             }
 
