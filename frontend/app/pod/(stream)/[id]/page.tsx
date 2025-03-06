@@ -75,6 +75,17 @@ const ComponentLoader = memo(() => (
 ));
 ComponentLoader.displayName = 'ComponentLoader';
 
+const ParticipantComponentLoader = memo(() => (
+    <div className="relative h-screen w-[80%] sm:w-[380px]">
+        <div className="animate-pulse bg-gray-800 absolute top-1/2 -translate-y-1/2 -translate-x-0 z-50  w-[100%] h-[50%] rounded-md sm:h-[240px] transform transition-transform duration-300 ease-in-out flex justify-center items-center text-center text-gray-400">
+            Loading...
+        </div>
+    </div>
+));
+
+ParticipantComponentLoader.displayName = 'ParticipantComponentLoader';
+
+
 // Memoize the main interface component
 const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
     const call = useStreamCall();
@@ -473,7 +484,7 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
                     </div>
 
                     {showParticipants && (
-                        <Suspense fallback={<ComponentLoader />}>
+                        <Suspense fallback={<ParticipantComponentLoader />}>
                             <DynamicComponents.ParticipantsSidebar
                                 isOpen={showParticipants}
                                 onClose={() => setShowParticipants(false)}
