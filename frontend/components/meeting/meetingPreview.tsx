@@ -47,16 +47,31 @@ const MeetingPreview: React.FC = () => {
             setIsInitializing(true);
 
             try {
-                // Camera initialization
+                // Log the current Redux state for debugging
+                console.log('Initial media state from Redux:', { isAudioEnabled, isVideoEnabled });
+                
+                // Camera initialization - respect existing Redux state
                 if (!isAudioSession && hasCameraPermission && camera) {
-                    await camera.enable();
-                    dispatch(setVideoEnabled(true));
+                    if (isVideoEnabled) {
+                        await camera.enable();
+                        console.log('Camera enabled on preview initialization');
+                    } else {
+                        await camera.disable();
+                        console.log('Camera disabled on preview initialization (respecting previous setting)');
+                    }
+                    // No need to update Redux state since we're using its value
                 }
 
-                // Microphone initialization
+                // Microphone initialization - respect existing Redux state
                 if (hasMicrophonePermission && microphone) {
-                    await microphone.enable();
-                    dispatch(setAudioEnabled(true));
+                    if (isAudioEnabled) {
+                        await microphone.enable();
+                        console.log('Microphone enabled on preview initialization');
+                    } else {
+                        await microphone.disable();
+                        console.log('Microphone disabled on preview initialization (respecting previous setting)');
+                    }
+                    // No need to update Redux state since we're using its value
                 }
             } catch (error) {
                 console.error('Device initialization error:', error);
@@ -83,6 +98,8 @@ const MeetingPreview: React.FC = () => {
         hasMicrophonePermission,
         dispatch,
         isAudioSession,
+        isAudioEnabled,
+        isVideoEnabled,
     ]);
 
     const AudioSessionPreview = () => (
@@ -126,9 +143,26 @@ const MeetingPreview: React.FC = () => {
         }
 
         try {
-            await microphone.toggle();
-            dispatch(setAudioEnabled(!isAudioEnabled));
+            // Toggle microphone state
+            const newState = !isAudioEnabled;
+            
+            // Update Redux state first
+            dispatch(setAudioEnabled(newState));
+            
+            // Save to localStorage to persist across page transitions
+            localStorage.setItem('podMeetingAudioEnabled', String(newState));
+            
+            // Then update the device
+            if (newState) {
+                await microphone.enable();
+                console.log('Microphone enabled in preview');
+            } else {
+                await microphone.disable();
+                console.log('Microphone disabled in preview');
+            }
         } catch (error) {
+            // If there was an error, revert the state
+            dispatch(setAudioEnabled(isAudioEnabled));
             dispatch(setToast(`Microphone toggle error: ${String(error)}`));
         }
     }, [microphone, dispatch, isAudioEnabled, hasMicrophonePermission]);
@@ -139,12 +173,32 @@ const MeetingPreview: React.FC = () => {
             return;
         }
 
-        setVideoPreviewText(isVideoEnabled ? 'Camera is off' : 'Camera is starting');
         try {
-            await camera.toggle();
-            dispatch(setVideoEnabled(!isVideoEnabled));
-            setVideoPreviewText(isVideoEnabled ? 'Camera is off' : '');
+            // Toggle camera state
+            const newState = !isVideoEnabled;
+            
+            // Update text before toggling
+            setVideoPreviewText(newState ? 'Camera is starting' : 'Camera is turning off');
+            
+            // Update Redux state first
+            dispatch(setVideoEnabled(newState));
+            
+            // Save to localStorage to persist across page transitions
+            localStorage.setItem('podMeetingVideoEnabled', String(newState));
+            
+            // Then update the device
+            if (newState) {
+                await camera.enable();
+                setVideoPreviewText('');
+                console.log('Camera enabled in preview');
+            } else {
+                await camera.disable();
+                setVideoPreviewText('Camera is off');
+                console.log('Camera disabled in preview');
+            }
         } catch (error) {
+            // If there was an error, revert the state
+            dispatch(setVideoEnabled(isVideoEnabled));
             dispatch(setToast(`Camera toggle error: ${String(error)}`));
             setVideoPreviewText('Camera error occurred');
         }

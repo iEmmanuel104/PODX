@@ -20,6 +20,7 @@ import { setSessionInfo } from '@/store/pod/slice';
 import { useAppDispatch, useTypedSelector } from '@/store/config/store';
 import { usePrivy } from '@privy-io/react-auth';
 import { UsersRound, Clock } from 'lucide-react';
+import { setAudioEnabled, setVideoEnabled } from '@/store/media/slice';
 
 // Types
 interface JoinSessionProps {
@@ -192,8 +193,11 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
     const { sessionTitle, sessionType, isScheduled, starts_at, tokenGate } = useTypedSelector(
         state => state.pod
     );
+    const { isAudioEnabled, isVideoEnabled } = useTypedSelector(state => state.media);
     const { newMeeting, setNewMeeting } = useContext(AppContext);
     // const { client: chatClient } = useChatContext();
+    // Check if this is an audio session
+    const isAudioSession = sessionType === 'Audio Session';
 
     // Stream Video Hooks
     const call = useCall();
@@ -411,14 +415,73 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
         setState(prev => ({ ...prev, joining: true }));
 
         try {
+            // Get settings from localStorage (these will override Redux state)
+            const storedAudioEnabled = localStorage.getItem('podMeetingAudioEnabled');
+            const storedVideoEnabled = localStorage.getItem('podMeetingVideoEnabled');
+            
+            // Parse localStorage values or use Redux state as fallback
+            const audioEnabled = storedAudioEnabled !== null ? 
+                storedAudioEnabled === 'true' : isAudioEnabled;
+            const videoEnabled = storedVideoEnabled !== null ? 
+                storedVideoEnabled === 'true' : isVideoEnabled;
+            
+            // Log the media settings for debugging
+            console.log('Media settings before joining:', { 
+                fromRedux: { isAudioEnabled, isVideoEnabled },
+                fromLocalStorage: { audioEnabled, videoEnabled },
+                usingValues: { audioEnabled, videoEnabled }
+            });
+            
             if (callingState !== CallingState.JOINED) {
+                // Join with the appropriate settings
                 await call?.join({
                     data: {
                         members: [{ user_id: user?.id! }],
                     },
                     ...(sessionType === 'Audio Session' && { video: false }),
                 });
-                // await call?.updateCallMembers({ update_members: [{ user_id: user?.id! }] });
+                
+                // Ensure the Redux state reflects our final decision
+                dispatch(setAudioEnabled(audioEnabled));
+                dispatch(setVideoEnabled(videoEnabled));
+                
+                // Set the directly to localStorage again to be extra safe
+                localStorage.setItem('podMeetingJoiningWithAudio', String(audioEnabled));
+                localStorage.setItem('podMeetingJoiningWithVideo', String(videoEnabled));
+                
+                console.log('Applying final media settings before navigation:', { 
+                    audio: audioEnabled, 
+                    video: videoEnabled 
+                });
+                
+                // Apply audio settings before navigating - force a small delay to ensure settings take effect
+                try {
+                    // Apply audio settings
+                    if (audioEnabled) {
+                        await call?.microphone.enable();
+                    } else {
+                        await call?.microphone.disable();
+                    }
+                    
+                    // Apply video settings before navigating
+                    if (!isAudioSession) {
+                        if (videoEnabled) {
+                            await call?.camera.enable();
+                        } else {
+                            await call?.camera.disable();
+                        }
+                    }
+                    
+                    // Small delay to ensure settings take effect
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    console.log('Final media state before navigation:', {
+                        microphone: call?.microphone?.enabled,
+                        camera: call?.camera?.enabled
+                    });
+                } catch (error) {
+                    console.error('Error applying media settings:', error);
+                }
             }
 
             router.push(`/pod/${code}`);
@@ -427,7 +490,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
             toast.error('Failed to join session, please check your connection and try again');
             setState(prev => ({ ...prev, joining: false }));
         }
-    }, [code, user, call, callingState, router, sessionType]);
+    }, [code, user, call, callingState, router, sessionType, isAudioSession, isAudioEnabled, isVideoEnabled, dispatch]);
 
     // Memoized UI elements
     const participantsUI = useMemo(() => {
