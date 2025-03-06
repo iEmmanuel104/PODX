@@ -99,16 +99,10 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
     useEffect(() => {
         // Immediate check on component mount
         if (!isLoggedIn || !authenticated) {
-            // Save the session code for after login in both localStorage and cookie
-            // localStorage.setItem(CachId, id);
-            
-            // // Also store in a cookie for more reliable persistence
-            // document.cookie = `${CachId}=${id}; path=/; max-age=3600`;
 
             cacheValue(CachId, id);
             
             // Redirect to home page
-            // router.replace('/');
             navigate("/");
             
             // Show informative message

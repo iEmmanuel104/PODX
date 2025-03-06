@@ -15,42 +15,15 @@ import {
 import clsx from 'clsx';
 import { Mic, MicOff, MoreHorizontal } from 'lucide-react';
 import Image from 'next/image';
-import type { ComponentType as ReactComponentType } from 'react';
-import avatar1 from '/images/avatars/Oval-1.png';
-import avatar2 from '/images/avatars/Oval-2.png';
-import avatar3 from '/images/avatars/Oval-3.png';
-import avatar4 from '/images/avatars/Oval-4.png';
-import avatar5 from '/images/avatars/Oval-5.png';
-import avatar6 from '/images/avatars/Oval-6.png';
-import avatar7 from '/images/avatars/Oval-7.png';
-import avatar8 from '/images/avatars/Oval-8.png';
-import avatar9 from '/images/avatars/Oval-9.png';
-import avatar10 from '/images/avatars/Oval-10.png';
-
-import ParticipantViewUI from './participantViewUI';
 import useAnimateVideoLayout from '../../hooks/useAnimateVideoLayout';
 import VideoPlaceholder from './videoPlaceholder';
-import { getBasename, getBasenameAvatar } from '@/app/apis/basenames';
+import { getBasename } from '@/app/apis/basenames';
 import {
     useIsMobile,
     useDebounceSpeak,
-    useParticipantAvatar,
     truncateUsername,
     useParticipantConsistentAvatar,
 } from '../../hooks/useParticipantUtils';
-
-const avatars = [
-    '/icons/Avatar/Oval-1.png',
-    '/icons/Avatar/Oval-2.png',
-    '/icons/Avatar/Oval-3.png',
-    '/icons/Avatar/Oval-4.png',
-    '/icons/Avatar/Oval-5.png',
-    '/icons/Avatar/Oval-6.png',
-    '/icons/Avatar/Oval-7.png',
-    '/icons/Avatar/Oval-8.png',
-    '/icons/Avatar/Oval-9.png',
-    '/icons/Avatar/Oval-10.png',
-];
 
 interface ScreenShareUIProps {
     participant: StreamVideoParticipant;
@@ -105,7 +78,6 @@ const SpeakerLayout = memo(() => {
     const participants = useParticipants();
     const hasOngoingScreenShare = useHasOngoingScreenShare();
     const [participantsBar, setParticipantsBar] = useState<HTMLDivElement | null>(null);
-    const isMobile = useIsMobile();
 
     // Find participants by status using helper functions
     const screenSharingParticipant = useMemo(
@@ -113,7 +85,7 @@ const SpeakerLayout = memo(() => {
         [participants]
     );
 
-    const pinnedParticipant = useMemo(() => participants.find(p => isPinned(p)), [participants]);
+    // const pinnedParticipant = useMemo(() => participants.find(p => isPinned(p)), [participants]);
 
     // Determine spotlight participant and others
     const [participantInSpotlight, ...otherParticipants] = useMemo(() => {
