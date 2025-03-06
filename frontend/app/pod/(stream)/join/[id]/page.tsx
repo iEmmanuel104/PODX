@@ -19,6 +19,7 @@ import { useScheduledCalls } from '@/hooks/useScheduledCalls';
 import { setSessionInfo } from '@/store/pod/slice';
 import { useAppDispatch, useTypedSelector } from '@/store/config/store';
 import { usePrivy } from '@privy-io/react-auth';
+import { UsersRound, Clock } from 'lucide-react';
 import { CachId, sessionType } from '@/constants';
 import { useNavigate } from '@/hooks/useNavigate';
 
@@ -252,27 +253,15 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                         },
                         settings_override: {
                             limits: {
-                                max_participants: 20,
-                                max_duration_seconds: 3600,
+                                max_participants: 100,
+                                max_duration_seconds: 5400,
                             },
                         },
                             ...(isScheduledCall && { starts_at }),
                     },
-                    members_limit: 20,
-                        ...(sessionTypeFromStore === sessionType.AUDIO && { video: false }),
-                    });
-                    console.debug('Call created successfully:', callResponse);
-                    
-                    // If we successfully created a call, set newMeeting to false to avoid recreating
-                    if (callResponse?.call) {
-                        setNewMeeting(false);
-                    }
-                    
-                    return callResponse;
-                } catch (createError) {
-                    console.error('Error creating call:', createError);
-                    throw createError;
-                }
+                    members_limit: 100,
+                    ...(sessionType === 'Audio Session' && { video: false }),
+                });
             } else {
                 // For existing calls, whether scheduled or not
                 console.debug('Trying to get existing call with ID:', code);
@@ -350,14 +339,14 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
             }
         } catch (error) {
             const err = error as ErrorFromResponse<GetCallResponse>;
-            console.error('Error initializing call:', err);
-            // Log full error details
-            console.error('Error details:', JSON.stringify(error, null, 2));
-            toast.error('Failed to initialize the session. Please try again.');
-
-            // Don't redirect immediately, give user a chance to retry
-            setState(prev => ({ ...prev, loading: false }));
-            throw error; // Rethrow to allow caller to handle
+            console.error('Call initialization error:', {
+                message: err.message,
+                details: err.response?.data,
+                status: err.response?.status,
+                error: err
+            });
+            router.push('/pod');
+            toast.error(`Error fetching meeting: ${err.message || 'Unknown error'}`);
         } finally {
             setState(prev => ({ ...prev, loading: false }));
         }
@@ -652,6 +641,16 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                                 ({sessionTypeFromStore || sessionType.POD})
                             </span>
                         </p>
+                        <div className="flex items-center justify-center gap-4 mt-2">
+                            <div className="flex items-center text-gray-400 text-sm">
+                                <UsersRound className="w-4 h-4 mr-1" />
+                                <span>Up to 100 participants</span>
+                            </div>
+                            <div className="flex items-center text-gray-400 text-sm">
+                                <Clock className="w-4 h-4 mr-1" />
+                                <span>1.5 hour duration</span>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="w-full max-w-6xl">

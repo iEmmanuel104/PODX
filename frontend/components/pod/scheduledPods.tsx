@@ -26,6 +26,11 @@ interface ShareSessionState {
     startTime: Date;
 }
 
+// Add Edge browser check
+const isEdgeBrowser = typeof window !== 'undefined' && 
+    (navigator.userAgent.indexOf("Edge") > -1 || 
+     navigator.userAgent.indexOf("Edg") > -1);
+
 // Utility functions
 const canJoinSession = (startsAt: string) => {
     const startTime = new Date(startsAt);
@@ -215,7 +220,10 @@ const DeleteConfirmationDialog = memo(function DeleteConfirmationDialog({
 
     return (
         <Dialog open={isOpen} onOpenChange={open => !isDeleting && !open && onClose()}>
-            <DialogContent className="bg-black border-[#2C2C2C] max-w-md animate-in zoom-in-95 duration-200">
+            <DialogContent className="bg-black border-[#2C2C2C] max-w-md animate-in zoom-in-95 duration-200" style={{
+                animation: 'dialogIn 200ms ease-out',
+                WebkitAnimation: 'dialogIn 200ms ease-out'
+            }}>
                 <DialogHeader>
                     <DialogTitle className="text-white flex items-center gap-2">
                         {deleteSuccess ? (
@@ -457,7 +465,7 @@ const SessionCard = memo(function SessionCard({
                     <Button
                         variant="default"
                         size="sm"
-                        className={`bg-[#6032F6] hover:bg-[#4C28C4] text-white text-xs px-3 py-1.5 h-auto`}
+                        className={`bg-[#6032F6] hover:bg-[#4C28C4] text-white text-xs px-3 py-1.5 h-auto transition-all duration-200`}
                         onClick={handleJoinClick}
                         disabled={isJoining || !canJoin || (!isCreator && status?.text !== 'In progress')}
                         title={getButtonTitle(isCreator, canJoin, status?.text)}
@@ -600,7 +608,12 @@ const ScheduledPods: React.FC<ScheduledPodsProps> = ({
 
     return (
         <>
-            <div className="w-full max-w-2xl mx-auto mb-8 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 400px)' }}>
+            <div className="w-full max-w-2xl mx-auto mb-8 overflow-y-auto" style={{ 
+                maxHeight: 'calc(100vh - 400px)',
+                msOverflowStyle: 'auto',  // Add Edge/IE scrollbar style
+                scrollbarWidth: 'auto',   // Firefox scrollbar
+                WebkitOverflowScrolling: 'touch' // Smooth scrolling on iOS
+            }}>
                 {/* Found Session Section */}
                 {foundSession && (
                     <div className="mb-8">
@@ -689,8 +702,10 @@ const ScheduledPods: React.FC<ScheduledPodsProps> = ({
                         className="space-y-4 overflow-y-auto flex-grow pr-2 pb-4"
                         style={{
                             maxHeight: 'calc(80vh - 100px)',
-                            scrollbarWidth: 'thin',
-                            scrollbarColor: '#666 #333'
+                            msOverflowStyle: 'auto',
+                            scrollbarWidth: 'auto',
+                            WebkitOverflowScrolling: 'touch',
+                            scrollbarColor: 'rgba(102, 102, 102, 0.5) rgba(51, 51, 51, 0.5)' // More compatible scrollbar colors
                         }}
                     >
                         {foundSession && (
@@ -739,6 +754,39 @@ const ScheduledPods: React.FC<ScheduledPodsProps> = ({
                     startTime={shareSession.startTime}
                 />
             )}
+
+            <style jsx global>{`
+                @keyframes dialogIn {
+                    from {
+                        opacity: 0;
+                        transform: scale(0.95);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: scale(1);
+                    }
+                }
+                @-webkit-keyframes dialogIn {
+                    from {
+                        opacity: 0;
+                        -webkit-transform: scale(0.95);
+                    }
+                    to {
+                        opacity: 1;
+                        -webkit-transform: scale(1);
+                    }
+                }
+                @-ms-keyframes dialogIn {
+                    from {
+                        opacity: 0;
+                        -ms-transform: scale(0.95);
+                    }
+                    to {
+                        opacity: 1;
+                        -ms-transform: scale(1);
+                    }
+                }
+            `}</style>
         </>
     );
 }
