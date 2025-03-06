@@ -242,26 +242,29 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
 
                 try {
                     const callResponse = await call?.getOrCreate({
-                    data: {
-                        members,
-                        custom: {
-                            sessionId: code,
-                            title: sessionTitle || 'New Call',
-                                type: sessionTypeFromStore || sessionType.POD,
-                            isTokenGated: tokenGate && tokenGate.length > 0,
-                            whitelistedUsers: tokenGate || [],
-                        },
-                        settings_override: {
-                            limits: {
-                                max_participants: 100,
-                                max_duration_seconds: 5400,
+                        data: {
+                            members,
+                            custom: {
+                                sessionId: code,
+                                title: sessionTitle || 'New Call',
+                                    type: sessionTypeFromStore || sessionType.POD,
+                                isTokenGated: tokenGate && tokenGate.length > 0,
+                                whitelistedUsers: tokenGate || [],
                             },
+                            settings_override: {
+                                limits: {
+                                    max_participants: 100,
+                                    max_duration_seconds: 5400,
+                                },
+                            },
+                                ...(isScheduledCall && { starts_at }),
                         },
-                            ...(isScheduledCall && { starts_at }),
-                    },
-                    members_limit: 100,
-                    ...(sessionType === 'Audio Session' && { video: false }),
-                });
+                        members_limit: 100,
+                        ...(sessionTypeFromStore === 'Audio Session' && { video: false }),
+                    })
+                } catch(error: any) {
+                    console.error(error);
+                }
             } else {
                 // For existing calls, whether scheduled or not
                 console.debug('Trying to get existing call with ID:', code);
@@ -345,7 +348,8 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                 status: err.response?.status,
                 error: err
             });
-            router.push('/pod');
+            // router.push('/pod');
+            navigate('/pod');
             toast.error(`Error fetching meeting: ${err.message || 'Unknown error'}`);
         } finally {
             setState(prev => ({ ...prev, loading: false }));
