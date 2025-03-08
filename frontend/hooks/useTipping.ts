@@ -9,7 +9,34 @@ import { useSendTransaction } from '@privy-io/react-auth';
 import { useSendTransaction as useSendTransactionWagmi } from 'wagmi';
 import { ethers, isAddress, parseEther, parseUnits } from 'ethers';
 import { erc20Abi } from 'viem';
-import toast from 'react-hot-toast';
+import toast, { Toast } from 'react-hot-toast';
+
+// Custom toast options
+const toastOptions = {
+    duration: 5000,
+    position: 'bottom-left' as const,
+    className: 'bg-[#1C1C1C] rounded-xl p-4 min-w-[420px] shadow-lg border border-zinc-800',
+    style: {
+        color: 'white',
+        fontSize: '1rem',
+        fontWeight: 500,
+    },
+};
+
+type ToastType = 'error' | 'success' | 'loading';
+
+const getToastFunction = (type: ToastType) => {
+    switch (type) {
+        case 'error':
+            return toast.error;
+        case 'success':
+            return toast.success;
+        case 'loading':
+            return toast.loading;
+        default:
+            return toast;
+    }
+};
 
 interface TippingState {
     showTipModal: boolean;
@@ -21,7 +48,7 @@ interface TippingState {
 }
 
 // USDC contract address (example for Base chain)
-export const USDC_CONTRACT_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'; // Replace with actual USDC contract address
+export const USDC_CONTRACT_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
 export const USDC_DECIMALS = 6;
 
 export const useTipping = (isEmbeddedWallet: boolean) => {
@@ -56,98 +83,111 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
     // External wallet transaction handling
     const { sendTransactionAsync: sendTransactionWagmi } = useSendTransactionWagmi();
 
+    const showToast = (message: string, type: ToastType, id?: string) => {
+        const toastFn = getToastFunction(type);
+        const options = {
+            ...toastOptions,
+            id,
+            className: `${toastOptions.className} ${
+                type === 'error' ? 'bg-red-500/10' : 
+                type === 'success' ? 'bg-green-500/10' : 
+                'bg-blue-500/10'
+            }`,
+        };
+        return toastFn(message, options);
+    };
+
     const sendETHExternal = async (recipient: string, amount: string) => {
-        const notification = toast.loading('Sending tip...');
+        const notification = showToast('Sending tip...', 'loading');
         try {
             if (!isAddress(recipient)) {
-                toast.error('Invalid recipient address', { id: notification });
+                showToast('Invalid recipient address', 'error', notification);
                 return;
             }
 
             if (!sendTransactionWagmi) {
-                toast.error('Wallet not connected properly', { id: notification });
+                showToast('Wallet not connected properly', 'error', notification);
                 return;
             }
 
             const parsedAmount = parseEther(amount);
-
-            // Send the transaction and wait for it to be mined
             const hash = await sendTransactionWagmi({
                 to: recipient as `0x${string}`,
                 value: parsedAmount,
             });
 
-            console.debug({ tipExternal: hash });
-            toast.success('Tip sent successfully!', { id: notification });
-
-            return { hash }; // Return transaction hash
+            showToast('Tip sent successfully!', 'success', notification);
+            return { hash };
         } catch (error) {
             console.error('Error sending ETH:', error);
-            let errorMessage = 'Failed to send tip. Please try again.';
+            let errorMessage = 'Failed to send tip';
 
             if (error instanceof Error) {
-                if (error.message.includes('insufficient funds')) {
-                    errorMessage = 'Insufficient funds to send tip';
-                } else if (error.message.includes('user rejected')) {
-                    errorMessage = 'Transaction was rejected';
+                if (error.message.toLowerCase().includes('insufficient funds')) {
+                    errorMessage = 'Insufficient ETH balance to send tip';
+                } else if (error.message.toLowerCase().includes('user rejected')) {
+                    errorMessage = 'Transaction was rejected by user';
+                } else if (error.message.toLowerCase().includes('gas')) {
+                    errorMessage = 'Insufficient funds for gas fees';
                 }
             }
 
-            toast.error(errorMessage, { id: notification });
+            showToast(errorMessage, 'error', notification);
             throw error;
         }
     };
 
     const sendUSDCExternal = async (recipient: string, amount: string) => {
-        const notification = toast.loading('Sending USDC tip...');
+        const notification = showToast('Sending USDC tip...', 'loading');
         try {
             if (!isAddress(recipient)) {
-                toast.error('Invalid recipient address', { id: notification });
+                showToast('Invalid recipient address', 'error', notification);
                 return;
             }
 
             if (!sendTransactionWagmi) {
-                toast.error('Wallet not connected properly', { id: notification });
+                showToast('Wallet not connected properly', 'error', notification);
                 return;
             }
 
-            const parsedAmount = parseUnits(amount, USDC_DECIMALS); // Parse USDC amount with 6 decimals
-
-            // Encode the USDC transfer function call
+            const parsedAmount = parseUnits(amount, USDC_DECIMALS);
             const data = new ethers.Interface(erc20Abi).encodeFunctionData('transfer', [
                 recipient,
                 parsedAmount,
             ]);
 
-            // Send the transaction
             const hash = await sendTransactionWagmi({
                 to: USDC_CONTRACT_ADDRESS as `0x${string}`,
                 data: data as `0x${string}`,
                 chainId: 8453,
             });
 
-            toast.success('USDC tip sent successfully!', { id: notification });
+            showToast('USDC tip sent successfully!', 'success', notification);
             return { hash };
         } catch (error) {
             console.error('Error sending USDC:', error);
-            let errorMessage = 'Failed to send USDC tip. Please try again.';
+            let errorMessage = 'Failed to send USDC tip';
 
             if (error instanceof Error) {
-                // Handle specific error cases
-                if (error.message.includes('insufficient funds')) {
-                    errorMessage = 'Insufficient funds to send tip';
-                } else if (error.message.includes('user rejected')) {
-                    errorMessage = 'Transaction was rejected';
+                const errorMsg = error.message.toLowerCase();
+                if (errorMsg.includes('insufficient') || errorMsg.includes('balance')) {
+                    errorMessage = 'Insufficient USDC balance to send tip';
+                } else if (errorMsg.includes('user rejected') || errorMsg.includes('user denied')) {
+                    errorMessage = 'Transaction was rejected by user';
+                } else if (errorMsg.includes('gas')) {
+                    errorMessage = 'Insufficient ETH for gas fees';
+                } else if (errorMsg.includes('allowance')) {
+                    errorMessage = 'USDC approval needed';
                 }
             }
 
-            toast.error(errorMessage, { id: notification });
-            throw error; // Re-throw to be caught by handleTip
+            showToast(errorMessage, 'error', notification);
+            throw error;
         }
     };
 
     const sendETHEmbedded = async (recipient: string, amount: string) => {
-        const notification = toast.loading('Sending tip...');
+        const notification = showToast('Sending tip...', 'loading');
         try {
             if (!isAddress(recipient)) throw new Error('Invalid recipient address');
             const parsedAmount = parseEther(amount.toString());
@@ -159,22 +199,34 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
                 gasLimit: 21000,
             });
 
-            toast.success('tip successful', { id: notification });
+            showToast('Tip sent successfully!', 'success', notification);
             return { hash: response.transactionHash };
         } catch (error) {
             console.error('Error sending ETH:', error);
-            toast.error('Failed to send tip. Please try again.', { id: notification });
-            throw Error(error as string);
+            let errorMessage = 'Failed to send tip';
+
+            if (error instanceof Error) {
+                const errorMsg = error.toString().toLowerCase();
+                if (errorMsg.includes('insufficient') || errorMsg.includes('balance')) {
+                    errorMessage = 'Insufficient ETH balance to send tip';
+                } else if (errorMsg.includes('rejected') || errorMsg.includes('denied')) {
+                    errorMessage = 'Transaction was rejected by user';
+                } else if (errorMsg.includes('gas')) {
+                    errorMessage = 'Insufficient funds for gas fees';
+                }
+            }
+
+            showToast(errorMessage, 'error', notification);
+            throw error;
         }
     };
 
     const sendUSDCEmbedded = async (recipient: string, amount: string) => {
-        const notification = toast.loading('Sending USDC tip...');
+        const notification = showToast('Sending USDC tip...', 'loading');
         try {
             if (!isAddress(recipient)) throw new Error('Invalid recipient address');
-            const parsedAmount = parseUnits(amount, USDC_DECIMALS); // Parse USDC amount with 6 decimals
+            const parsedAmount = parseUnits(amount, USDC_DECIMALS);
 
-            // Encode the USDC transfer function call
             const data = new ethers.Interface(erc20Abi).encodeFunctionData('transfer', [
                 recipient,
                 parsedAmount,
@@ -187,11 +239,27 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
                 gasLimit: 100000,
             });
 
-            toast.success('USDC tip successful', { id: notification });
+            showToast('USDC tip sent successfully!', 'success', notification);
             return { hash: response.transactionHash };
         } catch (error) {
             console.error('Error sending USDC:', error);
-            toast.error('Failed to send USDC tip. Please try again.', { id: notification });
+            let errorMessage = 'Failed to send USDC tip';
+
+            if (error instanceof Error) {
+                const errorMsg = error.toString().toLowerCase();
+                if (errorMsg.includes('insufficient') || errorMsg.includes('balance')) {
+                    errorMessage = 'Insufficient USDC balance to send tip';
+                } else if (errorMsg.includes('rejected') || errorMsg.includes('denied')) {
+                    errorMessage = 'Transaction was rejected by user';
+                } else if (errorMsg.includes('gas')) {
+                    errorMessage = 'Insufficient ETH for gas fees';
+                } else if (errorMsg.includes('allowance')) {
+                    errorMessage = 'USDC approval needed';
+                }
+            }
+
+            showToast(errorMessage, 'error', notification);
+            throw error;
         }
     };
 
