@@ -9,7 +9,8 @@ import { CheckCircle2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useBalance } from 'wagmi';
 import { useTipping } from '@/hooks/useTipping';
-import { useTypedSelector } from '@/store/config/store';
+import { useTypedSelector, useAppDispatch } from '@/store/config/store';
+import { setAudioEnabled, setVideoEnabled } from '@/store/media/slice';
 import clsx from 'clsx';
 import {
     StreamTheme,
@@ -220,14 +221,79 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
         return false;
     }, [participantInSpotlight]);
 
+    // Use media settings from the Redux store
+    const { isAudioEnabled, isVideoEnabled } = useTypedSelector(state => state.media);
+    const dispatch = useAppDispatch();
+    
+    // Track if we've already applied initial settings
+    const initialSettingsApplied = useRef(false);
+    
+    // This effect should run with higher priority than other effects
     useEffect(() => {
-        if (call) {
-            call.microphone
-                .disable()
-                .then(() => console.debug('Mic disabled by default'))
-                .catch(console.error);
+        if (!call || !callingState) return;
+        
+        // Only run this when the call state changes to JOINED
+        if (callingState === CallingState.JOINED && !initialSettingsApplied.current) {
+            // Get settings from localStorage (these take priority over Redux)
+            const storedAudioEnabled = localStorage.getItem('podMeetingJoiningWithAudio');
+            const storedVideoEnabled = localStorage.getItem('podMeetingJoiningWithVideo');
+            
+            // Parse localStorage values or use Redux state as fallback
+            const audioEnabled = storedAudioEnabled !== null ? 
+                storedAudioEnabled === 'true' : isAudioEnabled;
+            const videoEnabled = storedVideoEnabled !== null ? 
+                storedVideoEnabled === 'true' : isVideoEnabled;
+            
+            console.debug('Applying saved media settings in meeting page:', { 
+                fromRedux: { isAudioEnabled, isVideoEnabled },
+                fromLocalStorage: { storedAudioEnabled, storedVideoEnabled },
+                usingValues: { audioEnabled, videoEnabled }
+            });
+            
+            initialSettingsApplied.current = true;
+            
+            // Apply the media settings synchronously to ensure they're applied before any other operations
+            const applySettings = async () => {
+                try {
+                    // Update Redux to match our final values
+                    dispatch(setAudioEnabled(audioEnabled));
+                    dispatch(setVideoEnabled(videoEnabled));
+                    
+                    // Apply audio settings first
+                    if (audioEnabled) {
+                        await call.microphone.enable();
+                        console.debug('Successfully enabled microphone in meeting page');
+                    } else {
+                        await call.microphone.disable();
+                        console.debug('Successfully disabled microphone in meeting page');
+                    }
+                    
+                    // Then apply video settings
+                    if (videoEnabled) {
+                        await call.camera.enable();
+                        console.debug('Successfully enabled camera in meeting page');
+                    } else {
+                        await call.camera.disable();
+                        console.debug('Successfully disabled camera in meeting page');
+                    }
+                    
+                    // Clear localStorage values as they're no longer needed
+                    localStorage.removeItem('podMeetingJoiningWithAudio');
+                    localStorage.removeItem('podMeetingJoiningWithVideo');
+                    
+                    console.debug('Final media state in meeting page:', {
+                        microphone: call.microphone?.enabled,
+                        camera: call.camera?.enabled
+                    });
+                } catch (error) {
+                    console.error('Error applying media settings in meeting page:', error);
+                }
+            };
+            
+            // Execute immediately
+            applySettings();
         }
-    }, [call]);
+    }, [call, callingState, isAudioEnabled, isVideoEnabled, dispatch]);
 
     useEffect(() => {
         const startup = async () => {
@@ -288,14 +354,9 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
         const needsToJoin = [CallingState.IDLE, CallingState.UNKNOWN].includes(callingState);
 
         if (needsToJoin && !live) {
-            call.microphone
-                .disable()
-                .then(() => {
-                    console.debug('Microphone disabled before join');
-                    // router.push(`/pod/join/${id}`);
-                    navigate(`/pod/join/${id}`);
-                })
-                .catch(console.error);
+            // Don't force microphone state, just redirect to join page
+            console.debug('Redirecting to join page without changing media state');
+            router.push(`/pod/join/${id}`);
         }
     }, [id, callingState, call, connectedUser, navigate, live]);
 
@@ -403,17 +464,43 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
         };
     }, [call, handleCallEvent]);
 
-    // Update the media initialization
+    // Update the media initialization to respect user settings
     useEffect(() => {
         const initializeMedia = async () => {
             if (!call) return;
 
             try {
-                // Start with microphone disabled
-                await call.microphone.disable();
-
-                // Only enable camera
-                await call.camera.enable();
+                // Get settings from localStorage
+                const storedAudioEnabled = localStorage.getItem('podMeetingJoiningWithAudio');
+                const storedVideoEnabled = localStorage.getItem('podMeetingJoiningWithVideo');
+                
+                // Use the stored values or fall back to Redux state
+                const shouldEnableAudio = storedAudioEnabled !== null ? 
+                    storedAudioEnabled === 'true' : isAudioEnabled;
+                const shouldEnableVideo = storedVideoEnabled !== null ? 
+                    storedVideoEnabled === 'true' : isVideoEnabled;
+                
+                console.debug('Media settings in initializeMedia:', {
+                    fromStorage: { storedAudioEnabled, storedVideoEnabled },
+                    usingValues: { shouldEnableAudio, shouldEnableVideo }
+                });
+                
+                // Apply the user's preferences instead of fixed settings
+                if (shouldEnableAudio) {
+                    await call.microphone.enable();
+                    console.debug('Microphone enabled in initializeMedia (respecting user preference)');
+                } else {
+                    await call.microphone.disable();
+                    console.debug('Microphone disabled in initializeMedia (respecting user preference)');
+                }
+                
+                if (shouldEnableVideo) {
+                    await call.camera.enable();
+                    console.debug('Camera enabled in initializeMedia (respecting user preference)');
+                } else {
+                    await call.camera.disable();
+                    console.debug('Camera disabled in initializeMedia (respecting user preference)');
+                }
 
                 // Setup speaker
                 if (devices?.length > 0) {
@@ -421,14 +508,18 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
                     speaker.setVolume(1.0);
                 }
 
-                console.debug('Media devices initialized with muted mic');
+                // Update the Redux store to match what we applied
+                dispatch(setAudioEnabled(shouldEnableAudio));
+                dispatch(setVideoEnabled(shouldEnableVideo));
+                
+                console.debug('Media devices initialized with user preferences');
             } catch (error) {
                 console.error('Media initialization failed:', error);
             }
         };
 
         initializeMedia();
-    }, [call, speaker, devices]);
+    }, [call, speaker, devices, isAudioEnabled, isVideoEnabled, dispatch]);
 
     return (
         <StreamTheme className="root-theme">

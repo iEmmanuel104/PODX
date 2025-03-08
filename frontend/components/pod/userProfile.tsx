@@ -113,7 +113,7 @@ function UpdateUserComponent({username, onChange, loading, notification}:{userna
 
 const UserProfile = memo<UserDetailsProps>(({ user }) => {
 
-    // console.log("User seen:", user.username);
+    // console.debug("User seen:", user.username);
     const dispatch = useAppDispatch();
     const [updateUsername] = useUpdateUsernameMutation();
 
