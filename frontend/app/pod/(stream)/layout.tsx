@@ -4,12 +4,13 @@
 
 
 import React, { useEffect, useState, memo, Suspense } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import type { ReactNode } from 'react';
 import nextDynamic from 'next/dynamic';
 import { useTypedSelector } from '@/store/config/store';
 import { storage } from '@/utils/storage';
 import { LoadingOverlay } from '@/components/ui/loading';
+import { useNavigate } from '@/hooks/useNavigate';
 
 // Cache keys with namespace to avoid collisions
 const CACHE_KEYS = {
@@ -90,7 +91,8 @@ const StreamLayout = memo(({ children }: { children: ReactNode }) => {
     const params = useParams();
     // Type-safe way to get id from params
     const id = params?.['id'] as string | undefined;
-    const router = useRouter();
+    // const router = useRouter();
+    const navigate = useNavigate();
     const { isLoggedIn } = useTypedSelector(state => state.auth);
     const [isValidId, setIsValidId] = useState(() => {
         return storage.get(CACHE_KEYS.MEETING.ID(id as string)) ?? true;
@@ -132,15 +134,16 @@ const StreamLayout = memo(({ children }: { children: ReactNode }) => {
             storage.set(CACHE_KEYS.MEETING.ID(id as string), isValid, 7200); // 2h cache
 
             if (!isValid) {
-                router.replace('/pod');
+                console.debug("Intercepted direct to /pod!");
+                // router.replace('/pod');
             }
         };
 
         validateAndCacheId();
-    }, [id, router]);
+    }, [id,]);
 
     // Early returns
-    if (!isLoggedIn) return null;
+    // if (!isLoggedIn) return null;
     if (!isValidId) return <LoadingOverlay text="Validating session..." />;
 
     return (

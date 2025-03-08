@@ -34,6 +34,9 @@ import {
 } from '@stream-io/video-react-sdk';
 import { usePrivy } from '@privy-io/react-auth';
 import { toast } from 'react-hot-toast';
+import { CachId } from '@/constants';
+import { cacheValue } from '@/utils/storage';
+import { useNavigate } from '@/hooks/useNavigate';
 
 interface MeetingProps {
     params: {
@@ -73,11 +76,23 @@ const ComponentLoader = memo(() => (
 ));
 ComponentLoader.displayName = 'ComponentLoader';
 
+const ParticipantComponentLoader = memo(() => (
+    <div className="relative h-screen w-[80%] sm:w-[380px]">
+        <div className="animate-pulse bg-gray-800 absolute top-1/2 -translate-y-1/2 -translate-x-0 z-50  w-[100%] h-[50%] rounded-md sm:h-[240px] transform transition-transform duration-300 ease-in-out flex justify-center items-center text-center text-gray-400">
+            Loading...
+        </div>
+    </div>
+));
+
+ParticipantComponentLoader.displayName = 'ParticipantComponentLoader';
+
+
 // Memoize the main interface component
 const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
     const call = useStreamCall();
     const { id } = params;
-    const router = useRouter();
+    // const router = useRouter();
+    const navigate = useNavigate();
     const { isLoggedIn, user } = useTypedSelector(state => state.auth);
     const { authenticated, ready } = usePrivy();
     const authChecked = useRef(false);
@@ -96,31 +111,34 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
     useEffect(() => {
         // Immediate check on component mount
         if (!isLoggedIn || !authenticated) {
-            // Save the session code for after login
-            localStorage.setItem('pendingSessionCode', id);
+
+            cacheValue(CachId, id);
+            
             // Redirect to home page
-            router.replace('/');
+            navigate("/");
+            
             // Show informative message
             toast('Authentication required', {
                 icon: '🔐',
                 duration: 5000,
             });
-            console.log('Redirecting from pod page - user not authenticated', { authenticated, isLoggedIn });
+            console.debug('Redirecting from pod page - user not authenticated', { authenticated, isLoggedIn });
             return;
         }
 
         // Set the flag so we don't redirect after authentication
         authChecked.current = true;
-    }, [authenticated, isLoggedIn, id, router]);
+    }, [authenticated, isLoggedIn, id, navigate]);
 
     // Second check that waits for Privy to be ready
     useEffect(() => {
         if (ready && !authChecked.current) {
             if (!authenticated || !isLoggedIn) {
                 // Save the session code for after login
-                localStorage.setItem('pendingSessionCode', id);
+                localStorage.setItem(CachId, id);
                 // Redirect to home page
-                router.replace('/');
+                // router.replace('/');
+                navigate('/');
                 // Show informative message
                 toast('Please login to join this session', {
                     icon: '🔐',
@@ -129,7 +147,7 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
                 return;
             }
         }
-    }, [ready, authenticated, isLoggedIn, id, router]);
+    }, [ready, authenticated, isLoggedIn, id, navigate]);
 
     const participantComparator = useMemo(() => {
         return combineComparators(
@@ -226,7 +244,7 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
             const videoEnabled = storedVideoEnabled !== null ? 
                 storedVideoEnabled === 'true' : isVideoEnabled;
             
-            console.log('Applying saved media settings in meeting page:', { 
+            console.debug('Applying saved media settings in meeting page:', { 
                 fromRedux: { isAudioEnabled, isVideoEnabled },
                 fromLocalStorage: { storedAudioEnabled, storedVideoEnabled },
                 usingValues: { audioEnabled, videoEnabled }
@@ -244,26 +262,26 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
                     // Apply audio settings first
                     if (audioEnabled) {
                         await call.microphone.enable();
-                        console.log('Successfully enabled microphone in meeting page');
+                        console.debug('Successfully enabled microphone in meeting page');
                     } else {
                         await call.microphone.disable();
-                        console.log('Successfully disabled microphone in meeting page');
+                        console.debug('Successfully disabled microphone in meeting page');
                     }
                     
                     // Then apply video settings
                     if (videoEnabled) {
                         await call.camera.enable();
-                        console.log('Successfully enabled camera in meeting page');
+                        console.debug('Successfully enabled camera in meeting page');
                     } else {
                         await call.camera.disable();
-                        console.log('Successfully disabled camera in meeting page');
+                        console.debug('Successfully disabled camera in meeting page');
                     }
                     
                     // Clear localStorage values as they're no longer needed
                     localStorage.removeItem('podMeetingJoiningWithAudio');
                     localStorage.removeItem('podMeetingJoiningWithVideo');
                     
-                    console.log('Final media state in meeting page:', {
+                    console.debug('Final media state in meeting page:', {
                         microphone: call.microphone?.enabled,
                         camera: call.camera?.enabled
                     });
@@ -280,13 +298,14 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
     useEffect(() => {
         const startup = async () => {
             if (isUnkownOrIdle) {
-                router.push(`/pod/join/${id}`);
+                // router.push(`/pod/join/${id}`);
+                navigate(`/pod/join/${id}`);
                 return;
             }
         };
 
         startup();
-    }, [call, router, id, isUnkownOrIdle]);
+    }, [call, navigate, id, isUnkownOrIdle]);
 
     // Add type definition for CallEventHandler
     type CallEventHandler = (event: StreamVideoEvent) => void;
@@ -298,8 +317,12 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
                 const customEvent = event as unknown as StreamCustomEvent;
                 if (customEvent.custom.type === 'applaud') {
                     if (customEvent.custom.data.userId !== connectedUser?.id) {
-                        const clapSound = new Audio('/sounds/clap-sound.mp3');
-                        clapSound.play().catch(console.error);
+                        // const clapSound = new Audio('/sounds/clap-sound.mp3');
+                        // clapSound.play().catch(console.error);
+
+                        const toastId = `${connectedUser?.id || Date.now()}-${customEvent.custom.data.timestamp}`;
+                        const name = connectedUser?.name || "A guest";
+                        toast.success(`${name} is clapping`, {icon: "👏", id: toastId, duration: 6000});
                     }
                 }
                 handleTipEvent(event as CustomVideoEvent);
@@ -316,26 +339,7 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
                 break;
             }
         }
-    }, [connectedUser?.id, handleTipEvent]);
-
-    // Remove duplicate custom case and update the sendCustomEvent call
-    const handleApplaud = useCallback(() => {
-        if (!call || !connectedUser) return;
-
-        const clapSound = new Audio('/sounds/clap-sound.mp3');
-        clapSound.play().catch(console.error);
-
-        call.sendCustomEvent({
-            type: 'custom',
-            custom: {
-                type: 'applaud',
-                data: {
-                    userId: connectedUser.id,
-                    timestamp: Date.now()
-                }
-            }
-        });
-    }, [call, connectedUser]);
+    }, [connectedUser?.id,connectedUser?.name,handleTipEvent]);
 
     useEffect(() => {
         if (!call || !('on' in call)) return;
@@ -351,10 +355,10 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
 
         if (needsToJoin && !live) {
             // Don't force microphone state, just redirect to join page
-            console.log('Redirecting to join page without changing media state');
-            router.push(`/pod/join/${id}`);
+            console.debug('Redirecting to join page without changing media state');
+            navigate(`/pod/join/${id}`);
         }
-    }, [id, callingState, call, connectedUser, router, live]);
+    }, [id, callingState, call, connectedUser, navigate, live]);
 
     useEffect(() => {
         handleJoinSession();
@@ -365,16 +369,18 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
             if (call && 'leave' in call && callingState !== CallingState.OFFLINE) {
                 await (call as unknown as Call).leave();
             }
-            router.push(`/pod/end`);
+            // router.push(`/pod/end`);
+            navigate(`/pod/end`);
         } catch (error) {
             console.error('Error leaving call:', error);
-            router.push(`/pod/end`);
+            // router.push(`/pod/end`);
+            navigate(`/pod/end`);
         }
     };
 
     const toggleScreenShare = useCallback(async () => {
         if (!call || !screenShare) {
-            console.log('Call or screen share not available');
+            console.debug('Call or screen share not available');
             return;
         }
 
@@ -390,11 +396,12 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
     }, []);
 
     const confirmLeave = async () => {
-        router.push('/pod');
+        // router.push('/pod');
+        navigate('/pod');
     };
 
     const updateParticipantRole = (userId: string, newRole: string) => {
-        console.log(`Updating ${userId} to ${newRole}`);
+        console.debug(`Updating ${userId} to ${newRole}`);
     };
 
     const handleJoinRequest = (userId: string, accept: boolean) => {
@@ -473,7 +480,7 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
                 const shouldEnableVideo = storedVideoEnabled !== null ? 
                     storedVideoEnabled === 'true' : isVideoEnabled;
                 
-                console.log('Media settings in initializeMedia:', {
+                console.debug('Media settings in initializeMedia:', {
                     fromStorage: { storedAudioEnabled, storedVideoEnabled },
                     usingValues: { shouldEnableAudio, shouldEnableVideo }
                 });
@@ -481,18 +488,18 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
                 // Apply the user's preferences instead of fixed settings
                 if (shouldEnableAudio) {
                     await call.microphone.enable();
-                    console.log('Microphone enabled in initializeMedia (respecting user preference)');
+                    console.debug('Microphone enabled in initializeMedia (respecting user preference)');
                 } else {
                     await call.microphone.disable();
-                    console.log('Microphone disabled in initializeMedia (respecting user preference)');
+                    console.debug('Microphone disabled in initializeMedia (respecting user preference)');
                 }
                 
                 if (shouldEnableVideo) {
                     await call.camera.enable();
-                    console.log('Camera enabled in initializeMedia (respecting user preference)');
+                    console.debug('Camera enabled in initializeMedia (respecting user preference)');
                 } else {
                     await call.camera.disable();
-                    console.log('Camera disabled in initializeMedia (respecting user preference)');
+                    console.debug('Camera disabled in initializeMedia (respecting user preference)');
                 }
 
                 // Setup speaker
@@ -505,7 +512,7 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
                 dispatch(setAudioEnabled(shouldEnableAudio));
                 dispatch(setVideoEnabled(shouldEnableVideo));
                 
-                console.log('Media devices initialized with user preferences');
+                console.debug('Media devices initialized with user preferences');
             } catch (error) {
                 console.error('Media initialization failed:', error);
             }
@@ -553,7 +560,7 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
                     </div>
 
                     {showParticipants && (
-                        <Suspense fallback={<ComponentLoader />}>
+                        <Suspense fallback={<ParticipantComponentLoader />}>
                             <DynamicComponents.ParticipantsSidebar
                                 isOpen={showParticipants}
                                 onClose={() => setShowParticipants(false)}

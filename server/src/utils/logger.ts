@@ -27,7 +27,8 @@ const logFormat = printf((info) => {
     }
 
     if (info[Symbol.for('splat')]) {
-        info[Symbol.for('splat')].forEach((item: unknown) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (info[Symbol.for('splat')] as any).forEach((item: unknown) => {
             if (typeof item === 'object') {
                 logMessage += ` ${util.inspect(item, { depth: null, colors: true })}`;
             } else {

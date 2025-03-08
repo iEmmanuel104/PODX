@@ -174,57 +174,18 @@ export default class StreamIOConfig {
         }
     }
 
-    static async createCall(callType: string, callId: string, data: CallData, ring: boolean = false): Promise<{ call: any; error?: Error }> {
+    static async createCall(options: { data: any }): Promise<{ call: any; error?: Error }> {
         try {
+            const { data } = options;
+            
             this.initialize();
-            const call = this.client.video.call(callType, callId);
-
-            // Ensure we have default settings for required fields
-            const defaultSettings: Partial<CallSettings> = {
-                audio: {
-                    mic_default_on: true,
-                    default_device: 'speaker',
-                    access_request_enabled: false,
-                    opus_dtx_enabled: false,
-                    redundant_coding_enabled: false,
-                    speaker_default_on: false,
-                },
-                video: {
-                    camera_default_on: true,
-                    access_request_enabled: false,
-                    camera_facing: 'front',
-                    enabled: false,
-                    target_resolution: {
-                        width: 640,
-                        height: 480,
-                        bitrate: 512,
-                    },
-                },
-                backstage: {
-                    enabled: false,
-                },
-            };
-
-            const callRequest = {
-                ring,
-                data: {
-                    ...data,
-                    members: data.members || [{ user_id: data.created_by_id }],
-                    settings_override: {
-                        ...defaultSettings,
-                        ...data.settings_override,
-                        recording: data.settings_override?.recording
-                            ? {
-                                ...data.settings_override.recording,
-                                mode: data.settings_override.recording.mode as 'available' | 'disabled' | 'auto-on',
-                                quality: data.settings_override.recording.quality as '360p' | '480p' | '720p' | '1080p' | '1440p' | 'portrait-360x640' | 'portrait-480x854' | 'portrait-720x1280' | 'portrait-1080x1920' | 'portrait-1440x2560' | undefined,
-                            }
-                            : undefined,
-                    },
-                },
-            };
-
-            await call.create(callRequest);
+            const callId = generateUUID();
+            const call = this.client.video.call("video", callId);
+            
+            await call.create({
+                data: data
+            });
+            
             return { call };
         } catch (error) {
             console.error('Error creating call:', error);
@@ -281,7 +242,7 @@ export default class StreamIOConfig {
                 },
             };
 
-            const response = await call.getOrCreate(callRequest);
+            const response = await call.getOrCreate(callRequest as any);
             return { call: response };
         } catch (error) {
             console.error('Error getting/creating call:', error);
@@ -311,7 +272,7 @@ export default class StreamIOConfig {
             };
 
             await call.update({
-                settings_override: formattedSettings,
+                settings_override: formattedSettings as any,
             });
             return { success: true };
         } catch (error) {
@@ -735,4 +696,12 @@ export default class StreamIOConfig {
 
         return analytics;
     }
+}
+
+function generateUUID(): string {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
 }

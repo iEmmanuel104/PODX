@@ -25,12 +25,25 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({
     sessionCode,
     isJoining,
     onJoinSession,
+    scheduledTime,
 }) => {
     const [linkCopied, setLinkCopied] = useState(false);
     const [codeCopied, setCodeCopied] = useState(false);
     const [isCopyingLink, setIsCopyingLink] = useState(false);
     const [isCopyingCode, setIsCopyingCode] = useState(false);
     const [isJoiningInternal, setIsJoiningInternal] = useState(false);
+    
+    const isScheduled = !!scheduledTime;
+    const formattedScheduledTime = isScheduled
+        ? new Date(scheduledTime).toLocaleString('en-US', {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+        })
+        : '';
 
     useEffect(() => {
         setIsJoiningInternal(isJoining);
@@ -44,6 +57,12 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({
             console.error('Join session error:', error);
             setIsJoiningInternal(false);
         }
+    };
+
+    const handleModalClose = () => {
+        onClose();
+        
+        // Remove the automatic scrolling behavior
     };
 
     const copyToClipboard = async (text: string, isCopyingLink: boolean) => {
@@ -74,7 +93,7 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({
     };
 
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
+        <Dialog open={isOpen} onOpenChange={handleModalClose}>
             <DialogContent
                 className={`
                 bg-[#1E1E1E] text-white rounded-[20px] sm:rounded-[20px] p-6 w-full max-w-[90%] sm:max-w-md mx-auto 
@@ -97,10 +116,23 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({
                 />
                 <DialogHeader className="flex flex-row justify-between items-center mb-6">
                     <DialogTitle className="text-2xl font-semibold">
-                        Your session is created
+                        {isScheduled ? 'Session scheduled' : 'Your session is created'}
                     </DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
+                    {isScheduled && (
+                        <div className="bg-[#2A2A2A] p-4 rounded-lg mb-4">
+                            <div className="flex items-center mb-2">
+                                <AlertCircle className="text-[#DDB958] w-5 h-5 mr-2" />
+                                <span className="text-[#DDB958] font-medium">Scheduled for:</span>
+                            </div>
+                            <p className="text-white">{formattedScheduledTime}</p>
+                            <p className="text-[#A3A3A3] text-sm mt-2">
+                                Your scheduled session appears in the "Your Scheduled Sessions" list below.
+                            </p>
+                        </div>
+                    )}
+                    
                     <div>
                         <label className="text-[#A3A3A3] mb-2 flex items-center">
                             <Link className="w-4 h-4 mr-2" />
@@ -128,8 +160,8 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({
                                 {isCopyingLink
                                     ? 'Copying...'
                                     : linkCopied
-                                      ? 'Copied!'
-                                      : 'Copy Link'}
+                                    ? 'Copied!'
+                                    : 'Copy Link'}
                             </Button>
                         </div>
                     </div>
@@ -159,22 +191,34 @@ const CreatedSessionModal: React.FC<CreatedSessionModalProps> = ({
                             </Button>
                         </div>
                     </div>
-                    <Button
-                        onClick={handleJoinSession}
-                        variant="default"
-                        size="lg"
-                        className="w-full bg-[#DDB958] text-black hover:bg-[#DDB958] transition-all duration-300 ease-in-out mt-4 rounded-[10px] py-3"
-                        disabled={isJoiningInternal}
-                    >
-                        {isJoiningInternal ? (
-                            <div className="flex items-center justify-center">
-                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                <span>Joining...</span>
-                            </div>
-                        ) : (
-                            'Join Session Now'
-                        )}
-                    </Button>
+                    
+                    {isScheduled ? (
+                        <Button
+                            onClick={handleModalClose}
+                            variant="default"
+                            size="lg"
+                            className="w-full bg-[#6032F6] text-white hover:bg-[#4C28C4] transition-all duration-300 ease-in-out mt-4 rounded-[10px] py-3"
+                        >
+                            View Scheduled Sessions
+                        </Button>
+                    ) : (
+                        <Button
+                            onClick={handleJoinSession}
+                            variant="default"
+                            size="lg"
+                            className="w-full bg-[#DDB958] text-black hover:bg-[#DDB958] transition-all duration-300 ease-in-out mt-4 rounded-[10px] py-3"
+                            disabled={isJoiningInternal}
+                        >
+                            {isJoiningInternal ? (
+                                <div className="flex items-center justify-center">
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    <span>Joining...</span>
+                                </div>
+                            ) : (
+                                'Join Session Now'
+                            )}
+                        </Button>
+                    )}
                 </div>
             </DialogContent>
         </Dialog>

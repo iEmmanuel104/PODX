@@ -80,6 +80,7 @@ export interface ScheduleCallArgs {
     sessionId: string;
     starts_at: string;
     tokenGate?: string[];
+    scheduledDuration?: number; // Duration in minutes, default is 60
 }
 
 export interface QueryParams {

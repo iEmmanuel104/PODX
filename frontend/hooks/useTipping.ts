@@ -43,7 +43,7 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
             console.error('Embedded wallet transaction failed:', error);
         },
         onSuccess: response => {
-            console.log('Embedded wallet transaction successful:', response);
+            console.debug('Embedded wallet transaction successful:', response);
             if (state.selectedTipRecipient) {
                 toast.success(
                     `You successfully tipped ${state.selectedTipRecipient.user.name || state.selectedTipRecipient.user.id} ${state.tipAmount} ETH`,
@@ -77,7 +77,7 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
                 value: parsedAmount,
             });
 
-            console.log({ tipExternal: hash });
+            console.debug({ tipExternal: hash });
             toast.success('Tip sent successfully!', { id: notification });
 
             return { hash }; // Return transaction hash
@@ -288,7 +288,7 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
     const handleTipEvent = useCallback(
         (event: CustomVideoEvent) => {
             if (event.custom.type === 'tip') {
-                console.log('event.custom', event.custom);
+                console.debug('event.custom', event.custom);
                 const { from, to, amount, currency } = event.custom;
                 const senderName = from?.name || 'Anon';
                 if (to.id === connectedUser?.id) {
@@ -306,7 +306,7 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
     );
 
     const openTipModal = (participant: MemberResponse) => {
-        console.log('opening tip modal and setting recipient to', { participant });
+        console.debug('opening tip modal and setting recipient to', { participant });
         setState(prev => ({
             ...prev,
             selectedTipRecipient: participant,

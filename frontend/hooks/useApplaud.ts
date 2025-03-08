@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useCall } from '@stream-io/video-react-sdk';
 
 const clapSound = new Audio('/sounds/clap-sound.mp3');
@@ -9,6 +9,8 @@ export const useApplaud = (participantId: string) => {
     const call = useCall();
 
     const handleApplaud = useCallback(() => {
+        if (isApplauding) return;
+
         setIsApplauding(true);
         clapSound.play().catch(console.error);
 
@@ -22,7 +24,7 @@ export const useApplaud = (participantId: string) => {
         });
 
         setTimeout(() => setIsApplauding(false), 3000);
-    }, [call, participantId]);
+    }, [call, participantId, isApplauding]);
 
     return { isApplauding, handleApplaud };
 };

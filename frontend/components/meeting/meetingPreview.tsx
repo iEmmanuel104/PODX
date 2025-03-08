@@ -48,16 +48,16 @@ const MeetingPreview: React.FC = () => {
 
             try {
                 // Log the current Redux state for debugging
-                console.log('Initial media state from Redux:', { isAudioEnabled, isVideoEnabled });
+                console.debug('Initial media state from Redux:', { isAudioEnabled, isVideoEnabled });
                 
                 // Camera initialization - respect existing Redux state
                 if (!isAudioSession && hasCameraPermission && camera) {
                     if (isVideoEnabled) {
                         await camera.enable();
-                        console.log('Camera enabled on preview initialization');
+                        console.debug('Camera enabled on preview initialization');
                     } else {
                         await camera.disable();
-                        console.log('Camera disabled on preview initialization (respecting previous setting)');
+                        console.debug('Camera disabled on preview initialization (respecting previous setting)');
                     }
                     // No need to update Redux state since we're using its value
                 }
@@ -66,10 +66,10 @@ const MeetingPreview: React.FC = () => {
                 if (hasMicrophonePermission && microphone) {
                     if (isAudioEnabled) {
                         await microphone.enable();
-                        console.log('Microphone enabled on preview initialization');
+                        console.debug('Microphone enabled on preview initialization');
                     } else {
                         await microphone.disable();
-                        console.log('Microphone disabled on preview initialization (respecting previous setting)');
+                        console.debug('Microphone disabled on preview initialization (respecting previous setting)');
                     }
                     // No need to update Redux state since we're using its value
                 }
@@ -155,10 +155,10 @@ const MeetingPreview: React.FC = () => {
             // Then update the device
             if (newState) {
                 await microphone.enable();
-                console.log('Microphone enabled in preview');
+                console.debug('Microphone enabled in preview');
             } else {
                 await microphone.disable();
-                console.log('Microphone disabled in preview');
+                console.debug('Microphone disabled in preview');
             }
         } catch (error) {
             // If there was an error, revert the state
@@ -190,11 +190,11 @@ const MeetingPreview: React.FC = () => {
             if (newState) {
                 await camera.enable();
                 setVideoPreviewText('');
-                console.log('Camera enabled in preview');
+                console.debug('Camera enabled in preview');
             } else {
                 await camera.disable();
                 setVideoPreviewText('Camera is off');
-                console.log('Camera disabled in preview');
+                console.debug('Camera disabled in preview');
             }
         } catch (error) {
             // If there was an error, revert the state

@@ -1,8 +1,7 @@
 'use client';
 import dynamic from 'next/dynamic';
 import React, { useEffect, useState, useRef, useCallback, memo, ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
-import { STREAM_API_KEY } from '@/constants';
+import { CachId, STREAM_API_KEY } from '@/constants';
 import { LoadingOverlay } from '@/components/ui/loading';
 import { useStreamTokenProvider } from '@/hooks/useStreamTokenProvider';
 import type { StreamChat } from 'stream-chat';
@@ -10,6 +9,8 @@ import type { Call, StreamVideoClient } from '@stream-io/video-react-sdk';
 import { ErrorBoundary } from '@/components/pod/errorBoundary';
 import { StreamConnectionPool } from './streamConnectionPool';
 import { useTypedSelector } from '@/store/config/store';
+import toast from 'react-hot-toast';
+
 const DynamicStreamVideo = dynamic(
     () => import('@stream-io/video-react-sdk').then(mod => mod.StreamVideo),
     { ssr: false }
@@ -30,20 +31,34 @@ type StreamMeetProviderProps = {
     language: string;
 };
 
+
+const CACHE_KEYS = {
+    AUTH_STATE: 'auth_state',
+    COMPONENTS_LOADED: 'components_loaded',
+    UI: {
+        COMPONENTS: 'ui_components',
+    },
+    REDIRECT: 'main_redirect_state',
+};
+
 const connectionPool = new StreamConnectionPool();
 
 export const StreamMeetProvider = memo<StreamMeetProviderProps>(
-    ({ meetingId, children, language }) => {
+    ({ meetingId, children, language}) => {
+        // const { connect, ready } = useAuth();
         const { auth, pod } = useTypedSelector(state => state);
         const { user, isLoggedIn } = auth;
         const { streamCallType } = pod;
+
         const [loading, setLoading] = useState(true);
         const [isMounted, setIsMounted] = useState(false);
+        const [shouldAuthenticate, setShouldAuthenticate] = useState(false);
+
         const chatClientRef = useRef<StreamChat>();
         const videoClientRef = useRef<StreamVideoClient>();
         const callRef = useRef<Call>();
+
         const tokenProvider = useStreamTokenProvider();
-        const router = useRouter();
 
         useEffect(() => {
             setIsMounted(true);
@@ -92,7 +107,7 @@ export const StreamMeetProvider = memo<StreamMeetProviderProps>(
 
                 if (!callRef.current && videoClientRef.current && meetingId) {
                     const callType = streamCallType || 'default';
-                    console.log({ callType, meetingId, streamCallType });
+                    console.debug({ callType, meetingId, streamCallType });
                     callRef.current = videoClientRef.current.call(callType, meetingId);
                 }
             },
@@ -114,9 +129,14 @@ export const StreamMeetProvider = memo<StreamMeetProviderProps>(
                     }
                 } else {
                     if (meetingId) {
-                        localStorage.setItem('pendingSessionCode', meetingId);
+                        localStorage.setItem(CachId, meetingId);
                     }
-                    router.push('/');
+                    // router.push('/');
+
+                    // Initiate 
+                    toast.error('Please login to join this session', {
+                        duration: 5000,
+                    });
                 }
             };
 
@@ -128,7 +148,6 @@ export const StreamMeetProvider = memo<StreamMeetProviderProps>(
             tokenProvider,
             connectChatClient,
             connectVideoClient,
-            router,
             meetingId,
         ]);
 

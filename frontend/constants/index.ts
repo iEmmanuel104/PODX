@@ -4,7 +4,7 @@ export const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL as string;
 
 export const SERVER_SOCKET_URL = process.env.NEXT_PUBLIC_SERVER_SOCKET_URL as string;
 
-console.log({ SERVER_URL, SERVER_SOCKET_URL });
+console.debug({ SERVER_URL, SERVER_SOCKET_URL });
 
 export const SIGNATURE_MESSAGE = process.env.NEXT_PUBLIC_SIGNATURE_MESSAGE as string;
 
@@ -47,3 +47,6 @@ export const clashGrotesk = localFont({
         },
     ],
 });
+
+
+export const CachId = 'pendingSessionCode';

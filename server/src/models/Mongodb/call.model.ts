@@ -1,5 +1,30 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 
+interface TokenGateInfo {
+    enabled?: boolean;
+    addresses?: string[];
+    contractAddress?: string;
+    sessionName?: string;
+}
+
+interface POAPInfo {
+    contractAddress?: string;
+    sessionId?: number;
+    sessionTxHash?: string;
+    status?: string;
+    participantCount?: number;
+    creator?: string;
+}
+
+interface CallCustom {
+    title?: string;
+    type?: string;
+    tokenGateInfo?: TokenGateInfo;
+    poap?: POAPInfo;
+    events?: any[];
+    [key: string]: any; // Allow other properties
+}
+
 export interface ICall extends Document {
     callId: string;
     type: string;
@@ -13,7 +38,9 @@ export interface ICall extends Document {
     startTime?: Date;
     endTime?: Date;
     duration?: number;
-    custom?: Record<string, unknown>;
+    custom?: CallCustom;
+    scheduledDuration: number;
+    endedBy: Types.ObjectId;
 }
 
 const CallSchema = new Schema({
@@ -33,7 +60,18 @@ const CallSchema = new Schema({
     startTime: Date,
     endTime: Date,
     duration: Number,
-    custom: Schema.Types.Mixed,
+    custom: {
+        type: Schema.Types.Mixed,
+        default: {},
+    } as any,
+    scheduledDuration: { 
+        type: Number,  // in minutes
+        required: true 
+    },
+    endedBy: {
+        type: Schema.Types.ObjectId,
+        ref: 'User'
+    }
 }, {
     timestamps: true,
 });

@@ -30,6 +30,7 @@ import { useGetUserCallsQuery } from '@/store/user/slice';
 import { SessionFormState, Session } from '@/types';
 import { CallMember } from '@/store/user/types';
 import TokenGatingTooltip from './token-gating-tooltip';
+import { StreamCallData } from './streamCallData';
 
 interface CreateSessionModalProps {
     isOpen: boolean;
@@ -40,6 +41,7 @@ interface CreateSessionModalProps {
         scheduledDate?: Date,
         tokenGatedSessions?: string[]
     ) => void;
+    scheduledSessions?: StreamCallData[];
 }
 
 export const DEFAULT_SESSION_TITLE = 'Demo Session';
@@ -48,6 +50,7 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
     isOpen,
     onClose,
     onCreateSession,
+    scheduledSessions = [],
 }) => {
     const [formState, setFormState] = useState<SessionFormState>({
         title: DEFAULT_SESSION_TITLE,
@@ -60,6 +63,7 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
     const [whitelistedAddresses, setWhitelistedAddresses] = useState<string[]>([]);
     const [isCreating, setIsCreating] = useState(false);
     const [timeError, setTimeError] = useState('');
+    const [conflictError, setConflictError] = useState('');
     const [isSelectingSession, setIsSelectingSession] = useState(false);
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
@@ -111,9 +115,32 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
         return isBefore(dateWithTime, new Date());
     };
 
+    const checkTimeConflict = useCallback((date: Date, timeStr?: string) => {
+        if (!date || !timeStr) return false;
+        
+        const [hours, minutes = 0] = timeStr.split(':').map(Number);
+        const scheduledDate = new Date(date);
+        scheduledDate.setHours(hours, minutes, 0, 0);
+        
+        const hasConflict = scheduledSessions.some(session => {
+            if (!session.starts_at) return false;
+            
+            const existingStartTime = new Date(session.starts_at);
+            return existingStartTime.getTime() === scheduledDate.getTime();
+        });
+        
+        if (hasConflict) {
+            setConflictError('Cannot schedule a session at this time. There is already a session scheduled at exactly the same time.');
+            return true;
+        } else {
+            setConflictError('');
+            return false;
+        }
+    }, [scheduledSessions]);
+
     const handleCreateSession = useCallback(async () => {
         if (!formState.title.trim()) return;
-        if (formState.isScheduled && timeError) return;
+        if (formState.isScheduled && (timeError || conflictError)) return;
 
         setIsCreating(true);
         try {
@@ -132,14 +159,14 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
         } finally {
             setIsCreating(false);
         }
-    }, [formState, onCreateSession, onClose, timeError, tokenGatingSwitch, whitelistedAddresses]);
+    }, [formState, onCreateSession, onClose, timeError, conflictError, tokenGatingSwitch, whitelistedAddresses]);
 
     const updateFormState = useCallback((updates: Partial<SessionFormState>) => {
         setFormState(prev => ({ ...prev, ...updates }));
     }, []);
 
     const isSubmitDisabled = formState.isScheduled
-        ? !formState.title.trim() || !formState.date || !formState.time || isCreating || !!timeError
+        ? !formState.title.trim() || !formState.date || !formState.time || isCreating || !!timeError || !!conflictError
         : !formState.title.trim() || isCreating;
 
     const getWhitelistSummary = () => {
@@ -154,8 +181,39 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
         );
     };
 
+    const handleDateSelect = (date: Date | undefined) => {
+        updateFormState({ date });
+        setIsCalendarOpen(false);
+        setTimeError('');
+        
+        if (date && formState.time) {
+            checkTimeConflict(date, formState.time);
+        } else {
+            setConflictError('');
+        }
+    };
+    
+    const handleTimeChange = (newTime: string) => {
+        if (formState.date && isDateTimeInPast(formState.date, newTime)) {
+            setTimeError('Cannot schedule for a past time');
+            return;
+        }
+        
+        updateFormState({ time: newTime });
+        setTimeError('');
+        
+        if (formState.date && newTime) {
+            checkTimeConflict(formState.date, newTime);
+        } else {
+            setConflictError('');
+        }
+    };
+
+
+    if (!isOpen) return null;
+
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
+        <Dialog open={true} onOpenChange={onClose}>
             <DialogContent
                 className={`
                 bg-[#1d1d1d] text-white rounded-[20px] sm:rounded-[20px] p-4 sm:p-8 
@@ -300,11 +358,7 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                                         <Calendar
                                             mode="single"
                                             selected={formState.date}
-                                            onSelect={date => {
-                                                updateFormState({ date });
-                                                setIsCalendarOpen(false);
-                                                setTimeError('');
-                                            }}
+                                            onSelect={handleDateSelect}
                                             disabled={date =>
                                                 isBefore(date, startOfDay(new Date())) ||
                                                 date > addDays(new Date(), 30)
@@ -316,20 +370,16 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
 
                                 <SimpleTimePicker
                                     value={formState.time || ''}
-                                    onChange={newTime => {
-                                        if (
-                                            formState.date &&
-                                            isDateTimeInPast(formState.date, newTime)
-                                        ) {
-                                            setTimeError('Cannot schedule for a past time');
-                                            return;
-                                        }
-                                        updateFormState({ time: newTime });
-                                        setTimeError('');
-                                    }}
+                                    onChange={handleTimeChange}
                                     error={timeError}
                                 />
                             </div>
+                            
+                            {conflictError && (
+                                <div className="mt-2 text-red-500 text-sm bg-red-500/10 p-2 rounded border border-red-500/20">
+                                    {conflictError}
+                                </div>
+                            )}
                         </div>
                     )}
 

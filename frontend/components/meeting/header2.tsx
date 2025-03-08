@@ -51,10 +51,10 @@ export default async function Header({
     copyAddress,
 }: HeaderProps) {
     const { basename, avatar } = await fetchData(userAddress);
-    console.log({ basename, avatar });
+    console.debug({ basename, avatar });
 
     const withdrawFunds = () => {
-        console.log('withdrawing funds');
+        console.debug('withdrawing funds');
     };
 
     return (

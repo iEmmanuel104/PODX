@@ -43,11 +43,11 @@ export async function POST(request: Request) {
 
         // Generate the content
         const result = await model.generateContent(fullPrompt);
-        // console.log({ result })
+        // console.debug({ result })
         const response = await result.response;
-        // console.log({ result })
+        // console.debug({ result })
         const explanation = response.text();
-        // console.log({ explanation })
+        // console.debug({ explanation })
 
         // Return the response
         return NextResponse.json({ explanation });

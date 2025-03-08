@@ -1,0 +1,39 @@
+services:
+  postgres:
+      image: postgres:latest
+      container_name: podx_postgres_db
+      restart: always
+      ports:
+        - "5432:5432"
+      environment:
+        POSTGRES_USER: podx_admin
+        POSTGRES_PASSWORD: podx_admin
+        POSTGRES_DB: podx_db
+      volumes:
+        - pgdata:/var/lib/postgresql/data
+
+  mongodb:
+    image: mongo:latest
+    container_name: podx_mongo_db
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: podx_admin
+      MONGO_INITDB_ROOT_PASSWORD: podx_admin_pass
+    volumes:
+      - mongodata:/data/db
+
+  redis:
+    image: redis:latest
+    container_name: podx_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+
+volumes:
+  pgdata:
+  mongodata:
+  redisdata:

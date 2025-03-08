@@ -1,18 +1,22 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { LoadingOverlay } from '@/components/ui/loading';
 import { useTypedSelector, useAppDispatch } from '@/store/config/store';
 import { setUser, setSignature, logOut } from '@/store/auth/slice';
 import { UserInfo } from '@/store/user/types';
 import { useValidateUserMutation } from '@/store/user/slice';
+import { getSessionCode } from '@/utils/storage';
+import { CachId } from '@/constants';
+import { useNavigate } from '@/hooks/useNavigate';
+import toast from 'react-hot-toast';
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
     const { user: privyUser, authenticated, ready, logout } = usePrivy();
     const { isLoggedIn } = useTypedSelector(state => state.auth);
     const dispatch = useAppDispatch();
-    const router = useRouter();
+    const navigate = useNavigate();
     const pathname = usePathname();
     const [validateUser, { isLoading: isValidating }] = useValidateUserMutation();
 
@@ -37,7 +41,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
             );
 
             if (result.data?.signature) {
-                console.log('Setting signature:', result.data);
+                console.debug('Setting signature:', result.data);
 
                 dispatch(setSignature(result.data.signature));
             }
@@ -52,45 +56,66 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         }
     }, [privyUser, validateUser, dispatch, logout]);
 
+
+    const pendingSessionCode = useMemo(() => {
+        const storedSessionCode = localStorage.getItem(CachId);
+        const cookieSessionCode = document.cookie
+            .split('; ')
+            .find(row => row.startsWith(`${CachId}=`))
+            ?.split('=')[1];
+        const sessionCode = storedSessionCode || cookieSessionCode;
+
+        if (sessionCode) {
+            localStorage.setItem(CachId, sessionCode);
+        }
+
+        // Clear the cookie since we've moved it to localStorage
+        if (cookieSessionCode) {
+            document.cookie = `${CachId}=; path=/; max-age=0`;
+        }
+
+        console.debug('Stored pending session code for redirect after login:', sessionCode);
+
+        return sessionCode;
+    }, []);
+
     // Handle redirection
     const redirectToPod = useCallback(async () => {
-        const pendingSessionCode = localStorage.getItem('pendingSessionCode');
+        // const pendingSessionCode = localStorage.getItem(CachId);
+
+        console.debug('Redirect To Prod!', pendingSessionCode);
         const targetPath = pendingSessionCode ? `/pod/join/${pendingSessionCode}` : '/pod';
+        console.debug('Redirect TARGET!', targetPath);
 
         if (pathname !== targetPath) {
-            router.replace(targetPath);
+            // router.replace(targetPath);
             if (pendingSessionCode) {
-                localStorage.removeItem('pendingSessionCode');
+                toast.success(`Proceeding to meeting: ${pendingSessionCode}`);
+                localStorage.removeItem(CachId);
             }
+            navigate(targetPath, { replace: true });
         }
-    }, [pathname, router]);
+    }, [pathname, pendingSessionCode, navigate]);
 
     // Handle authentication and redirection without useEffect
     const handleAuthFlow = useCallback(async () => {
         // Check if we're on a pod page, even before Privy is ready
-        const isPodJoinPage = pathname && pathname.startsWith('/pod/join/');
-        const isDirectPodPage = pathname && pathname.startsWith('/pod/') && !isPodJoinPage && pathname !== '/pod';
+        const isPodJoinPage: boolean = Boolean(pathname?.startsWith('/pod/join/'));
+        const isDirectPodPage: boolean = Boolean(pathname?.startsWith('/pod/')) && !isPodJoinPage && pathname !== '/pod';
         
         // Safety check for pod pages before Privy is ready
         if ((isPodJoinPage || isDirectPodPage) && !ready) {
-            console.log('Pod page detected but Privy not ready yet - checking local login state');
+            console.debug('Pod page detected but Privy not ready yet - checking local login state');
             // If we're on a pod page but Privy isn't ready yet, check local state
             if (!isLoggedIn && pathname) {
                 // Save the session code
-                let sessionCode;
-                if (isPodJoinPage) {
-                    sessionCode = pathname.split('/pod/join/')[1];
-                } else if (isDirectPodPage) {
-                    sessionCode = pathname.split('/pod/')[1];
-                }
-                
-                if (sessionCode) {
-                    localStorage.setItem('pendingSessionCode', sessionCode);
-                }
+                getSessionCode(pathname, {isDirectPodPage, isPodJoinPage});
                 
                 // Redirect to home
-                router.replace('/');
-                console.log('Redirecting from pod page before Privy ready - not logged in');
+                // router.replace('/');
+                console.debug('Redirecting from pod page before Privy ready - not logged in');
+                toast.error(`Authentication is required`);
+                navigate("/", { replace: true });
                 return;
             }
         }
@@ -104,20 +129,11 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         // If user is on any pod page but not authenticated, redirect to home
         if ((isPodJoinPage || isDirectPodPage) && !authenticated) {
             // Extract the session code
-            let sessionCode;
-            if (isPodJoinPage) {
-                sessionCode = pathname.split('/pod/join/')[1];
-            } else if (isDirectPodPage) {
-                sessionCode = pathname.split('/pod/')[1];
-            }
-
-            if (sessionCode) {
-                localStorage.setItem('pendingSessionCode', sessionCode);
-            }
+            getSessionCode(pathname, {isDirectPodPage, isPodJoinPage});
 
             // Redirect to home page
-            router.replace('/');
-            console.log('Redirecting unauthenticated user from pod page to home', { pathname });
+            navigate('/', { replace: true });
+            console.debug('Redirecting unauthenticated user from pod page to home', { pathname });
             return;
         }
 
@@ -146,7 +162,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         handleAuthentication,
         redirectToPod,
         dispatch,
-        router,
+        // router,
+        navigate,
     ]);
 
     // Call handleAuthFlow when necessary

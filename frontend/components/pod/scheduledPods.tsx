@@ -11,6 +11,7 @@ import toast from 'react-hot-toast';
 interface ScheduledPodsProps {
     sessions: StreamCallData[];
     onJoinSession: (session: StreamCallData) => void;
+    onDeleteSession?: (session: StreamCallData) => void;
     currentUserId: string;
     isLoading?: boolean;
     foundSession?: StreamCallData;
@@ -298,6 +299,7 @@ const SessionCard = memo(function SessionCard({
     currentUserId,
     onJoinSession,
     onShareSession,
+    onDeleteSession,
     showFoundBadge = false,
     onClose,
     onRefresh,
@@ -306,10 +308,12 @@ const SessionCard = memo(function SessionCard({
     currentUserId: string;
     onJoinSession: (session: StreamCallData) => void;
     onShareSession: (data: ShareSessionState) => void;
+    onDeleteSession?: (session: StreamCallData) => void;
     showFoundBadge?: boolean;
     onClose?: () => void;
     onRefresh?: () => void;
 }) {
+    const [confirmDelete, setConfirmDelete] = useState(false);
     const isCreator = session.created_by.id === currentUserId;
     const startsAt = session.starts_at ? new Date(session.starts_at) : null;
     const status = startsAt ? getSessionStatus(session.starts_at) : null;
@@ -352,7 +356,7 @@ const SessionCard = memo(function SessionCard({
             
             // Call the delete function and get the result
             const deleteSuccessful = await deleteScheduledCall(session.id);
-            console.log('Delete operation result:', deleteSuccessful);
+            console.debug('Delete operation result:', deleteSuccessful);
             
             if (deleteSuccessful) {
                 // If delete was successful, trigger a refresh if available
@@ -371,6 +375,10 @@ const SessionCard = memo(function SessionCard({
         } finally {
             setIsDeleting(false);
         }
+    };
+
+    const handleDeleteClick = () => {
+        setConfirmDelete(true);
     };
 
     return (
@@ -473,19 +481,36 @@ const SessionCard = memo(function SessionCard({
                     </Button>
                 </div>
             </div>
+
+            {/* Delete confirmation dialog */}
+            <DeleteConfirmationDialog
+                isOpen={confirmDelete}
+                onClose={() => setConfirmDelete(false)}
+                onConfirm={() => (onDeleteSession && onDeleteSession(session) as any)}
+                sessionTitle={session.custom.title}
+                isDeleting={isDeleting}
+            />
         </div>
     );
 });
 
-// Main component
-export default function ScheduledPods({
+// Main componen
+const ScheduledPods: React.FC<ScheduledPodsProps> = ({
     sessions,
     foundSession,
     onJoinSession,
+    onDeleteSession,
     currentUserId,
     isLoading: isLoadingProp,
     onClearFoundSession,
-}: ScheduledPodsProps) {
+}) => {
+    console.debug('[ScheduledPods] Component rendered with:', {
+        sessionsCount: sessions?.length,
+        sessions,
+        hasFoundSession: !!foundSession,
+        isLoading: isLoadingProp,
+    });
+
     const [showAllSessions, setShowAllSessions] = useState(false);
     const [shareSession, setShareSession] = useState<ShareSessionState | null>(null);
     const [dialogKey, setDialogKey] = useState(0);
@@ -494,14 +519,14 @@ export default function ScheduledPods({
 
     // Function to force refresh sessions data
     const handleRefresh = useCallback(async () => {
-        console.log('Manually refreshing sessions list...');
+        console.debug('Manually refreshing sessions list...');
         setLastRefresh(new Date());
         await refreshSessions();
     }, [refreshSessions]);
 
     // Set up auto-refresh on component mount/unmount and visibility changes
     useEffect(() => {
-        console.log('Setting up session refresh behaviors');
+        console.debug('Setting up session refresh behaviors');
 
         // Refresh when the component mounts
         handleRefresh();
@@ -509,7 +534,7 @@ export default function ScheduledPods({
         // Set up visibility change listener to refresh when tab becomes active
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'visible') {
-                console.log('Tab became visible, refreshing sessions');
+                console.debug('Tab became visible, refreshing sessions');
                 refetchSessions();
             }
         };
@@ -529,7 +554,7 @@ export default function ScheduledPods({
 
     // Function to force open the dialog
     const openViewAllDialog = useCallback(() => {
-        console.log('Opening view all dialog');
+        console.debug('Opening view all dialog');
         // Refresh sessions data before showing all sessions
         refreshSessions().then(() => {
             setShowAllSessions(true);
@@ -559,13 +584,15 @@ export default function ScheduledPods({
             session => differenceInMinutes(new Date(session.starts_at), new Date()) > -60
         );
 
+        console.debug("[ScheduledPods] Filtered upcoming sessions:", upcoming);
+
         return { upcomingSessions: upcoming };
     }, [sessions, currentUserId]);
 
     // Debug logs to check session data
     useEffect(() => {
-        console.log('Total Scheduled Sessions:', sessions.length);
-        console.log('Upcoming Sessions for User:', upcomingSessions.length);
+        console.debug('Total Scheduled Sessions:', sessions.length);
+        console.debug('Upcoming Sessions for User:', upcomingSessions.length);
     }, [sessions, upcomingSessions]);
 
     if (isLoadingProp) {
@@ -595,6 +622,7 @@ export default function ScheduledPods({
                             currentUserId={currentUserId}
                             onJoinSession={onJoinSession}
                             onShareSession={setShareSession}
+                            onDeleteSession={onDeleteSession}
                             showFoundBadge={true}
                             onClose={onClearFoundSession}
                             onRefresh={handleRefresh}
@@ -687,6 +715,7 @@ export default function ScheduledPods({
                                     currentUserId={currentUserId}
                                     onJoinSession={onJoinSession}
                                     onShareSession={setShareSession}
+                                    onDeleteSession={onDeleteSession}
                                     showFoundBadge={true}
                                     onClose={onClearFoundSession}
                                     onRefresh={handleRefresh}
@@ -781,3 +810,5 @@ function getButtonText(isCreator: boolean, canJoin: boolean, status?: string): s
     }
     return 'Join session';
 }
+
+export default ScheduledPods;

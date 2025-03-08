@@ -36,7 +36,7 @@ export const ParticipantMenuDropdown = ({ participant, trigger }: ParticipantMen
     // Handle tipping a user
     const handleTipUser = () => {
         // Implement tip functionality
-        console.log(`Tipping user: ${participant.userId}`);
+        console.debug(`Tipping user: ${participant.userId}`);
     };
 
     // If this is the local user, don't show the menu

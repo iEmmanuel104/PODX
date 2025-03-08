@@ -144,3 +144,6 @@ postgres_data
 dump.rdb
 
 res.json
+
+# Package managers
+pnpm-lock.yaml

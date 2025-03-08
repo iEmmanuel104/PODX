@@ -25,14 +25,14 @@ function SimpleLayout({ children }: { children: ReactNode }) {
     useLayoutEffect(() => {
         if (mounted && !isLoggedIn) {
             setVisible(false);
-            router.replace('/');
+            // router.replace('/');
         }
-    }, [isLoggedIn, router, mounted]);
+    }, [isLoggedIn, mounted]);
 
     if (!mounted) return null;
 
     return (
-        <div className="fixed inset-0 bg-[#151515] text-white md:overflow-hidden overflow-auto">
+        <div className="fixed inset-0 bg-[#151515] text-white overflow-auto">
             {/* Background Grid */}
             <div className="fixed inset-0 w-full h-full overflow-hidden pointer-events-none">
                 <RetroGrid />
@@ -40,7 +40,7 @@ function SimpleLayout({ children }: { children: ReactNode }) {
 
             {/* Content wrapper */}
             <div
-                className="relative z-10 flex flex-col h-full"
+                className="relative z-10 flex flex-col min-h-screen"
                 style={{
                     opacity: visible ? 1 : 0,
                     transform: `translateY(${visible ? '0' : '10px'})`,
@@ -57,7 +57,7 @@ function SimpleLayout({ children }: { children: ReactNode }) {
                 {/* Main content area */}
                 <main className="flex-1 relative transition-transform duration-200 mt-12 md:mt-0">
                     <div className="max-w-[800px] w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 md:py-6">
-                        <div className="flex flex-col items-center justify-center h-full">
+                        <div className="flex flex-col items-center justify-center">
                             {children}
                         </div>
                     </div>
