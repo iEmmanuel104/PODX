@@ -356,7 +356,7 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
         if (needsToJoin && !live) {
             // Don't force microphone state, just redirect to join page
             console.debug('Redirecting to join page without changing media state');
-            router.push(`/pod/join/${id}`);
+            navigate(`/pod/join/${id}`);
         }
     }, [id, callingState, call, connectedUser, navigate, live]);
 

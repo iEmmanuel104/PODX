@@ -215,7 +215,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
     const { newMeeting, setNewMeeting } = useContext(AppContext);
     // const { client: chatClient } = useChatContext();
     // Check if this is an audio session
-    const isAudioSession = sessionType === 'Audio Session';
+    const isAudioSession = sessionTypeFromStore === 'Audio Session';
 
     // Stream Video Hooks
     const call = useCall();
@@ -503,7 +503,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
     }, [code, user, retrieveCall, initializeCall, dispatch]);
 
     // Join session handler
-    const handleJoinSession = useCallback(async () => {
+    const _handleJoinSession = useCallback(async () => {
         if (!code) return;
 
         setState(prev => ({ ...prev, joining: true }));
@@ -617,42 +617,42 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
             // Get settings from localStorage (these will override Redux state)
             const storedAudioEnabled = localStorage.getItem('podMeetingAudioEnabled');
             const storedVideoEnabled = localStorage.getItem('podMeetingVideoEnabled');
-            
+
             // Parse localStorage values or use Redux state as fallback
-            const audioEnabled = storedAudioEnabled !== null ? 
-                storedAudioEnabled === 'true' : isAudioEnabled;
-            const videoEnabled = storedVideoEnabled !== null ? 
-                storedVideoEnabled === 'true' : isVideoEnabled;
-            
+            const audioEnabled =
+                storedAudioEnabled !== null ? storedAudioEnabled === 'true' : isAudioEnabled;
+            const videoEnabled =
+                storedVideoEnabled !== null ? storedVideoEnabled === 'true' : isVideoEnabled;
+
             // Log the media settings for debugging
-            console.log('Media settings before joining:', { 
+            console.debug('Media settings before joining:', {
                 fromRedux: { isAudioEnabled, isVideoEnabled },
                 fromLocalStorage: { audioEnabled, videoEnabled },
-                usingValues: { audioEnabled, videoEnabled }
+                usingValues: { audioEnabled, videoEnabled },
             });
-            
+
             if (callingState !== CallingState.JOINED) {
                 // Join with the appropriate settings
                 await call?.join({
                     data: {
                         members: [{ user_id: user?.id! }],
                     },
-                    ...(sessionType === 'Audio Session' && { video: false }),
+                    ...(sessionTypeFromStore === 'Audio Session' && { video: false }),
                 });
-                
+
                 // Ensure the Redux state reflects our final decision
                 dispatch(setAudioEnabled(audioEnabled));
                 dispatch(setVideoEnabled(videoEnabled));
-                
+
                 // Set the directly to localStorage again to be extra safe
                 localStorage.setItem('podMeetingJoiningWithAudio', String(audioEnabled));
                 localStorage.setItem('podMeetingJoiningWithVideo', String(videoEnabled));
-                
-                console.log('Applying final media settings before navigation:', { 
-                    audio: audioEnabled, 
-                    video: videoEnabled 
+
+                console.debug('Applying final media settings before navigation:', {
+                    audio: audioEnabled,
+                    video: videoEnabled,
                 });
-                
+
                 // Apply audio settings before navigating - force a small delay to ensure settings take effect
                 try {
                     // Apply audio settings
@@ -661,7 +661,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                     } else {
                         await call?.microphone.disable();
                     }
-                    
+
                     // Apply video settings before navigating
                     if (!isAudioSession) {
                         if (videoEnabled) {
@@ -670,26 +670,37 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                             await call?.camera.disable();
                         }
                     }
-                    
+
                     // Small delay to ensure settings take effect
                     await new Promise(resolve => setTimeout(resolve, 500));
-                    
-                    console.log('Final media state before navigation:', {
+
+                    console.debug('Final media state before navigation:', {
                         microphone: call?.microphone?.enabled,
-                        camera: call?.camera?.enabled
+                        camera: call?.camera?.enabled,
                     });
                 } catch (error) {
                     console.error('Error applying media settings:', error);
                 }
             }
 
-            router.push(`/pod/${code}`);
+            navigate(`/pod/${code}`);
         } catch (error) {
             console.error(error);
             toast.error('Failed to join session, please check your connection and try again');
             setState(prev => ({ ...prev, joining: false }));
         }
-    }, [code, user, call, callingState, router, sessionType, isAudioSession, isAudioEnabled, isVideoEnabled, dispatch]);
+    }, [
+        code,
+        user,
+        call,
+        callingState,
+        navigate,
+        isAudioSession,
+        isAudioEnabled,
+        isVideoEnabled,
+        dispatch,
+        sessionTypeFromStore,
+    ]);
 
     // Memoized UI elements
     const participantsUI = useMemo(() => {
