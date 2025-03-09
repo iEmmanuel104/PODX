@@ -9,7 +9,8 @@ import { useSendTransaction } from '@privy-io/react-auth';
 import { useSendTransaction as useSendTransactionWagmi } from 'wagmi';
 import { ethers, isAddress, parseEther, parseUnits } from 'ethers';
 import { erc20Abi } from 'viem';
-import toast, { Toast } from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
+import { showSuccessToast, showErrorToast, showLoadingToast } from '@/components/ui/AnimatedToast';
 
 // Custom toast options
 const toastOptions = {
@@ -84,17 +85,16 @@ export const useTipping = (isEmbeddedWallet: boolean) => {
     const { sendTransactionAsync: sendTransactionWagmi } = useSendTransactionWagmi();
 
     const showToast = (message: string, type: ToastType, id?: string) => {
-        const toastFn = getToastFunction(type);
-        const options = {
-            ...toastOptions,
-            id,
-            className: `${toastOptions.className} ${
-                type === 'error' ? 'bg-red-500/10' : 
-                type === 'success' ? 'bg-green-500/10' : 
-                'bg-blue-500/10'
-            }`,
-        };
-        return toastFn(message, options);
+        switch (type) {
+            case 'success':
+                return showSuccessToast(message);
+            case 'error':
+                return showErrorToast(message);
+            case 'loading':
+                return showLoadingToast(message);
+            default:
+                return showSuccessToast(message);
+        }
     };
 
     const sendETHExternal = async (recipient: string, amount: string) => {

@@ -37,6 +37,7 @@ import { toast } from 'react-hot-toast';
 import { CachId } from '@/constants';
 import { cacheValue } from '@/utils/storage';
 import { useNavigate } from '@/hooks/useNavigate';
+import { showSuccessToast, showInfoToast, showErrorToast } from '@/components/ui/AnimatedToast';
 
 interface MeetingProps {
     params: {
@@ -118,10 +119,7 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
             navigate("/");
             
             // Show informative message
-            toast('Authentication required', {
-                icon: '🔐',
-                duration: 5000,
-            });
+            showErrorToast('Authentication required', 'Please login to interact with this session');
             console.debug('Redirecting from pod page - user not authenticated', { authenticated, isLoggedIn });
             return;
         }
@@ -140,10 +138,7 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
                 // router.replace('/');
                 navigate('/');
                 // Show informative message
-                toast('Please login to join this session', {
-                    icon: '🔐',
-                    duration: 5000,
-                });
+                showErrorToast('Login Required', 'Please login to join this session');
                 return;
             }
         }
@@ -322,7 +317,7 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
 
                         const toastId = `${connectedUser?.id || Date.now()}-${customEvent.custom.data.timestamp}`;
                         const name = connectedUser?.name || "A guest";
-                        toast.success(`${name} is clapping`, {icon: "👏", id: toastId, duration: 6000});
+                        showSuccessToast(`${name} is clapping`, '👏');
                     }
                 }
                 handleTipEvent(event as CustomVideoEvent);

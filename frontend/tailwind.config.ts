@@ -99,6 +99,10 @@ const config: Config = {
                         backgroundPosition: ' 0% 50%',
                     },
                 },
+                gradientx: {
+                    '0%': { backgroundPosition: '0% 50%' },
+                    '100%': { backgroundPosition: '100% 50%' },
+                },
             },
             backgroundSize: {
                 '300%': '300%',
@@ -107,6 +111,7 @@ const config: Config = {
                 'pulse-fade': 'pulseFade 2s ease-in-out infinite',
                 grid: 'grid 45s linear infinite',
                 'podx-gradient': 'animatedgradient 6s ease infinite alternate',
+                'gradient-x': 'gradientx 3s ease infinite alternate',
             },
         },
     },

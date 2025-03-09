@@ -23,6 +23,7 @@ import { UsersRound, Clock } from 'lucide-react';
 import { setAudioEnabled, setVideoEnabled } from '@/store/media/slice';
 import { CachId, sessionType } from '@/constants';
 import { useNavigate } from '@/hooks/useNavigate';
+import { showSuccessToast, showInfoToast, showErrorToast, showCustomToast } from '@/components/ui/AnimatedToast';
 
 // Types
 interface JoinSessionProps {
@@ -159,9 +160,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
             navigate("/");
 
             // Show informative message
-            toast.error('Please login to join this session', {
-                duration: 5000,
-            });
+            showErrorToast('Login Required', 'Please login to join this session');
             return;
         }
 
@@ -184,9 +183,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                 navigate('/');
 
                 // Show informative message
-                toast.error('Please login to join this session', {
-                    duration: 5000,
-                });
+                showErrorToast('Login Required', 'Please login to join this session');
                 console.debug('Redirecting from JoinSession - user not authenticated', { authenticated, isLoggedIn });
                 return;
             }
@@ -299,7 +296,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
                             const isWhitelisted = whitelistedUsers.includes(user.id);
 
                             if (!isWhitelisted) {
-                                toast.error('You are not whitelisted to join this call');
+                                showErrorToast('Access Denied', 'You are not whitelisted to join this call');
                                 // router.push('/pod');
                                 navigate('/pod');
                                 return;
@@ -355,7 +352,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
             });
             // router.push('/pod');
             navigate('/pod');
-            toast.error(`Error fetching meeting: ${err.message || 'Unknown error'}`);
+            showErrorToast('Error Fetching Meeting', err.message || 'Unknown error');
         } finally {
             setState(prev => ({ ...prev, loading: false }));
         }
@@ -571,7 +568,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
 
                 const name = user?.username || 'A guest';
                 const id = `${name}-${Date.now()}`;
-                toast.custom(`${name} joined the call`, { id, duration: 4000 });
+                showCustomToast(`${name} joined the call`);
 
                 console.debug('Join response:', joinResponse);
             }
@@ -581,7 +578,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
         } catch (error) {
             console.error('Join session error:', error);
             console.error('Error details:', JSON.stringify(error, null, 2));
-            toast.error('Failed to join session, please check your connection and try again');
+            showErrorToast('Connection Error', 'Failed to join session, please check your connection and try again');
             setState(prev => ({ ...prev, joining: false }));
         }
     }, [code, user, call, callingState, navigate, sessionTypeFromStore, isScheduled, sessionTitle, starts_at, setNewMeeting, initializeCall]);
@@ -686,7 +683,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ params }) => {
             navigate(`/pod/${code}`);
         } catch (error) {
             console.error(error);
-            toast.error('Failed to join session, please check your connection and try again');
+            showErrorToast('Connection Error', 'Failed to join session, please check your connection and try again');
             setState(prev => ({ ...prev, joining: false }));
         }
     }, [
