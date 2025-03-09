@@ -401,7 +401,7 @@ const SpeakerLayout = memo(() => {
                             {visibleGridParticipants.map((participant, index) => (
                                 <div
                                     key={participant.sessionId}
-                                    className="h-full w-[calc(33.333%-5.333px)] md:w-full md:h-[calc(33.333%-5.333px)] flex-shrink-0 bg-[#2A2A2A] rounded-xl overflow-hidden"
+                                    className="relative h-full w-[calc(33.333%-5.333px)] md:w-full md:h-[calc(33.333%-5.333px)] flex-shrink-0 bg-[#2A2A2A] rounded-xl overflow-hidden"
                                 >
                                     <ParticipantView
                                         participant={participant}
@@ -410,6 +410,33 @@ const SpeakerLayout = memo(() => {
                                         VideoPlaceholder={VideoPlaceholder}
                                         muteAudio={false}
                                     />
+                                    
+                                    {/* Microphone Status */}
+                                    <div className="absolute left-2 top-2 flex items-center p-[6px] bg-[rgba(75,75,75,0.5)] backdrop-blur-[5.7px] rounded-[1000px] z-10">
+                                        <div
+                                            className={clsx(
+                                                'rounded-full p-[6px] flex items-center justify-center',
+                                                {
+                                                    'bg-[#FF3B30]': !participant.publishedTracks.includes(1),
+                                                    'bg-[#5E5CE6]': participant.isSpeaking && participant.publishedTracks.includes(1),
+                                                    'bg-[#808080]': !participant.isSpeaking && participant.publishedTracks.includes(1)
+                                                }
+                                            )}
+                                        >
+                                            {participant.publishedTracks.includes(1) ? (
+                                                <Mic className="h-3 w-3 text-white" />
+                                            ) : (
+                                                <MicOff className="h-3 w-3 text-white" />
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Participant Name */}
+                                    <div className="absolute left-2 bottom-2 flex items-center p-[6px] bg-[rgba(75,75,75,0.5)] backdrop-blur-[5.7px] rounded-[1000px] z-10">
+                                        <span className="text-white text-xs px-1.5">
+                                            {participant.name || truncateUsername(participant.userId, participant.userId, true)}
+                                        </span>
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -433,6 +460,36 @@ const SpeakerLayout = memo(() => {
                                     VideoPlaceholder={VideoPlaceholder}
                                     muteAudio={false}
                                 />
+                                
+                                {/* Screen Sharing Participant Info */}
+                                <div className="absolute left-4 top-4 flex items-center gap-2 z-10">
+                                    {/* Microphone Status */}
+                                    <div className="flex items-center p-[6px] bg-[rgba(75,75,75,0.5)] backdrop-blur-[5.7px] rounded-[1000px]">
+                                        <div
+                                            className={clsx(
+                                                'rounded-full p-[6px] flex items-center justify-center',
+                                                {
+                                                    'bg-[#FF3B30]': !screenSharingParticipant.publishedTracks.includes(1),
+                                                    'bg-[#5E5CE6]': screenSharingParticipant.isSpeaking && screenSharingParticipant.publishedTracks.includes(1),
+                                                    'bg-[#808080]': !screenSharingParticipant.isSpeaking && screenSharingParticipant.publishedTracks.includes(1)
+                                                }
+                                            )}
+                                        >
+                                            {screenSharingParticipant.publishedTracks.includes(1) ? (
+                                                <Mic className="h-3 w-3 text-white" />
+                                            ) : (
+                                                <MicOff className="h-3 w-3 text-white" />
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Name Label */}
+                                    <div className="flex items-center p-[6px] bg-[rgba(75,75,75,0.5)] backdrop-blur-[5.7px] rounded-[1000px]">
+                                        <span className="text-white text-sm px-1.5">
+                                            {screenSharingParticipant.name || truncateUsername(screenSharingParticipant.userId, screenSharingParticipant.userId, false)} (Sharing)
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
