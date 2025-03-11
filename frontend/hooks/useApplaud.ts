@@ -18,7 +18,7 @@ export const useApplaud = (participantId: string) => {
         call?.sendCustomEvent({
             type: 'applaud',
             data: {
-                participantId,
+                userId: participantId,
                 timestamp: Date.now(),
             },
         });

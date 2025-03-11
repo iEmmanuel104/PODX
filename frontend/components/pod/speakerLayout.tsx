@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, memo, ComponentType } from 'react';
+import React, { useEffect, useState, useMemo, memo, ComponentType, useRef } from 'react';
 import {
     combineComparators,
     hasScreenShare,
@@ -24,6 +24,7 @@ import {
     truncateUsername,
     useParticipantConsistentAvatar,
 } from '../../hooks/useParticipantUtils';
+import AudioContinuityLayer from './AudioContinuityLayer';
 
 interface ScreenShareUIProps {
     participant: StreamVideoParticipant;
@@ -59,7 +60,7 @@ const ParticipantViewUIWrapper = memo(() => {
 }) as ComponentType;
 ParticipantViewUIWrapper.displayName = 'ParticipantViewUIWrapper';
 
-// Move CustomParticipantViewUI outside the SpeakerLayout component and export it
+// Keep the original CustomParticipantViewUI, we'll handle audio differently
 const CustomParticipantViewUI = memo(() => {
     const { participant } = useParticipantViewContext();
 
@@ -78,6 +79,28 @@ const SpeakerLayout = memo(() => {
     const participants = useParticipants();
     const hasOngoingScreenShare = useHasOngoingScreenShare();
     const [participantsBar, setParticipantsBar] = useState<HTMLDivElement | null>(null);
+    
+    // Add state to track speaking participants for smooth transitions
+    const recentlySpeakingRef = useRef<Map<string, number>>(new Map());
+
+    // Monitor speaking participants to ensure audio continuity during transitions
+    useEffect(() => {
+        // Track speaking participants
+        participants.forEach(p => {
+            if (p.isSpeaking) {
+                recentlySpeakingRef.current.set(p.sessionId, Date.now());
+            }
+        });
+        
+        // Clean up old entries
+        const now = Date.now();
+        recentlySpeakingRef.current.forEach((timestamp, id) => {
+            // Keep track of recently speaking participants for 2 seconds
+            if (now - timestamp > 2000 && !participants.some(p => p.sessionId === id && p.isSpeaking)) {
+                recentlySpeakingRef.current.delete(id);
+            }
+        });
+    }, [participants]);
 
     // Find participants by status using helper functions
     const screenSharingParticipant = useMemo(
@@ -257,6 +280,7 @@ const SpeakerLayout = memo(() => {
                         participant={participant}
                         VideoPlaceholder={VideoPlaceholder}
                         className="w-full h-full"
+                        muteAudio={true}
                     />
 
                     {/* Status indicator */}
@@ -385,6 +409,19 @@ const SpeakerLayout = memo(() => {
         return [visible, overflow];
     }, [otherParticipants]);
 
+    // Create an audio layer component inside the function but outside the render conditions
+    const AudioLayer = useMemo(() => (
+        <div className="sr-only">
+            {participants.map(participant => (
+                <Audio 
+                    key={participant.sessionId} 
+                    participant={participant} 
+                    trackType="audioTrack" 
+                />
+            ))}
+        </div>
+    ), [participants]);
+
     // Then update the screen sharing section:
     if (hasOngoingScreenShare && screenSharingParticipant) {
         // Calculate visible and overflow participants for grid layout
@@ -393,100 +430,75 @@ const SpeakerLayout = memo(() => {
         const overflowGridParticipants = otherParticipants.slice(maxVisibleParticipants);
 
         return (
-            <div ref={ref} className="w-full h-full relative overflow-hidden">
-                <div className="h-full flex flex-col md:flex-row">
-                    {/* Grid layout - horizontal on mobile, vertical on desktop */}
-                    <div className="w-full md:w-1/4 md:min-w-[250px] h-28 md:h-full p-2 relative">
-                        <div className="flex flex-row md:flex-col gap-2 h-full">
-                            {visibleGridParticipants.map((participant, index) => (
-                                <div
-                                    key={participant.sessionId}
-                                    className="relative h-full w-[calc(33.333%-5.333px)] md:w-full md:h-[calc(33.333%-5.333px)] flex-shrink-0 bg-[#2A2A2A] rounded-xl overflow-hidden"
-                                >
-                                    <ParticipantView
-                                        participant={participant}
-                                        trackType="videoTrack"
-                                        ParticipantViewUI={CustomParticipantViewUI}
-                                        VideoPlaceholder={VideoPlaceholder}
-                                        muteAudio={false}
-                                    />
-                                    
-                                    {/* Microphone Status */}
-                                    <div className="absolute left-2 top-2 flex items-center p-[6px] bg-[rgba(75,75,75,0.5)] backdrop-blur-[5.7px] rounded-[1000px] z-10">
-                                        <div
-                                            className={clsx(
-                                                'rounded-full p-[6px] flex items-center justify-center',
-                                                {
-                                                    'bg-[#FF3B30]': !participant.publishedTracks.includes(1),
-                                                    'bg-[#5E5CE6]': participant.isSpeaking && participant.publishedTracks.includes(1),
-                                                    'bg-[#808080]': !participant.isSpeaking && participant.publishedTracks.includes(1)
-                                                }
-                                            )}
-                                        >
-                                            {participant.publishedTracks.includes(1) ? (
-                                                <Mic className="h-3 w-3 text-white" />
-                                            ) : (
-                                                <MicOff className="h-3 w-3 text-white" />
-                                            )}
+            <>
+                {/* Use AudioContinuityLayer for better audio continuity during transitions */}
+                <AudioContinuityLayer participants={participants} />
+                
+                {/* Keep AudioLayer for backward compatibility */}
+                {AudioLayer}
+                
+                <div ref={ref} className="w-full h-full relative overflow-hidden">
+                    <div className="h-full flex flex-col md:flex-row">
+                        {/* Grid layout - horizontal on mobile, vertical on desktop */}
+                        <div className="w-full md:w-1/4 md:min-w-[250px] h-28 md:h-full p-2 relative">
+                            <div className="flex flex-row md:flex-col gap-2 h-full">
+                                {visibleGridParticipants.map((participant, index) => (
+                                    <div
+                                        key={participant.sessionId}
+                                        className="relative h-full w-[calc(33.333%-5.333px)] md:w-full md:h-[calc(33.333%-5.333px)] flex-shrink-0 bg-[#2A2A2A] rounded-xl overflow-hidden"
+                                    >
+                                        <ParticipantView
+                                            participant={participant}
+                                            trackType="videoTrack"
+                                            ParticipantViewUI={CustomParticipantViewUI}
+                                            VideoPlaceholder={VideoPlaceholder}
+                                            muteAudio={true}
+                                        />
+                                        
+                                        {/* Microphone Status */}
+                                        <div className="absolute left-[14px] top-[13px] z-10">
+                                            <div className={clsx(
+                                                "rounded-full p-[6px] flex items-center justify-center",
+                                                participant.isSpeaking ? "bg-[#5E5CE6]" : 
+                                                !participant.publishedTracks.includes(1) ? "bg-[#FF3B30]" : 
+                                                "bg-[#808080]"
+                                            )}>
+                                                {!participant.publishedTracks.includes(1) ? (
+                                                    <MicOff className="h-3 w-3 text-white" />
+                                                ) : (
+                                                    <Mic className="h-3 w-3 text-white" />
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
+                                ))}
+                            </div>
 
-                                    {/* Participant Name */}
-                                    <div className="absolute left-2 bottom-2 flex items-center p-[6px] bg-[rgba(75,75,75,0.5)] backdrop-blur-[5.7px] rounded-[1000px] z-10">
-                                        <span className="text-white text-xs px-1.5">
-                                            {participant.name || truncateUsername(participant.userId, participant.userId, true)}
-                                        </span>
-                                    </div>
+                            {/* Overflow indicator */}
+                            {overflowGridParticipants.length > 0 && (
+                                <div className="absolute right-4 bottom-4 z-10">
+                                    <OverflowIndicator count={overflowGridParticipants.length} />
                                 </div>
-                            ))}
+                            )}
                         </div>
 
-                        {/* Overflow indicator */}
-                        {overflowGridParticipants.length > 0 && (
-                            <div className="absolute right-4 bottom-4 z-10">
-                                <OverflowIndicator count={overflowGridParticipants.length} />
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Main content area with screen share */}
-                    <div className="flex-1 min-h-0 w-full p-2">
-                        <div className="w-full h-full flex items-center justify-center">
-                            <div className="w-full h-full relative rounded-xl overflow-hidden">
-                                <ParticipantView
-                                    participant={screenSharingParticipant}
-                                    trackType="screenShareTrack"
-                                    ParticipantViewUI={CustomParticipantViewUI}
-                                    VideoPlaceholder={VideoPlaceholder}
-                                    muteAudio={false}
-                                />
-                                
-                                {/* Screen Sharing Participant Info */}
-                                <div className="absolute left-4 top-4 flex items-center gap-2 z-10">
-                                    {/* Microphone Status */}
-                                    <div className="flex items-center p-[6px] bg-[rgba(75,75,75,0.5)] backdrop-blur-[5.7px] rounded-[1000px]">
-                                        <div
-                                            className={clsx(
-                                                'rounded-full p-[6px] flex items-center justify-center',
-                                                {
-                                                    'bg-[#FF3B30]': !screenSharingParticipant.publishedTracks.includes(1),
-                                                    'bg-[#5E5CE6]': screenSharingParticipant.isSpeaking && screenSharingParticipant.publishedTracks.includes(1),
-                                                    'bg-[#808080]': !screenSharingParticipant.isSpeaking && screenSharingParticipant.publishedTracks.includes(1)
-                                                }
-                                            )}
-                                        >
-                                            {screenSharingParticipant.publishedTracks.includes(1) ? (
-                                                <Mic className="h-3 w-3 text-white" />
-                                            ) : (
-                                                <MicOff className="h-3 w-3 text-white" />
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Name Label */}
-                                    <div className="flex items-center p-[6px] bg-[rgba(75,75,75,0.5)] backdrop-blur-[5.7px] rounded-[1000px]">
+                        {/* Main content area with screen share */}
+                        <div className="flex-1 min-h-0 w-full p-2">
+                            <div className="w-full h-full flex items-center justify-center">
+                                <div className="w-full h-full relative rounded-xl overflow-hidden">
+                                    <ParticipantView
+                                        participant={screenSharingParticipant}
+                                        trackType="screenShareTrack"
+                                        ParticipantViewUI={CustomParticipantViewUI}
+                                        VideoPlaceholder={VideoPlaceholder}
+                                        muteAudio={true}
+                                    />
+                                    
+                                    {/* Screen Sharing Participant Info */}
+                                    <div className="absolute left-[14px] bottom-[13px] flex items-center p-[6px] gap-2 bg-[rgba(75,75,75,0.5)] backdrop-blur-[5.7px] rounded-[1000px]">
                                         <span className="text-white text-sm px-1.5">
-                                            {screenSharingParticipant.name || truncateUsername(screenSharingParticipant.userId, screenSharingParticipant.userId, false)} (Sharing)
+                                            {truncateNameTo6Chars(screenSharingParticipant.name || screenSharingParticipant.userId)}
+                                            &nbsp;is sharing
                                         </span>
                                     </div>
                                 </div>
@@ -494,74 +506,65 @@ const SpeakerLayout = memo(() => {
                         </div>
                     </div>
                 </div>
-            </div>
+            </>
         );
     }
 
     // Regular layout for 2-4 participants
     if (participants.length <= 4) {
         return (
-            <div ref={ref} className="w-full h-full p-2 md:p-4">
-                <div
-                    className={clsx(
-                        'grid w-full h-full gap-2 md:gap-4 max-w-7xl mx-auto',
-                        participants.length === 2 ? 'grid-cols-2' : 'grid-cols-2 grid-rows-2'
-                    )}
-                >
-                    {participants.map(participant => (
-                        <div
-                            key={participant.sessionId}
-                            className={clsx(
-                                'relative rounded-xl overflow-hidden transition-transform duration-300',
-                                'flex items-center justify-center',
-                                isPinned(participant) && 'scale-100 hover:scale-[1.02]'
-                            )}
-                        >
-                            <ParticipantView
-                                participant={participant}
-                                trackType="videoTrack"
-                                ParticipantViewUI={CustomParticipantViewUI}
-                                VideoPlaceholder={VideoPlaceholder}
-                                muteAudio={true}
-                            />
-                        </div>
-                    ))}
+            <>
+                {/* Use AudioContinuityLayer for better audio continuity during transitions */}
+                <AudioContinuityLayer participants={participants} />
+                
+                {/* Keep AudioLayer for backward compatibility */}
+                {AudioLayer}
+                
+                <div ref={ref} className="w-full h-full p-2 md:p-4">
+                    <div
+                        className={clsx(
+                            'grid w-full h-full gap-2 md:gap-4 max-w-7xl mx-auto',
+                            participants.length === 2 ? 'grid-cols-2' : 'grid-cols-2 grid-rows-2'
+                        )}
+                    >
+                        {participants.map(participant => (
+                            <div
+                                key={participant.sessionId}
+                                className={clsx(
+                                    'relative rounded-xl overflow-hidden transition-transform duration-300',
+                                    'flex items-center justify-center',
+                                    isPinned(participant) && 'scale-100 hover:scale-[1.02]'
+                                )}
+                            >
+                                <ParticipantView
+                                    participant={participant}
+                                    trackType="videoTrack"
+                                    ParticipantViewUI={CustomParticipantViewUI}
+                                    VideoPlaceholder={VideoPlaceholder}
+                                    muteAudio={true}
+                                />
+                            </div>
+                        ))}
+                    </div>
                 </div>
-            </div>
+            </>
         );
     }
 
     // Single participant view
     if (participants.length === 1) {
         return (
-            <div ref={ref} className="w-full h-full flex items-center justify-center p-4">
-                <div className="w-full h-full max-w-4xl mx-auto rounded-xl overflow-hidden">
-                    <ParticipantView
-                        participant={participants[0]}
-                        trackType="videoTrack"
-                        ParticipantViewUI={CustomParticipantViewUI}
-                        VideoPlaceholder={VideoPlaceholder}
-                        muteAudio={true}
-                    />
-                </div>
-            </div>
-        );
-    }
-
-    // Multi-participant layout
-    return (
-        <div ref={ref} className="w-full h-full relative overflow-hidden">
-            <div className="h-full p-2 md:p-4 flex flex-col">
-                {/* Spotlight participant */}
-                <div className="flex-grow min-h-0 mb-2 md:mb-4">
-                    <div className="w-full h-full max-w-6xl mx-auto rounded-xl overflow-hidden">
+            <>
+                {/* Use AudioContinuityLayer for better audio continuity during transitions */}
+                <AudioContinuityLayer participants={participants} />
+                
+                {/* Keep AudioLayer for backward compatibility */}
+                {AudioLayer}
+                
+                <div ref={ref} className="w-full h-full flex items-center justify-center p-4">
+                    <div className="w-full h-full max-w-4xl mx-auto rounded-xl overflow-hidden">
                         <ParticipantView
-                            participant={{
-                                ...participantInSpotlight,
-                                name: truncateNameTo6Chars(
-                                    participantInSpotlight.name || participantInSpotlight.userId
-                                ),
-                            }}
+                            participant={participants[0]}
                             trackType="videoTrack"
                             ParticipantViewUI={CustomParticipantViewUI}
                             VideoPlaceholder={VideoPlaceholder}
@@ -569,41 +572,74 @@ const SpeakerLayout = memo(() => {
                         />
                     </div>
                 </div>
+            </>
+        );
+    }
 
-                {/* Other participants */}
-                {otherParticipants.length > 0 && (
-                    <div className="h-32 sm:h-36 flex-shrink-0">
-                        <div
-                            ref={setParticipantsBar}
-                            className="flex gap-4 h-full overflow-x-auto justify-center px-2 relative"
-                        >
-                            {/* Show visible participants */}
-                            <div className="flex gap-4">
-                                {visibleParticipants.map((participant, index) => (
-                                    <div
-                                        key={participant.sessionId}
-                                        className="h-full aspect-[4/3] flex-shrink-0 bg-[#2A2A2A] rounded-xl overflow-hidden"
-                                    >
-                                        <ParticipantTile
-                                            participant={participant}
-                                            totalParticipants={2}
-                                            index={index}
-                                        />
-                                    </div>
-                                ))}
-                            </div>
-
-                            {/* Show overflow indicator for remaining participants */}
-                            {overflowParticipants.length > 0 && (
-                                <div className="absolute right-4 bottom-4 z-10">
-                                    <OverflowIndicator count={overflowParticipants.length} />
-                                </div>
-                            )}
+    // Multi-participant layout
+    return (
+        <>
+            {/* Use AudioContinuityLayer for better audio continuity during transitions */}
+            <AudioContinuityLayer participants={participants} />
+            
+            {/* Keep AudioLayer for backward compatibility */}
+            {AudioLayer}
+            
+            <div ref={ref} className="w-full h-full relative overflow-hidden">
+                <div className="h-full p-2 md:p-4 flex flex-col">
+                    {/* Spotlight participant */}
+                    <div className="flex-grow min-h-0 mb-2 md:mb-4">
+                        <div className="w-full h-full max-w-6xl mx-auto rounded-xl overflow-hidden">
+                            <ParticipantView
+                                participant={{
+                                    ...participantInSpotlight,
+                                    name: truncateNameTo6Chars(
+                                        participantInSpotlight.name || participantInSpotlight.userId
+                                    ),
+                                }}
+                                trackType="videoTrack"
+                                ParticipantViewUI={CustomParticipantViewUI}
+                                VideoPlaceholder={VideoPlaceholder}
+                                muteAudio={true}
+                            />
                         </div>
                     </div>
-                )}
+
+                    {/* Other participants */}
+                    {otherParticipants.length > 0 && (
+                        <div className="h-32 sm:h-36 flex-shrink-0">
+                            <div
+                                ref={setParticipantsBar}
+                                className="flex gap-4 h-full overflow-x-auto justify-center px-2 relative"
+                            >
+                                {/* Show visible participants */}
+                                <div className="flex gap-4">
+                                    {visibleParticipants.map((participant, index) => (
+                                        <div
+                                            key={participant.sessionId}
+                                            className="h-full aspect-[4/3] flex-shrink-0 bg-[#2A2A2A] rounded-xl overflow-hidden"
+                                        >
+                                            <ParticipantTile
+                                                participant={participant}
+                                                totalParticipants={2}
+                                                index={index}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Show overflow indicator for remaining participants */}
+                                {overflowParticipants.length > 0 && (
+                                    <div className="absolute right-4 bottom-4 z-10">
+                                        <OverflowIndicator count={overflowParticipants.length} />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
-        </div>
+        </>
     );
 });
 

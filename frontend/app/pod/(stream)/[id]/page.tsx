@@ -312,8 +312,8 @@ const MeetingInterface: React.FC<MeetingProps> = memo(({ params }) => {
                 const customEvent = event as unknown as StreamCustomEvent;
                 if (customEvent.custom.type === 'applaud') {
                     if (customEvent.custom.data.userId !== connectedUser?.id) {
-                        // const clapSound = new Audio('/sounds/clap-sound.mp3');
-                        // clapSound.play().catch(console.error);
+                        const clapSound = new Audio('/sounds/clap-sound.mp3');
+                        clapSound.play().catch(console.error);
 
                         const toastId = `${connectedUser?.id || Date.now()}-${customEvent.custom.data.timestamp}`;
                         const name = connectedUser?.name || "A guest";

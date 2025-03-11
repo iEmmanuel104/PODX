@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useState, memo } from 'react';
+import React, { useMemo, useEffect, useState, memo, useRef } from 'react';
 import {
     combineComparators,
     ParticipantView,
@@ -30,6 +30,7 @@ import {
 } from '../../hooks/useParticipantUtils';
 import { useApplaud } from '../../hooks/useApplaud';
 import { ParticipantMenuDropdown } from './participantMenuDropdown';
+import AudioContinuityLayer from './AudioContinuityLayer';
 
 // In ParticipantTile component
 // Add after imports, before ParticipantTile component
@@ -60,14 +61,17 @@ const ParticipantTile = memo((
         onStopScreenShare,
     }: ParticipantTileProps) => {
         const isActuallySpeaking = useDebounceSpeak(isSpeaking || false);
-        const isMobile = useIsMobile();
         const [displayName, setDisplayName] = useState(name);
-        const { isApplauding, handleApplaud } = useApplaud(participant.sessionId);
+        const isMobile = useIsMobile();
+        const { handleApplaud, isApplauding } = useApplaud(participant.sessionId);
         const { avatarUrl, getFallbackAvatar } = useParticipantConsistentAvatar(
             userId,
             name,
             participant.image
         );
+        
+        // Add transition class for smooth movement
+        const transitionClass = "transition-all duration-500 ease-in-out";
 
         useEffect(() => {
             const updateDisplayName = async () => {
@@ -77,12 +81,8 @@ const ParticipantTile = memo((
             updateDisplayName();
         }, [name, userId, isMobile]);
 
-        // Show name if:
-        // 1. On desktop OR
-        // 2. On mobile AND:
-        //    - Total participants <= 4 OR
-        //    - This is one of the first 3 tiles when there are more than 4 participants
-        const shouldShowName = !isMobile || totalParticipants <= 4 || index < 3;
+        // Define shouldShowName based on totalParticipants
+        const shouldShowName = totalParticipants <= 4;
 
         // Custom video placeholder that shows the avatar
         const VideoPlaceholder = () => (
@@ -94,14 +94,13 @@ const ParticipantTile = memo((
                     alt="Participant avatar"
                     className="rounded-full"
                     priority
-                    onError={e => {
+                    onError={(e) => {
                         e.currentTarget.src = getFallbackAvatar();
                     }}
                 />
             </div>
         );
 
-        // Remove the applaud button and related code from CustomParticipantUI
         const CustomParticipantUI = () => {
             return (
                 <>
@@ -166,14 +165,20 @@ const ParticipantTile = memo((
         };
 
         return (
-            <div style={style} className="relative overflow-hidden">
-                <Audio participant={participant} trackType="audioTrack" />
+            <div 
+                style={style} 
+                className={`relative overflow-hidden ${transitionClass} cursor-pointer`}
+                onDoubleClick={handleApplaud}
+                title="Double-click to applaud"
+            >
+                {/* Audio is now handled by the AudioContinuityLayer at the top level */}
                 <ParticipantView
                     participant={participant}
                     ParticipantViewUI={CustomParticipantUI}
                     VideoPlaceholder={VideoPlaceholder}
                     className="w-full h-full"
                     trackType={isScreenSharing ? 'screenShareTrack' : 'videoTrack'}
+                    muteAudio={true} /* Mute audio in ParticipantView since we handle it at the top level */
                 />
             </div>
         );
@@ -258,6 +263,10 @@ const GridLayout = () => {
     const hasOngoingScreenShare = useHasOngoingScreenShare();
     const { ref } = useAnimateVideoLayout(false);
 
+    // Track previously seen participants for audio continuity
+    const trackedParticipantsRef = useRef<Set<string>>(new Set());
+    const speakingParticipantsRef = useRef<Map<string, number>>(new Map());
+    
     // Handle screen share cleanup
     useEffect(() => {
         if (!hasOngoingScreenShare && call) {
@@ -267,6 +276,29 @@ const GridLayout = () => {
             }
         }
     }, [hasOngoingScreenShare, call, participants]);
+
+    // Update audio tracking for continuity
+    useEffect(() => {
+        // Add all current participants to our tracked set
+        participants.forEach(p => {
+            trackedParticipantsRef.current.add(p.sessionId);
+            
+            // Track speaking participants with a timestamp
+            if (p.isSpeaking) {
+                speakingParticipantsRef.current.set(p.sessionId, Date.now());
+            }
+        });
+        
+        // Cleanup old speaking timestamps after a delay
+        const now = Date.now();
+        speakingParticipantsRef.current.forEach((timestamp, id) => {
+            // Keep speaking state for 2 seconds after they stop speaking
+            // This provides a buffer for transitions
+            if (now - timestamp > 2000 && !participants.some(p => p.sessionId === id && p.isSpeaking)) {
+                speakingParticipantsRef.current.delete(id);
+            }
+        });
+    }, [participants]);
 
     const participantComparator = useMemo(() => {
         return combineComparators(
@@ -311,16 +343,18 @@ const GridLayout = () => {
         return [visible, overflow];
     }, [sortedParticipants]);
 
-    // Update the overflow indicator rendering
-    {overflowParticipants.length > 0 && (
-        <div className="absolute bottom-4 right-4 z-10">
-            <OverflowIndicator
-                count={overflowParticipants.length}
-                style={{ display: 'flex', alignItems: 'center' }}
-                participants={overflowParticipants}
-            />
+    // Create a dedicated audio layer for continuous audio across transitions
+    const AudioLayer = useMemo(() => (
+        <div className="sr-only">
+            {participants.map(participant => (
+                <Audio 
+                    key={participant.sessionId} 
+                    participant={participant} 
+                    trackType="audioTrack" 
+                />
+            ))}
         </div>
-    )}
+    ), [participants]);
 
     const getGridContainerStyles = (count: number) => {
         switch (count) {
@@ -411,60 +445,64 @@ const GridLayout = () => {
     };
 
     return (
-        <div ref={ref} className="w-full relative overflow-hidden flex items-center justify-center">
-            <div className={clsx(
-                'flex flex-col items-start w-full bg-[#1D1D1D] rounded-[20px] relative',
-                'p-2 sm:p-3',
-                'gap-4 sm:gap-6',
-                'sm:max-w-[1249px]',
-                'mx-4',
-                'h-[calc(100vh-270px)]',
-                'sm:h-[calc(100vh-250px)]',
-                'mt-[50px] mb-[100px]',
-                'sm:mt-[42px] sm:mb-[120px]'
-            )}
-            >
+        <>
+            {/* Add audio continuity layer for smooth audio during transitions */}
+            <AudioContinuityLayer participants={participants} />
+            
+            <div ref={ref} className="w-full relative overflow-hidden flex items-center justify-center">
                 <div className={clsx(
-                    'grid w-full h-full',
-                    'gap-2 sm:gap-6',
-                    visibleParticipants.length === 1 && 'grid-cols-1',
-                    visibleParticipants.length === 2 && 'grid-cols-2',
-                    visibleParticipants.length === 3 && 'grid-cols-2 grid-rows-2',
-                    visibleParticipants.length >= 4 && 'grid-cols-2 grid-rows-2'
+                    'flex flex-col items-start w-full bg-[#1D1D1D] rounded-[20px] relative',
+                    'p-2 sm:p-3',
+                    'gap-4 sm:gap-6',
+                    'sm:max-w-[1249px]',
+                    'mx-4',
+                    'h-[calc(100vh-270px)]',
+                    'sm:h-[calc(100vh-250px)]',
+                    'mt-[50px] mb-[100px]',
+                    'sm:mt-[42px] sm:mb-[120px]'
                 )}>
-                    {visibleParticipants.slice(0, 4).map((participant, index) => {
-                        const isAudioEnabled = participant.publishedTracks.includes(1);
-                        const isSpeaking = participant.isSpeaking;
-                        const isScreenSharing = hasScreenShare(participant);
-                        
-                        return (
-                            <ParticipantTile
-                                key={participant.sessionId}
-                                name={participant.name || participant.userId}
-                                userId={participant.userId}
-                                isMuted={!isAudioEnabled}
-                                isSpeaking={isSpeaking}
-                                totalParticipants={visibleParticipants.length}
-                                index={index}
-                                participant={participant}
-                                isScreenSharing={isScreenSharing}
-                                onStopScreenShare={
-                                    isScreenSharing
-                                        ? () => handleStopScreenShare(participant)
-                                        : undefined
-                                }
-                                style={{
-                                    ...getTileStyles(
-                                        index,
-                                        Math.min(4, visibleParticipants.length)
-                                    ),
-                                    width: '100%',
-                                    height: '100%',
-                                }}
-                            />
-                        );
-                    })}
-
+                    <div className={clsx(
+                        'grid w-full h-full transition-all duration-500 ease-in-out',
+                        'gap-2 sm:gap-6',
+                        visibleParticipants.length === 1 && 'grid-cols-1',
+                        visibleParticipants.length === 2 && 'grid-cols-2',
+                        visibleParticipants.length === 3 && 'grid-cols-2 grid-rows-2',
+                        visibleParticipants.length >= 4 && 'grid-cols-2 grid-rows-2'
+                    )}>
+                        {visibleParticipants.slice(0, 4).map((participant, index) => {
+                            const isAudioEnabled = participant.publishedTracks.includes(1);
+                            const isSpeaking = participant.isSpeaking;
+                            const isScreenSharing = hasScreenShare(participant);
+                            
+                            return (
+                                <ParticipantTile
+                                    key={participant.sessionId}
+                                    name={participant.name || participant.userId}
+                                    userId={participant.userId}
+                                    isMuted={!isAudioEnabled}
+                                    isSpeaking={isSpeaking}
+                                    totalParticipants={visibleParticipants.length}
+                                    index={index}
+                                    participant={participant}
+                                    isScreenSharing={isScreenSharing}
+                                    onStopScreenShare={
+                                        isScreenSharing
+                                            ? () => handleStopScreenShare(participant)
+                                            : undefined
+                                    }
+                                    style={{
+                                        ...getTileStyles(
+                                            index,
+                                            Math.min(4, visibleParticipants.length)
+                                        ),
+                                        width: '100%',
+                                        height: '100%',
+                                    }}
+                                />
+                            );
+                        })}
+                    </div>
+                    
                     {overflowParticipants.length > 0 && (
                         <div className="absolute bottom-4 right-4 z-10">
                             <OverflowIndicator
@@ -476,7 +514,7 @@ const GridLayout = () => {
                     )}
                 </div>
             </div>
-        </div>
+        </>
     );
 };
 
