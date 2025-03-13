@@ -9,22 +9,20 @@ export class POAPController {
      * Get all POAPs owned by a specific user
      * @route GET /api/poap/user/:userId
      */
-    static async getUserPOAPs(req: Request, res: Response): Promise<void> {
+    public static async getUserPOAPs(req: Request, res: Response): Promise<void> {
         try {
-            const { userId } = req.params;
-            const poaps = await POAPService.getUserPOAPs(userId);
+            const { walletAddress } = req.params;
+            const details = await POAPService.getUserTokenGateOptions(walletAddress);
             
             res.status(200).json({
                 success: true,
-                data: poaps,
-                count: poaps.length
+                data: details,
             });
         } catch (error) {
-            logger.error('Error fetching user POAPs:', error);
+            console.error("Error getting user POAPs:", error);
             res.status(500).json({
                 success: false,
-                message: 'Failed to fetch user POAPs',
-                error: (error as Error).message
+                message: `Failed to get user POAPs: ${error instanceof Error ? error.message : String(error)}`,
             });
         }
     }
@@ -54,24 +52,23 @@ export class POAPController {
     }
 
     /**
-     * Get details of a specific meeting contract
+     * Get details for a specific meeting
      * @route GET /api/poap/meeting/:meetingAddress
      */
-    static async getMeetingDetails(req: Request, res: Response): Promise<void> {
+    public static async getMeetingDetails(req: Request, res: Response): Promise<void> {
         try {
             const { meetingAddress } = req.params;
             const details = await POAPService.getMeetingDetails(meetingAddress);
             
             res.status(200).json({
                 success: true,
-                data: details
+                data: details,
             });
         } catch (error) {
-            logger.error(`Error fetching meeting details for ${req.params.meetingAddress}:`, error);
+            console.error("Error getting meeting details:", error);
             res.status(500).json({
                 success: false,
-                message: 'Failed to fetch meeting details',
-                error: (error as Error).message
+                message: `Failed to get meeting details: ${error instanceof Error ? error.message : String(error)}`,
             });
         }
     }
@@ -100,10 +97,10 @@ export class POAPController {
     }
 
     /**
-     * Get all meeting contracts deployed
+     * Get all meetings
      * @route GET /api/poap/meetings
      */
-    static async getAllMeetings(req: Request, res: Response): Promise<void> {
+    public static async getAllMeetings(req: Request, res: Response): Promise<void> {
         try {
             const meetings = await POAPService.getAllMeetings();
             
@@ -113,20 +110,19 @@ export class POAPController {
                 count: meetings.length
             });
         } catch (error) {
-            logger.error('Error fetching all meetings:', error);
+            console.error("Error getting all meetings:", error);
             res.status(500).json({
                 success: false,
-                message: 'Failed to fetch meetings',
-                error: (error as Error).message
+                message: `Failed to get meetings: ${error instanceof Error ? error.message : String(error)}`,
             });
         }
     }
 
     /**
-     * Get the count of all meeting contracts
+     * Get meeting count
      * @route GET /api/poap/meetings/count
      */
-    static async getMeetingCount(req: Request, res: Response): Promise<void> {
+    public static async getMeetingCount(req: Request, res: Response): Promise<void> {
         try {
             const count = await POAPService.getMeetingCount();
             
@@ -145,138 +141,146 @@ export class POAPController {
     }
 
     /**
-     * Get all the calls that resulted in POAPs for a specific wallet address
+     * Get wallet POAP call history
      * @route GET /api/poap/wallet/:walletAddress/calls
      */
     static async getWalletPOAPCalls(req: Request, res: Response): Promise<void> {
         try {
             const { walletAddress } = req.params;
             
-            // First get all meetings
+            // Get all meetings
             const meetings = await POAPService.getAllMeetings();
             
-            // Then check each meeting to see if the wallet is a recipient
-            const relevantMeetings = [];
-            for (const meetingAddress of meetings) {
-                const hasNFT = await POAPService.walletHasMeetingNFT(walletAddress, meetingAddress);
-                if (hasNFT) {
-                    const details = await POAPService.getMeetingDetails(meetingAddress);
-                    relevantMeetings.push(details);
-                }
-            }
+            // Check wallet ownership for each meeting
+            const poapCalls = await Promise.all(
+                meetings.map(async (meetingAddress) => {
+                    const hasNFT = await POAPService.walletHasMeetingNFT(walletAddress, meetingAddress);
+                    if (hasNFT) {
+                        const details = await POAPService.getMeetingDetails(meetingAddress);
+                        return {
+                            meetingAddress,
+                            ...details
+                        };
+                    }
+                    return null;
+                })
+            );
+            
+            // Filter out null results
+            const validPoapCalls = poapCalls.filter(call => call !== null);
             
             res.status(200).json({
                 success: true,
-                data: relevantMeetings,
-                count: relevantMeetings.length
+                count: validPoapCalls.length,
+                data: validPoapCalls
             });
         } catch (error) {
             logger.error(`Error fetching POAP calls for wallet ${req.params.walletAddress}:`, error);
             res.status(500).json({
                 success: false,
-                message: 'Failed to fetch POAP calls',
+                message: 'Failed to fetch wallet POAP calls',
                 error: (error as Error).message
             });
         }
     }
 
     /**
-     * Check if a wallet has access to a token-gated session
-     * @route GET /api/poap/tokengate/:sessionName/:walletAddress
+     * Check token gate access for a session and wallet
+     * @route GET /api/poap/tokengate/check/:sessionName/:walletAddress
      */
     static async checkTokenGateAccess(req: Request, res: Response): Promise<void> {
         try {
             const { sessionName, walletAddress } = req.params;
             
-            // Get the call by session name
-            const call = await Call.findOne({
-                'custom.title': sessionName
-            });
+            // Get existing calls with this session name
+            const calls = await Call.find({ 'custom.tokenGateInfo.sessionName': sessionName });
             
-            if (!call) {
+            if (calls.length === 0) {
                 res.status(404).json({
                     success: false,
-                    message: 'Session not found',
-                    hasAccess: false
+                    message: `No calls found with session name ${sessionName}`
                 });
                 return;
             }
             
-            // If token gating is not enabled, grant access immediately
-            if (!call.custom?.tokenGateInfo?.enabled) {
-                res.status(200).json({
-                    success: true,
-                    message: 'Token gating not enabled for this session',
-                    hasAccess: true
+            // Find the most recent call with token gate info
+            const poapCalls = await Promise.all(
+                calls.map(async call => {
+                    if (call.custom?.tokenGateInfo?.addresses?.length > 0) {
+                        return {
+                            callId: call.callId,
+                            custom: call.custom
+                        };
+                    }
+                    return null;
+                })
+            );
+            
+            // Filter out null results
+            const validPoapCalls = poapCalls.filter(call => call !== null);
+            
+            if (validPoapCalls.length === 0) {
+                res.status(404).json({
+                    success: false,
+                    message: `No token gated calls found with session name ${sessionName}`
                 });
                 return;
             }
             
-            // Proceed with token gate verification if enabled...
-            // Check external token gating first (direct address list)
-            if (call.custom?.tokenGateInfo?.addresses) {
-                const addresses = call.custom.tokenGateInfo.addresses as string[];
-                const hasAccess = addresses.some((addr: string) => 
-                    addr.toLowerCase() === walletAddress.toLowerCase()
-                );
-                
-                if (hasAccess) {
-                    res.status(200).json({
-                        success: true,
-                        hasAccess: true,
-                        method: 'external',
-                        message: 'Access granted: Wallet in whitelist'
-                    });
-                    return;
-                }
-            }
+            // Sort by most recent (assuming _id contains timestamp)
+            const call = validPoapCalls[0];
             
-            // Default denial response if no access methods matched
+            // Get token gate addresses
+            const tokenGateAddresses = call.custom.tokenGateInfo.addresses || [];
+            
+            // Get user token gate options
+            const userTokenGateOptions = await POAPService.getUserTokenGateOptions(walletAddress);
+            
+            // Check if user has any of the required NFTs
+            const hasAccess = userTokenGateOptions.some(option =>
+                tokenGateAddresses.includes(option.meetingAddress.toLowerCase())
+            );
+            
             res.status(200).json({
                 success: true,
-                hasAccess: false,
-                method: 'denied',
-                message: 'Access denied: Wallet not authorized'
+                hasAccess,
+                tokenGateInfo: call.custom.tokenGateInfo,
+                userTokens: userTokenGateOptions.map(o => o.meetingAddress)
             });
         } catch (error) {
             logger.error(`Error checking token gate access for ${req.params.sessionName}:`, error);
             res.status(500).json({
                 success: false,
-                message: 'Failed to check token gate access',
-                error: (error as Error).message,
-                hasAccess: false
+                message: `Failed to check token gate access: ${error instanceof Error ? error.message : String(error)}`
             });
         }
     }
 
     /**
-     * Check if a wallet has access to a specific meeting
+     * Direct check for token gate access by meeting address
      * @route GET /api/poap/tokengate/direct/:meetingAddress/:walletAddress
      */
     static async checkDirectTokenGateAccess(req: Request, res: Response): Promise<void> {
         try {
             const { meetingAddress, walletAddress } = req.params;
             
-            // Check if this wallet has an NFT from this meeting
+            // Check if wallet has NFT from this meeting
             const hasNFT = await POAPService.walletHasMeetingNFT(walletAddress, meetingAddress);
             
-            // Get additional meeting information if needed
+            // Get meeting details if has access
             const meetingDetails = hasNFT ? await POAPService.getMeetingDetails(meetingAddress) : null;
             
             res.status(200).json({
                 success: true,
-                meetingAddress,
                 hasAccess: hasNFT,
-                details: meetingDetails,
-                message: hasNFT ? 'Access granted' : 'Access denied: No matching NFT found'
+                meetingDetails
             });
         } catch (error) {
             logger.error(`Error checking direct token gate access for ${req.params.meetingAddress}:`, error);
             res.status(500).json({
                 success: false,
-                message: 'Failed to check token gate access',
-                error: (error as Error).message,
-                hasAccess: false
+                message: 'Failed to check direct token gate access',
+                error: (error as Error).message
             });
         }
     }
@@ -288,23 +292,7 @@ export class POAPController {
     static async getUserTokenGateOptions(req: Request, res: Response): Promise<void> {
         try {
             const { walletAddress } = req.params;
-            
-            // Get all meetings
-            const meetings = await POAPService.getAllMeetings();
-            
-            // Check which meetings this wallet has NFTs for
-            const tokenGateOptions = [];
-            for (const meetingAddress of meetings) {
-                const hasNFT = await POAPService.walletHasMeetingNFT(walletAddress, meetingAddress);
-                if (hasNFT) {
-                    const details = await POAPService.getMeetingDetails(meetingAddress);
-                    tokenGateOptions.push({
-                        contractAddress: meetingAddress,
-                        sessionName: details.sessionName,
-                        // Other useful info
-                    });
-                }
-            }
+            const tokenGateOptions = await POAPService.getUserTokenGateOptions(walletAddress);
             
             res.status(200).json({
                 success: true,
@@ -365,52 +353,228 @@ export class POAPController {
     }
 
     /**
-     * Get debug POAP status
-     * @route GET /api/poap/debug/:callId
+     * Get POAP status for a specific call
+     * @route GET /api/poap/status/:callId
      */
-    static async debugPoapStatus(req: Request, res: Response): Promise<void> {
+    static async getPoapStatus(req: Request, res: Response): Promise<void> {
         try {
             const { callId } = req.params;
             
-            // Get all records related to this call
-            const poaps = await POAP.find({ callId });
+            // Get the call record
             const call = await Call.findOne({ callId });
+            if (!call) {
+                res.status(404).json({
+                    success: false,
+                    message: `Call ${callId} not found`
+                });
+                return;
+            }
+            
+            // Get POAP records for this call
+            const poaps = await POAP.find({ callId });
+            
+            // Get meeting information if available
+            let meetingDetails = null;
+            if (call.custom?.poap?.contractAddress) {
+                try {
+                    meetingDetails = await POAPService.getMeetingDetails(call.custom.poap.contractAddress);
+                } catch (meetingError) {
+                    logger.error(`Error getting meeting details: ${meetingError}`);
+                    meetingDetails = { 
+                        error: meetingError instanceof Error ? meetingError.message : String(meetingError),
+                        address: call.custom.poap.contractAddress 
+                    };
+                }
+            }
+            
+            // Calculate statistics
+            const stats = {
+                totalMembers: call.members.length,
+                totalPoapRecords: poaps.length,
+                mintedCount: poaps.filter(p => p.status === 'minted').length,
+                pendingCount: poaps.filter(p => p.status === 'pending').length,
+                callDuration: call.duration,
+                hasContractAddress: !!call.custom?.poap?.contractAddress,
+                contractAddress: call.custom?.poap?.contractAddress || null,
+                eligibleParticipants: (call.custom?.poap as any)?.eligible?.length || 0
+            };
             
             res.status(200).json({
                 success: true,
-                data: {
-                    poapCount: poaps.length,
-                    poapStatus: poaps.map(p => p.status),
-                    contractAddress: call?.custom?.poap?.contractAddress,
-                    sessionId: call?.custom?.poap?.sessionId,
-                    deploymentTransaction: call?.custom?.poap?.sessionTxHash
-                }
+                callId,
+                title: call.custom?.title || `Call ${callId}`,
+                startTime: call.startTime,
+                endTime: call.endTime,
+                duration: call.duration,
+                stats,
+                poapInfo: call.custom?.poap || null,
+                meetingDetails,
+                poaps: poaps.map(p => ({
+                    id: p._id,
+                    userId: p.userId,
+                    status: p.status,
+                    tokenId: p.tokenId || null,
+                    contractAddress: p.contractAddress
+                }))
             });
         } catch (error) {
-            // Handle error
-            res.status(500).json({ success: false, error: (error as Error).message });
+            logger.error(`Error getting POAP status: ${error}`);
+            res.status(500).json({
+                success: false,
+                message: `Error getting POAP status: ${error instanceof Error ? error.message : String(error)}`
+            });
         }
     }
 
     /**
-     * Trigger POAP generation for a specific call
-     * @route GET /api/poap/trigger/:callId
+     * Generate POAPs for a specific call
+     * Can be accessed via GET or POST
+     * @route GET /api/poap/generate/:callId
+     * @route POST /api/poap/generate/:callId (admin only)
      */
-    static async triggerPoapGeneration(req: Request, res: Response): Promise<void> {
+    static async generatePOAPs(req: Request, res: Response): Promise<void> {
         try {
             const { callId } = req.params;
             
-            await POAPService.handleCallPOAP(callId);
+            // First check if call exists and get basic info
+            const call = await Call.findOne({ callId });
+            if (!call) {
+                res.status(404).json({
+                    success: false,
+                    message: `Call ${callId} not found`
+                });
+                return;
+            }
+            
+            // Log eligibility criteria from environment variables
+            logger.info(`Generating POAPs for call ${callId}`);
+            logger.info(`Call duration: ${call.duration} seconds`);
+            logger.info(`Members in call: ${call.members?.length || 0}`);
+            logger.info(`Eligibility criteria:`);
+            logger.info(`  - MIN_PARTICIPANTS: ${process.env.MIN_PARTICIPANTS || "2"}`);
+            logger.info(`  - MIN_CALL_DURATION: ${process.env.MIN_CALL_DURATION || "60"} seconds`);
+            logger.info(`  - MIN_PARTICIPANT_DURATION: ${process.env.MIN_PARTICIPANT_DURATION || "30"} seconds`);
+            
+            // Log any existing POAP information
+            let existingContractAddress = null;
+            if (call.custom?.poap?.contractAddress) {
+                existingContractAddress = call.custom.poap.contractAddress;
+                logger.info(`Call already has POAP contract at ${existingContractAddress}`);
+                
+                // Get POAPs that have been minted for this call
+                const poaps = await POAP.find({ callId });
+                logger.info(`Found ${poaps.length} POAPs for this call`);
+                
+                const mintedCount = poaps.filter(p => p.status === 'minted').length;
+                const pendingCount = poaps.filter(p => p.status === 'pending').length;
+                logger.info(`POAP statuses: ${mintedCount} minted, ${pendingCount} pending`);
+                
+                res.status(200).json({
+                    success: true,
+                    message: `POAPs already generated for call ${callId}`,
+                    callInfo: {
+                        id: callId,
+                        duration: call.duration || 0,
+                        memberCount: call.members?.length || 0,
+                        poapContractAddress: existingContractAddress,
+                        poapCount: poaps.length,
+                        poapStatus: {
+                            minted: mintedCount,
+                            pending: pendingCount
+                        }
+                    }
+                });
+                return;
+            }
+            
+            // Now generate the POAPs
+            const beforePoaps = await POAP.countDocuments({ callId });
+            let errorDuringProcessing = null;
+            
+            try {
+                await POAPService.handleCallPOAP(callId);
+            } catch (processingError) {
+                errorDuringProcessing = processingError;
+                logger.error(`Error during POAP generation: ${processingError}`);
+            }
+            
+            // Get updated call info after POAP handling
+            const updatedCall = await Call.findOne({ callId });
+            const poaps = await POAP.find({ callId });
+            const afterPoaps = poaps.length;
+            
+            // Check if contract address changed
+            const newContractAddress = updatedCall?.custom?.poap?.contractAddress || null;
+            const contractAddressChanged = existingContractAddress !== newContractAddress && newContractAddress !== null;
+            
+            if (contractAddressChanged) {
+                logger.info(`POAP contract address created: ${newContractAddress}`);
+            }
+            
+            // Get meeting details if we have a contract address
+            let meetingDetails = null;
+            if (newContractAddress) {
+                try {
+                    meetingDetails = await POAPService.getMeetingDetails(newContractAddress);
+                } catch (meetingError) {
+                    logger.error(`Error getting meeting details: ${meetingError}`);
+                }
+            }
             
             res.status(200).json({
-                success: true,
-                message: 'POAP generation triggered'
+                success: !errorDuringProcessing,
+                message: errorDuringProcessing
+                    ? `Error during POAP generation: ${errorDuringProcessing instanceof Error ? errorDuringProcessing.message : String(errorDuringProcessing)}`
+                    : `Generated POAPs for call ${callId}`,
+                callInfo: {
+                    id: callId,
+                    duration: updatedCall?.duration || 0,
+                    memberCount: updatedCall?.members?.length || 0,
+                    poapContractAddress: newContractAddress,
+                    poapCount: poaps.length,
+                    newPoapsMinted: afterPoaps - beforePoaps,
+                    poapStatus: {
+                        minted: poaps.filter(p => p.status === 'minted').length,
+                        pending: poaps.filter(p => p.status === 'pending').length
+                    }
+                },
+                meetingDetails: meetingDetails || null,
+                error: errorDuringProcessing ?
+                    (errorDuringProcessing instanceof Error ? errorDuringProcessing.message : String(errorDuringProcessing)) :
+                    null
             });
         } catch (error) {
+            logger.error(`Error generating POAPs for call ${req.params.callId}:`, error);
             res.status(500).json({
                 success: false,
-                error: (error as Error).message
+                message: `Failed to generate POAPs: ${error instanceof Error ? error.message : String(error)}`
+            });
+        }
+    }
+
+    static async triggerPOAPIssuance(req: Request, res: Response): Promise<void | Response> {
+        try {
+            const { callId } = req.params;
+            
+            if (!callId) {
+                return res.status(400).json({ error: "callId parameter is required" });
+            }
+
+            await POAPService.handleCallPOAP(callId);
+            
+            res.json({
+                success: true,
+                message: "POAP issuance process started"
+            });
+        } catch (error) {
+            console.error("POAP issuance error:", error);
+            res.status(500).json({
+                success: false,
+                error: error instanceof Error ? error.message : "Unknown error"
             });
         }
     }
 }
+
+// Export the triggerPOAPIssuance function individually for direct use in routes
+export const triggerPOAPIssuance = POAPController.triggerPOAPIssuance;

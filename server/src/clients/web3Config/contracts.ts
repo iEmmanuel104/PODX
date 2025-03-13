@@ -45,7 +45,7 @@ class ContractsManager {
                 this.lastBlockNumber = await this.provider.getBlockNumber();
                 logger.info('Connected to network:', network.name, 'at block:', this.lastBlockNumber);
 
-                // Initialize POAP contract
+                // Initialize POAP contrac
                 this.poapContract = new ethers.Contract(
                     POAP_CONTRACT_ADDRESS,
                     POAP_ABI,

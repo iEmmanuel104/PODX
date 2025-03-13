@@ -1,133 +1,268 @@
-Documentation for the MeetingNFT Contracts
+# PODX POAP System Documentation
 
-This documentation explains the structure and functionality of three Solidity smart contracts: MeetingFactory.sol, Meeting.sol, and IMeeting.sol. These contracts collectively enable the creation, minting, and management of meeting-related NFTs, with the functionality for creating and tracking meetings through a factory pattern.
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Smart Contracts](#smart-contracts)
+3. [TypeScript Services](#typescript-services)
+4. [Integration Flow](#integration-flow)
+5. [Deployment Guide](#deployment-guide)
+6. [Troubleshooting](#troubleshooting)
 
-1. Contract Structure
+## 1. System Overview
 
-MeetingNFT/
-├── contracts/
-│   ├── MeetingFactory.sol
-│   ├── Meeting.sol
-│   ├── interfaces/IMeeting.sol
+The PODX POAP (Proof of Attendance Protocol) system is a comprehensive solution that enables the creation, management, and distribution of NFTs for meeting attendance. The system consists of:
 
-	•	MeetingFactory.sol: The factory contract responsible for deploying new Meeting contracts and tracking all created meetings.
-	•	Meeting.sol: The core contract representing each meeting, implementing ERC721 functionality (NFTs) and including logic for batch minting and managing meeting-specific metadata.
-	•	IMeeting.sol: The interface defining the functions that must be implemented by the Meeting contract. It standardizes interactions with the Meeting contract for external use.
+- Smart Contracts (Solidity)
+- Backend Services (TypeScript)
+- Integration Layer
 
-2. Deployment Process
+### Architecture Components:
 
-To deploy the contracts, you should follow these steps:
+```
+PODX POAP System/
+├── Smart Contracts/
+│   ├── MeetingFactory.sol     # Factory contract for deploying Meeting contracts
+│   ├── Meeting.sol            # Individual meeting NFT contract
+│   └── interfaces/
+│       └── IMeeting.sol       # Interface for Meeting contract
+├── TypeScript Services/
+│   ├── paymaster.service.ts   # Handles gas fee sponsorship
+│   ├── poap_management.service.ts  # Core POAP operations
+│   └── poap.service.ts        # High-level POAP business logic
+└── Deployment Info/
+    └── deployed_nft_info/     # Contract ABIs and deployment info
+```
 
-Step 1: Deploy Meeting.sol
+## 2. Smart Contracts
 
-You do not deploy the Meeting.sol contract directly. Instead, the MeetingFactory.sol contract will deploy instances of Meeting.sol using the createMeeting function.
+### MeetingFactory Contract
 
-Step 2: Deploy MeetingFactory.sol
-	1.	Deploy the MeetingFactory.sol contract. This contract will be responsible for deploying instances of Meeting.sol.
-	2.	After deployment, the MeetingFactory.sol contract can be interacted with to create Meeting contracts.
+The MeetingFactory contract is the entry point for creating new meeting NFT contracts.
 
-Step 3: Create Meetings using MeetingFactory.sol
-	1.	Once the MeetingFactory.sol contract is deployed, you can use its createMeeting() function to deploy new Meeting contracts.
-	2.	The function createMeeting() requires the meeting’s session name and metadata URL.
-	3.	The creator address is automatically set as the address that calls the createMeeting() function, but you can customize this behavior if needed (e.g., using a company wallet).
+#### Key Functions:
 
-3. Contract Details & Functionality
+```solidity
+function createMeeting(
+    string memory sessionName,
+    string memory metadataURL,
+    address creator,
+    address[] memory minters
+) public returns (address)
+```
 
-MeetingFactory.sol
+- Creates a new Meeting contract instance
+- Records the meeting in the factory's registry
+- Emits a MeetingCreated event
+- Returns the address of the new Meeting contract
 
-Functionality:
-	•	The MeetingFactory.sol contract is a factory that deploys new Meeting.sol instances and tracks the addresses of all created meetings.
+#### Transaction Tracking:
 
-Functions:
-	1.	createMeeting(string memory sessionName, string memory metadataURL)
-	•	Description: This function deploys a new instance of the Meeting.sol contract. The function requires two parameters: the sessionName (name of the meeting) and metadataURL (link to the metadata for the meeting).
-	•	Access: Public, anyone can call this function to create a new meeting.
-	•	Returns: The address of the newly created Meeting.sol contract.
-	2.	getAllMeetings()
-	•	Description: This function returns the addresses of all created Meeting.sol contracts. It is useful for tracking and querying all meetings.
-	•	Access: Public, anyone can call this function.
-	3.	getMeetingCount()
-	•	Description: This function returns the number of Meeting.sol contracts created through the factory. It is useful for monitoring how many meetings have been created.
-	•	Access: Public, anyone can call this function.
+```solidity
+function recordMint(address from, address to, uint256 tokenId)
+function recordTransfer(address from, address to, uint256 tokenId)
+```
 
-Meeting.sol
+- Records all mint and transfer operations
+- Maintains a global transaction history
+- Enables transaction querying and tracking
 
-Functionality:
-	•	The Meeting.sol contract represents an individual meeting, where each meeting is an ERC721-compliant NFT. The contract supports batch minting of tickets for attendees and maintains the session name, metadata URL, and creator’s address.
+### Meeting Contract
 
-Functions:
-	1.	batchMint(address[] calldata recipients, string[] calldata metadataURIs)
-	•	Description: This function mints multiple NFTs (meeting tickets) for a list of recipients. Each recipient is assigned an NFT with a metadata URI.
-	•	Access: Only the owner (creator) of the Meeting.sol contract can call this function.
-	•	Parameters:
-	•	recipients: An array of addresses to mint the NFTs for.
-	•	metadataURIs: An array of metadata URIs corresponding to each NFT.
-	•	Returns: None (function is void).
-	2.	tokenURI(uint256 tokenId)
-	•	Description: This function retrieves the metadata URI for a specific NFT (meeting ticket) by its token ID.
-	•	Access: Public, anyone can call this function.
-	•	Returns: A string representing the metadata URI for the specified token ID.
-	3.	getNFTRecipients()
-	•	Description: This function returns a list of all recipients (addresses) who have received NFTs (meeting tickets).
-	•	Access: Public, anyone can call this function.
-	•	Returns: An array of addresses who received NFTs.
-	4.	getNFTTransfer(uint256 tokenId)
-	•	Description: This function returns the address of the original recipient (creator) of the specified NFT.
-	•	Access: Public, anyone can call this function.
-	•	Returns: The address of the original recipient of the NFT.
-	5.	sessionName()
-	•	Description: This function returns the name of the session (meeting) associated with the contract.
-	•	Access: Public, anyone can call this function.
-	•	Returns: A string representing the session name.
-	6.	metadataURL()
-	•	Description: This function returns the metadata URL associated with the meeting.
-	•	Access: Public, anyone can call this function.
-	•	Returns: A string representing the metadata URL.
-	7.	creator()
-	•	Description: This function returns the address of the creator of the meeting (the person who deployed the contract).
-	•	Access: Public, anyone can call this function.
-	•	Returns: The address of the creator.
+Individual NFT contract for each meeting instance.
 
-4. IMeeting.sol (Interface)
+#### Key Functions:
 
-The IMeeting.sol interface defines the standardized functions that a contract implementing it must have. This ensures consistency and interoperability between different systems interacting with the Meeting.sol contract.
+```solidity
+function mint(address recipient, string calldata metadataURI) 
+    external returns (uint256)
+```
 
-Functions:
-	1.	batchMint(address[] calldata recipients, string[] calldata metadataURIs)
-	•	Description: Standard function to mint multiple NFTs for meeting attendees.
-	•	Access: Only callable by the contract owner.
-	•	Parameters:
-	•	recipients: An array of addresses to mint NFTs for.
-	•	metadataURIs: An array of metadata URIs for the NFTs.
-	2.	tokenURI(uint256 tokenId)
-	•	Description: Standard function to retrieve the metadata URI for a specific NFT.
-	•	Returns: A string containing the metadata URI.
-	3.	getNFTRecipients()
-	•	Description: Standard function to retrieve all the recipients of the meeting NFTs.
-	•	Returns: An array of addresses.
-	4.	getNFTTransfer(uint256 tokenId)
-	•	Description: Standard function to retrieve the original recipient of a given NFT (meeting ticket).
-	•	Returns: The address of the original recipient.
-	5.	sessionName()
-	•	Description: Standard function to retrieve the session name (meeting name).
-	•	Returns: A string representing the session name.
-	6.	metadataURL()
-	•	Description: Standard function to retrieve the metadata URL associated with the meeting.
-	•	Returns: A string representing the metadata URL.
-	7.	creator()
-	•	Description: Standard function to retrieve the address of the creator (meeting organizer).
-	•	Returns: The address of the creator.
+- Mints a new NFT for a meeting participant
+- Assigns unique metadata URI
+- Records original recipient
+- Returns token ID
 
-5. Example of Deployment and Interaction Flow
-	1.	Deploy the Factory Contract:
-	•	Deploy MeetingFactory.sol using your preferred Ethereum tool (Remix, Hardhat, Truffle, etc.).
-	2.	Create a New Meeting:
-	•	Once the factory is deployed, anyone can call the createMeeting() function to deploy a new Meeting.sol contract. For example, createMeeting("Session A", "https://metadata.url").
-	3.	Mint NFTs:
-	•	After deploying a Meeting.sol contract, the owner (creator) of the meeting can call batchMint() to mint NFTs for the meeting attendees.
-	4.	Track NFTs:
-	•	Use functions like tokenURI() to view individual NFT metadata and getNFTRecipients() to see who owns tickets for the meeting.
+#### Metadata Management:
 
-Conclusion
+```solidity
+function tokenURI(uint256 tokenId) public view returns (string memory)
+function getNFTRecipients() external view returns (address[] memory)
+function getNFTTransfer(uint256 tokenId) external view returns (address)
+```
 
-This documentation outlines the structure and functionality of the MeetingNFT ecosystem. The factory pattern provides an easy way to create and manage meetings, and the use of ERC721 NFTs ensures that each meeting ticket is unique and trackable. The MeetingFactory.sol allows anyone to create a meeting, while the Meeting.sol contract manages the specifics of each meeting, including minting tickets and tracking recipients.
+## 3. TypeScript Services
+
+### PaymasterService (paymaster.service.ts)
+
+Handles gas fee sponsorship and account abstraction.
+
+#### Key Features:
+
+1. Smart Account Management:
+```typescript
+const createSmartAccount = async () => {
+    // Creates or retrieves cached smart account
+    // Manages private key and account setup
+}
+```
+
+2. Client Configuration:
+```typescript
+const publicClient = createPublicClient({
+    chain: base,
+    transport: http(RPC_URL)
+});
+
+const walletClient = createWalletClient({
+    chain: base,
+    transport: http(RPC_URL)
+});
+```
+
+### POAPManagementService (poap_management.service.ts)
+
+Core service for POAP operations and blockchain interactions.
+
+#### Key Operations:
+
+1. Meeting Deployment:
+```typescript
+async deployMeeting({
+    sessionName,
+    metadataUri,
+    creatorAddress
+}): Promise<{ meetingAddress: string; txHash: string }>
+```
+
+2. NFT Minting:
+```typescript
+async mint(recipient: string, metadataURI: string): 
+    Promise<{ txHash: string; tokenId: string }>
+```
+
+3. Contract Interaction:
+```typescript
+async getMeetingDetails(meetingAddress: string): 
+    Promise<MeetingDetails>
+```
+
+### POAPService (poap.service.ts)
+
+High-level business logic for POAP management.
+
+#### Key Features:
+
+1. Call POAP Handling:
+```typescript
+public static async handleCallPOAP(callId: string): Promise<void>
+```
+- Validates call eligibility
+- Processes participant data
+- Manages POAP distribution
+
+2. Eligibility Checking:
+```typescript
+private static async getEligibleParticipants(call: any): Promise<any[]>
+```
+- Validates participation duration
+- Checks minimum requirements
+- Filters eligible participants
+
+## 4. Integration Flow
+
+1. Call Completion:
+   - Call ends in the system
+   - POAPService.handleCallPOAP is triggered
+
+2. Eligibility Check:
+   - Validate call duration (MIN_CALL_DURATION)
+   - Check participant count (MIN_PARTICIPANTS)
+   - Calculate individual participation times
+
+3. Contract Deployment:
+   - POAPService calls POAPManagementService
+   - POAPManagementService uses PaymasterService for gas-free deployment
+   - MeetingFactory deploys new Meeting contract
+
+4. NFT Minting:
+   - Generate metadata for eligible participants
+   - Batch mint NFTs using smart account
+   - Record transactions in the factory
+
+## 5. Deployment Guide
+
+1. Environment Setup:
+```bash
+# Required Environment Variables
+
+COINBASE_API_KEY=your_coinbase_key
+PRIVATE_KEY=your_private_key
+FACTORY_ADDRESS=deployed_factory_address of the meetingfactory 
+```
+
+2. Contract Deployment:
+   - Deploy MeetingFactory first
+   - Record factory address in environment
+   - Initialize PaymasterService
+
+3. Service Configuration:
+   - Configure RPC endpoints
+   - Set up smart account
+   - Initialize POAP services
+
+## 6. Troubleshooting
+
+### Common Issues:
+
+1. Gas Fee Issues:
+   - Check PaymasterService configuration
+   - Verify smart account balance
+   - Confirm API keys are valid
+
+2. Contract Deployment Failures:
+   - Verify factory address
+   - Check transaction parameters
+   - Review gas settings
+
+3. NFT Minting Problems:
+   - Validate recipient addresses
+   - Check metadata URI format
+   - Verify minter permissions
+
+### Monitoring:
+
+1. Transaction Tracking:
+```typescript
+const txHash = await accountClient.waitForUserOperationTransaction(uo);
+const receipt = await publicClient.getTransactionReceipt({ hash: txHash });
+```
+
+2. Error Logging:
+```typescript
+logger.error(`Error handling POAP for call ${callId}:`, error);
+```
+
+### Best Practices:
+
+1. Always verify contract addresses before interaction
+2. Use proper error handling and logging
+3. Implement retry mechanisms for failed transactions
+4. Maintain proper gas fee management
+5. Regular monitoring of smart account balance
+
+## Security Considerations
+
+1. Private Key Management:
+   - Secure storage of private keys
+   - Regular key rotation
+   - Environment variable protection
+
+2. Access Control:
+   - Proper minter permission management
+   - Role-based access control
+   - Input validation
+
+3. Gas Management:
+   - Gas price monitoring
+   - Transaction fee limits
+   - Proper error handling for out-of-gas scenarios
