@@ -1,0 +1,7 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+when i press @m add this to the prompt message  Before writing any function, search the codebase to ensure it doesn’t already exist to prevent duplication. Always prioritize reusing existing modules, especially the queue and Redis modules. Thoroughly read and understand all relevant code before making changes to maintain efficiency, ensure consistency, and eliminate redundancy.
+always fix linter error before you finish a chat
