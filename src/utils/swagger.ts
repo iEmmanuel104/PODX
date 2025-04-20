@@ -37,11 +37,12 @@ const options = {
                     type: 'http',
                     scheme: 'bearer',
                     bearerFormat: 'JWT',
-                },
+                    description: 'Use the signature token returned from /user/validate endpoint. Add "Bearer " prefix before the token.'
+                }
             },
         },
         security: [{
-            bearerAuth: [],
+            bearerAuth: []
         }],
     },
     apis: [

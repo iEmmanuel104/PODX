@@ -88,6 +88,10 @@
  *               type:
  *                 type: string
  *                 description: Type of call
+ *               sessionId:
+ *                 type: string
+ *                 description: Unique identifier for the call session
+ *                 required: true
  *               starts_at:
  *                 type: string
  *                 format: date-time
@@ -99,6 +103,10 @@
  *               durationRequirement:
  *                 $ref: '#/components/schemas/DurationRequirement'
  *                 description: Duration requirements for the call. If not provided, defaults to 1 second absolute.
+ *             required:
+ *               - title
+ *               - sessionId
+ *               - starts_at
  *     responses:
  *       200:
  *         description: Call scheduled successfully

@@ -46,7 +46,15 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 // Swagger API Documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, { explorer: true }));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
+    explorer: true,
+    swaggerOptions: {
+        persistAuthorization: true,
+        displayRequestDuration: true,
+        filter: true,
+        docExpansion: 'none'
+    }
+}));
 
 // server health check
 app.get('/api/health', getServerHealth);
