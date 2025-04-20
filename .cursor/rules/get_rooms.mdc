@@ -1,0 +1,52 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Server-SDK
+API Functions
+getRooms()
+Get Rooms
+getRooms() method will return all the rooms created from a given API_KEY.
+
+import { API } from '@huddle01/server-sdk/api';
+ 
+const rooms = async () => {
+  const api = new API({
+    apiKey: process.env.API_KEY!,
+  });
+ 
+  const rooms = await api.getRooms();
+ 
+  return rooms;
+};
+
+Returns
+getRooms() method returns an array of rooms with following fields.
+
+Name	Type	Description
+pageSize	number	The number of rooms in current page
+nextCursor	number	The cursor to fetch the next page of rooms.
+prevCursor	number	The cursor to fetch the previous page of rooms.
+count	number	The total number of rooms.
+rooms	rooms[]	An array of rooms
+roomId	string	The unique identifier of the room.
+createdAt	number	The creation time of the room in timestamp epoch format.
+roomLocked	boolean	State indicating if room is locked
+metadata	string	The metadata associated with the room
+{
+  "rooms": [
+      {
+          "roomId": "dummy-room-id",
+          "createdAt": "2024-08-06T06:42:06.356Z",
+          "roomLocked": false,
+          "metadata": null
+      }
+  ],
+  "pageSize": 1,
+  "current": 1,
+  "nextCursor": 2,
+  "prevCursor": 0,
+  "count": 104
+}
+

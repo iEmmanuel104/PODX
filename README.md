@@ -15,6 +15,7 @@ This is the backend server for PodX, a real-time meeting and podcasting platform
 9. [Deployment](#deployment)
 10. [Contributing](#contributing)
 11. [License](#license)
+12. [Migration from StreamIO to Huddle01](#migration-from-streamio-to-huddle01)
 
 ## Getting Started
 
@@ -85,6 +86,21 @@ npm run prod
 - Winston for logging
 - Zod for schema validation
 - Multer for file upload handling
+- Huddle01 Server SDK for video meeting functionality
+
+## Migration from StreamIO to Huddle01
+
+The platform has been migrated from StreamIO to Huddle01 for video conferencing functionality. Key changes include:
+
+1. **New API Endpoints**: `/huddle01` endpoints have been added for creating and managing video meetings
+2. **Token Gating Support**: Improved token gating with internal and external verification options
+3. **Webhook Integration**: Implemented Huddle01 webhooks to track meeting lifecycle and participant activity
+4. **Access Tokens**: Access token generation is now handled with Huddle01's SDK
+
+To use the new Huddle01 integration, make sure to:
+- Set up `HUDDLE01_API_KEY` and `HUDDLE01_PROJECT_ID` in your environment variables
+- Use the new API endpoints for creating and joining meetings
+- Configure webhook endpoints on the Huddle01 dashboard to point to `/webhooks/huddle01`
 
 ## Configuration
 
@@ -183,3 +199,7 @@ Make sure to set up the necessary environment variables when running the contain
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License.

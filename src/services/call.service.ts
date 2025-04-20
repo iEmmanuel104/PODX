@@ -1,239 +1,597 @@
-import { Call } from '../models/Mongodb/call.model';
+import { Call, ICall } from '../models/Mongodb/call.model';
 import { StreakService } from './streak.service';
-import StreamIOConfig from '../clients/streamio.config';
-import { webhookConfig } from '../clients/webhook.config';
-import { CallSessionPayload, CallSessionEndPayload, CallCreatedEvent, CustomEventPayload } from '../utils/interface';
-import { TipService } from './tip.service';
+import { Huddle01Service } from './huddle01.service';
 import { POAPService } from './poap.service';
 import { logger } from '../utils/logger';
+import { User } from '../models/Mongodb/user.model';
+import { Types } from 'mongoose';
 
 export class CallService {
-    static async handleCallSessionStart(payload: CallSessionPayload): Promise<void> {
-        const { call_cid, session_id, participant } = payload;
-        console.log({ sessionCreatedPayload: payload });
+    // Constants
+    private static readonly WEEK_IN_MS = 7 * 24 * 60 * 60 * 1000; // One week in milliseconds
 
+    // Create a new call
+    static async createCall(
+        userId: string,
+        title: string,
+        type: 'audio' | 'video',
+        tokenGateInfo?: {
+            type: 'internal' | 'external';
+            internal?: { pastRoomTitles?: string[] };
+            external?: { allowedWallets?: string[] };
+        },
+        durationRequirement?: {
+            value: number;
+            type: 'percentage';
+        }
+    ) {
         try {
-            if (!call_cid) {
-                throw new Error('call_cid is required');
+            // Create Huddle01 room with metadata including duration requirement
+            const { room, error } = await Huddle01Service.createRoom(
+                title,
+                true,
+                {
+                    roomType: type,
+                    durationRequirement
+                }
+            );
+            
+            if (error || !room) {
+                throw new Error(`Failed to create Huddle01 room: ${error}`);
             }
-            const [type, id] = call_cid.split(':');
 
-            // Update StreamIO
-            await StreamIOConfig.updateCallMembers(
+            // Get user details
+            const user = await User.findById(userId);
+            if (!user) {
+                throw new Error('User not found');
+            }
+
+            // Create call document
+            const call = await Call.create({
+                roomId: room.roomId,
+                title,
                 type,
-                id,
-                [{
-                    user_id: participant.user.id,
-                    custom: {
-                        join_time: new Date().toISOString(),
-                        session_id,
-                    },
-                }]
-            );
-
-            // Update local database and track join event
-            await Call.findOneAndUpdate(
-                {
-                    callId: id,
-                    // Check if this user is not already in the members array
-                    'members.userId': { $ne: participant.user.id },
-                },
-                {
-                    // Only add to members array if user doesn't exist
-                    $addToSet: {
-                        members: {
-                            userId: participant.user.id,
-                            role: participant.role,
-                        },
-                    },
-                    $push: {
-                        'custom.events': {
-                            userId: participant.user.id,
-                            type: 'joined',
-                            timestamp: new Date().toISOString(),
-                        },
-                    },
-                    $set: {
-                        sessionId: session_id,
-                        status: 'live',
-                    },
-                },
-                { new: true }
-            );
-
-        } catch (error) {
-            console.error('Error updating call members:', error);
-            throw error;
-        }
-    }
-
-    static async handleCallSessionEnd(payload: CallSessionEndPayload): Promise<void> {
-        const { call_cid, participant, duration_seconds } = payload;
-
-        console.log({ sessionEndPayload: payload });
-
-        if (duration_seconds < webhookConfig.STREAK_CONFIG.MIN_CALL_DURATION) {
-            return;
-        }
-
-        const userId = participant.user.id;
-        const [, callId] = call_cid.split(':');
-
-        // Update call duration
-        await Call.findOneAndUpdate(
-            { callId },
-            { duration: duration_seconds }
-        );
-
-        // Update streak stats
-        await StreakService.updateUserStreakStats(userId);
-    }
-
-    static async handleCallCreated(payload: CallCreatedEvent): Promise<void> {
-        const { call, members, created_at } = payload;
-
-        console.log({ sessionCreatedPayload: payload });
-
-        try {
-            // Set default duration requirement if not provided
-            const custom = {
-                ...call.custom,
-                durationRequirement: {
-                    value: call.custom?.durationRequirement?.value || 1,
-                    type: call.custom?.durationRequirement?.type || 'absolute'
-                },
-                // Preserve metadata if it exists
-                metadata: call.custom?.metadata || undefined
-            };
-
-            await Call.create({
-                callId: call.id,
-                type: call.type,
-                createdById: call.created_by.id,
+                hostWalletAddress: user.walletAddress,
+                createdById: user._id,
                 status: 'created',
-                members: members.map(member => ({
-                    userId: member.user.id,
-                    role: member.role,
-                })),
-                startTime: new Date(created_at),
-                custom,
+                members: [{ userId: user._id, role: 'host' }],
+                custom: {
+                    roomType: type,
+                    tokenGateInfo: tokenGateInfo ? {
+                        enabled: true,
+                        ...tokenGateInfo,
+                    } : undefined,
+                    durationRequirement
+                },
             });
 
-            // Update streak for creator
-            await StreakService.updateUserStreakStats(call.created_by.id);
+            return { call, room };
         } catch (error) {
-            console.error('Error handling call creation:', error);
+            logger.error('Error creating call:', error);
             throw error;
         }
     }
 
-    static async handleCallEnded(payload: {
-        call: CallSessionPayload['call'];
-        created_at: string;
-    }): Promise<void> {
-        const { call, created_at } = payload;
-
-        console.log({ handleEndedPayload: payload });
-        if (!call?.current_session_id) return;
-
-        // Update call status
-        await Call.findOneAndUpdate(
-            { callId: call?.id },
-            {
-                status: 'ended',
-                endTime: new Date(created_at),
-                $set: {
-                    'custom.ended_at': created_at,
-                    'custom.events': call.session?.participants.map(participant => ({
-                        userId: participant.user.id,
-                        type: 'left',
-                        timestamp: created_at,
-                    })),
-                },
+    // Get call details
+    static async getCallDetails(callId: string) {
+        try {
+            const { room, error } = await Huddle01Service.getRoomDetails(callId);
+            if (error || !room) {
+                throw new Error(`Failed to get room details: ${error}`);
             }
-        );
 
-        // Update streaks for all participants
-        const participants = call?.session?.participants || [];
-        for (const participant of participants) {
-            const duration = participant.joined_at ?
-                Math.floor((new Date(created_at).getTime() - participant.joined_at) / 1000) : 0;
+            const call = await Call.findOne({ roomId: callId })
+                .populate('createdById', 'username walletAddress displayImage')
+                .populate('members.userId', 'username walletAddress displayImage');
 
-            await this.handleCallSessionEnd({
-                call_cid: `${call?.type}:${call?.id}`,
-                participant,
-                duration_seconds: duration,
-                created_at,
-            });
-        }
-
-        // Handle POAP minting after call ends
-        try {
-            await POAPService.handleCallPOAP(call.id);
-            logger.info(`POAP distribution initiated for call ${call.id}`);
-        } catch (error) {
-            logger.error('Error handling POAP for call:', error);
-            // Don't throw the error here to prevent disrupting the main call end flow
-        }
-    }
-
-    static async handleCustomEvent(payload: CustomEventPayload): Promise<void> {
-        if (payload.custom.type !== 'tip') return;
-
-        const [, callId] = payload.call_cid.split(':');
-        const tipData = payload.custom;
-
-        try {
-            const call = await Call.findOne({ callId });
             if (!call) {
                 throw new Error('Call not found');
             }
 
-            await TipService.createTip(
-                callId,
-                call.sessionId,
-                tipData.from.id as string,
-                tipData.to.id as string,
-                tipData.amount as string,
-                tipData.currency as string,
-                tipData.timestamp,
-                tipData.transactionHash
-            );
+            const { participants } = await Huddle01Service.getLiveParticipants(callId);
 
+            return {
+                call,
+                room,
+                liveParticipants: participants,
+            };
         } catch (error) {
-            console.error('Error handling tip event:', error);
+            logger.error('Error getting call details:', error);
             throw error;
         }
     }
 
-    static async processWebhook(eventType: string, payload: unknown): Promise<void> {
+    // Get live sessions
+    static async getLiveSessions() {
+        try {
+            const { sessions, error } = await Huddle01Service.getLiveSessions();
+            
+            if (error) {
+                throw new Error(`Failed to get live sessions: ${error}`);
+            }
+
+            return sessions;
+        } catch (error) {
+            logger.error('Error getting live sessions:', error);
+            throw error;
+        }
+    }
+
+    // Get metrics
+    static async getMetrics() {
+        try {
+            const { metrics, error } = await Huddle01Service.getMetrics();
+            
+            if (error) {
+                throw new Error(`Failed to get metrics: ${error}`);
+            }
+
+            return metrics;
+        } catch (error) {
+            logger.error('Error getting metrics:', error);
+            throw error;
+        }
+    }
+
+    // Get all rooms
+    static async getRooms() {
+        try {
+            const { rooms, error } = await Huddle01Service.getRooms();
+            
+            if (error) {
+                throw new Error(`Failed to get rooms: ${error}`);
+            }
+
+            return rooms;
+        } catch (error) {
+            logger.error('Error getting rooms:', error);
+            throw error;
+        }
+    }
+
+    // Get participants for a session
+    static async getParticipants(sessionId: string) {
+        try {
+            const { participants, error } = await Huddle01Service.getParticipants(sessionId);
+            
+            if (error) {
+                throw new Error(`Failed to get participants: ${error}`);
+            }
+
+            return participants;
+        } catch (error) {
+            logger.error('Error getting participants:', error);
+            throw error;
+        }
+    }
+
+    // Verify token gate access
+    static async verifyTokenGateAccess(roomId: string, walletAddress: string) {
+        try {
+            // Get room details first
+            const call = await Call.findOne({ roomId });
+            
+            if (!call) {
+                throw new Error('Call not found');
+            }
+            
+            const tokenGateInfo = call.custom?.tokenGateInfo;
+            
+            // If no token gating, allow access
+            if (!tokenGateInfo || !tokenGateInfo.enabled) {
+                return { hasAccess: true };
+            }
+            
+            // Check based on token gate type
+            if (tokenGateInfo.type === 'external') {
+                // Check if wallet is in allowed list
+                const allowedWallets = tokenGateInfo.external?.allowedWallets || [];
+                return { 
+                    hasAccess: allowedWallets.includes(walletAddress),
+                    reason: 'wallet-list',
+                };
+            } else if (tokenGateInfo.type === 'internal') {
+                // Check if user has attended required past meetings
+                const user = await User.findOne({ walletAddress });
+                
+                if (!user) {
+                    return { hasAccess: false, reason: 'user-not-found' };
+                }
+                
+                // Implement contract verification logic here for the user's wallet
+                // This would verify if they have the required meeting POAPs
+                
+                return { hasAccess: true, reason: 'contract-verification' };
+            }
+            
+            return { hasAccess: false, reason: 'unknown-gate-type' };
+            
+        } catch (error) {
+            logger.error('Error verifying token gate access:', error);
+            throw error;
+        }
+    }
+    
+    // Generate access token
+    static async generateAccessToken(roomId: string, userId: string, walletAddress?: string) {
+        try {
+            const { token, error } = await Huddle01Service.generateAccessToken(roomId, userId, walletAddress);
+            
+            if (error || !token) {
+                throw new Error(`Failed to generate access token: ${error}`);
+            }
+
+            return { token };
+        } catch (error) {
+            logger.error('Error generating access token:', error);
+            throw error;
+        }
+    }
+
+    // Process Huddle01 webhooks
+    static async processHuddle01Webhook(eventType: string, payload: any): Promise<void> {
         try {
             switch (eventType) {
-            case 'call.created':
-                await this.handleCallCreated(payload as CallCreatedEvent);
+            case 'meeting:started':
+                await this.handleMeetingStarted(payload);
                 break;
-            case 'call.session_participant_left':
-                await this.handleCallSessionEnd(payload as CallSessionEndPayload);
+            case 'meeting:ended':
+                await this.handleMeetingEnded(payload);
                 break;
-            case 'call.session_participant_joined':
-                await this.handleCallSessionStart(payload as CallSessionPayload);
+            case 'peer:joined':
+                await this.handlePeerJoined(payload);
                 break;
-            case 'call.ended':
-                await this.handleCallEnded(payload as {
-                        call: CallSessionPayload['call'];
-                        created_at: string
-                    });
+            case 'peer:left':
+                await this.handlePeerLeft(payload);
                 break;
-            case 'custom':
-                await this.handleCustomEvent(payload as CustomEventPayload);
-                break;
-            case 'call.live_started':
-                // Handle live started event if needed
+            case 'recording:started':
+            case 'recording:stopped':
+            case 'recording:updated':
+                // Handle recording events if needed
                 break;
             }
         } catch (error) {
-            console.error(`Error processing webhook event ${eventType}:`, error);
+            logger.error(`Error processing Huddle01 webhook event ${eventType}:`, error);
             throw error;
         }
+    }
+
+    // Handle meeting started event
+    private static async handleMeetingStarted(payload: { sessionId: string; roomId: string; createdAt: number }) {
+        const { sessionId, roomId, createdAt } = payload;
+        
+        try {
+        // Update call status
+            await Call.findOneAndUpdate(
+                { roomId },
+                {
+                    sessionId,
+                    status: 'live',
+                    startTime: new Date(createdAt),
+                }
+            );
+            
+            logger.info(`Meeting started: ${roomId}, session: ${sessionId}`);
+        } catch (error) {
+            logger.error(`Error handling meeting start for ${roomId}:`, error);
+            throw error;
+        }
+    }
+
+    // Handle meeting ended event
+    private static async handleMeetingEnded(payload: {
+        sessionId: string;
+        roomId: string;
+        createdAt: number;
+        endedAt: number;
+        duration: number;
+        participants: number;
+    }) {
+        const { sessionId, roomId, endedAt, duration, participants } = payload;
+        
+        try {
+            // Update call status
+            const call = await Call.findOneAndUpdate(
+                { roomId },
+                {
+                    status: 'ended',
+                    endTime: new Date(endedAt),
+                    duration,
+                },
+                { new: true }
+            );
+            
+            if (!call) {
+                throw new Error(`Call ${roomId} not found`);
+            }
+
+            // Update streaks for all participants
+            const memberIds = call.members.map(member => member.userId);
+            
+            for (const userId of memberIds) {
+                await StreakService.updateUserStreakStats(userId.toString());
+            }
+            
+            // Handle POAP if more than one participant
+            if (participants > 1) {
+                try {
+                    await POAPService.handleCallPOAP(roomId);
+                    logger.info(`POAP distribution initiated for call ${roomId}`);
+                } catch (error) {
+                    logger.error('Error handling POAP for call:', error);
+                }
+            }
+            
+            logger.info(`Meeting ended: ${roomId}, session: ${sessionId}, duration: ${duration}`);
+        } catch (error) {
+            logger.error(`Error handling meeting end for ${roomId}:`, error);
+            throw error;
+        }
+    }
+
+    // Handle peer joined event
+    private static async handlePeerJoined(payload: {
+        id: string;
+        sessionId: string;
+        roomId: string;
+        joinedAt: number;
+        metadata?: string;
+    }) {
+        const { id: peerId, sessionId, roomId, joinedAt, metadata } = payload;
+        
+        try {
+            // Parse metadata to get user information
+            let userId;
+            
+            if (metadata) {
+                try {
+                    const parsedMetadata = JSON.parse(metadata);
+                    userId = parsedMetadata.userId;
+                } catch (err) {
+                    logger.warn(`Failed to parse peer metadata: ${metadata}`);
+                }
+            }
+            
+            if (!userId) {
+                logger.warn(`Peer joined without userId in metadata: ${peerId}`);
+                return;
+            }
+            
+            // Update call members
+            await Call.findOneAndUpdate(
+                {
+                    roomId,
+                    'members.userId': { $ne: userId }, // Only add if not already a member
+                },
+                {
+                    $addToSet: {
+                        members: { userId, role: 'guest' },
+                    },
+                    $push: {
+                        'custom.events': {
+                            userId,
+                            type: 'joined',
+                            timestamp: new Date(joinedAt).toISOString(),
+                        },
+                    },
+                }
+            );
+            
+            logger.info(`Peer joined: ${peerId} to room ${roomId}`);
+        } catch (error) {
+            logger.error(`Error handling peer join for ${roomId}:`, error);
+            throw error;
+        }
+    }
+
+    // Handle peer left event
+    private static async handlePeerLeft(payload: {
+        id: string;
+        sessionId: string;
+        roomId: string;
+        leftAt: number;
+        duration: number;
+        metadata?: string;
+    }) {
+        const { id: peerId, roomId, leftAt, duration, metadata } = payload;
+        
+        try {
+            // Parse metadata to get user information
+            let userId;
+            
+            if (metadata) {
+                try {
+                    const parsedMetadata = JSON.parse(metadata);
+                    userId = parsedMetadata.userId;
+                } catch (err) {
+                    logger.warn(`Failed to parse peer metadata: ${metadata}`);
+                }
+            }
+            
+            if (!userId) {
+                logger.warn(`Peer left without userId in metadata: ${peerId}`);
+            return;
+        }
+
+            // Update call events
+        await Call.findOneAndUpdate(
+                { roomId },
+                {
+                    $push: {
+                        'custom.events': {
+                            userId,
+                            type: 'left',
+                            timestamp: new Date(leftAt).toISOString(),
+                            duration,
+                        },
+                    },
+                }
+            );
+            
+            // Update user streak if call long enough
+            if (duration >= 60) { // At least 1 minute
+        await StreakService.updateUserStreakStats(userId);
+    }
+
+            logger.info(`Peer left: ${peerId} from room ${roomId}, duration: ${duration}s`);
+        } catch (error) {
+            logger.error(`Error handling peer leave for ${roomId}:`, error);
+            throw error;
+        }
+    }
+
+    // For backward compatibility - will be removed after full migration
+    static async processWebhook(eventType: string, payload: unknown): Promise<void> {
+        try {
+            // Log deprecated usage
+            logger.warn(`Using deprecated StreamIO webhook: ${eventType}`);
+            
+            // Just return - we're phasing this out
+            return;
+        } catch (error) {
+            logger.error(`Error processing webhook event ${eventType}:`, error);
+            throw error;
+        }
+    }
+
+    async handleParticipantJoined(roomId: string, peerId: string, displayName: string) {
+        try {
+            const call = await Call.findOne({ roomId });
+            if (!call) {
+                throw new Error('Call not found');
+            }
+
+            const user = await User.findOne({ displayName });
+            if (!user) {
+                throw new Error('User not found');
+            }
+
+            // Ensure we have a valid ID by checking if it exists
+            if (!user._id) {
+                throw new Error('User has no valid ID');
+            }
+
+            // Safely convert to string
+            const userId = String(user._id);
+            
+            // Check if user is already a member (using string comparison)
+            const memberIds = call.members.map(member => String(member.userId));
+            
+            if (!memberIds.includes(userId)) {
+                // Add to members array
+                call.members.push({ userId: new Types.ObjectId(userId), role: 'guest' });
+                await call.save();
+                console.log(`User ${displayName} joined call ${roomId}`);
+            }
+        } catch (error) {
+            console.error('Error handling participant joined:', error);
+            throw error;
+        }
+    }
+
+    async handleParticipantLeft(roomId: string, peerId: string) {
+        try {
+            const call = await Call.findOne({ roomId });
+            if (!call) {
+                throw new Error('Call not found');
+            }
+
+            // For this version, we'll use a simplified approach
+            // until we have more information about how Huddle01 
+            // provides participant metadata
+            console.log(`Participant ${peerId} left call ${roomId}`);
+            
+            // Mark call as ended if it was the last participant
+            if (call.members.length <= 1) {
+                await this.handleCallEnded(roomId);
+            }
+        } catch (error) {
+            console.error('Error handling participant left:', error);
+            throw error;
+        }
+    }
+
+    async handleCallEnded(roomId: string) {
+        try {
+            const call = await Call.findOne({ roomId });
+            if (!call) {
+                throw new Error('Call not found');
+            }
+
+            // Set call as inactive and record end time
+            call.isActive = false;
+            call.endedAt = new Date();
+            
+            if (call.startedAt && call.endedAt) {
+                // Calculate duration in seconds
+                const durationMs = call.endedAt.getTime() - call.startedAt.getTime();
+                call.duration = Math.floor(durationMs / 1000);
+            }
+            
+            await call.save();
+            
+            console.log(`Call ${roomId} ended`);
+        } catch (error) {
+            console.error('Error handling call ended:', error);
+            throw error;
+        }
+    }
+
+    private static async calculateStreakData(userId: string): Promise<{
+        currentStreak: number;
+        longestStreak: number;
+        streakHistory: Array<{ date: Date; streak: number }>;
+        lastActivityDate?: Date;
+    }> {
+        const calls = await Call.find({
+            $or: [{ createdById: userId }, { 'members.userId': userId }],
+            status: 'ended',
+            endedAt: { $exists: true },
+        }).sort({ endedAt: 1 });
+
+        let currentStreak = 0;
+        let longestStreak = 0;
+        let lastActivityDate: Date | null = null;
+        const streakHistory: Array<{ date: Date; streak: number }> = [];
+        const processedDates = new Set<string>();
+
+        for (const call of calls) {
+            if (!call.endedAt) continue;
+
+            const dateStr = call.endedAt.toISOString().split('T')[0];
+            if (processedDates.has(dateStr)) continue;
+            processedDates.add(dateStr);
+
+            const callDate = call.endedAt;
+
+            if (!lastActivityDate) {
+                currentStreak = 1;
+                lastActivityDate = callDate;
+            } else {
+                const timeDiff = callDate.getTime() - lastActivityDate.getTime();
+
+                if (timeDiff > this.WEEK_IN_MS) {
+                    currentStreak = 1;
+                } else {
+                    const daysDiff = Math.floor(timeDiff / (24 * 60 * 60 * 1000));
+                    if (daysDiff === 1) {
+                        currentStreak++;
+                    } else if (daysDiff > 1) {
+                        currentStreak = 1;
+                    }
+                }
+                lastActivityDate = callDate;
+            }
+
+            longestStreak = Math.max(longestStreak, currentStreak);
+            streakHistory.push({ date: callDate, streak: currentStreak });
+        }
+
+        return {
+            currentStreak,
+            longestStreak,
+            streakHistory,
+            lastActivityDate: lastActivityDate || undefined,
+        };
     }
 }

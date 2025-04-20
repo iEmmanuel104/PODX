@@ -55,7 +55,6 @@ const UserStreakSchema = new Schema({
         type: Schema.Types.ObjectId, 
         ref: 'User', 
         required: true,
-        index: true, 
     },
     currentStreak: { type: Number, default: 0 },
     longestStreak: { type: Number, default: 0 },

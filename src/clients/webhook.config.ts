@@ -1,82 +1,266 @@
-import crypto from 'crypto';
-import { STREAM_API_SECRET } from '../utils/constants';
+import { Request, Response } from 'express';
+import { CallService } from '../services/call.service';
+import UserService from '../services/user.service';
+import { StreakService } from '../services/streak.service';
+import { TipService } from '../services/tip.service';
+import { Call } from '../models/Mongodb/call.model';
+import { logger } from '../utils/logger';
+import { WebhookReceiver } from '@huddle01/server-sdk/webhooks';
 
-export interface WebhookConfig {
-    WEBHOOK_SECRET: string;
-    POINTS_CONFIG: {
-        CALL_CREATION: number;
-        POINTS_PER_MINUTE: number;
-        CREATOR_BONUS_MULTIPLIER: number;
-        BONUS_THRESHOLDS: {
-            duration: number;
-            points: number;
-        }[];
-    };
-    STREAK_CONFIG: {
-        BREAK_AFTER_DAYS: number;
-        MIN_CALL_DURATION: number;
-        BONUS_MULTIPLIERS: {
-            days: number;
-            multiplier: number;
-        }[];
-    };
-    RELEVANT_EVENTS: string[];
-}
-
-export const webhookConfig: WebhookConfig = {
-    WEBHOOK_SECRET: STREAM_API_SECRET,
-    POINTS_CONFIG: {
-        CALL_CREATION: 10,
-        POINTS_PER_MINUTE: 1,
-        CREATOR_BONUS_MULTIPLIER: 1.5,
-        BONUS_THRESHOLDS: [
-            { duration: 3600, points: 50 },  // 1 hour bonus
-            { duration: 7200, points: 150 }, // 2 hour bonus
-            { duration: 14400, points: 300 }, // 4 hour bonus
-        ],
-    },
-    STREAK_CONFIG: {
-        BREAK_AFTER_DAYS: 1,
-        MIN_CALL_DURATION: 60, // 1 minute
-        BONUS_MULTIPLIERS: [
-            { days: 7, multiplier: 1.5 },   // Week streak
-            { days: 30, multiplier: 2.0 },  // Month streak
-            { days: 90, multiplier: 3.0 },   // Quarter streak
-        ],
-    },
-    RELEVANT_EVENTS: [
-        'call.created',
-        'call.ended',
-        'call.session_started',
-        'call.session_ended',
-        'call.session_participant_joined',
-        'call.session_participant_left',
-        'call.live_started',
-        'custom',
+export const POINTS_CONFIG = {
+    POINTS_PER_MINUTE: 1,
+    CREATOR_BONUS_MULTIPLIER: 1.5,
+    CALL_CREATION: 10,
+    BONUS_THRESHOLDS: [
+        { duration: 300, points: 5 },  // 5 minutes
+        { duration: 900, points: 15 }, // 15 minutes
+        { duration: 1800, points: 30 }, // 30 minutes
     ],
 };
 
-export const verifyWebhookSignature = (
-    signature: string,
-    body: string,
-    secret: string = webhookConfig.WEBHOOK_SECRET
-): boolean => {
-    try {
-        const expectedSignature = crypto
-            .createHmac('sha256', secret)
-            .update(body)
-            .digest('hex');
+interface PeerJoined {
+  id: string;
+  sessionId: string;
+  roomId: string;
+  joinedAt: number;
+  metadata?: string;
+  role?: string;
+  browser: {
+    name?: string;
+    version?: string;
+  };
+  geoData?: {
+    region: string;
+    country: string;
+  };
+  device: {
+    model?: string;
+    type?: string;
+    vendor?: string;
+  };
+}
 
-        return crypto.timingSafeEqual(
-            Buffer.from(signature),
-            Buffer.from(expectedSignature)
-        );
-    } catch (error) {
-        console.error('Error verifying webhook signature:', error);
-        return false;
+interface PeerLeft {
+  id: string;
+  sessionId: string;
+  roomId: string;
+  leftAt: number;
+  duration: number;
+  metadata?: string;
+  role?: string;
+}
+
+export class WebhookConfig {
+    static async handleHuddle01Webhook(req: Request, res: Response) {
+        try {
+            const { event, data } = req.body;
+            
+            switch (event) {
+            case 'peer:joined':
+                await this.handlePeerJoined(data);
+                break;
+            case 'peer:left':
+                await this.handlePeerLeft(data);
+                break;
+            case 'meeting:started':
+                await this.handleMeetingStarted(data);
+                break;
+            case 'meeting:ended':
+                await this.handleMeetingEnded(data);
+                break;
+            case 'tip.received':
+                await this.handleTipReceived(data);
+                break;
+            default:
+                logger.info('Unhandled Huddle01 webhook event:', event);
+            }
+            
+            res.status(200).json({ message: 'Webhook processed successfully' });
+        } catch (error) {
+            logger.error('Error processing Huddle01 webhook:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
     }
-};
 
-export const isRelevantEvent = (eventType: string): boolean => {
-    return webhookConfig.RELEVANT_EVENTS.includes(eventType);
-};
+    private static async handlePeerJoined(data: PeerJoined) {
+        const { roomId, id: peerId, joinedAt, metadata } = data;
+        
+        try {
+            // Parse metadata to extract wallet address and user info
+            let walletAddress: string | undefined;
+            let userId: string | undefined;
+            
+            if (metadata) {
+                try {
+                    const parsedMetadata = JSON.parse(metadata);
+                    walletAddress = parsedMetadata.walletAddress;
+                    userId = parsedMetadata.userId;
+                } catch (err) {
+                    logger.warn(`Failed to parse peer metadata: ${metadata}`);
+                }
+            }
+            
+            if (!walletAddress && !userId) {
+                logger.warn(`Peer joined without identifiable information: ${peerId}`);
+                return;
+            }
+            
+            // Find or create the user if we have a wallet address
+            if (walletAddress && !userId) {
+                const user = await UserService.findOrCreateByWalletAddress(walletAddress);
+                if (user) {
+                    userId = user.id;
+                }
+            }
+            
+            // Update call with the join event
+            if (userId) {
+                await Call.findOneAndUpdate(
+                    { roomId },
+                    {
+                        $addToSet: {
+                            'members': { userId, role: 'guest' },
+                        },
+                        $push: {
+                            'custom.events': {
+                                userId,
+                                type: 'joined',
+                                timestamp: new Date(joinedAt).toISOString(),
+                                walletAddress
+                            },
+                        },
+                    }
+                );
+                
+                // Also update the user's streak
+                await StreakService.handleCallJoined(roomId, userId);
+            }
+            
+            logger.info(`Peer joined: ${peerId} to room ${roomId} with wallet ${walletAddress || 'unknown'}`);
+        } catch (error) {
+            logger.error(`Error handling peer join for ${roomId}:`, error);
+        }
+    }
+
+    private static async handlePeerLeft(data: PeerLeft) {
+        const { roomId, id: peerId, leftAt, duration, metadata } = data;
+        
+        try {
+            // Parse metadata to extract wallet address and user info
+            let walletAddress: string | undefined;
+            let userId: string | undefined;
+            
+            if (metadata) {
+                try {
+                    const parsedMetadata = JSON.parse(metadata);
+                    walletAddress = parsedMetadata.walletAddress;
+                    userId = parsedMetadata.userId;
+                } catch (err) {
+                    logger.warn(`Failed to parse peer metadata: ${metadata}`);
+                }
+            }
+            
+            if (!walletAddress && !userId) {
+                logger.warn(`Peer left without identifiable information: ${peerId}`);
+                return;
+            }
+            
+            // Find the user if we have a wallet address but no userId
+            if (walletAddress && !userId) {
+                const user = await UserService.getUserByWalletAddress(walletAddress);
+                if (user) {
+                    userId = user.id;
+                }
+            }
+            
+            // Update call with the left event
+            if (userId) {
+                await Call.findOneAndUpdate(
+                    { roomId },
+                    {
+                        $push: {
+                            'custom.events': {
+                                userId,
+                                type: 'left',
+                                timestamp: new Date(leftAt).toISOString(),
+                                duration,
+                                walletAddress
+                            },
+                        },
+                    }
+                );
+            }
+            
+            logger.info(`Peer left: ${peerId} from room ${roomId}, duration: ${duration}s, wallet: ${walletAddress || 'unknown'}`);
+        } catch (error) {
+            logger.error(`Error handling peer leave for ${roomId}:`, error);
+        }
+    }
+
+    private static async handleMeetingStarted(data: any) {
+        const { roomId, sessionId, createdAt } = data;
+        
+        try {
+            // Update the call status and start time
+            await Call.findOneAndUpdate(
+                { roomId },
+                {
+                    status: 'live',
+                    startedAt: new Date(createdAt),
+                    sessionId
+                }
+            );
+            
+            logger.info(`Meeting started: ${roomId}, session: ${sessionId}`);
+        } catch (error) {
+            logger.error(`Error handling meeting start for ${roomId}:`, error);
+        }
+    }
+
+    private static async handleMeetingEnded(data: any) {
+        const { roomId, sessionId, endedAt, duration } = data;
+        
+        try {
+            // Update the call status, end time and duration
+            await Call.findOneAndUpdate(
+                { roomId },
+                {
+                    status: 'ended',
+                    endedAt: new Date(endedAt),
+                    duration: duration,
+                    isActive: false
+                }
+            );
+            
+            logger.info(`Meeting ended: ${roomId}, session: ${sessionId}, duration: ${duration}s`);
+            
+            // Calculate streaks for participants
+        await StreakService.handleCallEnded(roomId);
+        } catch (error) {
+            logger.error(`Error handling meeting end for ${roomId}:`, error);
+        }
+    }
+
+    private static async handleTipReceived(data: any) {
+        const { roomId, fromUserId, toUserId, amount, currency = 'USDC', transactionHash } = data;
+        
+        try {
+            // Use the createTip method for consistency
+            await TipService.createTip(
+                roomId,       // callId
+                undefined,    // sessionId
+                fromUserId,   // from user
+                toUserId,     // to user
+                amount.toString(),
+                currency,
+                new Date(),
+                transactionHash
+            );
+            
+            logger.info(`Tip received in room ${roomId}: ${amount} ${currency} from ${fromUserId} to ${toUserId}`);
+        } catch (error) {
+            logger.error('Error handling tip received:', error);
+            throw error;
+        }
+    }
+}

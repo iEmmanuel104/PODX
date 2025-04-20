@@ -1,0 +1,44 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+this is for getting metrics
+Server-SDK
+API Functions
+getMetrics()
+Get Metrics
+getMetrics() provides the ability to fetch the total number of minutes spent on meetings, total number of livestream, total number of recordings, total number of token gated meetings and total number of meetings. You need an API_KEY to use this function.
+
+Metrics which you get from getMetrics() will be based on the provided API_KEY.
+
+Example
+import { API } from '@huddle01/server-sdk/api';
+ 
+const metrics = async () => {
+  const api = new API({
+    apiKey: process.env.API_KEY!,
+  });
+ 
+  const metrics = await api.getMetrics();
+ 
+  return metrics;
+};
+
+Returns
+getMetrics() will return an array of rooms with following fields
+
+Name	Type	Description
+totalSessions	number	Total number of sessions
+livestreamCount	number	Total number of livestreams
+recordingCount	number	Total number of recordings
+totalDuration	number	Total duration of all sessions
+totalUsers	number	Total number of users joined in all sessions
+{
+ "totalSessions": 156,
+ "totalDuration": 10254,
+ "totalUsers": 849,
+ "recordingCount": 7,
+ "livestreamCount": 2
+}
+

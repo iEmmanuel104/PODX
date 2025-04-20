@@ -1,16 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Call } from '../models/Mongodb/call.model';
 import { UserStreak, ICallActivity, IStreakStats } from '../models/Mongodb/userStreak.model';
-import { webhookConfig } from '../clients/webhook.config';
+import { POINTS_CONFIG } from '../clients/webhook.config';
 import { User } from '../models/Mongodb/user.model';
-import StreamIOConfig from '../clients/streamio.config';
 import { ProcessingError, ProcessingSummary } from '../utils/interface';
+import { Streak, IStreak } from '../models/Mongodb/streak.model';
+import { Types } from 'mongoose';
 
 export class StreakService {
     private static readonly WEEK_IN_MS = 7 * 24 * 60 * 60 * 1000;
 
     static async calculatePoints(duration: number, isCreator: boolean): Promise<number> {
-        const { POINTS_CONFIG } = webhookConfig;
         let points = Math.floor(duration / 60) * POINTS_CONFIG.POINTS_PER_MINUTE;
 
         if (isCreator) {
@@ -231,20 +231,36 @@ export class StreakService {
     }> {
         try {
             console.log(`[Sync] Fetching calls for user ${userId}`);
-            const { calls, error } = await StreamIOConfig.getCallsByUser(userId);
-
-            if (error) {
+            
+            // Replace StreamIO with direct database query
+            const calls = await Call.find({
+                $or: [
+                    { createdById: userId },
+                    { 'members.userId': userId },
+                ],
+            }).sort({ startTime: 1 });
+            
+            if (!calls || calls.length === 0) {
                 return {
                     calls: [],
-                    errors: [{
-                        userId,
-                        error: `Failed to fetch calls: ${error.message}`,
-                        timestamp: new Date(),
-                    }],
+                    errors: [],
                 };
             }
 
-            return { calls, errors: [] };
+            return { 
+                calls: calls.map(call => ({
+                    call: {
+                        id: call.callId,
+                        type: call.type,
+                        created_by: { id: call.createdById },
+                        created_at: call.startTime,
+                        ended_at: call.endTime,
+                        custom: call.custom,
+                    },
+                    members: call.members,
+                })),
+                errors: [], 
+            };
         } catch (error) {
             return {
                 calls: [],
@@ -450,5 +466,73 @@ export class StreakService {
             };
         }).filter(streak => streak.userId); // Filter out any invalid entries
 
+    }
+
+    static async handleCallJoined(roomId: string, peerId: string) {
+        try {
+            const call = await Call.findOne({ roomId });
+            if (!call) {
+                throw new Error('Call not found');
+            }
+
+            const user = await User.findOne({ peerId });
+            if (!user) {
+                throw new Error('User not found');
+            }
+
+            let streak = await Streak.findOne({ userId: user._id });
+            if (!streak) {
+                streak = new Streak({
+                    userId: user._id,
+                    currentStreak: 0,
+                    lastCallDate: new Date(),
+                    totalCalls: 0,
+                    longestStreak: 0,
+                });
+            }
+
+            // Update streak only if it's a new day
+            const lastCallDate = new Date(streak.lastCallDate);
+            const today = new Date();
+            if (lastCallDate.toDateString() !== today.toDateString()) {
+                streak.currentStreak += 1;
+                streak.longestStreak = Math.max(streak.longestStreak, streak.currentStreak);
+                streak.lastCallDate = today;
+            }
+
+            streak.totalCalls += 1;
+            await streak.save();
+        } catch (error) {
+            console.error('Error handling call joined for streak:', error);
+            throw error;
+        }
+    }
+
+    static async handleCallEnded(roomId: string) {
+        try {
+            const call = await Call.findOne({ roomId });
+            if (!call) {
+                throw new Error('Call not found');
+            }
+
+            // Update streaks for all participants
+            for (const participantId of call.participants) {
+                const streak = await Streak.findOne({ userId: participantId });
+                if (streak) {
+                    // Calculate call duration
+                    const duration = call.endedAt 
+                        ? (call.endedAt.getTime() - call.startedAt.getTime()) / 1000 / 60 
+                        : 0;
+
+                    // Update streak stats
+                    streak.totalMinutes += duration;
+                    streak.averageCallDuration = streak.totalMinutes / streak.totalCalls;
+                    await streak.save();
+                }
+            }
+        } catch (error) {
+            console.error('Error handling call ended for streak:', error);
+            throw error;
+        }
     }
 }

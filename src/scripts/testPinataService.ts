@@ -34,29 +34,29 @@ async function main() {
         const imageBuffer = fs.readFileSync(imagePath);
         const imageFile = new Blob([imageBuffer], { 
             type: imagePath.endsWith('.png') ? 'image/png' : 
-                  imagePath.endsWith('.jpg') || imagePath.endsWith('.jpeg') ? 'image/jpeg' : 
-                  'application/octet-stream'
+                imagePath.endsWith('.jpg') || imagePath.endsWith('.jpeg') ? 'image/jpeg' : 
+                    'application/octet-stream',
         });
 
         // Test data for NFT creation
         const nftData = {
             image: imageFile,
-            name: "Test Meeting NFT",
-            description: "This is a test NFT created via PinataService",
+            name: 'Test Meeting NFT',
+            description: 'This is a test NFT created via PinataService',
             attributes: [
                 {
-                    trait_type: "Type",
-                    value: "Meeting"
+                    trait_type: 'Type',
+                    value: 'Meeting',
                 },
                 {
-                    trait_type: "Duration",
-                    value: 60
+                    trait_type: 'Duration',
+                    value: 60,
                 },
                 {
-                    trait_type: "Status",
-                    value: "Test"
-                }
-            ]
+                    trait_type: 'Status',
+                    value: 'Test',
+                },
+            ],
         };
 
         console.log('📤 Uploading NFT data to IPFS...');

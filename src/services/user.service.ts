@@ -377,4 +377,48 @@ export default class UserService {
             throw error;
         }
     }
+
+    /**
+     * Find a user by their wallet address
+     * @param walletAddress The wallet address to search for
+     * @returns The user if found, null otherwise
+     */
+    static async findUserByWalletAddress(walletAddress: string): Promise<ITransformedUserResponse | null> {
+        try {
+            // Normalize the wallet address (convert to lowercase)
+            const normalizedAddress = walletAddress.toLowerCase();
+
+            // Find the user by wallet address
+            const user = await User.findOne({ walletAddress: normalizedAddress })
+                .populate('settings')
+                .populate({
+                    path: 'streak',
+                    select: 'currentStreak longestStreak totalPoints stats weeklyActivity',
+                });
+
+            if (!user) {
+                return null;
+            }
+
+            // Transform the user object
+            return {
+                id: (user._id as any).toString(),
+                username: user.username,
+                walletAddress: user.walletAddress,
+                displayImage: user.displayImage,
+                settings: user.settings,
+                streak: user.streak ? {
+                    currentStreak: user.streak.currentStreak,
+                    longestStreak: user.streak.longestStreak,
+                    totalPoints: user.streak.totalPoints,
+                    stats: user.streak.stats,
+                } : null,
+                createdAt: user.createdAt,
+                updatedAt: user.updatedAt,
+            };
+        } catch (error) {
+            console.error('Error finding user by wallet address:', error);
+            throw error;
+        }
+    }
 }

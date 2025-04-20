@@ -29,7 +29,7 @@ const options = {
             {
                 url: '/api/v0',
                 description: 'Relative Path',
-            }
+            },
         ],
         components: {
             securitySchemes: {
@@ -37,18 +37,18 @@ const options = {
                     type: 'http',
                     scheme: 'bearer',
                     bearerFormat: 'JWT',
-                    description: 'Use the signature token returned from /user/validate endpoint. Add "Bearer " prefix before the token.'
-                }
+                    description: 'Use the signature token returned from /user/validate endpoint. Add "Bearer " prefix before the token.',
+                },
             },
         },
         security: [{
-            bearerAuth: []
+            bearerAuth: [],
         }],
     },
     apis: [
         './src/docs/swagger/*.ts',
         './src/models/**/*.ts',
-        './src/routes/**/*.ts'  // Added routes directory for more complete documentation
+        './src/routes/**/*.ts',  // Added routes directory for more complete documentation
     ],
 };
 

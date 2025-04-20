@@ -7,7 +7,6 @@ const router: Router = express.Router();
 router
     .get('/leaderboard', StreakController.getLeaderboard)
     .post('/sync-user', basicAuth(), AuthenticatedController(StreakController.recalculateUserStreak))
-    .post('/sync-local', StreakController.recalculateAllStreaks)
-    .post('/sync-streamio', StreakController.syncStreaksWithStreamIO);
+    .post('/sync-local', StreakController.recalculateAllStreaks);
 
 export default router;

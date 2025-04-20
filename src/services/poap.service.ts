@@ -70,7 +70,7 @@ export class POAPService {
                 sessionName: call.custom?.metadata?.name || `Call-${callId}`,
                 metadataURL: metadataURI,
                 creator: eligibleAddresses[0],
-                minters: eligibleAddresses
+                minters: eligibleAddresses,
             });
 
             // 6. Update call with complete POAP information
@@ -86,9 +86,9 @@ export class POAPService {
                             status: 'deployed',
                             participantCount: eligibleParticipants.length,
                             creator: eligibleAddresses[0],
-                            mintingStatus: {} as MintingStatus
-                        }
-                    }
+                            mintingStatus: {} as MintingStatus,
+                        },
+                    },
                 },
                 { new: true }
             );
@@ -110,12 +110,12 @@ export class POAPService {
                     const mintResult = await MeetingContractUtils.mintToken({
                         meetingAddress: deployResult.meetingAddress,
                         recipient: participant.walletAddress as `0x${string}`,
-                        metadataURI
+                        metadataURI,
                     });
 
                     mintingStatus[participant.walletAddress] = {
                         status: 'success',
-                        txHash: mintResult
+                        txHash: mintResult,
                     };
                     successfulMints++;
 
@@ -123,11 +123,11 @@ export class POAPService {
                 } catch (error) {
                     mintingStatus[participant.walletAddress] = {
                         status: 'failed',
-                        error: error instanceof Error ? error.message : 'Unknown error'
+                        error: error instanceof Error ? error.message : 'Unknown error',
                     };
                     logger.error('Error minting POAP to participant:', {
                         participant: participant.walletAddress,
-                        error
+                        error,
                     });
                 }
 
@@ -137,8 +137,8 @@ export class POAPService {
                     {
                         $set: {
                             'custom.poap.mintingStatus': mintingStatus,
-                            'custom.poap.status': successfulMints === eligibleParticipants.length ? 'completed' : 'partial'
-                        }
+                            'custom.poap.status': successfulMints === eligibleParticipants.length ? 'completed' : 'partial',
+                        },
                     }
                 );
             }
@@ -149,8 +149,8 @@ export class POAPService {
                 {
                     $set: {
                         'custom.poap.status': successfulMints === 0 ? 'failed' :
-                            successfulMints === eligibleParticipants.length ? 'completed' : 'partial'
-                    }
+                            successfulMints === eligibleParticipants.length ? 'completed' : 'partial',
+                    },
                 }
             );
 
@@ -158,7 +158,7 @@ export class POAPService {
                 callId,
                 totalParticipants: eligibleParticipants.length,
                 successfulMints,
-                status: mintingStatus
+                status: mintingStatus,
             });
 
         } catch (error) {
@@ -169,8 +169,8 @@ export class POAPService {
                 {
                     $set: {
                         'custom.poap.status': 'failed',
-                        'custom.poap.error': error instanceof Error ? error.message : 'Unknown error'
-                    }
+                        'custom.poap.error': error instanceof Error ? error.message : 'Unknown error',
+                    },
                 }
             );
             throw error;

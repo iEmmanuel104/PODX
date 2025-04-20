@@ -52,8 +52,8 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
         persistAuthorization: true,
         displayRequestDuration: true,
         filter: true,
-        docExpansion: 'none'
-    }
+        docExpansion: 'none',
+    },
 }));
 
 // server health check

@@ -1,7 +1,9 @@
 import { Request, Response } from 'express';
 import { CallService } from '../services/call.service';
 import { verifyWebhookSignature, isRelevantEvent } from '../clients/webhook.config';
+import Huddle01Config from '../clients/huddle01.config';
 import { BadRequestError } from '../utils/customErrors';
+import { logger } from '../utils/logger';
 
 export default class WebhookController {
     static async handleStreamWebhook(req: Request, res: Response): Promise<void> {
@@ -46,6 +48,56 @@ export default class WebhookController {
 
         } catch (error) {
             console.error('Webhook processing error:', error);
+            if (error instanceof BadRequestError) {
+                res.status(400).json({
+                    status: 'error',
+                    message: error.message,
+                });
+            } else {
+                res.status(500).json({
+                    status: 'error',
+                    message: 'Internal server error processing webhook',
+                });
+            }
+        }
+    }
+
+    static async handleHuddle01Webhook(req: Request, res: Response): Promise<void> {
+        try {
+            // Get Huddle01 signature header
+            const signature = req.headers['huddle01-signature'] as string;
+            
+            if (!signature) {
+                throw new BadRequestError('Missing Huddle01 signature header');
+            }
+            
+            // Verify webhook data
+            const { data, error } = Huddle01Config.verifyWebhook(req.body, signature);
+            
+            if (error || !data) {
+                throw new BadRequestError('Invalid webhook signature');
+            }
+            
+            // Process webhook event based on type
+            const { type } = data;
+            
+            logger.info(`Received Huddle01 webhook of type ${type}`);
+            
+            // Process webhook asynchronously
+            CallService.processHuddle01Webhook(type, data.payload)
+                .catch(err => {
+                    logger.error('Error processing Huddle01 webhook:', err);
+                });
+            
+            // Return immediate success response
+            res.status(200).json({
+                status: 'success',
+                message: 'Webhook received and processing',
+            });
+            
+        } catch (error) {
+            logger.error('Webhook processing error:', error);
+            
             if (error instanceof BadRequestError) {
                 res.status(400).json({
                     status: 'error',

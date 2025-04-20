@@ -1,0 +1,81 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Access Token
+Access Token is a JWT token that is used to authenticate a peer to join a room. It contains the roomId, apiKey, role, permissions, and metadata.
+
+You can generate roomId using Create Room API.
+
+To join a Huddle01 room, every peer needs a unique access token. You need apiKey and roomId to generate an access Token.
+
+Make sure that you are using the same apiKey which you used to generate roomId.
+
+Permissions
+Access Token gives an ability to set your own custom permissions. Let's see each permission in detail.
+
+Permission	Description
+admin	The peer will have admin privileges. Admins can perform all actions on the room.
+canConsume	The peer will be able to consume tracks from other peers.
+canProduce	The peer will be able to publish tracks to the room.
+canProduceSources	The peer will be able to publish tracks from the specified sources such as `cam`, `mic`, and `screen`.
+canRecvData	The peer will be able to receive data messages from other peers.
+canSendData	the peer will be able to send data messages to other peers.
+canUpdateMetadata	The peer will be able to update its own metadata.
+Role
+You can set a role from the following list of roles, or you can create your own custom role as well.
+
+If you create a custom role, you can give custom permission. Predifined roles have predefined permissions.
+
+Role	Description
+host	Hosts can perform all actions on the room, they have `admin` as a true in permissions.
+coHost	Co-hosts can perform all actions on the room just like `host`, but they can't update role to `host`.
+guest	Guests can can publish all tracks and send/receive data to the room, but can't perform admin actions.
+speaker	Speakers can publish only `audio` tracks to the room, and remaining same as `guest` role.
+listener	Listeners can consume tracks and send/receive data from other peers.
+bot	This can only consume tracks from other peers and won't able to send/receive data unlike `listener`
+To get access these pre-defined roles, you can import Role from Server SDK.
+
+import { Role } from '@huddle01/server-sdk/auth';
+ 
+// Access Host Role 
+console.log(Role.HOST);
+
+Generating Access Token
+You need to create an instance of AccessToken where you can pass permission, role and metadata.
+
+metadata can be of any type.
+
+import { AccessToken, Role } from '@huddle01/server-sdk/auth';
+
+ 
+const accessToken = new AccessToken({
+    apiKey: 'YOUR_API_KEY',
+    roomId: 'YOUR_ROOM_ID',
+    //available roles: Role.HOST, Role.CO_HOST, Role.SPEAKER, Role.LISTENER, Role.GUEST - depending on the privileges you want to give to the user
+    role: Role.HOST,
+    //custom permissions give you more flexibility in terms of the user privileges than a pre-defined role
+    permissions: {
+          admin: true,
+          canConsume: true,
+          canProduce: true,
+          canProduceSources: {
+            cam: true,
+            mic: true,
+            screen: true,
+          },
+          canRecvData: true,
+          canSendData: true,
+          canUpdateMetadata: true,
+        },
+        options: {
+          metadata: { 
+             // you can add any custom attributes here which you want to associate with the user
+            walletAddress: "mizanxali.eth"
+          },
+        },
+  });
+ 
+const token = accessToken.toJwt();
+ 

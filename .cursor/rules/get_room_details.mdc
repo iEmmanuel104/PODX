@@ -1,0 +1,45 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+this is for getting room details 
+
+erver-SDK
+API Functions
+getRoomDetails()
+Get Room Details
+getRoomDetails() method helps to retrieve information about specific roomId.
+
+import { API } from '@huddle01/server-sdk/api';
+ 
+const roomDetails = async () => {
+  const api = new API({
+    apiKey: process.env.API_KEY!,
+  });
+ 
+  const roomDetails = await api.getRoomDetails({
+    roomId: 'YOUR_ROOM_ID',
+  });
+ 
+  return roomDetails;
+};
+
+Returns
+getRoomDetails() will return all details about room, if it's token gated it will also return tokenGatingInfo.
+
+Name	Type	Description
+roomId	string	The unique identifier for Room
+roomLocked	boolean	The state of room indicating if it is locked
+metadata	unknown	The metadata associated with the Room
+{
+  "roomId": "nvw-fxtj-gha",
+  "roomLocked": true,
+  "metadata": {
+    "hosts": [],
+    "title": "",
+    "roomType": "video",
+    "meetingLink": "https://akmo.huddle01.com/voy-kpsa-hpo"
+  }
+}
+

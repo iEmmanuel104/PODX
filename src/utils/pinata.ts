@@ -10,7 +10,7 @@ config();
 // Initialize Pinata SDK with API key and secret
 const pinata = new PinataSDK({ 
     pinataApiKey: process.env.PINATA_API_KEY,
-    pinataSecretApiKey: process.env.PINATA_SECRET
+    pinataSecretApiKey: process.env.PINATA_SECRET,
 });
 
 export interface NFTAttribute {
@@ -50,7 +50,7 @@ export class PinataService {
         'image/jpeg',
         'image/png',
         'image/gif',
-        'image/webp'
+        'image/webp',
     ];
 
     /**
@@ -109,7 +109,7 @@ export class PinataService {
                 name: metadata.name.trim(),
                 description: metadata.description.trim(),
                 image: imageIpfsUrl,  // Using IPFS URL format
-                attributes: metadata.attributes || []
+                attributes: metadata.attributes || [],
             };
 
             // 3. Upload the metadata to IPFS
@@ -120,7 +120,7 @@ export class PinataService {
             return {
                 ...nftMetadata,
                 imageUrl: imageGatewayUrl,    // For preview purposes
-                metadataUrl: metadataIpfsUrl  // For NFT minting
+                metadataUrl: metadataIpfsUrl,  // For NFT minting
             };
         } catch (error: unknown) {
             console.error('Error creating NFT metadata:', error);
@@ -149,14 +149,14 @@ export class PinataService {
                 name: `${name}-image`,
                 keyvalues: {
                     type: 'nft-image',
-                    timestamp: new Date().toISOString()
-                }
+                    timestamp: new Date().toISOString(),
+                },
             };
             
             while (retries > 0) {
                 try {
                     result = await pinata.pinFileToIPFS(fs.createReadStream(tempPath), {
-                        pinataMetadata: metadata
+                        pinataMetadata: metadata,
                     });
                     break;
                 } catch (error) {
@@ -189,12 +189,12 @@ export class PinataService {
                 name,
                 keyvalues: {
                     type: 'nft-metadata',
-                    timestamp: new Date().toISOString()
-                }
+                    timestamp: new Date().toISOString(),
+                },
             };
 
             const result = await pinata.pinJSONToIPFS(data, {
-                pinataMetadata: metadata
+                pinataMetadata: metadata,
             });
             
             if (!result?.IpfsHash) {

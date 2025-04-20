@@ -1,0 +1,35 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+what is needed to create a newroom 
+
+Server-SDK
+API Functions
+createRoom()
+Create Room
+createRoom() will create a new meeting room and return the room ID. This room ID can be used to join the room using joinRoom() method on client side. While creating room, you can pass following details.
+
+Parameters
+Params	Definition	Data Type	Mandatory
+roomLocked	The start time of the room. This will be displayed in the room list.	boolean	true
+metadata	This can be custom data that you want to store with the room. This data will be returned when you fetch the room details.	object	N
+Example
+import { API } from '@huddle01/server-sdk/api';
+ 
+const getRoomId = async () => {
+  const api = new API({
+    apiKey: process.env.API_KEY!,
+  });
+ 
+  const newRoom = await api.createRoom({
+    roomLocked: true,
+    metadata: JSON.stringify({
+      'title': 'Huddle01 Meeting',
+    })
+  });
+ 
+  return newRoom;
+};
+

@@ -1,0 +1,88 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Server-SDK
+API Functions
+getLiveSessions()
+Get Live Sessions
+This method retrieves the list of live meetings from a given API_KEY. Live meetings are meetings which are currently running.
+
+Example
+import { API } from '@huddle01/server-sdk/api';
+ 
+const liveSessions = async () => {
+  const api = new API({
+    apiKey: process.env.API_KEY!,
+  });
+ 
+  const liveSessions = await api.getLiveSessions();
+ 
+  return liveSessions;
+};
+
+Returns
+getLiveSessions() function will return an array of rooms with the following fields:
+
+Name	Type	Description
+roomId	string	The roomId of the meeting
+startTime	number	The start time of session in epoch
+liveStreamCount	number	The count of live streams in this session
+recordingCount	number	The count of recordings in this session
+{
+  "liveSessions": [
+    {
+      "roomId": "mjc-vksd-ktu",
+      "startTime": 1724911036147,
+      "livestreamCount": 1,
+      "recordingCount": 1
+    },
+    {
+      "roomId": "gar-ouoz-szl",
+      "startTime": 1724825547555,
+      "livestreamCount": 0,
+      "recordingCount": 0
+    }
+  ]
+}
+
+Get Single Live Meeting API
+This method retrieves the status of single live meeting from a given API_KEY. Live meetings are meetings which are currently running.
+
+Example
+import { API } from '@huddle01/server-sdk/api';
+ 
+const liveSessions = async () => {
+  const api = new API({
+    apiKey: process.env.API_KEY!,
+  });
+ 
+  const roomId = 'YOUR_ROOM_ID'
+ 
+  const liveSessions = await api.getLiveMeetings({ roomId });
+ 
+  return liveMeetings.data;
+};
+
+Returns
+getLiveSessions() function will return an array of rooms with the following fields:
+
+Name	Type	Description
+roomId	string	The roomId of the meeting
+startTime	number	The start time of session in epoch
+liveStreamCount	number	The count of live streams in this session
+recordingCount	number	The count of recordings in this session
+currentPeerCount	number	The count of peers currently inside session
+{
+  "liveSessions": [
+    {
+        "roomid": "gar-ouoz-szl",
+        "starttime": 1724911036147,
+        "currentPeerCount": 412,
+        "livestreamCount": 1,
+        "recordingCount": 1
+    }
+  ]
+}
+

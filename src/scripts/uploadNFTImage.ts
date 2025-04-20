@@ -21,8 +21,8 @@ async function uploadImage(imagePath: string) {
         const imageBuffer = fs.readFileSync(imagePath);
         const imageFile = new Blob([imageBuffer], { 
             type: imagePath.toLowerCase().endsWith('.png') ? 'image/png' : 
-                  imagePath.toLowerCase().endsWith('.jpg') || imagePath.toLowerCase().endsWith('.jpeg') ? 'image/jpeg' : 
-                  'application/octet-stream'
+                imagePath.toLowerCase().endsWith('.jpg') || imagePath.toLowerCase().endsWith('.jpeg') ? 'image/jpeg' : 
+                    'application/octet-stream',
         });
 
         // Get file name without extension for NFT name
@@ -32,17 +32,17 @@ async function uploadImage(imagePath: string) {
         const nftData = {
             image: imageFile,
             name: `${fileName} NFT`,
-            description: "NFT created via PinataService",
+            description: 'NFT created via PinataService',
             attributes: [
                 {
-                    trait_type: "Type",
-                    value: "Meeting"
+                    trait_type: 'Type',
+                    value: 'Meeting',
                 },
                 {
-                    trait_type: "Created",
-                    value: new Date().toISOString().split('T')[0] // Today's date
-                }
-            ]
+                    trait_type: 'Created',
+                    value: new Date().toISOString().split('T')[0], // Today's date
+                },
+            ],
         };
 
         console.log('\n📤 Uploading to IPFS...');

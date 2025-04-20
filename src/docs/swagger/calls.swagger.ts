@@ -2,7 +2,14 @@
  * @swagger
  * tags:
  *   name: Calls
- *   description: Video call management endpoints
+ *   description: Video call management endpoints using Huddle01 integration
+ */
+
+/**
+ * @swagger
+ * tags:
+ *   name: Huddle01
+ *   description: Endpoints for direct Huddle01 API integration
  */
 
 /**
@@ -11,224 +18,206 @@
  *   schemas:
  *     Call:
  *       type: object
+ *       required:
+ *         - _id
+ *         - title
+ *         - type
+ *         - status
+ *         - hostWalletAddress
+ *         - createdById
  *       properties:
  *         _id:
  *           type: string
- *           example: "6442a55d8d99b93c05c0feac"
- *         callId:
+ *           description: Unique identifier for the call, same as the Huddle01 roomId
+ *           example: "abc-def-ghi"
+ *         title:
  *           type: string
- *           example: "call-123"
+ *           description: Title of the call
+ *           example: "Team Meeting"
+ *         description:
+ *           type: string
+ *           description: Detailed description of the call
+ *           example: "Weekly team sync meeting"
  *         type:
  *           type: string
- *           example: "default"
+ *           enum: [audio, video]
+ *           description: Type of call
+ *           example: "video"
  *         status:
  *           type: string
- *           enum: [scheduled, live, ended]
- *           example: "live"
+ *           enum: [created, live, ended]
+ *           description: Current status of the call
+ *           example: "created"
+ *         hostWalletAddress:
+ *           type: string
+ *           description: Wallet address of the call host
+ *           example: "0x123456789abcdef..."
  *         createdById:
  *           type: string
- *           example: "user123"
- *         startTime:
+ *           description: User ID of who created the call
+ *           example: "507f1f77bcf86cd799439012"
+ *         startedAt:
  *           type: string
  *           format: date-time
- *         endTime:
+ *           description: When the call started
+ *           example: "2024-04-10T15:00:00Z"
+ *         endedAt:
  *           type: string
  *           format: date-time
+ *           description: When the call ended (if applicable)
+ *           example: "2024-04-10T16:00:00Z"
  *         duration:
  *           type: number
+ *           description: Duration of the call in seconds (if ended)
  *           example: 3600
  *         members:
  *           type: array
+ *           description: List of call participants
  *           items:
  *             type: object
  *             properties:
  *               userId:
  *                 type: string
- *               joinTime:
+ *                 example: "507f1f77bcf86cd799439013"
+ *               role:
  *                 type: string
- *                 format: date-time
- *               leaveTime:
+ *                 enum: [host, guest]
+ *                 example: "guest"
+ *         tokenGating:
+ *           type: object
+ *           description: Token gating configuration (if enabled)
+ *           properties:
+ *             enabled:
+ *               type: boolean
+ *               example: true
+ *             type:
+ *               type: string
+ *               enum: [external]
+ *               example: "external"
+ *             addresses:
+ *               type: array
+ *               items:
  *                 type: string
- *                 format: date-time
- *     DurationRequirement:
+ *               example: ["0x123..."]
+ *         isActive:
+ *           type: boolean
+ *           description: Whether the call is currently active
+ *           example: true
+ *         isPrivate:
+ *           type: boolean
+ *           description: Whether this is a private call
+ *           example: false
+ *         isScheduled:
+ *           type: boolean
+ *           description: Whether this is a scheduled call
+ *           example: false
+ *         scheduledTime:
+ *           type: string
+ *           format: date-time
+ *           description: When the call is scheduled to start (if isScheduled is true)
+ *           example: "2024-04-10T15:00:00Z"
+ *
+ *     Huddle01Room:
+ *       type: object
+ *       required:
+ *         - roomId
+ *         - hostWalletAddress
+ *       properties:
+ *         roomId:
+ *           type: string
+ *           description: Unique Huddle01 room identifier
+ *           example: "abc-def-ghi"
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           description: Time when the room was created
+ *           example: "2023-07-20T14:30:00Z"
+ *         roomLocked:
+ *           type: boolean
+ *           description: Whether the room is locked
+ *           example: true
+ *         meetingUrl:
+ *           type: string
+ *           description: URL to access the meeting
+ *           example: "https://app.huddle01.com/abc-def-ghi"
+ *         hostWalletAddress:
+ *           type: string
+ *           description: Wallet address of the host
+ *           example: "0x123abc..."
+ *         tokenGating:
+ *           type: object
+ *           description: Token gating configuration
+ *           properties:
+ *             enabled:
+ *               type: boolean
+ *               example: true
+ *             type:
+ *               type: string
+ *               enum: [external]
+ *               example: "external"
+ *             addresses:
+ *               type: array
+ *               items:
+ *                 type: string
+ *               example: ["0x123..."]
+ *
+ *     Huddle01AccessToken:
  *       type: object
  *       properties:
- *         value:
- *           type: number
- *           description: The duration value. For absolute type, this is in seconds. For percentage type, this is a percentage (0-100).
- *           example: 60
- *         type:
+ *         token:
  *           type: string
- *           enum: [absolute, percentage]
- *           description: Whether the value represents absolute seconds or a percentage of the scheduled duration
- *           example: absolute
- *       required:
- *         - value
- *         - type
- */
-
-/**
- * @swagger
- * /calls/schedule:
- *   post:
- *     summary: Schedule a new call
- *     tags: [Calls]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
+ *           description: JWT token for accessing a Huddle01 room
+ *           example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ *         expiresIn:
+ *           type: number
+ *           description: Token expiration time in seconds
+ *           example: 3600
+ *
+ *     Huddle01RoomDetails:
+ *       type: object
+ *       properties:
+ *         roomId:
+ *           type: string
+ *           description: Unique Huddle01 room identifier
+ *           example: "abc-def-ghi"
+ *         status:
+ *           type: string
+ *           enum: [active, inactive, ended]
+ *           description: Current status of the room
+ *           example: "active"
+ *         activeParticipants:
+ *           type: array
+ *           description: List of active participants in the room
+ *           items:
  *             type: object
  *             properties:
- *               title:
+ *               peerId:
  *                 type: string
- *                 description: Title of the call
- *               type:
+ *                 example: "peer-123"
+ *               displayName:
  *                 type: string
- *                 description: Type of call
- *               sessionId:
+ *                 example: "John Doe"
+ *               avatarUrl:
  *                 type: string
- *                 description: Unique identifier for the call session
- *                 required: true
- *               starts_at:
+ *                 example: "https://example.com/avatar.jpg"
+ *               joinedAt:
  *                 type: string
  *                 format: date-time
- *                 description: When the call starts
- *               scheduledDuration:
- *                 type: number
- *                 description: Scheduled duration in minutes
- *                 default: 60
- *               durationRequirement:
- *                 $ref: '#/components/schemas/DurationRequirement'
- *                 description: Duration requirements for the call. If not provided, defaults to 1 second absolute.
- *             required:
- *               - title
- *               - sessionId
- *               - starts_at
- *     responses:
- *       200:
- *         description: Call scheduled successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: "success"
- *                 message:
- *                   type: string
- *                   example: "Call scheduled successfully"
- *                 data:
- *                   $ref: '#/components/schemas/Call'
- *       400:
- *         description: Invalid input
- *       401:
- *         description: Unauthorized
- */
-
-/**
- * @swagger
- * /calls/scheduled:
- *   get:
- *     summary: Get user's scheduled calls
- *     tags: [Calls]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Scheduled calls retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: "success"
- *                 message:
- *                   type: string
- *                   example: "Scheduled calls retrieved successfully"
- *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Call'
- *       401:
- *         description: Unauthorized
- */
-
-/**
- * @swagger
- * /calls/info/{sessionId}:
- *   get:
- *     summary: Get call information by session ID
- *     tags: [Calls]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: sessionId
- *         required: true
- *         schema:
- *           type: string
- *         description: Session ID of the call
- *     responses:
- *       200:
- *         description: Call information retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: "success"
- *                 message:
- *                   type: string
- *                   example: "Call information retrieved successfully"
- *                 data:
- *                   $ref: '#/components/schemas/Call'
- *       401:
- *         description: Unauthorized
- *       404:
- *         description: Call not found
- */
-
-/**
- * @swagger
- * /calls/scheduled/{sessionId}:
- *   delete:
- *     summary: Delete a scheduled call
- *     tags: [Calls]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: sessionId
- *         required: true
- *         schema:
- *           type: string
- *         description: Session ID of the scheduled call
- *     responses:
- *       200:
- *         description: Call deleted successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: "success"
- *                 message:
- *                   type: string
- *                   example: "Call deleted successfully"
- *       401:
- *         description: Unauthorized
- *       404:
- *         description: Call not found
+ *                 example: "2023-07-20T14:35:00Z"
+ *         recording:
+ *           type: object
+ *           properties:
+ *             status:
+ *               type: string
+ *               enum: [active, inactive, completed]
+ *               example: "inactive"
+ *             startedAt:
+ *               type: string
+ *               format: date-time
+ *               example: null
+ *             url:
+ *               type: string
+ *               example: null
  */
 
 /**
@@ -236,25 +225,66 @@
  * /calls/create:
  *   post:
  *     summary: Create a new call
+ *     description: |
+ *       Creates a new Huddle01 room with optional token gating, image, and scheduling.
+ *       Integrates with Huddle01's createRoom() API to generate a unique roomId.
+ *       The room starts locked (roomLocked: true) and includes custom metadata.
+ *       If `isScheduled` is true, `scheduledTime` must be provided and be in the future.
  *     tags: [Calls]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
+ *             required:
+ *               - title
+ *               - type
  *             properties:
  *               title:
  *                 type: string
  *                 description: Title of the call
+ *                 example: "Team Meeting"
  *               type:
  *                 type: string
+ *                 enum: [audio, video]
  *                 description: Type of call
+ *                 example: "video"
+ *               description:
+ *                 type: string
+ *                 description: Optional detailed description of the call
+ *                 example: "Weekly team sync meeting"
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *                 description: Optional thumbnail image for the call
+ *               tokenGatingAddresses:
+ *                 type: array
+ *                 description: List of wallet addresses for token gating
+ *                 items:
+ *                   type: string
+ *                 example: ["0x123..."]
+ *               tokenGatingType:
+ *                 type: string
+ *                 enum: [external]
+ *                 description: Type of token gating
+ *                 example: "external"
  *               durationRequirement:
- *                 $ref: '#/components/schemas/DurationRequirement'
- *                 description: Duration requirements for the call. If not provided, defaults to 1 second absolute.
+ *                 type: number
+ *                 description: Percentage duration requirement for participants
+ *                 example: 70
+ *               isScheduled:
+ *                 type: boolean
+ *                 description: Whether this is a scheduled call
+ *                 default: false
+ *                 example: false
+ *               scheduledTime:
+ *                 type: string
+ *                 format: date-time
+ *                 description: When the call is scheduled to start (required and must be in the future if isScheduled is true)
+ *                 example: "2025-04-10T15:00:00Z"
  *     responses:
  *       201:
  *         description: Call created successfully
@@ -272,43 +302,111 @@
  *                 data:
  *                   type: object
  *                   properties:
- *                     callId:
+ *                     roomId:
  *                       type: string
- *                       example: "call-123"
- *                       description: Unique identifier for the created call
+ *                       example: "xof-tzgw-ycv"
+ *                     title:
+ *                       type: string
+ *                       example: "Team Meeting"
+ *                     description:
+ *                       type: string
+ *                       example: "Weekly team sync meeting"
+ *                     type:
+ *                       type: string
+ *                       example: "video"
+ *                     host:
+ *                       type: object
+ *                       properties:
+ *                         walletAddress:
+ *                           type: string
+ *                           example: "0x4c4f1968359425eb6457dd89e88eda18fbc39c45"
+ *                         username:
+ *                           type: string
+ *                           example: "guest-0x4c4f19"
+ *                     status:
+ *                       type: string
+ *                       example: "created"
+ *                     isActive:
+ *                       type: boolean
+ *                       example: true
+ *                     isPrivate:
+ *                       type: boolean
+ *                       example: true
+ *                     tokenGating:
+ *                       type: object
+ *                       properties:
+ *                         enabled:
+ *                           type: boolean
+ *                           example: true
+ *                         type:
+ *                           type: string
+ *                           example: "external"
+ *                         allowedWallets:
+ *                           type: array
+ *                           items:
+ *                             type: string
+ *                           example: ["0x123..."]
+ *                     resources:
+ *                       type: object
+ *                       properties:
+ *                         ipfs:
+ *                           type: string
+ *                           example: "ipfs://bafkreiazrxg7mfuzi5t2vpgbob76jkrbexfoyud276hlpouvrbbc2bwy7y"
+ *                     durationRequirement:
+ *                       type: object
+ *                       properties:
+ *                         value:
+ *                           type: number
+ *                           example: 70
+ *                         type:
+ *                           type: string
+ *                           example: "percentage"
+ *                     isScheduled:
+ *                       type: boolean
+ *                       description: Indicates if the call is scheduled
+ *                       example: false
+ *                     scheduledTime:
+ *                       type: string
+ *                       format: date-time
+ *                       description: The scheduled start time (only present if isScheduled is true)
+ *                       example: "2025-04-10T15:00:00Z"
+ *                     timestamps:
+ *                       type: object
+ *                       properties:
+ *                         createdAt:
+ *                           type: string
+ *                           format: date-time
+ *                           example: "2023-04-04T11:41:34.658Z"
  *       400:
- *         description: Invalid input - missing required fields or invalid duration requirement values
+ *         description: Invalid input (e.g., missing scheduledTime when isScheduled is true, scheduledTime in the past)
  *       401:
- *         description: Unauthorized - missing or invalid authentication token
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
  */
 
 /**
  * @swagger
- * /calls/get-or-create:
- *   post:
- *     summary: Get existing call or create new one
+ * /calls/info/{sessionId}:
+ *   get:
+ *     summary: Get call information by session ID
+ *     description: |
+ *       Retrieves detailed information about a specific call by its session ID.
+ *       Returns call metadata, member information, status, and scheduling details.
+ *       The `scheduledTime` field is only included if `isScheduled` is true.
  *     tags: [Calls]
  *     security:
  *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               callType:
- *                 type: string
- *                 description: Type of call
- *               callId:
- *                 type: string
- *                 description: Unique identifier for the call
- *               durationRequirement:
- *                 $ref: '#/components/schemas/DurationRequirement'
- *                 description: Duration requirements for the call. If not provided, defaults to 1 second absolute.
+ *     parameters:
+ *       - in: path
+ *         name: sessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Session ID of the call (same as roomId)
  *     responses:
  *       200:
- *         description: Call retrieved or created successfully
+ *         description: Call information retrieved successfully
  *         content:
  *           application/json:
  *             schema:
@@ -319,234 +417,101 @@
  *                   example: "success"
  *                 message:
  *                   type: string
- *                   example: "Call retrieved or created successfully"
+ *                   example: "Call details retrieved successfully"
  *                 data:
- *                   $ref: '#/components/schemas/Call'
- *       400:
- *         description: Invalid input
- *       401:
- *         description: Unauthorized
- */
-
-/**
- * @swagger
- * /calls/settings:
- *   patch:
- *     summary: Update call settings
- *     tags: [Calls]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - callType
- *               - callId
- *               - settings
- *             properties:
- *               callType:
- *                 type: string
- *                 example: "default"
- *               callId:
- *                 type: string
- *                 example: "call-123"
- *               settings:
- *                 type: object
- *                 properties:
- *                   audio:
- *                     type: object
- *                     properties:
- *                       mic_default_on:
- *                         type: boolean
- *                         example: true
- *                       default_device:
- *                         type: string
- *                         enum: [speaker, earpiece]
- *                         example: "speaker"
- *                       access_request_enabled:
- *                         type: boolean
- *                         example: false
- *                       opus_dtx_enabled:
- *                         type: boolean
- *                         example: false
- *                       redundant_coding_enabled:
- *                         type: boolean
- *                         example: false
- *                       speaker_default_on:
- *                         type: boolean
- *                         example: false
- *                   video:
- *                     type: object
- *                     properties:
- *                       camera_default_on:
- *                         type: boolean
- *                         example: true
- *                       access_request_enabled:
- *                         type: boolean
- *                         example: false
- *                       camera_facing:
- *                         type: string
- *                         enum: [front, back]
- *                         example: "front"
- *                       enabled:
- *                         type: boolean
- *                         example: true
- *                       target_resolution:
- *                         type: object
- *                         properties:
- *                           width:
- *                             type: number
- *                             example: 640
- *                           height:
- *                             type: number
- *                             example: 480
- *                           bitrate:
- *                             type: number
- *                             example: 512
- *                   backstage:
- *                     type: object
- *                     properties:
- *                       enabled:
- *                         type: boolean
- *                         example: false
- *                   recording:
- *                     type: object
- *                     properties:
- *                       mode:
- *                         type: string
- *                         enum: [available, disabled, auto-on]
- *                         example: "available"
- *                       quality:
- *                         type: string
- *                         enum: [360p, 480p, 720p, 1080p, 1440p, portrait-360x640, portrait-480x854, portrait-720x1280, portrait-1080x1920, portrait-1440x2560]
- *                         example: "720p"
- *     responses:
- *       200:
- *         description: Call settings updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: "success"
- *                 message:
- *                   type: string
- *                   example: "Call settings updated successfully"
- *       400:
- *         description: Invalid input
- *       401:
- *         description: Unauthorized
- */
-
-/**
- * @swagger
- * /calls/members:
- *   patch:
- *     summary: Update call members
- *     tags: [Calls]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - callType
- *               - callId
- *             properties:
- *               callType:
- *                 type: string
- *                 example: "default"
- *               callId:
- *                 type: string
- *                 example: "call-123"
- *               updateMembers:
- *                 type: array
- *                 items:
  *                   type: object
  *                   properties:
- *                     user_id:
+ *                     roomId:
  *                       type: string
- *                       example: "user123"
- *                     role:
+ *                       example: "xof-tzgw-ycv"
+ *                     title:
  *                       type: string
- *                       example: "host"
- *               removeMembers:
- *                 type: array
- *                 items:
- *                   type: string
- *                 example: ["user456"]
- *     responses:
- *       200:
- *         description: Call members updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: "success"
- *                 message:
- *                   type: string
- *                   example: "Call members updated successfully"
- *       400:
- *         description: Invalid input
+ *                       example: "Team Meeting"
+ *                     description:
+ *                       type: string
+ *                       example: "Weekly team sync meeting"
+ *                     type:
+ *                       type: string
+ *                       enum: [audio, video]
+ *                       example: "video"
+ *                     host:
+ *                       type: object
+ *                       properties:
+ *                         walletAddress:
+ *                           type: string
+ *                           example: "0x4c4f1968359425eb6457dd89e88eda18fbc39c45"
+ *                         username:
+ *                           type: string
+ *                           example: "guest-0x4c4f19"
+ *                     status:
+ *                       type: string
+ *                       enum: [created, live, ended]
+ *                       example: "created"
+ *                     isActive:
+ *                       type: boolean
+ *                       example: true
+ *                     isPrivate:
+ *                       type: boolean
+ *                       example: false
+ *                     tokenGating:
+ *                       type: object
+ *                       properties:
+ *                         enabled:
+ *                           type: boolean
+ *                           example: true
+ *                         type:
+ *                           type: string
+ *                           example: "external"
+ *                         allowedWallets:
+ *                           type: array
+ *                           items:
+ *                             type: string
+ *                           example: ["0x123..."]
+ *                     participants:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           peerId:
+ *                             type: string
+ *                             example: "peerId--AmxuhmUBW17kP1FGL2mU"
+ *                           joinTime:
+ *                             type: number
+ *                             description: Time of joining in epoch timestamp format
+ *                             example: 1706810039986
+ *                           exitTime:
+ *                             type: number
+ *                             description: Time of exiting in epoch timestamp format (if applicable)
+ *                             example: 1706811249372
+ *                           metadata:
+ *                             type: object
+ *                             description: Custom metadata associated with the peer
+ *                     resources:
+ *                       type: object
+ *                       properties:
+ *                         ipfs:
+ *                           type: string
+ *                           example: "ipfs://bafkreiazrxg7mfuzi5t2vpgbob76jkrbexfoyud276hlpouvrbbc2bwy7y"
+ *                     isScheduled:
+ *                       type: boolean
+ *                       description: Indicates if the call is scheduled
+ *                       example: false
+ *                     scheduledTime:
+ *                       type: string
+ *                       format: date-time
+ *                       description: The scheduled start time (only present if isScheduled is true)
+ *                       example: "2025-04-10T15:00:00Z"
+ *                     timestamps:
+ *                       type: object
+ *                       properties:
+ *                         createdAt:
+ *                           type: string
+ *                           format: date-time
+ *                           example: "2025-04-04T11:41:34.658Z"
  *       401:
  *         description: Unauthorized
- */
-
-/**
- * @swagger
- * /calls/end:
- *   post:
- *     summary: End a call
- *     tags: [Calls]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - callType
- *               - callId
- *             properties:
- *               callType:
- *                 type: string
- *                 example: "default"
- *               callId:
- *                 type: string
- *                 example: "call-123"
- *     responses:
- *       200:
- *         description: Call ended successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: "success"
- *                 message:
- *                   type: string
- *                   example: "Call ended successfully"
- *                 data:
- *                   $ref: '#/components/schemas/Call'
- *       400:
- *         description: Invalid input
- *       401:
- *         description: Unauthorized
+ *       404:
+ *         description: Call not found
  */
 
 /**
@@ -554,6 +519,12 @@
  * /calls/stats:
  *   get:
  *     summary: Get call statistics
+ *     description: |
+ *       Get aggregated statistics about all calls.
+ *       Uses Huddle01's getMetrics() API to retrieve global metrics about:
+ *       - Total number of sessions
+ *       - Total duration of all sessions
+ *       - Recording and livestream counts
  *     tags: [Calls]
  *     responses:
  *       200:
@@ -568,43 +539,103 @@
  *                   example: "success"
  *                 message:
  *                   type: string
- *                   example: "Call statistics retrieved successfully"
+ *                   example: "Call stats"
  *                 data:
  *                   type: object
  *                   properties:
- *                     totalCalls:
+ *                     totalSessions:
  *                       type: number
- *                       example: 1500
- *                     ongoingCalls:
+ *                       example: 156
+ *                     totalDuration:
  *                       type: number
- *                       example: 25
- *                     completedCalls:
+ *                       description: Total duration in minutes across all sessions
+ *                       example: 10254
+ *                     recordingCount:
  *                       type: number
- *                       example: 1450
- *                     upcomingCalls:
+ *                       example: 7
+ *                     livestreamCount:
  *                       type: number
- *                       example: 25
- *                     callsByType:
- *                       type: object
- *                       additionalProperties:
- *                         type: number
- *                       example: {"default": 1200, "webinar": 300}
- *                     callsByDate:
- *                       type: object
- *                       additionalProperties:
- *                         type: number
- *                       example: {"2024-03-20": 50, "2024-03-19": 45}
+ *                       example: 2
  */
 
 /**
  * @swagger
- * /calls/detailed-stats:
+ * /calls/{roomId}/live-participants:
  *   get:
- *     summary: Get detailed call statistics
+ *     summary: Get live participants in a room
+ *     description: |
+ *       Get a list of participants currently active in a specific room.
+ *       Uses Huddle01's getLiveParticipantsDetails() API to retrieve real-time data about:
+ *       - Who is currently in the room (peerId)
+ *       - When they joined (joinTime)
+ *       - Their metadata
+ *       This provides real-time information directly from Huddle01 servers.
  *     tags: [Calls]
+ *     parameters:
+ *       - in: path
+ *         name: roomId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The Huddle01 room ID to query
  *     responses:
  *       200:
- *         description: Detailed call statistics retrieved successfully
+ *         description: Live participants retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "success"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     participants:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           peerId:
+ *                             type: string
+ *                             example: "peerId--AmxuhmUBW17kP1FGL2mU"
+ *                           joinTime:
+ *                             type: number
+ *                             description: Time of joining in epoch timestamp format
+ *                             example: 1706810039986
+ *                           exitTime:
+ *                             type: number
+ *                             description: Time of exiting in epoch timestamp format (if applicable)
+ *                             example: 1706811249372
+ *                           metadata:
+ *                             type: object
+ *                             description: Custom metadata associated with the peer
+ */
+
+/**
+ * @swagger
+ * /huddle01/token/{roomId}:
+ *   get:
+ *     summary: Generate an access token for a Huddle01 room
+ *     description: |
+ *       Generates a JWT access token for a specific Huddle01 room.
+ *       This token is required for users to join a room.
+ *       Calls Huddle01's getAccessToken() API method with your API key.
+ *       The token includes user-specific claims and room access permissions.
+ *     tags: [Huddle01]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: roomId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The Huddle01 room ID
+ *     responses:
+ *       200:
+ *         description: Access token generated successfully
  *         content:
  *           application/json:
  *             schema:
@@ -615,36 +646,32 @@
  *                   example: "success"
  *                 message:
  *                   type: string
- *                   example: "Detailed call statistics retrieved successfully"
+ *                   example: "Access token generated successfully"
  *                 data:
- *                   type: object
- *                   properties:
- *                     dailyStats:
- *                       type: array
- *                       items:
- *                         type: object
- *                         properties:
- *                           date:
- *                             type: string
- *                             format: date
- *                             example: "2024-03-20"
- *                           totalCalls:
- *                             type: number
- *                             example: 150
- *                           totalDuration:
- *                             type: number
- *                             example: 36000
- *                           uniqueUsers:
- *                             type: number
- *                             example: 75
+ *                   $ref: '#/components/schemas/Huddle01AccessToken'
+ *       400:
+ *         description: Invalid roomId
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Room not found
+ *       500:
+ *         description: Server error or Huddle01 API error
  */
 
 /**
  * @swagger
- * /calls/members:
+ * /calls/token:
  *   post:
- *     summary: Query call members
+ *     summary: Generate a token for joining a call
+ *     description: |
+ *       Generates a JWT access token for joining a Huddle01 room with specific permissions.
+ *       This token includes user information as metadata and assigns appropriate
+ *       permissions based on the requested role. The token is required for users
+ *       to join a call with the Huddle01 client SDK.
  *     tags: [Calls]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -652,21 +679,55 @@
  *           schema:
  *             type: object
  *             required:
- *               - callId
+ *               - roomId
  *             properties:
- *               callId:
+ *               roomId:
  *                 type: string
- *                 example: "call-123"
- *               filter:
+ *                 description: The room ID of the call to join
+ *                 example: "abc-def-ghi"
+ *               role:
+ *                 type: string
+ *                 enum: [host, coHost, guest, speaker, listener, bot]
+ *                 description: The role to assign in the call
+ *                 default: "guest"
+ *                 example: "guest"
+ *               permissions:
  *                 type: object
+ *                 description: Custom permissions (optional, defaults based on role if not provided)
  *                 properties:
- *                   status:
- *                     type: string
- *                     enum: [active, left]
- *                     example: "active"
+ *                   admin:
+ *                     type: boolean
+ *                     example: false
+ *                   canConsume:
+ *                     type: boolean
+ *                     example: true
+ *                   canProduce:
+ *                     type: boolean
+ *                     example: true
+ *                   canProduceSources:
+ *                     type: object
+ *                     properties:
+ *                       cam:
+ *                         type: boolean
+ *                         example: true
+ *                       mic:
+ *                         type: boolean
+ *                         example: true
+ *                       screen:
+ *                         type: boolean
+ *                         example: true
+ *                   canRecvData:
+ *                     type: boolean
+ *                     example: true
+ *                   canSendData:
+ *                     type: boolean
+ *                     example: true
+ *                   canUpdateMetadata:
+ *                     type: boolean
+ *                     example: true
  *     responses:
  *       200:
- *         description: Call members retrieved successfully
+ *         description: Token generated successfully
  *         content:
  *           application/json:
  *             schema:
@@ -677,21 +738,43 @@
  *                   example: "success"
  *                 message:
  *                   type: string
- *                   example: "Call members retrieved successfully"
+ *                   example: "Token generated successfully"
  *                 data:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       userId:
- *                         type: string
- *                         example: "user123"
- *                       joinTime:
- *                         type: string
- *                         format: date-time
- *                       leaveTime:
- *                         type: string
- *                         format: date-time
+ *                   type: object
+ *                   properties:
+ *                     token:
+ *                       type: string
+ *                       example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlJZCI6IkVrcWFwb0RWaXNWRFJ3WmZMa2FXIiwicm9vbUlkIjoibWV0LXdxaW4tcnZ0IiwicGVlcklkIjoicGVlcklkLS1YV1ltR3YzMU9mZWpZVzRTaW1PMCIsInJvbGUiOiJIT1NUIiwicGVybWlzc2lvbnMiOnsiYWRtaW4iOnRydWUsImNhbkNvbnN1bWUiOnRydWUsImNhblByb2R1Y2UiOnRydWUsImNhblByb2R1Y2VTb3VyY2VzIjp7ImNhbSI6dHJ1ZSwibWljIjp0cnVlLCJzY3JlZW4iOnRydWV9LCJjYW5SZWxheT90cnVlLCJjYW5VcGRhdGVNZXRhZGF0YSI6dHJ1ZSwiY2FuUmVjdkRhdGEiOnRydWUsImNhblNlbmREYXRhIjp0cnVlfSwibWV0YWRhdGEiOnsid2FsbGV0QWRkcmVzcyI6IjB4NDVhZGJkZjYyZGFmZDAzYmYwYzFlYzVlYmNiNTVkODBmMzU2ZjQ1OCIsInVzZXJJZCI6IjY1MzcwMjA5ZWVkMzYxNWYxZDcyZjM5MyIsInVzZXJuYW1lIjoiZ3Vlc3QtMHg0NWFkYmQiLCJkaXNwbGF5TmFtZSI6Imd1ZXN0LTB4NDVhZGJkIn0sImlhdCI6MTcxNTI2MjAwOX0.wNuRd4L9gg3fpnL4BVp2XWGnmC8N9QIrSqv0EYx0XRk"
+ *                     roomId:
+ *                       type: string
+ *                       example: "abc-def-ghi"
+ *                     role:
+ *                       type: string
+ *                       example: "guest"
+ *                     metadata:
+ *                       type: object
+ *                       properties:
+ *                         walletAddress:
+ *                           type: string
+ *                           example: "0x45adbdf62dafd03bf0c1ec5ebcb55d80f356f458"
+ *                         userId:
+ *                           type: string
+ *                           example: "6537020"
+ *                         username:
+ *                           type: string
+ *                           example: "guest-0x45adbd"
+ *                         displayName:
+ *                           type: string
+ *                           example: "guest-0x45adbd"
+ *                     expiresIn:
+ *                       type: number
+ *                       example: 3600
  *       400:
- *         description: Invalid input
- */ 
+ *         description: Invalid request parameters
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Room not found
+ *       500:
+ *         description: Server error
+ */

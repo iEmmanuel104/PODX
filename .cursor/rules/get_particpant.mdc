@@ -1,0 +1,50 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Server-SDK
+API Functions
+getParticipants()
+Get Participants Detail
+This method returns a list of participants in a meetings. By passing the sessionId, you can easily access a list of participants who joined the meeting.
+
+You can retrieve the sessionId by using getRoomMeetings().
+
+Example
+import { API } from '@huddle01/server-sdk/api';
+ 
+const participantsList = async () => {
+  const api = new API({
+    apiKey: process.env.API_KEY!,
+  });
+ 
+  const participantsRes = await api.getParticipantsDetails({
+    sessionId: 'YOUR_SESSION_ID',
+  });
+ 
+  return participantsRes;
+};
+
+Returns
+getParticipants() returns following details.
+
+Name	Type	Description
+peerId	string	The peer id of the user
+joinTime	number	Time of joining the call in Epochs
+exitTIme	number | undefined	Time of exiting the call in Epochs
+metadata	unknown	Metadata associated with the peer
+{
+  "participants": [
+    {
+      "peerId": "peerId--AmxuhmUBW17kP1FGL2mU",
+      "joinTime": 1706810039986,
+      "exitTime": 1706811249372,
+      "metadata": {
+          ...
+      }
+    },
+    ...
+  ]
+}
+

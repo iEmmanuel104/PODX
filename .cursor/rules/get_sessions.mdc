@@ -1,0 +1,44 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Server-SDK
+API Functions
+getSessions()
+Get Sessions
+getSessions() returns all the meetings for a given roomId. By passing roomId you can get list of meetings along with their start and end time.
+
+sessionId and roomId are different, one roomId can have multiple sessions i.e. multiple sessionIds.
+
+import { API } from '@huddle01/server-sdk/api';
+ 
+const sessionList = async () => {
+  const api = new API({
+    apiKey: process.env.API_KEY!,
+  });
+ 
+  const sessionList = await api.getRoomSessions({
+    roomId: 'YOUR_ROOM_ID',
+  });
+ 
+  return sessionList;
+};
+
+Returns
+getSessions() returns a list of sessions with following fields.
+
+Name	Type	Description
+sessionId	string	Your meeting ID
+startTime	number	Start time of the meeting in epoch timestamp format
+endTime	number	End time of the meeting in epoch timestamp format
+{
+    "sessions": [
+        {
+            "sessionId": "YOUR_SESSION_ID",
+            "startTime": 1707929199649, // epoch timestamp
+            "endTime": 1707933488746 // epoch timestamp
+        }
+    ]
+}
+

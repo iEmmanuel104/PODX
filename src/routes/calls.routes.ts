@@ -1,3 +1,7 @@
+/**
+ * Routes for managing video calls using Huddle01 API integration
+ * Provides endpoints for creating, retrieving, and managing call sessions
+ */
 import express, { Router } from 'express';
 import multer from 'multer';
 import CallsController from '../controllers/calls.controller';
@@ -16,35 +20,22 @@ const upload = multer({
         } else {
             cb(new Error('Only image files are allowed'));
         }
-    }
+    },
 });
 
-router.post('/schedule', basicAuth(), AuthenticatedController(CallsController.scheduleCall));
-
-router.get('/scheduled', basicAuth(), AuthenticatedController(CallsController.getUserScheduledCalls));
-
-router.get('/info/:sessionId', basicAuth(), AuthenticatedController(CallsController.getCall));
-
-router.delete('/scheduled/:sessionId', basicAuth(), AuthenticatedController(CallsController.deleteScheduledCall));
-
-// Stream call management routes
-
+// Create a new call room
 router.post('/create', basicAuth(), upload.single('image'), AuthenticatedController(CallsController.createCall));
 
-router.post('/get-or-create', basicAuth(), AuthenticatedController(CallsController.getOrCreateCall));
+// Get call information by session ID
+router.get('/info/:sessionId', basicAuth(), AuthenticatedController(CallsController.getCall));
 
-router.patch('/settings', basicAuth(), AuthenticatedController(CallsController.updateCallSettings));
-
-router.patch('/members', basicAuth(), AuthenticatedController(CallsController.updateCallMembers));
-
-router.post('/end', basicAuth(), AuthenticatedController(CallsController.endCall));
-
-// Call information routes
-
+// Get call statistics
 router.get('/stats', CallsController.getCallStats);
 
-router.get('/detailed-stats', CallsController.getDetailedCallStats);
+// Get live participants in a meeting
+router.get('/:roomId/live-participants', CallsController.getLiveParticipants);
 
-router.post('/members', CallsController.queryCallMembers);
+// Generate access token for a call
+router.post('/token', basicAuth(), AuthenticatedController(CallsController.generateToken));
 
 export default router;
