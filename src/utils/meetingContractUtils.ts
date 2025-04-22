@@ -60,7 +60,7 @@ const getClients = async () => {
         // Pads the preVerificationGas to ensure UserOperation lands onchain
         account.userOperation = {
             estimateGas: async (userOperation) => {
-                // @ts-ignore - This matches the official example
+                // @ts-expect-error - This matches the official example
                 const estimate = await bundlerClient.estimateUserOperationGas(userOperation);
                 // adjust preVerification upward
                 estimate.preVerificationGas = estimate.preVerificationGas * 2n;

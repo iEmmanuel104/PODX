@@ -8,7 +8,7 @@ import tipRoutes from './tip.routes';
 // import poapRoutes from './poap.routes';
 import healthRouter from './health.routes';
 
-const router = Router();
+const router: Router = Router();
 
 router
     .use('/calls', callRoutes)

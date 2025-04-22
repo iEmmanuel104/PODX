@@ -1,5 +1,5 @@
 import 'express-async-errors';
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response, NextFunction, Express } from 'express';
 import Middlewares from './middlewares/errorHandlers';
 import cors from 'cors';
 import expressWinston from 'express-winston';
@@ -14,7 +14,8 @@ import { specs, swaggerUi } from './utils/swagger';
 // import { poapManagementService } from './services/poap_management_service';
 // import corsOptions from './utils/cors';
 
-const app = express();
+const app: Express = express();
+
 app.use(
     expressWinston.logger({
         winstonInstance: logger,

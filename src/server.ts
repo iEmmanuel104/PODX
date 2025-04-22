@@ -19,6 +19,7 @@ async function startServer(): Promise<void> {
         const port = parseInt(process.env.PORT || '8054');
 
         server.listen(port, () => {
+            logger.info('Running server');
             logger.info(`Server is running on Port ${port}`);
             
             // Log Swagger documentation URL
