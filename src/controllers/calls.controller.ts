@@ -139,7 +139,7 @@ export default class CallsController {
             } catch (participantsError) {
                 // Silently handle the error when nobody is in the room yet
                 // This catches "No ongoing session found for the room and project"
-                logger.debug(`No active participants in room ${sessionId}`);
+                logger.info(`No active participants in room ${sessionId}`);
             }
 
             // Find the host from the members array
@@ -499,7 +499,7 @@ export default class CallsController {
             } catch (error) {
                 // Silently handle the "No ongoing session" error
                 // This is not an actual error but a normal state when nobody is in the room
-                logger.debug(`No active participants in room ${roomId}`);
+                logger.info(`No active participants in room ${roomId}`);
             }
 
             // Always return a 200 success response with participants (empty array if none)

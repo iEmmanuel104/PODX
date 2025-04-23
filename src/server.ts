@@ -27,9 +27,9 @@ async function startServer(): Promise<void> {
                 ? 'https://api.podx.fun' 
                 : `http://localhost:${port}`;
             
-            logger.debug('\n📚 API Documentation:');
-            console.debug(`${baseUrl}/api-docs - Swagger UI`);
-            console.debug(`${baseUrl}/api/v0 - API Base URL\n`);
+            logger.info('\n📚 API Documentation:');
+            console.info(`${baseUrl}/api-docs - Swagger UI`);
+            console.info(`${baseUrl}/api/v0 - API Base URL\n`);
             
             logger.info(`Swagger documentation is available at ${baseUrl}/api-docs`);
         });

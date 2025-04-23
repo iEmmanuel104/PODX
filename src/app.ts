@@ -41,7 +41,7 @@ app.use(cookieParser());
 app.use((req: Request, res: Response, next: NextFunction) => {
     logger.warn(`Incoming request: ${req.method} ${req.path} ${req.originalUrl} from ${req.ip} at ${new Date().toISOString()}`);
     const fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
-    logger.debug('Full Requested URL:', fullUrl);
+    logger.info('Full Requested URL:', fullUrl);
     next();
 });
 
