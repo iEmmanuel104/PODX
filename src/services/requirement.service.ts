@@ -1,5 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Call } from '../models/Mongodb/call.model';
-import { User } from '../models/Mongodb/user.model';
 import { BadRequestError } from '../utils/customErrors';
 import { logger } from '../utils/logger';
 import { Types } from 'mongoose';
@@ -129,7 +129,7 @@ export default class RequirementService {
                     type: event.type as 'joined' | 'left',
                     timestamp: event.timestamp,
                     duration: event.duration,
-                    walletAddress: event.walletAddress
+                    walletAddress: event.walletAddress,
                 };
                 
                 acc[userId].push(typedEvent);
@@ -142,7 +142,7 @@ export default class RequirementService {
                 const timeSpent = this.calculateParticipantDuration(userEvents, userId);
                 participantTimes.push({
                     userId,
-                    timeSpentMinutes: timeSpent
+                    timeSpentMinutes: timeSpent,
                 });
             }
         } else {
@@ -282,7 +282,7 @@ export default class RequirementService {
                                     type: event.type as 'joined' | 'left',
                                     timestamp: event.timestamp,
                                     duration: event.duration,
-                                    walletAddress: event.walletAddress
+                                    walletAddress: event.walletAddress,
                                 });
                             }
                         });

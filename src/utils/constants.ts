@@ -5,6 +5,10 @@ export const PORT = process.env.PORT;
 
 export const NODE_ENV = process.env.NODE_ENV as 'development' | 'production';
 
+export const ORIGIN = process.env.NODE_ENV === 'production' 
+    ? 'https://podx.fun' 
+    :  `http://localhost:${PORT}`;
+
 export const REDIS_CONNECTION_URL = process.env.REDIS_CONNECTION_URL as string;
 
 export const JWT_SECRET = process.env.JWT_SECRET as string;

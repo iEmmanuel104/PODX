@@ -67,6 +67,7 @@ export interface ICall extends Document {
     updatedAt: Date;
     custom?: {
         roomType?: string;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         tokenGateInfo?: any;
         durationRequirement?: DurationRequirement;
         events?: Array<{
@@ -113,7 +114,7 @@ const callSchema = new Schema<ICall>({
     tags: [{ type: String }],
     custom: {
         type: Schema.Types.Mixed,
-        default: {}
+        default: {},
     },
     ipfsUrl: { type: String }, // Store IPFS URL when an image is uploaded
 }, {

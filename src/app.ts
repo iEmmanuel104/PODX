@@ -11,6 +11,7 @@ import mongoSanitize from 'express-mongo-sanitize';
 import { getServerHealth } from './views/serverHealthCheck';
 import cookieParser from 'cookie-parser';
 import { specs, swaggerUi } from './utils/swagger';
+import { ORIGIN } from './utils/constants';
 // import { poapManagementService } from './services/poap_management_service';
 // import corsOptions from './utils/cors';
 
@@ -30,9 +31,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 // app.use(cors(corsOptions));
 app.use(cors({
-    origin: process.env.NODE_ENV === 'production' 
-        ? 'https://podx.fun' 
-        : 'http://localhost:3000',
+    origin: ORIGIN,
     credentials: true,
 }));
 app.use(morgan('dev'));
@@ -42,7 +41,7 @@ app.use(cookieParser());
 app.use((req: Request, res: Response, next: NextFunction) => {
     logger.warn(`Incoming request: ${req.method} ${req.path} ${req.originalUrl} from ${req.ip} at ${new Date().toISOString()}`);
     const fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
-    console.log('Full Requested URL:', fullUrl);
+    logger.debug('Full Requested URL:', fullUrl);
     next();
 });
 

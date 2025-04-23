@@ -7,7 +7,7 @@ import { redisClient } from './utils/redis';
 // Asynchronous function to start the server
 async function startServer(): Promise<void> {
     try {
-        await redisClient.on('connect', () => {
+        redisClient.on('connect', () => {
             logger.info('Connection to REDIS database successful');
         });
 
@@ -27,14 +27,14 @@ async function startServer(): Promise<void> {
                 ? 'https://api.podx.fun' 
                 : `http://localhost:${port}`;
             
-            console.log('\n📚 API Documentation:');
-            console.log(`${baseUrl}/api-docs - Swagger UI`);
-            console.log(`${baseUrl}/api/v0 - API Base URL\n`);
+            logger.debug('\n📚 API Documentation:');
+            console.debug(`${baseUrl}/api-docs - Swagger UI`);
+            console.debug(`${baseUrl}/api/v0 - API Base URL\n`);
             
             logger.info(`Swagger documentation is available at ${baseUrl}/api-docs`);
         });
     } catch (err) {
-        console.log(err);
+        // console.log(err);
         logger.error(err);
 
         // Clean up Redis connection

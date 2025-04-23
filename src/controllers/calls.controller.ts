@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // controllers/calls.controller.ts
 /**
  * Controller for managing video calls using Huddle01 API integration
  * Provides endpoints for creating, retrieving, and managing call sessions
  */
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { redisClient } from '../utils/redis';
 import { BadRequestError } from '../utils/customErrors';
 import { AuthenticatedRequest } from '../middlewares/authMiddleware';
@@ -11,39 +12,37 @@ import { Call } from '../models/Mongodb/call.model';
 import { logger } from '../utils/logger';
 import { validateDurationRequirement } from '../utils/validation';
 import { PinataService } from '../services/pinata.service';
-import { NFTMetadataInput } from '../services/pinata.service';
 import { Huddle01Service } from '../services/huddle01.service';
-import { CallService } from '../services/call.service';
-import { Types, PopulatedDoc, Document } from 'mongoose';
+import { Types } from 'mongoose';
 import generateCallToken, { TokenPermissions, ValidRole } from '../utils/generateCallToken';
 
 // Extend the IUser interface to include isAdmin property
-interface ExtendedUser {
-    isAdmin?: boolean;
-}
+// interface ExtendedUser {
+//     isAdmin?: boolean;
+// }
 
 // Extend the AuthenticatedRequest to use our extended user
-interface AdminAuthenticatedRequest extends AuthenticatedRequest {
-    user: AuthenticatedRequest['user'] & ExtendedUser;
-}
+// interface AdminAuthenticatedRequest extends AuthenticatedRequest {
+//     user: AuthenticatedRequest['user'] & ExtendedUser;
+// }
 
 // Add this interface near the top of the file with other interfaces
-interface CallData {
-    roomId: string;
-    title: string;
-    description: string;
-    type: string;
-    hostWalletAddress: string;
-    createdById: string;
-    status: string;
-    members: Array<{ userId: string; role: string }>;
-    tokenGating: {
-        enabled: boolean;
-        type?: string;
-        addresses?: string[];
-    };
-    ipfsUrl?: string;
-}
+// interface CallData {
+//     roomId: string;
+//     title: string;
+//     description: string;
+//     type: string;
+//     hostWalletAddress: string;
+//     createdById: string;
+//     status: string;
+//     members: Array<{ userId: string; role: string }>;
+//     tokenGating: {
+//         enabled: boolean;
+//         type?: string;
+//         addresses?: string[];
+//     };
+//     ipfsUrl?: string;
+// }
 
 // Add this interface near the top of the file with other interfaces
 interface CallCreateData {
@@ -80,28 +79,28 @@ interface IUser {
     walletAddress: string;
 }
 
-interface IMember {
-    userId: PopulatedDoc<Document<unknown, any, IUser> & IUser>;
-    role: string;
-}
+// interface IMember {
+//     userId: PopulatedDoc<Document<unknown, any, IUser> & IUser>;
+//     role: string;
+// }
 
-interface IPopulatedCall extends Document {
-    roomId: string;
-    title: string;
-    description: string;
-    type: string;
-    status: string;
-    members: IMember[];
-    tokenGating: {
-        enabled: boolean;
-        type?: string;
-        addresses?: string[];
-    };
-    ipfsUrl?: string;
-    createdAt: Date;
-    isActive?: boolean;
-    isPrivate?: boolean;
-}
+// interface IPopulatedCall extends Document {
+//     roomId: string;
+//     title: string;
+//     description: string;
+//     type: string;
+//     status: string;
+//     members: IMember[];
+//     tokenGating: {
+//         enabled: boolean;
+//         type?: string;
+//         addresses?: string[];
+//     };
+//     ipfsUrl?: string;
+//     createdAt: Date;
+//     isActive?: boolean;
+//     isPrivate?: boolean;
+// }
 
 /**
  * CallsController manages all video/audio call operations using Huddle01 API
@@ -115,7 +114,7 @@ export default class CallsController {
      * @param req Request containing sessionId parameter
      * @param res Response object
      */
-    static async getCall(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    static async getCall(req: AuthenticatedRequest, res: Response): Promise<void> {
         try {
             const { sessionId } = req.params;
 
@@ -158,7 +157,7 @@ export default class CallsController {
                     type: call.type,
                     host: hostData ? {
                         walletAddress: hostData.walletAddress || '',
-                        username: hostData.username || ''
+                        username: hostData.username || '',
                     } : null,
                     status: call.status,
                     isActive: call.isActive !== false,
@@ -166,18 +165,18 @@ export default class CallsController {
                     tokenGating: {
                         enabled: call.tokenGating?.enabled || false,
                         type: call.tokenGating?.type || '',
-                        allowedWallets: call.tokenGating?.addresses || []
+                        allowedWallets: call.tokenGating?.addresses || [],
                     },
                     participants: participants,
                     resources: {
-                        ipfs: call.ipfsUrl || ''
+                        ipfs: call.ipfsUrl || '',
                     },
                     isScheduled: call.isScheduled,
                     scheduledTime: call.isScheduled ? call.scheduledTime?.toISOString() : undefined,
                     timestamps: {
-                        createdAt: call.createdAt
-                    }
-                }
+                        createdAt: call.createdAt,
+                    },
+                },
             };
 
             res.status(200).json(formattedResponse);
@@ -186,13 +185,13 @@ export default class CallsController {
             if (error instanceof BadRequestError) {
                 res.status(400).json({
                     status: 'error',
-                    message: error.message
+                    message: error.message,
                 });
                 return;
             }
             res.status(500).json({
                 status: 'error',
-                message: 'Failed to retrieve call details'
+                message: 'Failed to retrieve call details',
             });
         }
     }
@@ -204,7 +203,7 @@ export default class CallsController {
      * @param req Request with title, description, type, and optional token gating parameters
      * @param res Response object
      */
-    static async createCall(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    static async createCall(req: AuthenticatedRequest, res: Response): Promise<void> {
         try {
             const { title, description, type, tokenGatingAddresses, tokenGatingType, durationRequirement, isScheduled, scheduledTime } = req.body;
             if (!title || !type || !['audio', 'video'].includes(type)) {
@@ -223,7 +222,7 @@ export default class CallsController {
             if (durationRequirement) {
                 validateDurationRequirement({
                     value: durationRequirement,
-                    type: 'percentage'
+                    type: 'percentage',
                 });
             }
 
@@ -233,42 +232,42 @@ export default class CallsController {
                 type,
                 durationRequirement: durationRequirement ? {
                     value: durationRequirement,
-                    type: 'percentage'
+                    type: 'percentage',
                 } : undefined,
                 isScheduled: Boolean(isScheduled),
-                scheduledTime: isScheduled ? new Date(scheduledTime).toISOString() : undefined
+                scheduledTime: isScheduled ? new Date(scheduledTime).toISOString() : undefined,
             };
 
             // Prepare NFT attributes including schedule info
             const nftAttributes = [
                 {
                     trait_type: 'Type',
-                    value: type
+                    value: type,
                 },
                 {
                     trait_type: 'Creator',
-                    value: req.user.walletAddress
+                    value: req.user.walletAddress,
                 },
                 {
                     trait_type: 'Call Type',
-                    value: type === 'audio' ? 'Audio Call' : 'Video Call'
+                    value: type === 'audio' ? 'Audio Call' : 'Video Call',
                 },
                 // Add duration requirement if provided
                 ...(durationRequirement ? [{
                     trait_type: 'Duration Requirement',
-                    value: `${durationRequirement}%`
+                    value: `${durationRequirement}%`,
                 }] : []),
                 // Add schedule info if scheduled
                 ...(isScheduled ? [
                     {
                         trait_type: 'Scheduled',
-                        value: 'Yes'
+                        value: 'Yes',
                     },
                     {
                         trait_type: 'Scheduled Time',
-                        value: new Date(scheduledTime).toISOString()
-                    }
-                ] : [])
+                        value: new Date(scheduledTime).toISOString(),
+                    },
+                ] : []),
             ];
 
             // Prepare call details for NFT metadata
@@ -286,13 +285,13 @@ export default class CallsController {
                 },
                 durationRequirement: durationRequirement ? {
                     value: durationRequirement,
-                    type: 'percentage'
+                    type: 'percentage',
                 } : undefined,
                 isScheduled: Boolean(isScheduled),
                 scheduledTime: isScheduled ? new Date(scheduledTime).toISOString() : undefined,
                 createdAt: new Date().toISOString(),
                 platform: 'Huddle01',
-                version: '1.0'
+                version: '1.0',
             };
 
             // Run Huddle01 room creation and NFT metadata creation in parallel
@@ -309,8 +308,8 @@ export default class CallsController {
                     description: description || `Call: ${title}`,
                     image: req.file?.buffer || null,
                     attributes: nftAttributes,
-                    callDetails: nftCallDetails
-                })
+                    callDetails: nftCallDetails,
+                }),
             ]);
 
             // Check for errors in parallel operations
@@ -346,9 +345,9 @@ export default class CallsController {
                 custom: durationRequirement ? {
                     durationRequirement: {
                         value: durationRequirement,
-                        type: 'percentage'
-                    }
-                } : undefined
+                        type: 'percentage',
+                    },
+                } : undefined,
             };
 
             const call = await Call.create(callData);
@@ -366,7 +365,7 @@ export default class CallsController {
                     type: call.type,
                     host: {
                         walletAddress: req.user.walletAddress,
-                        username: req.user.username
+                        username: req.user.username,
                     },
                     status: call.status,
                     isActive: call.isActive,
@@ -374,21 +373,21 @@ export default class CallsController {
                     tokenGating: {
                         enabled: call.tokenGating.enabled,
                         type: call.tokenGating.type,
-                        allowedWallets: call.tokenGating.addresses || []
+                        allowedWallets: call.tokenGating.addresses || [],
                     },
                     resources: {
-                        ipfs: call.ipfsUrl
+                        ipfs: call.ipfsUrl,
                     },
                     durationRequirement: durationRequirement ? {
                         value: durationRequirement,
-                        type: 'percentage'
+                        type: 'percentage',
                     } : undefined,
                     isScheduled: call.isScheduled,
                     scheduledTime: call.isScheduled ? call.scheduledTime?.toISOString() : undefined,
                     timestamps: {
-                        createdAt: call.createdAt
-                    }
-                }
+                        createdAt: call.createdAt,
+                    },
+                },
             };
 
             // Send response immediately after DB operations
@@ -401,7 +400,7 @@ export default class CallsController {
                 res.status(400).json({
                     status: 'error',
                     error: true,
-                    message: error.message
+                    message: error.message,
                 });
                 return;
             }
@@ -410,7 +409,7 @@ export default class CallsController {
                 res.status(400).json({
                     status: 'error',
                     error: true,
-                    message: 'A call with this room ID already exists'
+                    message: 'A call with this room ID already exists',
                 });
                 return;
             }
@@ -418,7 +417,7 @@ export default class CallsController {
             res.status(500).json({
                 status: 'error',
                 error: true,
-                message: 'Failed to create call: ' + (error.message || 'Unknown error')
+                message: 'Failed to create call: ' + (error.message || 'Unknown error'),
             });
         }
     }
@@ -455,7 +454,7 @@ export default class CallsController {
                     totalSessions: metrics.totalSessions || 0,
                     totalDuration: metrics.totalDuration || 0,
                     recordingCount: metrics.recordingCount || 0,
-                    livestreamCount: metrics.livestreamCount || 0
+                    livestreamCount: metrics.livestreamCount || 0,
                 },
             };
             
@@ -469,7 +468,7 @@ export default class CallsController {
             logger.error('Error getting call stats:', error);
             res.status(500).json({
                 status: 'error',
-                message: 'Failed to retrieve call statistics'
+                message: 'Failed to retrieve call statistics',
             });
         }
     }
@@ -516,13 +515,13 @@ export default class CallsController {
             if (error instanceof BadRequestError) {
                 res.status(400).json({
                     status: 'error',
-                    message: error.message
+                    message: error.message,
                 });
                 return;
             }
             res.status(500).json({
                 status: 'error',
-                message: 'Failed to retrieve participants'
+                message: 'Failed to retrieve participants',
             });
         }
     }
@@ -532,7 +531,7 @@ export default class CallsController {
      * @param req Request with roomId, role, and optional permissions
      * @param res Response object
      */
-    static async generateToken(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    static async generateToken(req: AuthenticatedRequest, res: Response): Promise<void> {
         try {
             const { roomId, role = 'guest', permissions } = req.body;
             
@@ -582,7 +581,7 @@ export default class CallsController {
                 roomId,
                 role: role as ValidRole,
                 permissions: tokenPermissions,
-                metadata
+                metadata,
             });
             
             // Return success response
@@ -594,8 +593,8 @@ export default class CallsController {
                     roomId,
                     role,
                     metadata,
-                    expiresIn: 3600 // 1 hour expiration
-                }
+                    expiresIn: 3600, // 1 hour expiration
+                },
             });
         } catch (error: any) {
             logger.error('Error generating token:', error);
@@ -604,7 +603,7 @@ export default class CallsController {
                 res.status(400).json({
                     status: 'error',
                     error: true,
-                    message: error.message
+                    message: error.message,
                 });
                 return;
             }
@@ -612,7 +611,7 @@ export default class CallsController {
             res.status(500).json({
                 status: 'error',
                 error: true,
-                message: 'Failed to generate token: ' + (error.message || 'Unknown error')
+                message: 'Failed to generate token: ' + (error.message || 'Unknown error'),
             });
         }
     }
