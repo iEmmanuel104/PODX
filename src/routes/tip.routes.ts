@@ -121,17 +121,20 @@ router.post('/create', basicAuth(), AuthenticatedController(async (req, res) => 
         const senderUserId = req.user?.id;
 
         if (!callId || !recipientId || !amount || !senderUserId) {
-            return res.status(400).json({ error: 'Missing required fields' });
+            res.status(400).json({ error: 'Missing required fields' });
+            return;
         }
 
         if (senderUserId === recipientId) {
-            return res.status(400).json({ error: 'Cannot send tip to yourself' });
+            res.status(400).json({ error: 'Cannot send tip to yourself' });
+            return;
         }
 
         // Validate amount
         const numAmount = Number(amount);
         if (isNaN(numAmount) || numAmount <= 0) {
-            return res.status(400).json({ error: 'Invalid amount' });
+            res.status(400).json({ error: 'Invalid amount' });
+            return;
         }
 
         const tip = await TipService.createTip(
@@ -144,14 +147,14 @@ router.post('/create', basicAuth(), AuthenticatedController(async (req, res) => 
             new Date()
         );
 
-        return res.status(200).json({ 
+        res.status(200).json({ 
             success: true, 
             tip,
             message: 'Tip sent successfully',
         });
     } catch (error) {
         console.error('Error creating tip:', error);
-        return res.status(500).json({ 
+        res.status(500).json({ 
             error: 'Failed to process tip',
             message: error instanceof Error ? error.message : 'Unknown error',
         });
@@ -203,26 +206,31 @@ router.get('/user/:type', basicAuth(), AuthenticatedController(async (req, res) 
         const userId = req.user?.id;
         
         if (!userId) {
-            return res.status(401).json({ error: 'User not authenticated' });
+            res.status(401).json({ error: 'User not authenticated' });
+            return;
         }
 
         if (!['sent', 'received', 'all'].includes(type)) {
-            return res.status(400).json({ error: 'Invalid type parameter' });
+            res.status(400).json({ error: 'Invalid type parameter' });
+            return;
         }
 
         if (type === 'all') {
             const { sentTips, receivedTips } = await TipService.getUserTips(userId);
-            return res.status(200).json({ sentTips, receivedTips });
+            res.status(200).json({ sentTips, receivedTips });
+            return;
         } else {
             const tips = await TipService.getUserTips(userId, type as 'sent' | 'received');
-            return res.status(200).json({ tips });
+            res.status(200).json({ tips });
+            return;
         }
     } catch (error) {
         console.error('Error getting user tips:', error);
-        return res.status(500).json({ 
+        res.status(500).json({ 
             error: 'Failed to retrieve tips',
             message: error instanceof Error ? error.message : 'Unknown error',
         });
+        return;
     }
 }));
 
@@ -263,17 +271,20 @@ router.get('/call/:callId', async (req, res) => {
         const { callId } = req.params;
         
         if (!callId) {
-            return res.status(400).json({ error: 'CallId is required' });
+            res.status(400).json({ error: 'CallId is required' });
+            return;
         }
 
         const tips = await TipService.getTipsForCall(callId);
-        return res.status(200).json({ tips });
+        res.status(200).json({ tips });
+        return;
     } catch (error) {
         console.error('Error getting call tips:', error);
-        return res.status(500).json({ 
+        res.status(500).json({ 
             error: 'Failed to retrieve call tips',
             message: error instanceof Error ? error.message : 'Unknown error',
         });
+        return;
     }
 });
 
@@ -322,17 +333,20 @@ router.get('/stats/:userId', async (req, res) => {
         const { userId } = req.params;
         
         if (!userId) {
-            return res.status(400).json({ error: 'UserId is required' });
+            res.status(400).json({ error: 'UserId is required' });
+            return;
         }
 
         const stats = await TipService.getUserTipStats(userId);
-        return res.status(200).json(stats);
+        res.status(200).json(stats);
+        return;
     } catch (error) {
         console.error('Error getting user tip stats:', error);
-        return res.status(500).json({ 
+        res.status(500).json({ 
             error: 'Failed to retrieve tip statistics',
             message: error instanceof Error ? error.message : 'Unknown error',
         });
+        return;
     }
 });
 
