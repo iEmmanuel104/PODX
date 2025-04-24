@@ -22,24 +22,25 @@ This is the backend server for PodX, a real-time meeting and podcasting platform
 To run the server locally:
 
 1. Clone the repository
-2. Install dependencies:
+2. Install dependencies
 
-bash
-npm install
-
+  ```bash
+  npm install
+  ```
 
 3. Set up environment variables (see Configuration section)
 4. Start the development server:
 
-bash
-npm run dev
-
+```bash
+  docker compose up -d # If you are running your database via docker
+  npm run dev
+```
 
 For production:
 
-bash
+```bash
 npm run prod
-
+```
 
 ## Project Structure
 
@@ -98,6 +99,7 @@ The platform has been migrated from StreamIO to Huddle01 for video conferencing 
 4. **Access Tokens**: Access token generation is now handled with Huddle01's SDK
 
 To use the new Huddle01 integration, make sure to:
+
 - Set up `HUDDLE01_API_KEY` and `HUDDLE01_PROJECT_ID` in your environment variables
 - Use the new API endpoints for creating and joining meetings
 - Configure webhook endpoints on the Huddle01 dashboard to point to `/webhooks/huddle01`
@@ -105,7 +107,6 @@ To use the new Huddle01 integration, make sure to:
 ## Configuration
 
 Create a .env file in the root directory. Required variables include:
-
 
 PORT=8080
 MONGODB_URI=your_mongodb_connection_string
@@ -117,7 +118,6 @@ REDIS_URL=your_redis_url
 CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
 CLOUDINARY_API_KEY=your_cloudinary_api_key
 CLOUDINARY_API_SECRET=your_cloudinary_api_secret
-
 
 Adjust these variables according to your specific setup.
 
@@ -147,8 +147,8 @@ The PodX API comes with interactive documentation powered by Swagger UI. This al
 
 Once the server is running, you can access the API documentation at:
 
-- **Development**: http://localhost:8090/api-docs
-- **Production**: https://api.podx.fun/api-docs
+- **Development**: <http://localhost:8090/api-docs>
+- **Production**: <https://api.podx.fun/api-docs>
 
 ### Features
 
@@ -192,7 +192,6 @@ To build and run the Docker image:
 bash
 docker build -t podx-server .
 docker run -p 8080:8080 podx-server
-
 
 Make sure to set up the necessary environment variables when running the container.
 
