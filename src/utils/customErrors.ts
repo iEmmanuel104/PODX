@@ -70,3 +70,71 @@ export class JsonWebTokenError extends CustomAPIError {
         super(message, 401);
     }
 }
+
+// Generic error for all other errors
+export type GenericErrors = Record<string, unknown>;
+
+
+// MongoDB Error Types
+export interface ValidationErrorItem {
+    message: string;
+}
+
+export interface MongoDBValidationError {
+    name: "ValidationError";
+    errors: Record<string, ValidationErrorItem>;
+    code?: never;
+    keyValue?: never;
+    value?: never;
+}
+
+export interface MongoDBDuplicateError {
+    name: "DuplicateError";
+    code: number;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    keyValue: Record<string, any>;
+}
+
+export interface MongoDBCastError {
+    name: "CastError";
+    value: string;
+    code?: never;
+    keyValue?: never;
+    errors?: never;
+}
+
+// Sequelize Error Types
+export interface SequelizeValidationErrorItem {
+    message: string;
+}
+
+export interface SequelizeValidationError {
+    name: "SequelizeValidationError";
+    errors: Record<string, SequelizeValidationErrorItem>;
+}
+
+export interface SequelizeUniqueConstraintError {
+    name: "SequelizeUniqueConstraintError";
+    errors: Record<string, SequelizeValidationErrorItem>;
+}
+
+export interface SequelizeDatabaseError {
+    name: "SequelizeDatabaseError";
+    message: string;
+}
+
+export interface SequelizeForeignKeyConstraintError {
+    name: "SequelizeForeignKeyConstraintError";
+    parent: {
+        detail: string;
+    };
+}
+
+// Union type for all possible Sequelize Errors
+export type SequelizeError =
+    | SequelizeValidationError
+    | SequelizeUniqueConstraintError
+    | SequelizeDatabaseError
+    | SequelizeForeignKeyConstraintError;
+
+export type MongoError = MongoDBValidationError | MongoDBDuplicateError | MongoDBCastError;

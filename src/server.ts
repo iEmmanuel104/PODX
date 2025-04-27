@@ -33,6 +33,14 @@ async function startServer(): Promise<void> {
             
             logger.info(`Swagger documentation is available at ${baseUrl}/api-docs`);
         });
+
+        process.on("SIGINT", () => {
+            logger.debug("Gracefully shutting down");
+            server.close(() => {
+                console.log("Closed all connections");
+                process.exit(0);
+            });
+        });
     } catch (err) {
         // console.log(err);
         logger.error(err);

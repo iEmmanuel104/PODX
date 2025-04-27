@@ -1,5 +1,5 @@
 import { Call, ICall } from '../models/Mongodb/call.model';
-import { User } from '../models/Mongodb/user.model';
+// import { User } from '../models/Mongodb/user.model';
 import { MeetingContractUtils } from '../utils/meetingContractUtils';
 import RequirementService from './requirement.service';
 import { logger } from '../utils/logger';

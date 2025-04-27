@@ -3,7 +3,7 @@ import UserService from '../services/user.service';
 import { BadRequestError } from '../utils/customErrors';
 import { AuthenticatedRequest } from '../middlewares/authMiddleware';
 import { AuthUtil } from '../utils/token';
-import { TipService } from '../services/tip.service';
+// import { TipService } from '../services/tip.service';
 
 export default class UserController {
 
@@ -68,7 +68,7 @@ export default class UserController {
             username: updatedUser.username,
             createdAt: updatedUser.createdAt,
             updatedAt: updatedUser.updatedAt,
-            id: updatedUser.id
+            id: updatedUser.id,
         };
 
         res.status(200).json({

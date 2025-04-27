@@ -1,8 +1,10 @@
-import express, { Router } from 'express';
-import { getServerHealth } from '../views/serverHealthCheck';
+import express, { Router } from "express";
+import ServerController from "../controllers/server.controller";
 
-const router: Router = express.Router();
+// Make sure that ServerController is correctly typed
+const serverRouter: Router = express.Router();
 
-router.get('/', getServerHealth);
+// Ensure getServerHealth is typed correctly as a RequestHandler
+serverRouter.get("/", ServerController.getServerHealth);
 
-export default router; 
+export default serverRouter;
