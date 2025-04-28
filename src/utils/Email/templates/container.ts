@@ -50,5 +50,4 @@ export const container = (content: string) => {
 </body>
 
 </html>`;
-
 };

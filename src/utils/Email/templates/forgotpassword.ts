@@ -1,4 +1,10 @@
-export const forgotPassword = ({ link, name }: { link: string, name: string }) => {
+export const forgotPassword = ({
+    link,
+    name,
+}: {
+    link: string;
+    name: string;
+}) => {
     return `
 <table style="width: 95%; max-width: 670px; margin: 20px auto; background: #fff; border-radius: 3px; text-align: center; box-shadow: 0 6px 18px 0 rgba(0,0,0,.06);" >
     <tr>

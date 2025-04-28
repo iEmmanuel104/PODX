@@ -11,7 +11,6 @@
 // router.get('/instructor-stats', AdminController.getInstructorStats);
 // router.get('/top-propertys', AdminController.getTopPropertys);
 
-
 // router.post('/create', adminAuth('admin'), AdminAuthenticatedController(AdminController.createAdmin));
 // router.get('/admins', adminAuth('admin'), AdminAuthenticatedController(AdminController.getAllAdmins));
 // router.get('/revenue-stats', adminAuth('admin'), AdminAuthenticatedController(AdminController.getRevenueStats));

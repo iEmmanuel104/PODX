@@ -1,5 +1,5 @@
-import { Schema, model, Document } from 'mongoose';
-import isEmail from 'validator/lib/isEmail';
+import { Schema, model, Document } from "mongoose";
+import isEmail from "validator/lib/isEmail";
 
 export interface IAdmin extends Document {
     name: string;
@@ -9,20 +9,23 @@ export interface IAdmin extends Document {
     updatedAt: Date;
 }
 
-const mongooseAdminSchema = new Schema<IAdmin>({
-    name: { type: String, required: true },
-    email: {
-        type: String,
-        required: true,
-        unique: true,
-        validate: [isEmail, 'Invalid email address'],
+const mongooseAdminSchema = new Schema<IAdmin>(
+    {
+        name: { type: String, required: true },
+        email: {
+            type: String,
+            required: true,
+            unique: true,
+            validate: [isEmail, "Invalid email address"],
+        },
+        isSuperAdmin: { type: Boolean, default: false },
     },
-    isSuperAdmin: { type: Boolean, default: false },
-}, {
-    timestamps: true,
-});
+    {
+        timestamps: true,
+    },
+);
 
-mongooseAdminSchema.set('toJSON', {
+mongooseAdminSchema.set("toJSON", {
     virtuals: true,
     transform: (_, ret) => {
         ret.id = ret._id.toHexString();
@@ -32,4 +35,4 @@ mongooseAdminSchema.set('toJSON', {
     },
 });
 
-export const Admin = model<IAdmin>('Admin', mongooseAdminSchema);
+export const Admin = model<IAdmin>("Admin", mongooseAdminSchema);

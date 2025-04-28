@@ -1,5 +1,5 @@
 // interface.ts
-import { BaseContract, ContractTransactionResponse } from 'ethers';
+import { BaseContract, ContractTransactionResponse } from "ethers";
 
 export interface ICreateSessionParams {
     sessionName: string;
@@ -24,7 +24,7 @@ export interface POAPContract extends BaseContract {
         (
             sessionName: string,
             tokenURI: string,
-            sessionId: number
+            sessionId: number,
         ): Promise<ContractTransactionResponse>;
     };
 
@@ -32,7 +32,7 @@ export interface POAPContract extends BaseContract {
     batchMintTokens: {
         (
             recipients: string[],
-            sessionId: number
+            sessionId: number,
         ): Promise<ContractTransactionResponse>;
     };
 

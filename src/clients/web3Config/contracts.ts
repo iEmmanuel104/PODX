@@ -1,10 +1,10 @@
 /* eslint-disable no-undef */
 // contracts.ts
-import { ethers } from 'ethers';
-import { POAPContract } from './interface';
-import { POAP_ABI, POAP_CONTRACT_ADDRESS, RPC_URL } from './abis';
-import { logger } from '../../utils/logger';
-import { BadRequestError } from '../../utils/customErrors';
+import { ethers } from "ethers";
+import { POAPContract } from "./interface";
+import { POAP_ABI, POAP_CONTRACT_ADDRESS, RPC_URL } from "./abis";
+import { logger } from "../../utils/logger";
+import { BadRequestError } from "../../utils/customErrors";
 
 class ContractsManager {
     private static provider: ethers.JsonRpcProvider | null = null;
@@ -26,30 +26,36 @@ class ContractsManager {
 
         for (let i = 0; i < maxRetries; i++) {
             try {
-                this.provider = new ethers.JsonRpcProvider(RPC_URL, {
-                    chainId: 84532,
-                    name: 'base-sepolia',
-                },
-                {
-                    // staticNetwork: true,
-                    polling: true,
-                    // pollingInterval: 4000, // 4 seconds
-                    batchMaxCount: 1, // Limit concurrent requests
-                    // cacheTimeout: 2000, // 2 seconds cache
-                }
+                this.provider = new ethers.JsonRpcProvider(
+                    RPC_URL,
+                    {
+                        chainId: 84532,
+                        name: "base-sepolia",
+                    },
+                    {
+                        // staticNetwork: true,
+                        polling: true,
+                        // pollingInterval: 4000, // 4 seconds
+                        batchMaxCount: 1, // Limit concurrent requests
+                        // cacheTimeout: 2000, // 2 seconds cache
+                    },
                 );
-
 
                 // Test connection
                 const network = await this.provider.getNetwork();
                 this.lastBlockNumber = await this.provider.getBlockNumber();
-                logger.info('Connected to network:', network.name, 'at block:', this.lastBlockNumber);
+                logger.info(
+                    "Connected to network:",
+                    network.name,
+                    "at block:",
+                    this.lastBlockNumber,
+                );
 
                 // Initialize POAP contrac
                 this.poapContract = new ethers.Contract(
                     POAP_CONTRACT_ADDRESS,
                     POAP_ABI,
-                    this.provider
+                    this.provider,
                 ) as unknown as POAPContract;
 
                 // Start connection monitoring
@@ -57,15 +63,21 @@ class ContractsManager {
 
                 this.isInitialized = true;
                 this.consecutiveFailures = 0;
-                logger.info('Contracts manager initialized successfully');
+                logger.info("Contracts manager initialized successfully");
                 return;
-
             } catch (error) {
-                logger.error(`Provider initialization attempt ${i + 1} failed:`, error);
+                logger.error(
+                    `Provider initialization attempt ${i + 1} failed:`,
+                    error,
+                );
                 if (i < maxRetries - 1) {
-                    await new Promise(resolve => setTimeout(resolve, retryDelay));
+                    await new Promise((resolve) =>
+                        setTimeout(resolve, retryDelay),
+                    );
                 } else {
-                    throw new BadRequestError('Failed to initialize provider after maximum retries');
+                    throw new BadRequestError(
+                        "Failed to initialize provider after maximum retries",
+                    );
                 }
             }
         }
@@ -75,7 +87,8 @@ class ContractsManager {
         try {
             if (!this.provider) return false;
             const currentBlockNumber = await this.provider.getBlockNumber();
-            const isProgressingChain = currentBlockNumber >= this.lastBlockNumber;
+            const isProgressingChain =
+                currentBlockNumber >= this.lastBlockNumber;
             this.lastBlockNumber = currentBlockNumber;
             return isProgressingChain;
         } catch {
@@ -90,21 +103,26 @@ class ContractsManager {
 
         this.connectionCheckInterval = setInterval(async () => {
             try {
-                if (!await this.isConnectionValid()) {
+                if (!(await this.isConnectionValid())) {
                     this.consecutiveFailures++;
-                    logger.info(`Connection check failed. Consecutive failures: ${this.consecutiveFailures}`);
+                    logger.info(
+                        `Connection check failed. Consecutive failures: ${this.consecutiveFailures}`,
+                    );
 
-                    if (this.consecutiveFailures >= this.MAX_CONSECUTIVE_FAILURES) {
+                    if (
+                        this.consecutiveFailures >=
+                        this.MAX_CONSECUTIVE_FAILURES
+                    ) {
                         void this.handleConnectionError();
                     }
                 } else {
                     if (this.consecutiveFailures > 0) {
-                        logger.info('Connection restored');
+                        logger.info("Connection restored");
                     }
                     this.consecutiveFailures = 0;
                 }
             } catch (error) {
-                logger.error('Connection monitoring error:', error);
+                logger.error("Connection monitoring error:", error);
                 this.consecutiveFailures++;
                 if (this.consecutiveFailures >= this.MAX_CONSECUTIVE_FAILURES) {
                     void this.handleConnectionError();
@@ -116,7 +134,7 @@ class ContractsManager {
     private static async handleConnectionError() {
         if (this.reconnectTimeout) return;
 
-        logger.info('Connection unstable - initiating reconnection...');
+        logger.info("Connection unstable - initiating reconnection...");
 
         this.reconnectTimeout = setTimeout(async () => {
             try {
@@ -124,18 +142,20 @@ class ContractsManager {
                 await this.initialize();
                 this.reconnectTimeout = null;
             } catch (error) {
-                logger.error('Reconnection failed:', error);
+                logger.error("Reconnection failed:", error);
                 this.reconnectTimeout = null;
                 this.consecutiveFailures = 0;
             }
         }, 5000);
     }
 
-    static getContractInstance(signerOrProvider?: ethers.Signer | ethers.Provider): POAPContract {
+    static getContractInstance(
+        signerOrProvider?: ethers.Signer | ethers.Provider,
+    ): POAPContract {
         this.ensureInitialized();
         const contract = this.poapContract;
         if (!contract) {
-            throw new BadRequestError('POAP contract not initialized');
+            throw new BadRequestError("POAP contract not initialized");
         }
         if (signerOrProvider) {
             return contract.connect(signerOrProvider) as POAPContract;
@@ -146,14 +166,16 @@ class ContractsManager {
     static async getWalletSigner(privateKey: string): Promise<ethers.Wallet> {
         this.ensureInitialized();
         if (!this.provider) {
-            throw new BadRequestError('Provider not initialized');
+            throw new BadRequestError("Provider not initialized");
         }
         return new ethers.Wallet(privateKey, this.provider);
     }
 
     private static ensureInitialized() {
         if (!this.isInitialized) {
-            throw new BadRequestError('ContractsManager not initialized. Call initialize() first.');
+            throw new BadRequestError(
+                "ContractsManager not initialized. Call initialize() first.",
+            );
         }
     }
 
@@ -174,12 +196,15 @@ class ContractsManager {
         this.consecutiveFailures = 0;
 
         if (shouldLog) {
-            logger.info('ContractsManager cleaned up');
+            logger.info("ContractsManager cleaned up");
         }
     }
 }
 
-export const initializeContracts = ContractsManager.initialize.bind(ContractsManager);
-export const getContractInstance = ContractsManager.getContractInstance.bind(ContractsManager);
-export const getWalletSigner = ContractsManager.getWalletSigner.bind(ContractsManager);
+export const initializeContracts =
+    ContractsManager.initialize.bind(ContractsManager);
+export const getContractInstance =
+    ContractsManager.getContractInstance.bind(ContractsManager);
+export const getWalletSigner =
+    ContractsManager.getWalletSigner.bind(ContractsManager);
 export const cleanup = ContractsManager.cleanup.bind(ContractsManager);

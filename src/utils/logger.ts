@@ -1,10 +1,9 @@
-import winston, { format } from 'winston';
+import winston, { format } from "winston";
 // import { LoggingWinston } from '@google-cloud/logging-winston';
 // import { PROJECT_ID, NODE_ENV } from '../utils/constants';
-import * as util from 'util';
+import * as util from "util";
 
-
-declare module 'winston' {
+declare module "winston" {
     interface Logger {
         payload: winston.LeveledLogMethod;
         authorized: winston.LeveledLogMethod;
@@ -19,17 +18,17 @@ const logFormat = printf((info) => {
     let logMessage = `${info.level}:`;
 
     if (info.message) {
-        if (typeof info.message === 'object') {
+        if (typeof info.message === "object") {
             logMessage += ` ${util.inspect(info.message, { depth: null, colors: true })}`;
         } else {
             logMessage += ` ${info.message}`;
         }
     }
 
-    if (info[Symbol.for('splat')]) {
+    if (info[Symbol.for("splat")]) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (info[Symbol.for('splat')] as any).forEach((item: unknown) => {
-            if (typeof item === 'object') {
+        (info[Symbol.for("splat")] as any).forEach((item: unknown) => {
+            if (typeof item === "object") {
                 logMessage += ` ${util.inspect(item, { depth: null, colors: true })}`;
             } else {
                 logMessage += ` ${item}`;
@@ -52,14 +51,14 @@ const customLevels = {
 };
 
 const colorScheme = {
-    info: 'cyan',
-    error: 'red',
-    warn: 'yellow',
-    payload: 'blue',
-    authorized: 'green',
-    downloading: 'magenta',
-    uploading: 'cyan',
-    tokenType: 'yellow',
+    info: "cyan",
+    error: "red",
+    warn: "yellow",
+    payload: "blue",
+    authorized: "green",
+    downloading: "magenta",
+    uploading: "cyan",
+    tokenType: "yellow",
 };
 
 // let loggingWinston: LoggingWinston | undefined;
@@ -73,23 +72,20 @@ const colorScheme = {
 const logger = winston.createLogger({
     levels: customLevels,
     transports: [
-        new winston.transports.Console({ // Log to console in production
-            level: 'info',
+        new winston.transports.Console({
+            // Log to console in production
+            level: "info",
             format: winston.format.combine(
                 winston.format.colorize({
                     colors: colorScheme,
                 }),
                 winston.format.simple(),
-                logFormat
+                logFormat,
             ),
         }),
         // ...(loggingWinston ? [loggingWinston] : []), // Log to Google Cloud Logging in production
     ],
-    format: format.combine(
-        format.json(),
-        format.prettyPrint()
-    ),
+    format: format.combine(format.json(), format.prettyPrint()),
 });
-
 
 export { logger };

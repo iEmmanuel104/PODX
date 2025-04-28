@@ -5,9 +5,9 @@
  */
 
 // Import all swagger documentation files to ensure they are processed
-import './users.swagger';
-import './calls.swagger';
-import './webhook.swagger';
+import "./users.swagger";
+import "./calls.swagger";
+import "./webhook.swagger";
 
 // Export a simple flag that can be used to check if swagger is loaded
-export const swaggerDocsLoaded = true; 
+export const swaggerDocsLoaded = true;

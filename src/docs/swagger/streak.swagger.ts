@@ -142,4 +142,4 @@
  *                     streaksUpdated:
  *                       type: number
  *                       example: 85
- */ 
+ */

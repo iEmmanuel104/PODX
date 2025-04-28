@@ -1,5 +1,5 @@
 // models/Mongodb/tip.model.ts
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document } from "mongoose";
 
 export interface ITip extends Document {
     callId: mongoose.Types.ObjectId;
@@ -9,54 +9,57 @@ export interface ITip extends Document {
     amount: string;
     currency: string;
     timestamp: Date;
-    status: 'pending' | 'completed' | 'failed';
+    status: "pending" | "completed" | "failed";
     transactionHash?: string;
 }
 
-const TipSchema: Schema = new Schema({
-    callId: {
-        type: Schema.Types.ObjectId,
-        ref: 'Call',
-        required: true,
+const TipSchema: Schema = new Schema(
+    {
+        callId: {
+            type: Schema.Types.ObjectId,
+            ref: "Call",
+            required: true,
+        },
+        sessionId: {
+            type: String,
+            required: false,
+        },
+        fromUserId: {
+            type: Schema.Types.ObjectId,
+            ref: "User",
+            required: true,
+        },
+        toUserId: {
+            type: Schema.Types.ObjectId,
+            ref: "User",
+            required: true,
+        },
+        amount: {
+            type: String,
+            required: true,
+        },
+        currency: {
+            type: String,
+            default: "USDC",
+            required: true,
+        },
+        timestamp: {
+            type: Date,
+            default: Date.now,
+        },
+        status: {
+            type: String,
+            enum: ["pending", "completed", "failed"],
+            default: "pending",
+        },
+        transactionHash: {
+            type: String,
+        },
     },
-    sessionId: {
-        type: String,
-        required: false,
+    {
+        timestamps: true,
     },
-    fromUserId: {
-        type: Schema.Types.ObjectId,
-        ref: 'User',
-        required: true,
-    },
-    toUserId: {
-        type: Schema.Types.ObjectId,
-        ref: 'User',
-        required: true,
-    },
-    amount: {
-        type: String,
-        required: true,
-    },
-    currency: {
-        type: String,
-        default: 'USDC',
-        required: true,
-    },
-    timestamp: {
-        type: Date,
-        default: Date.now,
-    },
-    status: {
-        type: String,
-        enum: ['pending', 'completed', 'failed'],
-        default: 'pending',
-    },
-    transactionHash: {
-        type: String,
-    },
-}, {
-    timestamps: true,
-});
+);
 
 // Indexes
 TipSchema.index({ callId: 1 });
@@ -65,4 +68,4 @@ TipSchema.index({ toUserId: 1 });
 TipSchema.index({ timestamp: -1 });
 TipSchema.index({ status: 1 });
 
-export const Tip = mongoose.model<ITip>('Tip', TipSchema);
+export const Tip = mongoose.model<ITip>("Tip", TipSchema);

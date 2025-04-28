@@ -53,4 +53,4 @@
  *                 error:
  *                   type: string
  *                   example: "Database connection failed"
- */ 
+ */

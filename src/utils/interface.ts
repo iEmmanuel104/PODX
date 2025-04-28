@@ -1,66 +1,73 @@
-import { IUser } from '../models/Mongodb/user.model';
-import { Types } from 'mongoose';
+import { IUser } from "../models/Mongodb/user.model";
+import { Types } from "mongoose";
 
 export interface SaveTokenToCache {
-    key: string,
-    token: string,
-    expiry?: number
+    key: string;
+    token: string;
+    expiry?: number;
 }
 
-export type AuthToken = 'access' | 'refresh' | 'passwordreset' | 'emailverification' | 'setpassword' | 'adminlogin' | 'admin';
+export type AuthToken =
+    | "access"
+    | "refresh"
+    | "passwordreset"
+    | "emailverification"
+    | "setpassword"
+    | "adminlogin"
+    | "admin";
 
-export type ENCRYPTEDTOKEN = AuthToken | 'admin'
+export type ENCRYPTEDTOKEN = AuthToken | "admin";
 
-export type AWSUploadType = 'profile' | 'posts' | 'document' | 'other';
+export type AWSUploadType = "profile" | "posts" | "document" | "other";
 
 export interface GenerateTokenData {
-    type: AuthToken,
-    user: DecodedUser,
+    type: AuthToken;
+    user: DecodedUser;
 }
 export interface GenerateAdminTokenData {
-    type: AuthToken,
-    identifier: string,
+    type: AuthToken;
+    identifier: string;
 }
 
 export interface GenerateCodeData {
-    type: AuthToken,
-    identifier: string,
-    expiry: number,
+    type: AuthToken;
+    identifier: string;
+    expiry: number;
 }
 
 export interface CompareTokenData {
-    tokenType: AuthToken,
-    user: IUser & { id: string },
-    token: string
+    tokenType: AuthToken;
+    user: IUser & { id: string };
+    token: string;
 }
 export interface CompareAdminTokenData {
-    tokenType: AuthToken,
-    identifier: string,
-    token: string
+    tokenType: AuthToken;
+    identifier: string;
+    token: string;
 }
 
 export interface DeleteToken {
-    tokenType: AuthToken,
-    tokenClass: 'token' | 'code',
-    user: IUser & { id: string },
+    tokenType: AuthToken;
+    tokenClass: "token" | "code";
+    user: IUser & { id: string };
 }
 
-export type DecodedUser = { id: string, walletAddress: string };
+export type DecodedUser = { id: string; walletAddress: string };
 
 export interface DecodedTokenData {
-    user: DecodedUser,
-    token: string,
-    tokenType: AuthToken
-    authKey?: string
-    timestamp: number
-    nonce: string
-    walletHash: string
+    user: DecodedUser;
+    token: string;
+    tokenType: AuthToken;
+    authKey?: string;
+    timestamp: number;
+    nonce: string;
+    walletHash: string;
 }
 
 export interface AWSKeyData {
-    id: string,
-    fileName: string,
-    type: AWSUploadType,
+    id: string;
+    fileName: string;
+    type: AWSUploadType;
 }
 export interface UserResponse {
     id: string;
@@ -106,7 +113,7 @@ export interface CallResponse {
     custom?: {
         durationRequirement?: {
             value: number;
-            type: 'absolute' | 'percentage';
+            type: "absolute" | "percentage";
         };
         [key: string]: unknown;
     };
@@ -150,18 +157,18 @@ export interface CustomEventPayload {
         type: string;
         amount: unknown;
         from: {
-            id: string
-            name: string
+            id: string;
+            name: string;
         };
         to: {
-            id: string
-            name: string
+            id: string;
+            name: string;
         };
         currency: string;
         timestamp: string;
         transactionHash?: string;
     };
-    type: string
+    type: string;
     user: UserResponse;
 }
 
@@ -190,7 +197,7 @@ interface UserBasicInfo {
 interface CallInfoPopulated {
     callId: string;
     type: string;
-    status: 'created' | 'live' | 'ended';
+    status: "created" | "live" | "ended";
     startTime?: Date;
     endTime?: Date;
     duration?: number;
@@ -200,13 +207,13 @@ interface CallInfoPopulated {
 
 interface PopulatedTip {
     _id: Types.ObjectId;
-    callId: string;  // The string callId
-    call: CallInfoPopulated;  // The populated call information
+    callId: string; // The string callId
+    call: CallInfoPopulated; // The populated call information
     fromUserId: UserBasicInfo;
     toUserId: UserBasicInfo;
     amount: string;
     timestamp: Date;
-    status: 'pending' | 'completed' | 'failed';
+    status: "pending" | "completed" | "failed";
     currency: string;
     transactionHash?: string;
 }
@@ -227,7 +234,7 @@ type TipQueryFilter = {
     fromUserId?: Types.ObjectId;
     toUserId?: Types.ObjectId;
     $or?: Array<{ fromUserId: Types.ObjectId } | { toUserId: Types.ObjectId }>;
-}
+};
 
 export {
     UserBasicInfo,

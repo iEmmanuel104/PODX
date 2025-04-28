@@ -217,4 +217,4 @@
  *           type: string
  *           description: URL of the processed recording (if available)
  *           example: "https://api.huddle01.com/recordings/rec-123.mp4"
- */ 
+ */

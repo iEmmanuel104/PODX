@@ -1,5 +1,5 @@
-import EmailTemplate from './templates';
-import { logger } from '../logger';
+import EmailTemplate from "./templates";
+import { logger } from "../logger";
 import {
     EMAIL_HOST_ADDRESS,
     OAUTH_CLIENT_ID,
@@ -8,14 +8,14 @@ import {
     OAUTH_ACCESS_TOKEN,
     // POSTMARK_API_KEY,
     // NODE_ENV,
-} from '../constants';
-import nodemailer from 'nodemailer';
+} from "../constants";
+import nodemailer from "nodemailer";
 // import * as postmark from 'postmark';
 
 export type postmarkInfo = {
     postMarkTemplateData: Record<string, unknown>;
-    receipientEmail: string
-}
+    receipientEmail: string;
+};
 
 type EmailOptions = {
     email: string;
@@ -31,7 +31,7 @@ type EmailOptions = {
     //postmark
     isPostmarkTemplate?: boolean;
     postMarkTemplateAlias?: string;
-    postmarkInfo?: postmarkInfo[]
+    postmarkInfo?: postmarkInfo[];
 };
 
 // eslint-disable-next-line no-unused-vars
@@ -42,23 +42,23 @@ export default class EmailService {
 
     constructor(service: string) {
         switch (service) {
-        case 'nodemailer':
+        case "nodemailer":
             this.sendEmail = this.createNodemailerEmail();
             break;
             // case 'postmark':
             //     this.sendEmail = this.createPostmarkEmail();
             //     break;
         default:
-            throw new Error('Invalid email service specified');
+            throw new Error("Invalid email service specified");
         }
     }
     private createNodemailerEmail(): SendEmailFunction {
         const transporter = nodemailer.createTransport({
-            host: 'smtp.gmail.com',
+            host: "smtp.gmail.com",
             port: 465,
             secure: true,
             auth: {
-                type: 'OAuth2',
+                type: "OAuth2",
                 user: EMAIL_HOST_ADDRESS,
                 clientId: OAUTH_CLIENT_ID,
                 clientSecret: OAUTH_CLIENT_SECRET,
@@ -68,33 +68,35 @@ export default class EmailService {
         });
 
         return async (options) => {
-            logger.info('options for sending', options);
+            logger.info("options for sending", options);
 
             try {
-
                 // Use Promise.all to wait for all emails to be sent
-                await Promise.all((options.postmarkInfo ?? []).map(async (recipient) => {
-                    const mailOptions = {
-                        from: `PodX Accounts<${EMAIL_HOST_ADDRESS}>`,
-                        to: recipient.receipientEmail,
-                        subject: options.subject,
-                        html: options.html ? options.html : undefined,
-                        attachments: options.attachments,
-                    };
+                await Promise.all(
+                    (options.postmarkInfo ?? []).map(async (recipient) => {
+                        const mailOptions = {
+                            from: `PodX Accounts<${EMAIL_HOST_ADDRESS}>`,
+                            to: recipient.receipientEmail,
+                            subject: options.subject,
+                            html: options.html ? options.html : undefined,
+                            attachments: options.attachments,
+                        };
 
-                    try {
-                        await transporter.sendMail(mailOptions);
-                        logger.info(`Email sent to ${recipient}`);
-                    } catch (error) {
-                        // Log the error without throwing it
-                        logger.error(`Error sending email to ${recipient}: ${error}`);
-                    }
-                }));
+                        try {
+                            await transporter.sendMail(mailOptions);
+                            logger.info(`Email sent to ${recipient}`);
+                        } catch (error) {
+                            // Log the error without throwing it
+                            logger.error(
+                                `Error sending email to ${recipient}: ${error}`,
+                            );
+                        }
+                    }),
+                );
             } catch (error) {
-                logger.error('Error sending email:', error);
+                logger.error("Error sending email:", error);
             }
         };
-
     }
 
     // static getSenderEmail(type: string) {
@@ -174,14 +176,13 @@ export default class EmailService {
     //     };
     // }
 
-
     public send(options: EmailOptions): Promise<void | Error> {
-        console.log('sending email');
+        console.log("sending email");
         return this.sendEmail(options);
     }
 }
 
-const emailService = new EmailService('nodemailer');
+const emailService = new EmailService("nodemailer");
 
 // let emailService: EmailService;
 

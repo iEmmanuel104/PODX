@@ -1,4 +1,4 @@
-import { Schema, model, Document, Types } from 'mongoose';
+import { Schema, model, Document, Types } from "mongoose";
 
 export interface IBlockHistoryEntry {
     [key: string]: string;
@@ -20,24 +20,32 @@ export interface IUserSettings extends Document {
     updatedAt?: Date;
 }
 
-const mongooseUserSettingsSchema = new Schema<IUserSettings>({
-    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
-    joinDate: { type: String, required: true },
-    lastLogin: { type: Date },
-    isBlocked: { type: Boolean, default: false },
-    isDeactivated: { type: Boolean, default: false },
-    meta: {
-        type: {
-            blockHistory: [{ type: Map, of: String }],
-            unblockHistory: [{ type: Map, of: String }],
+const mongooseUserSettingsSchema = new Schema<IUserSettings>(
+    {
+        userId: {
+            type: Schema.Types.ObjectId,
+            ref: "User",
+            required: true,
+            unique: true,
         },
-        required: false,
+        joinDate: { type: String, required: true },
+        lastLogin: { type: Date },
+        isBlocked: { type: Boolean, default: false },
+        isDeactivated: { type: Boolean, default: false },
+        meta: {
+            type: {
+                blockHistory: [{ type: Map, of: String }],
+                unblockHistory: [{ type: Map, of: String }],
+            },
+            required: false,
+        },
     },
-}, {
-    timestamps: false,
-});
+    {
+        timestamps: false,
+    },
+);
 
-mongooseUserSettingsSchema.set('toJSON', {
+mongooseUserSettingsSchema.set("toJSON", {
     virtuals: true,
     transform: (_, ret) => {
         ret.id = ret._id.toHexString();
@@ -47,4 +55,7 @@ mongooseUserSettingsSchema.set('toJSON', {
     },
 });
 
-export const UserSettings = model<IUserSettings>('UserSettings', mongooseUserSettingsSchema);
+export const UserSettings = model<IUserSettings>(
+    "UserSettings",
+    mongooseUserSettingsSchema,
+);
