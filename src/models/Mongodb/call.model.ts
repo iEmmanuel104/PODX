@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Types } from 'mongoose';
+import mongoose, { Schema, Document, Types } from "mongoose";
 
 interface TokenGateInfo {
     enabled: boolean;
@@ -19,7 +19,7 @@ interface POAPInfo {
 
 interface DurationRequirement {
     value: number;
-    type: 'absolute' | 'percentage';
+    type: "absolute" | "percentage";
 }
 
 interface CallMetadata {
@@ -40,10 +40,10 @@ export interface ICall extends Document {
     sessionId?: string; // For session tracking
     title: string;
     description: string;
-    type: 'audio' | 'video';
+    type: "audio" | "video";
     hostWalletAddress: string;
     createdById: Types.ObjectId;
-    status: 'created' | 'live' | 'ended';
+    status: "created" | "live" | "ended";
     startedAt: Date | null;
     endedAt: Date | null;
     duration: number;
@@ -80,49 +80,58 @@ export interface ICall extends Document {
     ipfsUrl?: string; // Optional IPFS URL for calls with images
 }
 
-const callSchema = new Schema<ICall>({
-    roomId: { type: String, required: true }, // Store Huddle01 roomId here
-    sessionId: { type: String }, // For session tracking
-    title: { type: String, required: true },
-    description: { type: String, default: '' },
-    type: { type: String, enum: ['audio', 'video'], required: true },
-    hostWalletAddress: { type: String, required: true },
-    createdById: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    status: {
-        type: String,
-        enum: ['created', 'live', 'ended'],
-        default: 'created',
+const callSchema = new Schema<ICall>(
+    {
+        roomId: { type: String, required: true }, // Store Huddle01 roomId here
+        sessionId: { type: String }, // For session tracking
+        title: { type: String, required: true },
+        description: { type: String, default: "" },
+        type: { type: String, enum: ["audio", "video"], required: true },
+        hostWalletAddress: { type: String, required: true },
+        createdById: {
+            type: Schema.Types.ObjectId,
+            ref: "User",
+            required: true,
+        },
+        status: {
+            type: String,
+            enum: ["created", "live", "ended"],
+            default: "created",
+        },
+        startedAt: { type: Date, default: null },
+        endedAt: { type: Date, default: null },
+        duration: { type: Number, default: 0 },
+        isActive: { type: Boolean, default: true },
+        isPrivate: { type: Boolean, default: false },
+        isScheduled: { type: Boolean, default: false },
+        scheduledTime: { type: Date },
+        tokenGating: {
+            enabled: { type: Boolean, default: false },
+            type: { type: String },
+            addresses: [{ type: String }],
+        },
+        members: [
+            {
+                userId: { type: Schema.Types.ObjectId, ref: "User" },
+                role: { type: String, default: "guest" },
+            },
+        ],
+        totalTips: { type: Number, default: 0 },
+        tipCount: { type: Number, default: 0 },
+        tags: [{ type: String }],
+        custom: {
+            type: Schema.Types.Mixed,
+            default: {},
+        },
+        ipfsUrl: { type: String }, // Store IPFS URL when an image is uploaded
     },
-    startedAt: { type: Date, default: null },
-    endedAt: { type: Date, default: null },
-    duration: { type: Number, default: 0 },
-    isActive: { type: Boolean, default: true },
-    isPrivate: { type: Boolean, default: false },
-    isScheduled: { type: Boolean, default: false },
-    scheduledTime: { type: Date },
-    tokenGating: {
-        enabled: { type: Boolean, default: false },
-        type: { type: String },
-        addresses: [{ type: String }],
+    {
+        timestamps: true,
     },
-    members: [{
-        userId: { type: Schema.Types.ObjectId, ref: 'User' },
-        role: { type: String, default: 'guest' },
-    }],
-    totalTips: { type: Number, default: 0 },
-    tipCount: { type: Number, default: 0 },
-    tags: [{ type: String }],
-    custom: {
-        type: Schema.Types.Mixed,
-        default: {},
-    },
-    ipfsUrl: { type: String }, // Store IPFS URL when an image is uploaded
-}, {
-    timestamps: true,
-});
+);
 
 // Transform for JSON responses
-callSchema.set('toJSON', {
+callSchema.set("toJSON", {
     virtuals: true,
     transform: (_, ret) => {
         ret.id = ret._id;
@@ -137,4 +146,4 @@ callSchema.index({ roomId: 1 }); // Not unique to allow flexibility
 callSchema.index({ createdById: 1 });
 callSchema.index({ status: 1 });
 
-export const Call = mongoose.model<ICall>('Call', callSchema);
+export const Call = mongoose.model<ICall>("Call", callSchema);

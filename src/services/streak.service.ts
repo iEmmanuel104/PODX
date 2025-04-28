@@ -1,20 +1,27 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Call } from '../models/Mongodb/call.model';
-import { UserStreak, ICallActivity, IStreakStats } from '../models/Mongodb/userStreak.model';
-import { POINTS_CONFIG } from '../clients/webhook.config';
-import { User } from '../models/Mongodb/user.model';
-import { ProcessingError, ProcessingSummary } from '../utils/interface';
-import { Streak, IStreak } from '../models/Mongodb/streak.model';
-import { Types } from 'mongoose';
+import { Call } from "../models/Mongodb/call.model";
+import {
+    UserStreak,
+    ICallActivity,
+    IStreakStats,
+} from "../models/Mongodb/userStreak.model";
+import { POINTS_CONFIG } from "../clients/webhook.config";
+import { User } from "../models/Mongodb/user.model";
+import { ProcessingError, ProcessingSummary } from "../utils/interface";
+import { Streak } from "../models/Mongodb/streak.model";
+import { logger } from "../utils/logger";
 
 export class StreakService {
     private static readonly WEEK_IN_MS = 7 * 24 * 60 * 60 * 1000;
 
-    static async calculatePoints(duration: number, isCreator: boolean): Promise<number> {
-        let points = Math.floor(duration / 60) * POINTS_CONFIG.POINTS_PER_MINUTE;
+    static calculatePoints(duration: number, isCreator: boolean): number {
+        let points =
+            Math.floor(duration / 60) * POINTS_CONFIG.POINTS_PER_MINUTE;
 
         if (isCreator) {
-            points = Math.floor(points * POINTS_CONFIG.CREATOR_BONUS_MULTIPLIER);
+            points = Math.floor(
+                points * POINTS_CONFIG.CREATOR_BONUS_MULTIPLIER,
+            );
             points += POINTS_CONFIG.CALL_CREATION;
         }
 
@@ -27,27 +34,28 @@ export class StreakService {
         return points;
     }
 
-    private static async calculateUserCallStats(userId: string): Promise<IStreakStats> {
+    private static async calculateUserCallStats(
+        userId: string,
+    ): Promise<IStreakStats> {
         const [createdCalls, participatedCalls, allCalls] = await Promise.all([
-            Call.find({ createdById: userId, status: 'ended' }),
+            Call.find({ createdById: userId, status: "ended" }),
             Call.find({
-                'members.userId': userId,
+                "members.userId": userId,
                 createdById: { $ne: userId },
-                status: 'ended',
+                status: "ended",
             }),
             Call.find({
-                $or: [
-                    { createdById: userId },
-                    { 'members.userId': userId },
-                ],
-                status: 'ended',
+                $or: [{ createdById: userId }, { "members.userId": userId }],
+                status: "ended",
             }),
         ]);
 
-        const durations = allCalls.map(call => call.duration || 0);
+        const durations = allCalls.map((call) => call.duration || 0);
         const totalDuration = durations.reduce((sum, dur) => sum + dur, 0);
-        const lastCall = allCalls.sort((a, b) =>
-            (b.endTime?.getTime() || 0) - (a.endTime?.getTime() || 0)
+        const lastCall = allCalls.sort(
+            (a, b) =>
+                ((b as any).endTime?.getTime() || 0) -
+                ((a as any).endTime?.getTime() || 0),
         )[0];
 
         return {
@@ -57,7 +65,7 @@ export class StreakService {
             averageCallDuration: totalDuration / allCalls.length || 0,
             totalCallDuration: totalDuration,
             longestCallDuration: Math.max(...durations, 0),
-            lastCallDate: lastCall?.endTime,
+            lastCallDate: (lastCall as any)?.endTime,
         };
     }
 
@@ -68,8 +76,8 @@ export class StreakService {
         lastActivityDate?: Date;
     }> {
         const calls = await Call.find({
-            $or: [{ createdById: userId }, { 'members.userId': userId }],
-            status: 'ended',
+            $or: [{ createdById: userId }, { "members.userId": userId }],
+            status: "ended",
             endTime: { $exists: true },
         }).sort({ endTime: 1 });
 
@@ -80,24 +88,27 @@ export class StreakService {
         const processedDates = new Set<string>();
 
         for (const call of calls) {
-            if (!call.endTime) continue;
+            if (!(call as any).endTime) continue;
 
-            const dateStr = call.endTime.toISOString().split('T')[0];
+            const dateStr = (call as any).endTime.toISOString().split("T")[0];
             if (processedDates.has(dateStr)) continue;
             processedDates.add(dateStr);
 
-            const callDate = call.endTime;
+            const callDate = (call as any).endTime;
 
             if (!lastActivityDate) {
                 currentStreak = 1;
                 lastActivityDate = callDate;
             } else {
-                const timeDiff = callDate.getTime() - lastActivityDate.getTime();
+                const timeDiff =
+                    callDate.getTime() - lastActivityDate.getTime();
 
                 if (timeDiff > this.WEEK_IN_MS) {
                     currentStreak = 1;
                 } else {
-                    const daysDiff = Math.floor(timeDiff / (24 * 60 * 60 * 1000));
+                    const daysDiff = Math.floor(
+                        timeDiff / (24 * 60 * 60 * 1000),
+                    );
                     if (daysDiff === 1) {
                         currentStreak++;
                     } else if (daysDiff > 1) {
@@ -114,7 +125,7 @@ export class StreakService {
         // Check if current streak is still active
         if (lastActivityDate) {
             const now = new Date();
-            if ((now.getTime() - lastActivityDate.getTime()) > this.WEEK_IN_MS) {
+            if (now.getTime() - lastActivityDate.getTime() > this.WEEK_IN_MS) {
                 currentStreak = 0;
             }
         }
@@ -132,8 +143,8 @@ export class StreakService {
         totalPoints: number;
     }> {
         const calls = await Call.find({
-            $or: [{ createdById: userId }, { 'members.userId': userId }],
-            status: 'ended',
+            $or: [{ createdById: userId }, { "members.userId": userId }],
+            status: "ended",
             endTime: { $exists: true },
         }).sort({ endTime: 1 });
 
@@ -141,16 +152,16 @@ export class StreakService {
         const activities: ICallActivity[] = [];
 
         for (const call of calls) {
-            if (!call.endTime || !call.duration) continue;
+            if (!(call as any).endTime || !call.duration) continue;
 
             const isCreator = call.createdById.toString() === userId;
-            const points = await this.calculatePoints(call.duration, isCreator);
+            const points = this.calculatePoints(call.duration, isCreator);
             totalPoints += points;
 
             activities.push({
-                date: call.endTime,
-                callId: call.callId,
-                duration: call.duration,
+                date: (call as any).endTime,
+                callId: (call as any).callId,
+                duration: (call as any).duration,
                 isCreator,
                 points,
             });
@@ -160,7 +171,7 @@ export class StreakService {
     }
 
     static async updateUserStreakStats(userId: string): Promise<void> {
-        console.log(`[Streak Update] Starting for user ${userId}`);
+        logger.info(`[Streak Update] Starting for user ${userId}`);
 
         try {
             const [stats, streakData, activityData] = await Promise.all([
@@ -182,12 +193,12 @@ export class StreakService {
             await UserStreak.findOneAndUpdate(
                 { userId },
                 { $set: update },
-                { upsert: true, new: true }
+                { upsert: true, new: true },
             );
 
-            console.log(`[Streak Update] Completed for user ${userId}`);
+            logger.info(`[Streak Update] Completed for user ${userId}`);
         } catch (error) {
-            console.error(`[Streak Update] Error for user ${userId}:`, error);
+            logger.error(`[Streak Update] Error for user ${userId}:`, error);
             throw error;
         }
     }
@@ -196,32 +207,41 @@ export class StreakService {
         processedUsers: number;
         errors: Array<{ userId: string; error: string }>;
     }> {
-        const users = await User.find({}).select('_id');
+        const users = await User.find({}).select("_id");
         const errors: Array<{ userId: string; error: string }> = [];
         let processedUsers = 0;
 
-        console.log(`[Batch Streak Update] Starting for ${users.length} users`);
+        logger.info(`[Batch Streak Update] Starting for ${users.length} users`);
 
         for (let i = 0; i < users.length; i += batchSize) {
             const batch = users.slice(i, i + batchSize);
             await Promise.all(
                 batch.map(async (user) => {
                     try {
-                        await this.updateUserStreakStats((user as any)?._id.toString());
+                        await this.updateUserStreakStats(
+                            (user as any)?._id.toString(),
+                        );
                         processedUsers++;
                     } catch (error) {
                         errors.push({
                             userId: (user as any)?._id.toString(),
-                            error: error instanceof Error ? error.message : 'Unknown error',
+                            error:
+                                error instanceof Error
+                                    ? error.message
+                                    : "Unknown error",
                         });
                     }
-                })
+                }),
             );
 
-            console.log(`[Batch Streak Update] Processed ${processedUsers}/${users.length} users`);
+            logger.info(
+                `[Batch Streak Update] Processed ${processedUsers}/${users.length} users`,
+            );
         }
 
-        console.log(`[Batch Streak Update] Completed. Success: ${processedUsers}, Errors: ${errors.length}`);
+        logger.info(
+            `[Batch Streak Update] Completed. Success: ${processedUsers}, Errors: ${errors.length}`,
+        );
         return { processedUsers, errors };
     }
 
@@ -230,16 +250,13 @@ export class StreakService {
         errors: ProcessingError[];
     }> {
         try {
-            console.log(`[Sync] Fetching calls for user ${userId}`);
-            
+            logger.info(`[Sync] Fetching calls for user ${userId}`);
+
             // Replace StreamIO with direct database query
             const calls = await Call.find({
-                $or: [
-                    { createdById: userId },
-                    { 'members.userId': userId },
-                ],
+                $or: [{ createdById: userId }, { "members.userId": userId }],
             }).sort({ startTime: 1 });
-            
+
             if (!calls || calls.length === 0) {
                 return {
                     calls: [],
@@ -247,8 +264,8 @@ export class StreakService {
                 };
             }
 
-            return { 
-                calls: calls.map(call => ({
+            return {
+                calls: calls.map((call: any) => ({
                     call: {
                         id: call.callId,
                         type: call.type,
@@ -259,16 +276,18 @@ export class StreakService {
                     },
                     members: call.members,
                 })),
-                errors: [], 
+                errors: [],
             };
         } catch (error) {
             return {
                 calls: [],
-                errors: [{
-                    userId,
-                    error: `Error processing user calls: ${error instanceof Error ? error.message : 'Unknown error'}`,
-                    timestamp: new Date(),
-                }],
+                errors: [
+                    {
+                        userId,
+                        error: `Error processing user calls: ${error instanceof Error ? error.message : "Unknown error"}`,
+                        timestamp: new Date(),
+                    },
+                ],
             };
         }
     }
@@ -279,13 +298,25 @@ export class StreakService {
         errors: ProcessingError[];
     }> {
         const callsToCreate = [];
-        const streakUpdates: { userId: any; callActivity: { date: Date; callId: any; duration: number; isCreator: boolean; points: number; }; activityDate: Date; }[] = [];
+        const streakUpdates: {
+            userId: any;
+            callActivity: {
+                date: Date;
+                callId: any;
+                duration: number;
+                isCreator: boolean;
+                points: number;
+            };
+            activityDate: Date;
+        }[] = [];
         const errors: ProcessingError[] = [];
 
         const existingCallIds = new Set(
-            (await Call.find({
-                callId: { $in: calls.map(c => c.call.id) },
-            }).select('callId')).map(c => c.callId)
+            (
+                await Call.find({
+                    callId: { $in: calls.map((c: any) => c.call.id) },
+                }).select("callId")
+            ).map((c: any) => c.callId),
         );
 
         for (const { call, members } of calls) {
@@ -296,13 +327,17 @@ export class StreakService {
                     callId: call.id,
                     type: call.type,
                     createdById: call.created_by.id,
-                    status: call.ended_at ? 'ended' : 'live',
-                    members: members.map((member: { user_id: any; role: any; }) => ({
-                        userId: member.user_id,
-                        role: member.role,
-                    })),
+                    status: call.ended_at ? "ended" : "live",
+                    members: members.map(
+                        (member: { user_id: any; role: any }) => ({
+                            userId: member.user_id,
+                            role: member.role,
+                        }),
+                    ),
                     startTime: new Date(call.created_at),
-                    endTime: call.ended_at ? new Date(call.ended_at) : undefined,
+                    endTime: call.ended_at
+                        ? new Date(call.ended_at)
+                        : undefined,
                     custom: call.custom,
                 };
 
@@ -310,30 +345,38 @@ export class StreakService {
 
                 if (call.ended_at) {
                     const duration = Math.floor(
-                        (new Date(call.ended_at).getTime() - new Date(call.created_at).getTime()) / 1000
+                        (new Date(call.ended_at).getTime() -
+                            new Date(call.created_at).getTime()) /
+                            1000,
                     );
 
-                    await Promise.all(members.map(async (member: { user_id: any; }) => {
-                        const isCreator = member.user_id === call.created_by.id;
-                        const points = await this.calculatePoints(duration, isCreator);
-
-                        streakUpdates.push({
-                            userId: member.user_id,
-                            callActivity: {
-                                date: new Date(call.created_at),
-                                callId: call.id,
+                    await Promise.all(
+                        members.map((member: { user_id: any }) => {
+                            const isCreator =
+                                member.user_id === call.created_by.id;
+                            const points = this.calculatePoints(
                                 duration,
                                 isCreator,
-                                points,
-                            },
-                            activityDate: new Date(call.created_at),
-                        });
-                    }));
+                            );
+
+                            streakUpdates.push({
+                                userId: member.user_id,
+                                callActivity: {
+                                    date: new Date(call.created_at),
+                                    callId: call.id,
+                                    duration,
+                                    isCreator,
+                                    points,
+                                },
+                                activityDate: new Date(call.created_at),
+                            });
+                        }),
+                    );
                 }
             } catch (error) {
                 errors.push({
                     callId: call.id,
-                    error: `Failed to process call: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                    error: `Failed to process call: ${error instanceof Error ? error.message : "Unknown error"}`,
                     timestamp: new Date(),
                 });
             }
@@ -342,23 +385,27 @@ export class StreakService {
         return { callsToCreate, streakUpdates, errors };
     }
 
-    private static async updateStreaksBatch(updates: any[]): Promise<ProcessingError[]> {
+    private static async updateStreaksBatch(
+        updates: any[],
+    ): Promise<ProcessingError[]> {
         const errors: ProcessingError[] = [];
         const batchSize = 50;
 
         for (let i = 0; i < updates.length; i += batchSize) {
             const batch = updates.slice(i, i + batchSize);
-            await Promise.all(batch.map(async update => {
-                try {
-                    await this.updateUserStreakStats(update.userId);
-                } catch (error) {
-                    errors.push({
-                        userId: update.userId,
-                        error: `Failed to update streak: ${error instanceof Error ? error.message : 'Unknown error'}`,
-                        timestamp: new Date(),
-                    });
-                }
-            }));
+            await Promise.all(
+                batch.map(async (update) => {
+                    try {
+                        await this.updateUserStreakStats(update.userId);
+                    } catch (error) {
+                        errors.push({
+                            userId: update.userId,
+                            error: `Failed to update streak: ${error instanceof Error ? error.message : "Unknown error"}`,
+                            timestamp: new Date(),
+                        });
+                    }
+                }),
+            );
         }
 
         return errors;
@@ -375,30 +422,41 @@ export class StreakService {
         };
 
         try {
-            console.log('[Sync] Starting StreamIO synchronization');
-            const users = await User.find({}).select('_id').lean().exec();
+            logger.info("[Sync] Starting StreamIO synchronization");
+            const users = await User.find({}).select("_id").lean().exec();
             const batchSize = 10;
 
             for (let i = 0; i < users.length; i += batchSize) {
                 const userBatch = users.slice(i, i + batchSize);
                 const batchResults = await Promise.all(
-                    userBatch.map(user => this.fetchAndProcessCalls(user._id.toString()))
+                    userBatch.map((user) =>
+                        // eslint-disable-next-line @typescript-eslint/no-base-to-string
+                        this.fetchAndProcessCalls(user._id?.toString()),
+                    ),
                 );
 
-                const allCalls = batchResults.flatMap(result => result.calls);
-                summary.errors.push(...batchResults.flatMap(result => result.errors));
+                const allCalls = batchResults.flatMap((result) => result.calls);
+                summary.errors.push(
+                    ...batchResults.flatMap((result) => result.errors),
+                );
 
                 if (allCalls.length > 0) {
-                    const { callsToCreate, streakUpdates, errors: processErrors } =
-                        await this.processCallBatch(allCalls);
+                    const {
+                        callsToCreate,
+                        streakUpdates,
+                        errors: processErrors,
+                    } = await this.processCallBatch(allCalls);
 
                     if (callsToCreate.length > 0) {
-                        await Call.insertMany(callsToCreate, { ordered: false });
+                        await Call.insertMany(callsToCreate, {
+                            ordered: false,
+                        });
                         summary.totalCallsProcessed += callsToCreate.length;
                     }
 
                     if (streakUpdates.length > 0) {
-                        const updateErrors = await this.updateStreaksBatch(streakUpdates);
+                        const updateErrors =
+                            await this.updateStreaksBatch(streakUpdates);
                         summary.totalStreakUpdates += streakUpdates.length;
                         summary.errors.push(...updateErrors);
                     }
@@ -407,77 +465,85 @@ export class StreakService {
                 }
 
                 summary.totalUsersProcessed += userBatch.length;
-                console.log(`[Sync] Processed ${summary.totalUsersProcessed}/${users.length} users`);
+                logger.info(
+                    `[Sync] Processed ${summary.totalUsersProcessed}/${users.length} users`,
+                );
             }
 
             summary.processingTime = Date.now() - startTime;
-            console.log('[Sync] Synchronization completed', summary);
+            logger.info("[Sync] Synchronization completed", summary);
             return summary;
-
         } catch (error) {
-            console.error('[Sync] Critical error during synchronization:', error);
+            logger.error(
+                "[Sync] Critical error during synchronization:",
+                error,
+            );
             throw error;
         }
     }
 
-    static async getLeaderboard(limit = 10): Promise<Array<{
-        userId: string;
-        username: string;
-        displayImage?: string;
-        totalPoints: number;
-        currentStreak: number;
-        longestStreak: number;
-        engagementScore: number;
-        stats: IStreakStats;
-    }>> {
+    static async getLeaderboard(limit = 10): Promise<
+        Array<{
+            userId: string;
+            username: string;
+            displayImage?: string;
+            totalPoints: number;
+            currentStreak: number;
+            longestStreak: number;
+            engagementScore: number;
+            stats: IStreakStats;
+        }>
+    > {
         const streaks = await UserStreak.find()
             .sort({ totalPoints: -1 })
             .limit(limit)
-            .populate('userId', 'username displayImage')
-            .select('userId totalPoints currentStreak longestStreak stats')
+            .populate("userId", "username displayImage")
+            .select("userId totalPoints currentStreak longestStreak stats")
             .lean();
 
-        return streaks.map(streak => {
-            const stats = streak.stats || {
-                createdCalls: 0,
-                participatedCalls: 0,
-                totalCalls: 0,
-                averageCallDuration: 0,
-                totalCallDuration: 0,
-                longestCallDuration: 0,
-            };
+        return streaks
+            .map((streak) => {
+                const stats = streak.stats || {
+                    createdCalls: 0,
+                    participatedCalls: 0,
+                    totalCalls: 0,
+                    averageCallDuration: 0,
+                    totalCallDuration: 0,
+                    longestCallDuration: 0,
+                };
 
-            // Calculate engagement score with safe access
-            const engagementScore = Math.round(
-                ((streak.currentStreak || 0) * 10) +
-                    ((stats.totalCalls || 0) * 5) +
-                    ((streak.totalPoints || 0) * 0.1)
-            );
+                // Calculate engagement score with safe access
+                const engagementScore = Math.round(
+                    (streak.currentStreak || 0) * 10 +
+                        (stats.totalCalls || 0) * 5 +
+                        (streak.totalPoints || 0) * 0.1,
+                );
 
-            return {
-                userId: (streak.userId as any)?._id?.toString() || '',
-                username: (streak.userId as any)?.username || 'Unknown User',
-                displayImage: (streak.userId as any)?.displayImage,
-                totalPoints: streak.totalPoints || 0,
-                currentStreak: streak.currentStreak || 0,
-                longestStreak: streak.longestStreak || 0,
-                stats,
-                engagementScore,
-            };
-        }).filter(streak => streak.userId); // Filter out any invalid entries
-
+                return {
+                    userId: (streak.userId as any)?._id?.toString() || "",
+                    username:
+                        (streak.userId as any)?.username || "Unknown User",
+                    displayImage: (streak.userId as any)?.displayImage,
+                    totalPoints: streak.totalPoints || 0,
+                    currentStreak: streak.currentStreak || 0,
+                    longestStreak: streak.longestStreak || 0,
+                    stats,
+                    engagementScore,
+                };
+            })
+            .filter((streak) => streak.userId); // Filter out any invalid entries
     }
 
     static async handleCallJoined(roomId: string, peerId: string) {
         try {
             const call = await Call.findOne({ roomId });
             if (!call) {
-                throw new Error('Call not found');
+                throw new Error("Call not found");
             }
 
             const user = await User.findOne({ peerId });
             if (!user) {
-                throw new Error('User not found');
+                throw new Error("User not found");
             }
 
             let streak = await Streak.findOne({ userId: user._id });
@@ -496,42 +562,49 @@ export class StreakService {
             const today = new Date();
             if (lastCallDate.toDateString() !== today.toDateString()) {
                 streak.currentStreak += 1;
-                streak.longestStreak = Math.max(streak.longestStreak, streak.currentStreak);
+                streak.longestStreak = Math.max(
+                    streak.longestStreak,
+                    streak.currentStreak,
+                );
                 streak.lastCallDate = today;
             }
 
             streak.totalCalls += 1;
             await streak.save();
         } catch (error) {
-            console.error('Error handling call joined for streak:', error);
+            logger.error("Error handling call joined for streak:", error);
             throw error;
         }
     }
 
-    static async handleCallEnded(roomId: string) {
+    static async handleCallEnded(roomId: string): Promise<void> {
         try {
             const call = await Call.findOne({ roomId });
             if (!call) {
-                throw new Error('Call not found');
+                throw new Error("Call not found");
             }
 
             // Update streaks for all participants
-            for (const participantId of call.participants) {
+            for (const participantId of (call as any).participants) {
                 const streak = await Streak.findOne({ userId: participantId });
                 if (streak) {
                     // Calculate call duration
-                    const duration = call.endedAt 
-                        ? (call.endedAt.getTime() - call.startedAt.getTime()) / 1000 / 60 
+                    const duration = call.endedAt
+                        ? (call.endedAt.getTime() -
+                              (call as any).startedAt.getTime()) /
+                          1000 /
+                          60
                         : 0;
 
                     // Update streak stats
                     streak.totalMinutes += duration;
-                    streak.averageCallDuration = streak.totalMinutes / streak.totalCalls;
+                    streak.averageCallDuration =
+                        streak.totalMinutes / streak.totalCalls;
                     await streak.save();
                 }
             }
         } catch (error) {
-            console.error('Error handling call ended for streak:', error);
+            logger.error("Error handling call ended for streak:", error);
             throw error;
         }
     }

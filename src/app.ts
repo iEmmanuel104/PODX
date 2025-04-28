@@ -1,6 +1,5 @@
 import "express-async-errors";
 import express, { Request, Response, NextFunction, Express } from "express";
-import Middlewares from "./middlewares/errorHandlers";
 import cors from "cors";
 import expressWinston from "express-winston";
 import { logger } from "./utils/logger";
@@ -12,9 +11,10 @@ import cookieParser from "cookie-parser";
 import { specs, swaggerUi } from "./utils/swagger";
 import { ORIGIN } from "./utils/constants";
 import ServerController from "./controllers/server.controller";
-import serverRouter from "./routes/health.routes";
+import serverRouter from "./routes/server.routes";
+import { CustomAPIError } from "./utils/customErrors";
 // import { poapManagementService } from './services/poap_management_service';
-// import corsOptions from './utils/cors';
+// import corsOptions from "./utils/cors";
 
 const app: Express = express();
 
@@ -22,7 +22,7 @@ app.use(
     expressWinston.logger({
         winstonInstance: logger,
         statusLevels: true,
-    })
+    }),
 );
 expressWinston.requestWhitelist.push("body");
 expressWinston.responseWhitelist.push("body");
@@ -31,40 +31,45 @@ app.use(mongoSanitize());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 // app.use(cors(corsOptions));
-app.use(cors({
-    origin: ORIGIN,
-    credentials: true,
-}));
+app.use(
+    cors({
+        origin: ORIGIN,
+        credentials: true,
+    }),
+);
+
 app.use(morgan("dev"));
 app.use(cookieParser());
 
 // Request logger middleware
 app.use((req: Request, res: Response, next: NextFunction) => {
     const fullUrl = req.protocol + "://" + req.get("host") + req.originalUrl;
-    logger.info(`Request logged: ${req.method} ${req.path} from ${req.ip} at ${new Date().toISOString()}`);
+    logger.info(
+        `Request logged: ${req.method} ${req.path} from ${req.ip} at ${new Date().toISOString()}`,
+    );
     logger.debug("Full Requested URL:", fullUrl); // Consider using different log levels for better granularity
     next();
 });
 
-
 // Swagger API Documentation
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs, {
-    explorer: true,
-    swaggerOptions: {
-    securityDefinitions: {
-        bearerAuth: {
-            type: "apiKey",
-            in: "header",
-            name: "Authorization",
-            description: "Bearer token for API access"
-        }
-    },
-    security: [
-        { bearerAuth: [] }
-    ],
-}
-}));
-
+app.use(
+    "/api-docs",
+    swaggerUi.serve,
+    swaggerUi.setup(specs, {
+        explorer: true,
+        swaggerOptions: {
+            securityDefinitions: {
+                bearerAuth: {
+                    type: "apiKey",
+                    in: "header",
+                    name: "Authorization",
+                    description: "Bearer token for API access",
+                },
+            },
+            security: [{ bearerAuth: [] }],
+        },
+    }),
+);
 
 // server health check
 // app.get("/serverhealth", getServerHealth);
@@ -79,7 +84,8 @@ app.use("*", (req, res) => {
     });
 });
 
-app.use(ServerController.errorHandler);
+app.use((err: CustomAPIError, req: Request, res: Response) => {
+    ServerController.errorHandler(err, req, res);
+});
 
 export default app;
-

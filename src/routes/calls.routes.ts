@@ -2,40 +2,61 @@
  * Routes for managing video calls using Huddle01 API integration
  * Provides endpoints for creating, retrieving, and managing call sessions
  */
-import express, { Router } from 'express';
-import multer from 'multer';
-import CallsController from '../controllers/calls.controller';
-import { AuthenticatedController, basicAuth } from '../middlewares/authMiddleware';
+import express, { Router } from "express";
+
+import CallsController from "../controllers/calls.controller";
+import { basicAuth } from "../middlewares/authMiddleware";
+import { UploadImageFiles } from "../middlewares/storage.middleware";
+import {
+    AsyncToSyncController,
+    AuthAsyncToSyncController,
+} from "../middlewares/utils";
+import { validationMiddleware } from "../middlewares/validators.middleware";
+import { CreateCallDto } from "../controllers/dto/createCall.dto";
+// import { GenerateTokenDto } from "../controllers/dto/generateToken.dto";
 
 const router: Router = express.Router();
-const upload = multer({
-    storage: multer.memoryStorage(),
-    limits: {
-        fileSize: 10 * 1024 * 1024, // 10MB limit
-    },
-    fileFilter: (req, file, cb) => {
-        // Accept only image files
-        if (file.mimetype.startsWith('image/')) {
-            cb(null, true);
-        } else {
-            cb(new Error('Only image files are allowed'));
-        }
-    },
-});
 
 // Create a new call room
-router.post('/create', basicAuth(), upload.single('image'), AuthenticatedController(CallsController.createCall));
+router.post(
+    "/create",
+    basicAuth(),
+    validationMiddleware(CreateCallDto),
+    UploadImageFiles.single("image"),
+    AuthAsyncToSyncController((req, res) =>
+        CallsController.createCall(req, res),
+    ),
+);
 
 // Get call information by session ID
-router.get('/info/:sessionId', basicAuth(), AuthenticatedController(CallsController.getCall));
+router.get(
+    "/info/:sessionId",
+    basicAuth(),
+    AuthAsyncToSyncController((req, res) => CallsController.getCall(req, res)),
+);
 
 // Get call statistics
-router.get('/stats', CallsController.getCallStats);
+router.get(
+    "/stats",
+    AsyncToSyncController((req, res) => CallsController.getCallStats(req, res)),
+);
 
 // Get live participants in a meeting
-router.get('/:roomId/live-participants', CallsController.getLiveParticipants);
+router.get(
+    "/:roomId/live-participants",
+    AsyncToSyncController((req, res) =>
+        CallsController.getLiveParticipants(req, res),
+    ),
+);
 
 // Generate access token for a call
-router.post('/token', basicAuth(), AuthenticatedController(CallsController.generateToken));
+router.post(
+    "/token",
+    basicAuth(),
+    // validationMiddleware(GenerateTokenDto),
+    AuthAsyncToSyncController((req, res) =>
+        CallsController.generateToken(req, res),
+    ),
+);
 
 export default router;

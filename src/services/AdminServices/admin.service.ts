@@ -1,16 +1,19 @@
-import { Types } from 'mongoose';
-import { Admin, IAdmin } from '../../models/Mongodb/admin.model';
-import { UserSettings, IUserSettings, IBlockMeta } from '../../models/Mongodb/userSettings.model';
-import { BadRequestError, NotFoundError } from '../../utils/customErrors';
-import { ADMIN_EMAIL } from '../../utils/constants';
-import moment from 'moment';
+import { Types } from "mongoose";
+import { Admin, IAdmin } from "../../models/Mongodb/admin.model";
+import {
+    UserSettings,
+    IUserSettings,
+    IBlockMeta,
+} from "../../models/Mongodb/userSettings.model";
+import { BadRequestError, NotFoundError } from "../../utils/customErrors";
+import { ADMIN_EMAIL } from "../../utils/constants";
+import moment from "moment";
 
 export default class AdminService {
-
     static async createAdmin(adminData: IAdmin): Promise<IAdmin> {
         const existingAdmin = await Admin.findOne({ email: adminData.email });
         if (existingAdmin) {
-            throw new BadRequestError('Admin with this email already exists');
+            throw new BadRequestError("Admin with this email already exists");
         }
 
         const newAdmin = await Admin.create(adminData);
@@ -26,7 +29,7 @@ export default class AdminService {
         const admin = await Admin.findOne({ email });
 
         if (!admin) {
-            throw new NotFoundError('Admin not found');
+            throw new NotFoundError("Admin not found");
         }
 
         return admin;
@@ -35,36 +38,45 @@ export default class AdminService {
     static async deleteAdmin(adminId: string): Promise<void> {
         const admin = await Admin.findById(adminId);
         if (!admin) {
-            throw new NotFoundError('Admin not found');
+            throw new NotFoundError("Admin not found");
         }
 
         if (admin.email === ADMIN_EMAIL) {
-            throw new BadRequestError('Cannot delete the super admin');
+            throw new BadRequestError("Cannot delete the super admin");
         }
 
         await Admin.findByIdAndDelete(adminId);
     }
 
-    static async blockUser(id: string, status: boolean, reason: string): Promise<IUserSettings> {
-        const userSettings = await UserSettings.findOne({ userId: new Types.ObjectId(id) });
+    static async blockUser(
+        id: string,
+        status: boolean,
+        reason: string,
+    ): Promise<IUserSettings> {
+        const userSettings = await UserSettings.findOne({
+            userId: new Types.ObjectId(id),
+        });
 
         if (!userSettings) {
-            throw new NotFoundError('User settings not found');
+            throw new NotFoundError("User settings not found");
         }
 
-        const currentDate = moment().format('YYYY-MM-DD');
-        const updatedMeta: IBlockMeta = userSettings.meta || { blockHistory: [], unblockHistory: [] };
+        const currentDate = moment().format("YYYY-MM-DD");
+        const updatedMeta: IBlockMeta = userSettings.meta || {
+            blockHistory: [],
+            unblockHistory: [],
+        };
 
         if (status) {
             // Blocking the user
             if (userSettings.isBlocked) {
-                throw new BadRequestError('User is already blocked');
+                throw new BadRequestError("User is already blocked");
             }
             updatedMeta.blockHistory.push({ [currentDate]: reason });
         } else {
             // Unblocking the user
             if (!userSettings.isBlocked) {
-                throw new BadRequestError('User is not blocked');
+                throw new BadRequestError("User is not blocked");
             }
             updatedMeta.unblockHistory.push({ [currentDate]: reason });
         }
@@ -75,11 +87,11 @@ export default class AdminService {
                 isBlocked: status,
                 meta: updatedMeta,
             },
-            { new: true }
+            { new: true },
         );
 
         if (!updatedUserSettings) {
-            throw new NotFoundError('User settings not found');
+            throw new NotFoundError("User settings not found");
         }
 
         return updatedUserSettings;

@@ -40,7 +40,10 @@ export function serverHealth(data: ServerHealthData): string {
 }
 
 export default class ServerController {
-    static getServerHealth: RequestHandler = (req: Request, res: Response): void => {
+    static getServerHealth: RequestHandler = (
+        req: Request,
+        res: Response,
+    ): void => {
         const data = {
             serverStatus: "success",
             message: `Welcome to PodX ${process.env.NODE_ENV} server`,
@@ -54,7 +57,13 @@ export default class ServerController {
         res.send(jsonResponse);
     };
 
-    static errorHandler(err: CustomAPIError, req: Request, res: Response): Response {
+    static errorHandler(
+        this: void,
+        err: CustomAPIError,
+        req: Request,
+        res: Response,
+        // next: RequestHandler,
+    ): Response {
         logger.error("Error handler");
         logger.error(err);
 
@@ -67,14 +76,27 @@ export default class ServerController {
 
         // MongoDB ValidationError
         if (err.name === "ValidationError" && "errors" in err) {
-            customError.message = Object.values(err.errors as GenericErrors)
+            customError.message = Object.values(
+                err.errors as unknown as GenericErrors,
+            )
                 .map((item) => (item as ValidationErrorItem).message)
                 .join(",");
             customError.statusCode = 400;
         }
 
         // MongoDB Duplicate Key Error
-        if ((err as unknown as MongoError).code === 11000 && "keyValue" in err) {
+        if (
+            (err as unknown as MongoError).code === 11000 &&
+            "keyValue" in err
+        ) {
+            customError.message = `Duplicate value entered for ${Object.keys(err.keyValue as Record<string, unknown>).join(", ")} field(s), please choose another value`;
+            customError.statusCode = 400;
+        }
+
+        if (
+            (err as unknown as MongoError).code === 11000 &&
+            "keyValue" in err
+        ) {
             customError.message = `Duplicate value entered for ${Object.keys(err.keyValue as Record<string, unknown>).join(", ")} field(s), please choose another value`;
             customError.statusCode = 400;
         }
@@ -87,7 +109,9 @@ export default class ServerController {
 
         // Sequelize Validation Error
         if (err.name === "SequelizeValidationError" && "errors" in err) {
-            customError.message = Object.values((err as SequelizeValidationError).errors)
+            customError.message = Object.values(
+                (err as unknown as SequelizeValidationError).errors,
+            )
                 .map((item: SequelizeValidationErrorItem) => item.message)
                 .join(",");
             customError.statusCode = 400;
@@ -95,7 +119,9 @@ export default class ServerController {
 
         // Sequelize Unique Constraint Error
         if (err.name === "SequelizeUniqueConstraintError" && "errors" in err) {
-            customError.message = Object.values((err as SequelizeUniqueConstraintError).errors)
+            customError.message = Object.values(
+                (err as unknown as SequelizeUniqueConstraintError).errors,
+            )
                 .map((item: SequelizeValidationErrorItem) => item.message)
                 .join(",");
             customError.statusCode = 400;
@@ -108,14 +134,23 @@ export default class ServerController {
         }
 
         // Sequelize Foreign Key Constraint Error
-        if (err.name === "SequelizeForeignKeyConstraintError" && "parent" in err) {
-            customError.message = (err as SequelizeForeignKeyConstraintError).parent.detail;
+        if (
+            err.name === "SequelizeForeignKeyConstraintError" &&
+            "parent" in err
+        ) {
+            customError.message = (
+                err as SequelizeForeignKeyConstraintError
+            ).parent.detail;
             customError.statusCode = 400;
         }
 
         // Default case for general errors
         if (customError.statusCode === 500) {
-            return res.status(500).json({ status: "error", error: true, message: "Ops, Something went wrong" });
+            return res.status(500).json({
+                status: "error",
+                error: true,
+                message: "Ops, Something went wrong",
+            });
         }
 
         return res.status(customError.statusCode).json({

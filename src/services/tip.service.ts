@@ -1,11 +1,11 @@
+/* eslint-disable @typescript-eslint/no-base-to-string */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // services/tip.service.ts
-import { User, IUser } from '../models/Mongodb/user.model';
-import { Tip, ITip } from '../models/Mongodb/tip.model';
-import { Types } from 'mongoose';
-import { PopulatedTip, TipSummary, TipsWithSummary, UserBasicInfo } from '../utils/interface';
-import { ICall } from '../models/Mongodb/call.model';
-import { Call } from '../models/Mongodb/call.model';
+import { User } from "../models/Mongodb/user.model";
+import { Tip, ITip } from "../models/Mongodb/tip.model";
+import { Types } from "mongoose";
+import { Call } from "../models/Mongodb/call.model";
+import { logger } from "../utils/logger";
 
 export class TipService {
     /**
@@ -17,12 +17,13 @@ export class TipService {
         fromUserId: string,
         toUserId: string,
         amount: string,
-        currency: string = 'USDC',
+        currency: string = "USDC",
         timestamp: string | Date = new Date(),
         transactionHash?: string,
     ): Promise<ITip> {
         try {
-            const tipTimestamp = typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
+            const tipTimestamp =
+                typeof timestamp === "string" ? new Date(timestamp) : timestamp;
 
             const tip = await Tip.create({
                 callId,
@@ -33,7 +34,7 @@ export class TipService {
                 transactionHash,
                 currency,
                 timestamp: tipTimestamp,
-                status: transactionHash ? 'completed' : 'pending',
+                status: transactionHash ? "completed" : "pending",
             });
 
             // Update call statistics
@@ -47,7 +48,7 @@ export class TipService {
 
             return tip;
         } catch (error) {
-            console.error('Error creating tip:', error);
+            logger.error("Error creating tip:", error);
             throw error;
         }
     }
@@ -55,39 +56,44 @@ export class TipService {
     /**
      * Get tips for a user (sent, received, or both)
      */
-    static async getUserTips(userId: string, type?: 'sent' | 'received'): Promise<any> {
+    static async getUserTips(
+        userId: string,
+        type?: "sent" | "received",
+    ): Promise<any> {
         try {
-            if (type === 'sent') {
-                return await Tip.find({ fromUserId: new Types.ObjectId(userId) })
+            if (type === "sent") {
+                return await Tip.find({
+                    fromUserId: new Types.ObjectId(userId),
+                })
                     .sort({ timestamp: -1 })
-                    .populate('fromUserId', 'username displayImage')
-                    .populate('toUserId', 'username displayImage')
-                    .populate('callId', 'title roomId');
-            } else if (type === 'received') {
+                    .populate("fromUserId", "username displayImage")
+                    .populate("toUserId", "username displayImage")
+                    .populate("callId", "title roomId");
+            } else if (type === "received") {
                 return await Tip.find({ toUserId: new Types.ObjectId(userId) })
                     .sort({ timestamp: -1 })
-                    .populate('fromUserId', 'username displayImage')
-                    .populate('toUserId', 'username displayImage')
-                    .populate('callId', 'title roomId');
+                    .populate("fromUserId", "username displayImage")
+                    .populate("toUserId", "username displayImage")
+                    .populate("callId", "title roomId");
             } else {
                 // Get both sent and received
                 const [sentTips, receivedTips] = await Promise.all([
                     Tip.find({ fromUserId: new Types.ObjectId(userId) })
-                        .populate('fromUserId', 'username displayImage')
-                        .populate('toUserId', 'username displayImage')
-                        .populate('callId', 'title roomId')
+                        .populate("fromUserId", "username displayImage")
+                        .populate("toUserId", "username displayImage")
+                        .populate("callId", "title roomId")
                         .sort({ timestamp: -1 }),
                     Tip.find({ toUserId: new Types.ObjectId(userId) })
-                        .populate('fromUserId', 'username displayImage')
-                        .populate('toUserId', 'username displayImage')
-                        .populate('callId', 'title roomId')
+                        .populate("fromUserId", "username displayImage")
+                        .populate("toUserId", "username displayImage")
+                        .populate("callId", "title roomId")
                         .sort({ timestamp: -1 }),
                 ]);
-                
+
                 return { sentTips, receivedTips };
             }
         } catch (error) {
-            console.error('Error getting user tips:', error);
+            logger.error("Error getting user tips:", error);
             throw error;
         }
     }
@@ -95,16 +101,16 @@ export class TipService {
     /**
      * Get all tips for a specific call
      */
-    static async getTipsForCall(callId: string) {
+    static async getTipsForCall(callId: string): Promise<ITip[]> {
         try {
             const tips = await Tip.find({ callId: new Types.ObjectId(callId) })
-                .populate('fromUserId', 'username displayImage')
-                .populate('toUserId', 'username displayImage')
+                .populate("fromUserId", "username displayImage")
+                .populate("toUserId", "username displayImage")
                 .sort({ timestamp: -1 });
-            
+
             return tips;
         } catch (error) {
-            console.error('Error getting tips for call:', error);
+            logger.error("Error getting tips for call:", error);
             throw error;
         }
     }
@@ -119,13 +125,25 @@ export class TipService {
         tipsReceived: number;
     }> {
         const [sentTips, receivedTips] = await Promise.all([
-            Tip.find({ fromUserId: new Types.ObjectId(userId), status: 'completed' }),
-            Tip.find({ toUserId: new Types.ObjectId(userId), status: 'completed' }),
+            Tip.find({
+                fromUserId: new Types.ObjectId(userId),
+                status: "completed",
+            }),
+            Tip.find({
+                toUserId: new Types.ObjectId(userId),
+                status: "completed",
+            }),
         ]);
 
         return {
-            totalSent: sentTips.reduce((sum, tip) => sum + parseFloat(tip.amount), 0),
-            totalReceived: receivedTips.reduce((sum, tip) => sum + parseFloat(tip.amount), 0),
+            totalSent: sentTips.reduce(
+                (sum, tip) => sum + parseFloat(tip.amount),
+                0,
+            ),
+            totalReceived: receivedTips.reduce(
+                (sum, tip) => sum + parseFloat(tip.amount),
+                0,
+            ),
             tipsSent: sentTips.length,
             tipsReceived: receivedTips.length,
         };
@@ -136,8 +154,8 @@ export class TipService {
      */
     static async updateTipStatus(
         tipId: string,
-        status: 'completed' | 'failed',
-        transactionHash?: string
+        status: "completed" | "failed",
+        transactionHash?: string,
     ): Promise<ITip | null> {
         return await Tip.findByIdAndUpdate(
             tipId,
@@ -145,7 +163,7 @@ export class TipService {
                 status,
                 ...(transactionHash && { transactionHash }),
             },
-            { new: true }
+            { new: true },
         );
     }
 
@@ -153,12 +171,17 @@ export class TipService {
      * Handle tip received webhook
      * @deprecated Use createTip instead
      */
-    static async handleTipReceived(roomId: string, senderId: string, recipientId: string, amount: number) {
+    static async handleTipReceived(
+        roomId: string,
+        senderId: string,
+        recipientId: string,
+        amount: number,
+    ): Promise<ITip | null> {
         try {
             // Validate call
             const call = await Call.findOne({ roomId });
             if (!call) {
-                throw new Error('Call not found');
+                throw new Error("Call not found");
             }
 
             // Validate users
@@ -168,11 +191,11 @@ export class TipService {
             ]);
 
             if (!sender) {
-                throw new Error('Tip sender not found');
+                throw new Error("Tip sender not found");
             }
 
             if (!recipient) {
-                throw new Error('Tip recipient not found');
+                throw new Error("Tip recipient not found");
             }
 
             // Create tip record
@@ -191,7 +214,7 @@ export class TipService {
 
             return tip;
         } catch (error) {
-            console.error('Error handling tip received:', error);
+            logger.error("Error handling tip received:", error);
             throw error;
         }
     }
@@ -201,24 +224,29 @@ export class TipService {
      * @param walletAddress Wallet address of the user
      * @param type Type of tips to retrieve (sent, received, or both)
      */
-    static async getUserTipsWithCallInfo(walletAddress: string, type?: 'sent' | 'received'): Promise<any> {
+    static async getUserTipsWithCallInfo(
+        walletAddress: string,
+        type?: "sent" | "received",
+    ): Promise<any> {
         try {
             // First, find the user by wallet address
-            const user = await User.findOne({ walletAddress: walletAddress.toLowerCase() });
+            const user = await User.findOne({
+                walletAddress: walletAddress.toLowerCase(),
+            });
             if (!user) {
-                throw new Error('User not found');
+                throw new Error("User not found");
             }
 
             // Get the user ID as a string
             const userId = user._id ? user._id.toString() : null;
             if (!userId) {
-                throw new Error('Invalid user ID');
+                throw new Error("Invalid user ID");
             }
 
             // Now use the getUserTips method with the user's ID
             return this.getUserTips(userId, type);
         } catch (error) {
-            console.error('Error getting user tips with call info:', error);
+            logger.error("Error getting user tips with call info:", error);
             throw error;
         }
     }
