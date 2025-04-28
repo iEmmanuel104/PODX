@@ -28,7 +28,7 @@ export default class WebhookController {
             }
 
             // Process the webhook event
-            const { type, ...payload } = req.body;
+            const { type } = req.body;
 
             // Verify if this is a relevant event type
             if (!isRelevantEvent(type)) {
@@ -45,9 +45,10 @@ export default class WebhookController {
             logger.info(`Received webhook ${webhookId} of type ${type}`);
 
             // Process webhook asynchronously
-            CallService.processWebhook(type, payload).catch((error) => {
-                logger.error(`Error processing webhook ${webhookId}:`, error);
-            });
+            CallService.processWebhook(type);
+            // .catch((error) => {
+            //     logger.error(`Error processing webhook ${webhookId}:`, error);
+            // });
 
             // Return immediate success response
             res.status(200).json({
