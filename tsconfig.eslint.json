@@ -6,6 +6,8 @@
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "jest.config.js",
+    "jest.setup.ts",
   ]
 }

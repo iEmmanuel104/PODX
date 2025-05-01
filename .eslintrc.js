@@ -10,6 +10,7 @@ module.exports = {
     env: {
         browser: false,
         node: true,
+        jest: true,
     },
     parserOptions: {
         project: "./tsconfig.eslint.json",
@@ -52,4 +53,12 @@ module.exports = {
             },
         },
     },
+    overrides: [
+        {
+            files: ["*.test.ts", "*.spec.ts"],
+            env: {
+                jest: true,
+            },
+        },
+    ],
 };

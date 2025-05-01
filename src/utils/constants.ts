@@ -12,6 +12,8 @@ export const ORIGIN =
 
 export const REDIS_CONNECTION_URL = process.env.REDIS_CONNECTION_URL as string;
 
+export const FRONTEND_URL = process.env.FRONTEND_URL || "https://app.podx.xyz";
+
 export const HUDDLE01_API_KEY = process.env.HUDDLE01_API_KEY as string;
 
 export const JWT_SECRET = process.env.JWT_SECRET as string;

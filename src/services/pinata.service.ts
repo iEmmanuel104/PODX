@@ -2,6 +2,7 @@
 import axios from "axios";
 import { logger } from "../utils/logger";
 import FormData from "form-data";
+import { FRONTEND_URL } from "../utils/constants";
 
 export interface NFTMetadataInput {
     name: string;
@@ -108,7 +109,7 @@ export class PinataService {
                 attributes: input.attributes || [],
                 callDetails: input.callDetails || {},
                 external_url: input.callDetails?.roomId
-                    ? `${process.env.FRONTEND_URL || "https://app.podx.xyz"}/calls/${input.callDetails.roomId}`
+                    ? `${FRONTEND_URL}/calls/${input.callDetails.roomId}`
                     : undefined,
                 background_color: "000000",
                 timestamp: new Date().toISOString(),
@@ -140,8 +141,14 @@ export class PinataService {
                 metadataUri: `ipfs://${response.data.IpfsHash}`,
                 error: null,
             };
-        } catch (error) {
-            logger.error("Error creating NFT metadata:", error);
+        } catch (error: any) {
+            logger.error("Error creating NFT metadata:", {
+                status: error.response?.status,
+                statusText: error.response?.statusText,
+                data: error.response?.data,
+                url: error.response?.url,
+                method: error.response?.method,
+            });
             return {
                 metadataUri: null,
                 error:

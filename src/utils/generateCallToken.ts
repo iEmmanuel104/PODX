@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { AccessToken, Role } from "@huddle01/server-sdk/auth";
 
 // Define types for permissions and metadata

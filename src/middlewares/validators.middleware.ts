@@ -24,7 +24,8 @@ export function validationMiddleware(type: any) {
             })
             .catch((error) => {
                 logger.error("Validation Error:", error);
-                throw new BadRequestError("Validation failed");
+                // throw new BadRequestError("Validation failed");
+                next(error);
             });
     };
 }

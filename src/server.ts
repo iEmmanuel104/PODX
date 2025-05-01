@@ -29,8 +29,8 @@ async function startServer(): Promise<void> {
                     : `http://localhost:${port}`;
 
             logger.info("\n📚 API Documentation:");
-            console.info(`${baseUrl}/api-docs - Swagger UI`);
-            console.info(`${baseUrl}/api/v0 - API Base URL\n`);
+            logger.info(`${baseUrl}/api-docs - Swagger UI`);
+            logger.info(`${baseUrl}/api/v0 - API Base URL\n`);
 
             logger.info(
                 `Swagger documentation is available at ${baseUrl}/api-docs`,
@@ -40,22 +40,21 @@ async function startServer(): Promise<void> {
         process.on("SIGINT", () => {
             logger.debug("Gracefully shutting down");
             server.close(() => {
-                console.log("Closed all connections");
+                logger.info("Closed all connections");
                 process.exit(0);
             });
         });
     } catch (err) {
-        // console.log(err);
+        // logger.info(err);
         logger.error(err);
 
         // Clean up Redis connection
-        redisClient.quit((err, result) => {
-            if (err) {
-                logger.error("Error quitting Redis:", err);
-            } else {
-                logger.info("Redis instance has been stopped:", result);
-            }
-        });
+        try {
+            const result = await redisClient.quit();
+            logger.info("Redis instance has been stopped:", result);
+        } catch (err) {
+            logger.error("Error quitting Redis:", err);
+        }
 
         // Exit the process with error
         process.exit(1);
@@ -63,4 +62,4 @@ async function startServer(): Promise<void> {
 }
 
 // Start the server
-startServer();
+void startServer();

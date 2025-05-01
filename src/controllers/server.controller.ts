@@ -64,8 +64,11 @@ export default class ServerController {
         res: Response,
         // next: RequestHandler,
     ): Response {
-        logger.error("Error handler");
-        logger.error(err);
+        logger.error("Error occurred:", {
+            message: err.message,
+            stack: err.stack,
+            statusCode: err.statusCode || 500,
+        });
 
         const customError = {
             status: "error",
@@ -76,9 +79,7 @@ export default class ServerController {
 
         // MongoDB ValidationError
         if (err.name === "ValidationError" && "errors" in err) {
-            customError.message = Object.values(
-                err.errors as unknown as GenericErrors,
-            )
+            customError.message = Object.values(err.errors as GenericErrors)
                 .map((item) => (item as ValidationErrorItem).message)
                 .join(",");
             customError.statusCode = 400;

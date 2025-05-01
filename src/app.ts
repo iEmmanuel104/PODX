@@ -47,7 +47,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     logger.info(
         `Request logged: ${req.method} ${req.path} from ${req.ip} at ${new Date().toISOString()}`,
     );
-    logger.debug("Full Requested URL:", fullUrl); // Consider using different log levels for better granularity
+    logger.info("Full Requested URL:", fullUrl); // Consider using different log levels for better granularity
     next();
 });
 

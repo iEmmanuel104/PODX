@@ -94,68 +94,78 @@ export default class CallsController {
         req: AuthenticatedRequest,
         res: Response,
     ): Promise<void> {
-        const { sessionId } = req.params;
+        try {
 
-        // Get database call data
-        const call = await Call.findOne({ roomId: sessionId })
-            .lean()
-            .select(
-                "roomId title description type status members tokenGating ipfsUrl createdAt isActive isPrivate isScheduled scheduledTime",
-            )
-            .populate("members.userId", "username walletAddress");
-
-        if (!call) {
-            throw new BadRequestError("Call not found");
+            const { sessionId } = req.params;
+    
+            if (!sessionId) {
+                throw new BadRequestError("Invalid sessionId");
+            }
+    
+            // Get database call data
+            const call = await Call.findOne({ roomId: sessionId })
+                .lean()
+                .select(
+                    "roomId title description type status members tokenGating ipfsUrl createdAt isActive isPrivate isScheduled scheduledTime",
+                )
+                .populate("members.userId", "username walletAddress");
+    
+            if (!call) {
+                throw new BadRequestError("Call not found");
+            }
+    
+            // Get live participants data with error handling
+            // let participants: any[] = [];
+    
+            // Try to get live participants, but don't fail if no session exists
+            const participants = await (async (): Promise<any[]> => {
+                try {
+                    const huddle01Response =
+                        await Huddle01Service.getLiveParticipants(sessionId);
+    
+                    if (huddle01Response.error) {
+                        throw huddle01Response.error;
+                    }
+    
+                    if (huddle01Response.participants) {
+                        return huddle01Response.participants as Array<
+                            Record<string, any>
+                        >;
+                    }
+                } catch (participantsError) {
+                    // Silently handle the error when nobody is in the room yet
+                    // This catches "No ongoing session found for the room and project"
+                    logger.error(`No active participants in room ${sessionId}`);
+                }
+    
+                return [];
+            })();
+    
+            // Find the host from the members array
+            const hostMember = call.members?.find((m) => m.role === "host");
+            const hostData = hostMember?.userId
+                ? (hostMember.userId as unknown as IUser)
+                : null;
+    
+            const hostInfo = hostData
+                ? {
+                    walletAddress: hostData.walletAddress || "",
+                    username: hostData.username || "",
+                }
+                : null;
+    
+            // Format the response according to the new structure
+            const formattedResponse = formatCallResponse(
+                call,
+                hostInfo,
+                participants,
+            );
+    
+            res.status(200).json(formattedResponse);
+        } catch (error) {
+            logger.error("Error retrieving call", error);
+            throw error;
         }
-
-        // Get live participants data with error handling
-        // let participants: any[] = [];
-
-        // Try to get live participants, but don't fail if no session exists
-        const participants = await (async (): Promise<any[]> => {
-            try {
-                const huddle01Response =
-                    await Huddle01Service.getLiveParticipants(sessionId);
-
-                if (huddle01Response.error) {
-                    throw huddle01Response.error;
-                }
-
-                if (huddle01Response.participants) {
-                    return huddle01Response.participants as Array<
-                        Record<string, any>
-                    >;
-                }
-            } catch (participantsError) {
-                // Silently handle the error when nobody is in the room yet
-                // This catches "No ongoing session found for the room and project"
-                logger.error(`No active participants in room ${sessionId}`);
-            }
-
-            return [];
-        })();
-
-        // Find the host from the members array
-        const hostMember = call.members?.find((m) => m.role === "host");
-        const hostData = hostMember?.userId
-            ? (hostMember.userId as unknown as IUser)
-            : null;
-
-        const hostInfo = hostData
-            ? {
-                walletAddress: hostData.walletAddress || "",
-                username: hostData.username || "",
-            }
-            : null;
-
-        // Format the response according to the new structure
-        const formattedResponse = formatCallResponse(
-            call,
-            hostInfo,
-            participants,
-        );
-
-        res.status(200).json(formattedResponse);
     }
 
     /**
@@ -169,217 +179,106 @@ export default class CallsController {
         req: AuthenticatedRequest & { body: CreateCallDto },
         res: Response,
     ): Promise<void> {
-        const {
-            title,
-            description,
-            type,
-            tokenGatingAddresses,
-            tokenGatingType,
-            durationRequirement,
-            isScheduled,
-            scheduledTime,
-        } = req.body;
-
-        if (!title || !type || !["audio", "video"].includes(type)) {
-            throw new BadRequestError("Invalid call parameters");
-        }
-
-        // Validate scheduled time if provided
-        if (isScheduled && !scheduledTime) {
-            throw new BadRequestError(
-                "scheduledTime is required when isScheduled is true",
-            );
-        }
-        if (isScheduled && new Date(scheduledTime) <= new Date()) {
-            throw new BadRequestError("scheduledTime must be in the future");
-        }
-
-        // Validate duration requirement if provided
-        if (durationRequirement) {
-            validateDurationRequirement({
-                value: durationRequirement,
-                type: "percentage",
-            });
-        }
-
-        // Prepare Huddle01 metadata including schedule info
-        const huddleMetadata = {
-            title,
-            type,
-            durationRequirement: durationRequirement
-                ? {
-                    value: durationRequirement,
-                    type: "percentage",
-                }
-                : undefined,
-            isScheduled: Boolean(isScheduled),
-            scheduledTime: isScheduled
-                ? new Date(scheduledTime).toISOString()
-                : undefined,
-        };
-
-        // Prepare NFT attributes including schedule info
-        const nftAttributes = [
-            {
-                trait_type: "Type",
-                value: type,
-            },
-            {
-                trait_type: "Creator",
-                value: req.user.walletAddress,
-            },
-            {
-                trait_type: "Call Type",
-                value: type === "audio" ? "Audio Call" : "Video Call",
-            },
-            // Add duration requirement if provided
-            ...(durationRequirement
-                ? [
-                    {
-                        trait_type: "Duration Requirement",
-                        value: `${durationRequirement}%`,
-                    },
-                ]
-                : []),
-            // Add schedule info if scheduled
-            ...(isScheduled
-                ? [
-                    {
-                        trait_type: "Scheduled",
-                        value: "Yes",
-                    },
-                    {
-                        trait_type: "Scheduled Time",
-                        value: new Date(scheduledTime).toISOString(),
-                    },
-                ]
-                : []),
-        ];
-
-        // Prepare call details for NFT metadata
-        const nftCallDetails = {
-            title,
-            type,
-            creator: req.user.walletAddress,
-            creatorName: req.user.username,
-            description: description || `Call: ${title}`,
-            callType: type,
-            tokenGating: {
-                enabled: Boolean(tokenGatingAddresses && tokenGatingType),
-                type: tokenGatingType,
-                addresses: tokenGatingAddresses,
-            },
-            durationRequirement: durationRequirement
-                ? {
-                    value: durationRequirement,
-                    type: "percentage",
-                }
-                : undefined,
-            isScheduled: Boolean(isScheduled),
-            scheduledTime: isScheduled
-                ? new Date(scheduledTime).toISOString()
-                : undefined,
-            createdAt: new Date().toISOString(),
-            platform: "Huddle01",
-            version: "1.0",
-        };
-
-        // Run Huddle01 room creation and NFT metadata creation in parallel
-        const [huddle01Result, nftMetadata] = await Promise.all([
-            // Create Huddle01 room
-            Huddle01Service.createRoom(
+        try {
+            const {
                 title,
-                true, // Start locked
-                huddleMetadata,
-            ),
-            // Create NFT metadata
-            PinataService.createNFTMetadata({
-                name: title,
-                description: description || `Call: ${title}`,
-                image: req.file?.buffer || null,
-                attributes: nftAttributes,
-                callDetails: nftCallDetails,
-            }),
-        ]);
+                description,
+                type,
+                tokenGatingAddresses,
+                tokenGatingType,
+                durationRequirement,
+                isScheduled,
+                scheduledTime,
+            } = req.body;
 
-        // Check for errors in parallel operations
-        if (huddle01Result.error || !huddle01Result.room) {
-            logger.error(
-                `Huddle01 room creation failed: ${huddle01Result.error}`,
-            );
-            throw new InternalServerError(
-                "Unable to create Huddle01 room. Please try again later.",
-            );
-        }
+            if (!title || !type || !["audio", "video"].includes(type)) {
+                throw new BadRequestError("Invalid call parameters");
+            }
 
-        if (nftMetadata.error || !nftMetadata.metadataUri) {
-            logger.error(`NFT metadata creation failed: ${nftMetadata.error}`);
-            throw new InternalServerError(
-                "Unable to create NFT metadata. Please try again later.",
-            );
-        }
+            // Validate scheduled time if provided
+            if (isScheduled && !scheduledTime) {
+                throw new BadRequestError(
+                    "scheduledTime is required when isScheduled is true",
+                );
+            }
+            if (isScheduled && new Date(scheduledTime) <= new Date()) {
+                throw new BadRequestError("scheduledTime must be in the future");
+            }
 
-        // Get room ID from Huddle01 result
-        const room = huddle01Result.room;
+            // Validate duration requirement if provided
+            if (durationRequirement) {
+                validateDurationRequirement({
+                    value: durationRequirement,
+                    type: "percentage",
+                });
+            }
 
-        // Create Call document with all data, including schedule info
-        const callData: CallCreateData = {
-            roomId: room.roomId,
-            title,
-            description: description || "",
-            type,
-            hostWalletAddress: req.user.walletAddress,
-            createdById: req.user.id,
-            status: "created",
-            members: [{ userId: req.user.id, role: "host" }],
-            tokenGating: {
-                enabled: Boolean(tokenGatingAddresses && tokenGatingType),
-                type: tokenGatingType,
-                addresses: tokenGatingAddresses,
-            },
-            ipfsUrl: nftMetadata.metadataUri,
-            isScheduled: Boolean(isScheduled),
-            scheduledTime: isScheduled ? new Date(scheduledTime) : undefined,
-            custom: durationRequirement
-                ? {
-                    durationRequirement: {
+            // Prepare Huddle01 metadata including schedule info
+            const huddleMetadata = {
+                title,
+                type,
+                durationRequirement: durationRequirement
+                    ? {
                         value: durationRequirement,
                         type: "percentage",
-                    },
-                }
-                : undefined,
-        };
+                    }
+                    : undefined,
+                isScheduled: Boolean(isScheduled),
+                scheduledTime: isScheduled
+                    ? new Date(scheduledTime).toISOString()
+                    : undefined,
+            };
 
-        const call = await Call.create(callData);
-        logger.info(`Call created with roomId: ${call.roomId}`);
-        await call.populate(
-            "members.userId",
-            "username walletAddress displayImage",
-        );
-
-        // Format the response according to the new structure, including schedule info
-        const formattedResponse = {
-            status: "success",
-            message: "Call created successfully",
-            data: {
-                roomId: call.roomId,
-                title: call.title,
-                description: call.description,
-                type: call.type,
-                host: {
-                    walletAddress: req.user.walletAddress,
-                    username: req.user.username,
+            // Prepare NFT attributes including schedule info
+            const nftAttributes = [
+                {
+                    trait_type: "Type",
+                    value: type,
                 },
-                status: call.status,
-                isActive: call.isActive,
-                isPrivate: true, // Based on room creation parameter
+                {
+                    trait_type: "Creator",
+                    value: req.user.walletAddress,
+                },
+                {
+                    trait_type: "Call Type",
+                    value: type === "audio" ? "Audio Call" : "Video Call",
+                },
+                // Add duration requirement if provided
+                ...(durationRequirement
+                    ? [
+                        {
+                            trait_type: "Duration Requirement",
+                            value: `${durationRequirement}%`,
+                        },
+                    ]
+                    : []),
+                // Add schedule info if scheduled
+                ...(isScheduled
+                    ? [
+                        {
+                            trait_type: "Scheduled",
+                            value: "Yes",
+                        },
+                        {
+                            trait_type: "Scheduled Time",
+                            value: new Date(scheduledTime).toISOString(),
+                        },
+                    ]
+                    : []),
+            ];
+
+            // Prepare call details for NFT metadata
+            const nftCallDetails = {
+                title,
+                type,
+                creator: req.user.walletAddress,
+                creatorName: req.user.username,
+                description: description || `Call: ${title}`,
+                callType: type,
                 tokenGating: {
-                    enabled: call.tokenGating.enabled,
-                    type: call.tokenGating.type,
-                    allowedWallets: call.tokenGating.addresses || [],
-                },
-                resources: {
-                    ipfs: call.ipfsUrl,
+                    enabled: Boolean(tokenGatingAddresses && tokenGatingType),
+                    type: tokenGatingType,
+                    addresses: tokenGatingAddresses,
                 },
                 durationRequirement: durationRequirement
                     ? {
@@ -387,18 +286,135 @@ export default class CallsController {
                         type: "percentage",
                     }
                     : undefined,
-                isScheduled: call.isScheduled,
-                scheduledTime: call.isScheduled
-                    ? call.scheduledTime?.toISOString()
+                isScheduled: Boolean(isScheduled),
+                scheduledTime: isScheduled
+                    ? new Date(scheduledTime).toISOString()
                     : undefined,
-                timestamps: {
-                    createdAt: call.createdAt,
-                },
-            },
-        };
+                createdAt: new Date().toISOString(),
+                platform: "Huddle01",
+                version: "1.0",
+            };
 
-        // Send response immediately after DB operations
-        res.status(200).json(formattedResponse);
+            // Run Huddle01 room creation and NFT metadata creation in parallel
+            const [huddle01Result, nftMetadata] = await Promise.all([
+                // Create Huddle01 room
+                Huddle01Service.createRoom(
+                    title,
+                    true, // Start locked
+                    huddleMetadata,
+                ),
+                // Create NFT metadata
+                PinataService.createNFTMetadata({
+                    name: title,
+                    description: description || `Call: ${title}`,
+                    image: req.file?.buffer || null,
+                    attributes: nftAttributes,
+                    callDetails: nftCallDetails,
+                }),
+            ]);
+
+            // Check for errors in parallel operations
+            if (huddle01Result.error || !huddle01Result.room) {
+                logger.error(
+                    `Huddle01 room creation failed: ${huddle01Result.error}`,
+                );
+                throw new InternalServerError(
+                    "Unable to create Huddle01 room. Please try again later.",
+                );
+            }
+
+            if (nftMetadata.error || !nftMetadata.metadataUri) {
+                logger.error(`NFT metadata creation failed: ${nftMetadata.error}`);
+                throw new InternalServerError(
+                    "Unable to create NFT metadata. Please try again later.",
+                );
+            }
+
+            // Get room ID from Huddle01 result
+            const room = huddle01Result.room;
+
+            // Create Call document with all data, including schedule info
+            const callData: CallCreateData = {
+                roomId: room.roomId,
+                title,
+                description: description || "",
+                type,
+                hostWalletAddress: req.user.walletAddress,
+                createdById: req.user.id,
+                status: "created",
+                members: [{ userId: req.user.id, role: "host" }],
+                tokenGating: {
+                    enabled: Boolean(tokenGatingAddresses && tokenGatingType),
+                    type: tokenGatingType,
+                    addresses: tokenGatingAddresses,
+                },
+                ipfsUrl: nftMetadata.metadataUri,
+                isScheduled: Boolean(isScheduled),
+                scheduledTime: isScheduled ? new Date(scheduledTime) : undefined,
+                custom: durationRequirement
+                    ? {
+                        durationRequirement: {
+                            value: durationRequirement,
+                            type: "percentage",
+                        },
+                    }
+                    : undefined,
+            };
+
+            const call = await Call.create(callData);
+            logger.info(`Call created with roomId: ${call.roomId}`);
+            await call.populate(
+                "members.userId",
+                "username walletAddress displayImage",
+            );
+
+            // Format the response according to the new structure, including schedule info
+            const formattedResponse = {
+                status: "success",
+                message: "Call created successfully",
+                data: {
+                    roomId: call.roomId,
+                    title: call.title,
+                    description: call.description,
+                    type: call.type,
+                    host: {
+                        walletAddress: req.user.walletAddress,
+                        username: req.user.username,
+                    },
+                    status: call.status,
+                    isActive: call.isActive,
+                    isPrivate: true, // Based on room creation parameter
+                    tokenGating: {
+                        enabled: call.tokenGating?.enabled,
+                        type: call.tokenGating?.type,
+                        allowedWallets: call.tokenGating?.addresses || [],
+                    },
+                    resources: {
+                        ipfs: call.ipfsUrl,
+                    },
+                    durationRequirement: durationRequirement
+                        ? {
+                            value: durationRequirement,
+                            type: "percentage",
+                        }
+                        : undefined,
+                    isScheduled: call.isScheduled,
+                    scheduledTime: call.isScheduled
+                        ? call.scheduledTime?.toISOString()
+                        : undefined,
+                    timestamps: {
+                        createdAt: call.createdAt,
+                    },
+                },
+            };
+
+            // Send response immediately after DB operations
+            res.status(200).json(formattedResponse);
+        }
+        catch (error) {
+            logger.error("Error creating call", error);
+            throw error;
+        }
     }
 
     /**
@@ -471,7 +487,9 @@ export default class CallsController {
         } catch (error) {
             // Silently handle the "No ongoing session" error
             // This is not an actual error but a normal state when nobody is in the room
-            logger.info(`No active participants in room ${roomId}`);
+            logger.error(`No active participants in room ${roomId}`, error);
+            throw new BadRequestError(
+                `No active participants in room ${roomId}`);
         }
 
         // Always return a 200 success response with participants (empty array if none)
@@ -492,75 +510,81 @@ export default class CallsController {
         req: AuthenticatedRequest,
         res: Response, // & { body: GenerateTokenDto },
     ): Promise<void> {
-        const { roomId, role = "guest", permissions } = req.body;
+        try {
 
-        if (!roomId) {
-            throw new BadRequestError("Room ID is required");
-        }
-
-        // Get call details to verify it exists
-        const call = await Call.findOne({ roomId });
-        if (!call) {
-            throw new BadRequestError(`Call with room ID ${roomId} not found`);
-        }
-
-        // Set default permissions based on role if not provided
-        let tokenPermissions: TokenPermissions;
-
-        if (!permissions) {
-            // Default permissions based on role
-            tokenPermissions = {
-                admin: role === "host" || role === "coHost",
-                canConsume: true,
-                canProduce: role !== "listener" && role !== "bot",
-                canProduceSources: {
-                    cam:
-                        role !== "speaker" &&
-                        role !== "listener" &&
-                        role !== "bot",
-                    mic: role !== "listener" && role !== "bot",
-                    screen:
-                        role !== "speaker" &&
-                        role !== "listener" &&
-                        role !== "bot",
-                },
-                canRecvData: role !== "bot",
-                canSendData: role !== "bot",
-                canUpdateMetadata: true,
+            const { roomId, role = "guest", permissions } = req.body;
+    
+            if (!roomId) {
+                throw new BadRequestError("Room ID is required");
+            }
+    
+            // Get call details to verify it exists
+            const call = await Call.exists({ roomId });
+            if (!call) {
+                throw new BadRequestError(`Call with room ID ${roomId} not found`);
+            }
+    
+            // Set default permissions based on role if not provided
+            let tokenPermissions: TokenPermissions;
+    
+            if (!permissions) {
+                // Default permissions based on role
+                tokenPermissions = {
+                    admin: role === "host" || role === "coHost",
+                    canConsume: true,
+                    canProduce: role !== "listener" && role !== "bot",
+                    canProduceSources: {
+                        cam:
+                            role !== "speaker" &&
+                            role !== "listener" &&
+                            role !== "bot",
+                        mic: role !== "listener" && role !== "bot",
+                        screen:
+                            role !== "speaker" &&
+                            role !== "listener" &&
+                            role !== "bot",
+                    },
+                    canRecvData: role !== "bot",
+                    canSendData: role !== "bot",
+                    canUpdateMetadata: true,
+                };
+            } else {
+                tokenPermissions = permissions;
+            }
+    
+            // Add metadata with user information
+            const metadata = {
+                walletAddress: req.user.walletAddress,
+                userId: req.user.id,
+                username: req.user.username,
+                displayName:
+                    req.user.username || req.user.walletAddress.substring(0, 10),
             };
-        } else {
-            tokenPermissions = permissions;
-        }
-
-        // Add metadata with user information
-        const metadata = {
-            walletAddress: req.user.walletAddress,
-            userId: req.user.id,
-            username: req.user.username,
-            displayName:
-                req.user.username || req.user.walletAddress.substring(0, 10),
-        };
-
-        // Generate token
-        const token = await generateCallToken({
-            apiKey: HUDDLE01_API_KEY,
-            roomId,
-            role: role as ValidRole,
-            permissions: tokenPermissions,
-            metadata,
-        });
-
-        // Return success response
-        res.status(200).json({
-            status: "success",
-            message: "Token generated successfully",
-            data: {
-                token,
+    
+            // Generate token
+            const token = await generateCallToken({
+                apiKey: HUDDLE01_API_KEY,
                 roomId,
-                role,
+                role: role as ValidRole,
+                permissions: tokenPermissions,
                 metadata,
-                expiresIn: 3600, // 1 hour expiration
-            },
-        });
+            });
+    
+            // Return success response
+            res.status(200).json({
+                status: "success",
+                message: "Token generated successfully",
+                data: {
+                    token,
+                    roomId,
+                    role,
+                    metadata,
+                    expiresIn: 3600, // 1 hour expiration
+                },
+            });
+        } catch (error) {
+            logger.error("Error generating token", error);
+            throw error;
+        }
     }
 }

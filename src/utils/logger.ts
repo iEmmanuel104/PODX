@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
+/* eslint-disable prettier/prettier */
 import winston, { format } from "winston";
 // import { LoggingWinston } from '@google-cloud/logging-winston';
 // import { PROJECT_ID, NODE_ENV } from '../utils/constants';
@@ -19,9 +21,14 @@ const logFormat = printf((info) => {
 
     if (info.message) {
         if (typeof info.message === "object") {
-            logMessage += ` ${util.inspect(info.message, { depth: null, colors: true })}`;
+            // Use util.inspect to mimic console.dir behavior
+            logMessage += ` ${util.inspect(info.message, { depth: 5, colors: true, compact: false })}`;
         } else {
-            logMessage += ` ${info.message}`;
+            logMessage += ` ${
+                typeof info.message === "object" && info.message !== null
+                    ? util.inspect(info.message, { depth: 5, colors: true, compact: false })
+                    : String(info.message)
+            }`;
         }
     }
 
@@ -29,7 +36,8 @@ const logFormat = printf((info) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (info[Symbol.for("splat")] as any).forEach((item: unknown) => {
             if (typeof item === "object") {
-                logMessage += ` ${util.inspect(item, { depth: null, colors: true })}`;
+                // Use util.inspect for additional arguments
+                logMessage += ` ${util.inspect(item, { depth: 5, colors: true, compact: false })}`;
             } else {
                 logMessage += ` ${item}`;
             }

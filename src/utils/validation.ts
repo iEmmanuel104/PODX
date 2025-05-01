@@ -27,6 +27,7 @@ export function validateDurationRequirement(
         !["absolute", "percentage"].includes(durationReq.type)
     ) {
         throw new BadRequestError(
+            // eslint-disable-next-line prettier/prettier
             "Duration requirement type must be either \"absolute\" or \"percentage\"",
         );
     }

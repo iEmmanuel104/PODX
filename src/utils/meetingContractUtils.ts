@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createPublicClient, http, decodeEventLog } from "viem";
 import { baseSepolia } from "viem/chains";
 import {
@@ -8,24 +9,32 @@ import { privateKeyToAccount } from "viem/accounts";
 import { config } from "dotenv";
 import meetingFactoryMetadata from "../contracts/artifacts/MeetingFactory_metadata.json";
 import meetingMetadata from "../contracts/artifacts/Meeting_metadata.json";
+import { logger } from "./logger";
 
 // Load environment variables first
 config();
 
+type Hex = `0x${string}`;
+type EstimateGasResult = {
+    preVerificationGas: bigint;
+    verificationGasLimit: bigint;
+    callGasLimit: bigint;
+};
+
 // Get environment variables and RPC URL
-const FACTORY_ADDRESS = process.env.FACTORY_ADDRESS as `0x${string}`;
+const FACTORY_ADDRESS = process.env.FACTORY_ADDRESS as Hex;
 const PRIVATE_KEY = process.env.PRIVATE_KEY?.startsWith("0x")
-    ? (process.env.PRIVATE_KEY as `0x${string}`)
+    ? (process.env.PRIVATE_KEY as Hex)
     : `0x${process.env.PRIVATE_KEY}`;
 const COINBASE_API_KEY = process.env.COINBASE_API_KEY;
 const RPC_URL = `https://api.developer.coinbase.com/rpc/v1/base-sepolia/${COINBASE_API_KEY}`;
 
 // Log environment variables for debugging
-console.log("\nEnvironment Variables:");
-console.log("FACTORY_ADDRESS:", FACTORY_ADDRESS);
-console.log("PRIVATE_KEY:", PRIVATE_KEY ? "✅ Set" : "❌ Missing");
-console.log("COINBASE_API_KEY:", COINBASE_API_KEY ? "✅ Set" : "❌ Missing");
-console.log("RPC_URL:", RPC_URL);
+logger.info("\nEnvironment Variables:");
+logger.info("FACTORY_ADDRESS:", FACTORY_ADDRESS);
+logger.info("PRIVATE_KEY:", PRIVATE_KEY ? "✅ Set" : "❌ Missing");
+logger.info("COINBASE_API_KEY:", COINBASE_API_KEY ? "✅ Set" : "❌ Missing");
+logger.info("RPC_URL:", RPC_URL);
 
 if (!FACTORY_ADDRESS || !PRIVATE_KEY || !COINBASE_API_KEY) {
     throw new Error(
@@ -40,10 +49,10 @@ const client = createPublicClient({
 });
 
 // Create owner account from private key
-const owner = privateKeyToAccount(PRIVATE_KEY);
+const owner = privateKeyToAccount(PRIVATE_KEY as Hex);
 
 // Create smart account and bundler client
-const getClients = async () => {
+const getClients = async (): Promise<{ account: any; bundlerClient: any }> => {
     try {
         // Create Coinbase smart wallet using an EOA signer
         const account = await toCoinbaseSmartAccount({
@@ -52,7 +61,7 @@ const getClients = async () => {
         });
 
         // Log the deterministic public address
-        console.log(`Using smart account address: ${account.address}`);
+        logger.info(`Using smart account address: ${account.address}`);
 
         // The bundler is a special node that gets your UserOperation on chain
         const bundlerClient = createBundlerClient({
@@ -64,10 +73,15 @@ const getClients = async () => {
 
         // Pads the preVerificationGas to ensure UserOperation lands onchain
         account.userOperation = {
-            estimateGas: async (userOperation) => {
-                // @ts-expect-error - This matches the official example
-                const estimate =
-                    await bundlerClient.estimateUserOperationGas(userOperation);
+            estimateGas: async (userOperation): Promise<EstimateGasResult> => {
+                const estimate = await bundlerClient.estimateUserOperationGas({
+                    ...userOperation,
+                    callData: userOperation.callData || "0x",
+                    callGasLimit: userOperation.callGasLimit || 0n,
+                    maxFeePerGas: userOperation.maxFeePerGas || 0n,
+                    maxPriorityFeePerGas:
+                        userOperation.maxPriorityFeePerGas || 0n,
+                });
                 // adjust preVerification upward
                 estimate.preVerificationGas = estimate.preVerificationGas * 2n;
                 return estimate;
@@ -76,7 +90,7 @@ const getClients = async () => {
 
         return { account, bundlerClient };
     } catch (error) {
-        console.error("Error creating clients:", error);
+        logger.error("Error creating clients:", error);
         throw error;
     }
 };
@@ -84,22 +98,22 @@ const getClients = async () => {
 interface CreateMeetingParams {
     sessionName: string;
     metadataURL: string;
-    creator: `0x${string}`;
-    minters: `0x${string}`[];
+    creator: Hex;
+    minters: Hex[];
 }
 
 interface MintTokenParams {
-    meetingAddress: `0x${string}`;
-    recipient: `0x${string}`;
+    meetingAddress: Hex;
+    recipient: Hex;
     metadataURI: string;
 }
 
 interface DeployAndMintParams {
     sessionName: string;
     metadataURL: string;
-    creator: `0x${string}`;
-    minters: `0x${string}`[];
-    recipientAddress: `0x${string}`;
+    creator: Hex;
+    minters: Hex[];
+    recipientAddress: Hex;
 }
 
 /**
@@ -113,7 +127,12 @@ export class MeetingContractUtils {
      * @param params Combined parameters for deployment and minting
      * @returns Object containing deployment and minting transaction details
      */
-    static async deployAndMint(params: DeployAndMintParams) {
+    static async deployAndMint(params: DeployAndMintParams): Promise<{
+        meetingAddress?: Hex;
+        mintTxHash?: Hex;
+        success: boolean;
+        error?: string;
+    }> {
         try {
             const {
                 sessionName,
@@ -125,14 +144,14 @@ export class MeetingContractUtils {
             const { account } = await getClients();
             const smartAccountAddress = account.address;
 
-            console.log("\n🚀 Starting Deploy & Mint Operation");
-            console.log("Smart Account:", smartAccountAddress);
-            console.log("\n📝 Parameters:");
-            console.log("Session Name:", sessionName);
-            console.log("Metadata URL:", metadataURL);
-            console.log("Creator:", creator);
-            console.log("Minters:", minters);
-            console.log("Recipient:", recipientAddress);
+            logger.info("\n🚀 Starting Deploy & Mint Operation");
+            logger.info("Smart Account:", smartAccountAddress);
+            logger.info("\n📝 Parameters:");
+            logger.info("Session Name:", sessionName);
+            logger.info("Metadata URL:", metadataURL);
+            logger.info("Creator:", creator);
+            logger.info("Minters:", minters);
+            logger.info("Recipient:", recipientAddress);
 
             // First deploy the contract
             const { meetingAddress } = await this.deployMeeting({
@@ -148,8 +167,8 @@ export class MeetingContractUtils {
                 );
             }
 
-            console.log("\n🏗️ Contract Deployed Successfully");
-            console.log("Meeting Address:", meetingAddress);
+            logger.info("\n🏗️ Contract Deployed Successfully");
+            logger.info("Meeting Address:", meetingAddress);
 
             // Then mint the token
             const mintTxHash = await this.mintToken({
@@ -158,9 +177,9 @@ export class MeetingContractUtils {
                 metadataURI: metadataURL,
             });
 
-            console.log("\n🎉 Operation Complete!");
-            console.log("Contract:", meetingAddress);
-            console.log("Mint Transaction:", mintTxHash);
+            logger.info("\n🎉 Operation Complete!");
+            logger.info("Contract:", meetingAddress);
+            logger.info("Mint Transaction:", mintTxHash);
 
             return {
                 meetingAddress,
@@ -168,7 +187,7 @@ export class MeetingContractUtils {
                 success: true,
             };
         } catch (error) {
-            console.error("Deploy and mint operation failed:", error);
+            logger.error("Deploy and mint operation failed:", error);
             return {
                 success: false,
                 error: error instanceof Error ? error.message : "Unknown error",
@@ -181,16 +200,18 @@ export class MeetingContractUtils {
      * @param params Meeting creation parameters
      * @returns Transaction receipt containing deployment logs
      */
-    static async deployMeeting(params: CreateMeetingParams) {
+    static async deployMeeting(
+        params: CreateMeetingParams,
+    ): Promise<{ meetingAddress: Hex; receipt: any }> {
         try {
             const { sessionName, metadataURL, creator, minters } = params;
             const { account, bundlerClient } = await getClients();
 
-            console.log("\n📝 Deployment Parameters:");
-            console.log("Session Name:", sessionName);
-            console.log("Metadata URL:", metadataURL);
-            console.log("Creator:", creator);
-            console.log("Minters:", minters);
+            logger.info("\n📝 Deployment Parameters:");
+            logger.info("Session Name:", sessionName);
+            logger.info("Metadata URL:", metadataURL);
+            logger.info("Creator:", creator);
+            logger.info("Minters:", minters);
 
             // Prepare the contract call
             const createMeetingCall = {
@@ -213,18 +234,20 @@ export class MeetingContractUtils {
             });
 
             // Find and decode the MeetingCreated event
-            const meetingCreatedEvent = receipt.receipt.logs.find((log) => {
-                try {
-                    const event = decodeEventLog({
-                        abi: meetingFactoryMetadata.output.abi,
-                        data: log.data,
-                        topics: log.topics,
-                    });
-                    return event.eventName === "MeetingCreated";
-                } catch {
-                    return false;
-                }
-            });
+            const meetingCreatedEvent = receipt.receipt.logs.find(
+                (log: any) => {
+                    try {
+                        const event = decodeEventLog({
+                            abi: meetingFactoryMetadata.output.abi,
+                            data: log.data,
+                            topics: log.topics,
+                        });
+                        return event.eventName === "MeetingCreated";
+                    } catch {
+                        return false;
+                    }
+                },
+            );
 
             if (!meetingCreatedEvent) {
                 throw new Error(
@@ -240,14 +263,14 @@ export class MeetingContractUtils {
             });
 
             const meetingAddress = (decodedEvent.args as any)
-                .meetingAddress as `0x${string}`;
+                .meetingAddress as Hex;
 
-            console.log("\n✅ Meeting Contract Deployment Success!");
-            console.log("📍 Meeting Contract Address:", meetingAddress);
-            console.log(
+            logger.info("\n✅ Meeting Contract Deployment Success!");
+            logger.info("📍 Meeting Contract Address:", meetingAddress);
+            logger.info(
                 `⛽ View sponsored UserOperation: https://base-sepolia.blockscout.com/op/${receipt.userOpHash}`,
             );
-            console.log(
+            logger.info(
                 `🔍 View transaction: https://sepolia.basescan.org/tx/${receipt.receipt.transactionHash}`,
             );
 
@@ -256,7 +279,7 @@ export class MeetingContractUtils {
                 receipt: receipt.receipt,
             };
         } catch (error) {
-            console.error("Meeting deployment error:", error);
+            logger.error("Meeting deployment error:", error);
             throw error;
         }
     }
@@ -266,15 +289,15 @@ export class MeetingContractUtils {
      * @param params Token minting parameters
      * @returns Transaction hash
      */
-    static async mintToken(params: MintTokenParams): Promise<`0x${string}`> {
+    static async mintToken(params: MintTokenParams): Promise<Hex> {
         try {
             const { meetingAddress, recipient, metadataURI } = params;
             const { account, bundlerClient } = await getClients();
 
-            console.log("\n🎫 Minting Parameters:");
-            console.log("Meeting Contract:", meetingAddress);
-            console.log("Recipient:", recipient);
-            console.log("Metadata URI:", metadataURI);
+            logger.info("\n🎫 Minting Parameters:");
+            logger.info("Meeting Contract:", meetingAddress);
+            logger.info("Recipient:", recipient);
+            logger.info("Metadata URI:", metadataURI);
 
             // Prepare the mint call
             const mintCall = {
@@ -296,19 +319,19 @@ export class MeetingContractUtils {
                 hash: userOpHash,
             });
 
-            console.log("\n✅ Token Mint Success!");
-            console.log("🏠 Meeting Contract:", meetingAddress);
-            console.log("📬 Recipient:", recipient);
-            console.log(
+            logger.info("\n✅ Token Mint Success!");
+            logger.info("🏠 Meeting Contract:", meetingAddress);
+            logger.info("📬 Recipient:", recipient);
+            logger.info(
                 `⛽ View sponsored UserOperation: https://base-sepolia.blockscout.com/op/${receipt.userOpHash}`,
             );
-            console.log(
+            logger.info(
                 `🔍 View NFT: https://sepolia.basescan.org/token/${meetingAddress}`,
             );
 
             return receipt.receipt.transactionHash;
         } catch (error) {
-            console.error("Token minting error:", error);
+            logger.error("Token minting error:", error);
             throw error;
         }
     }
