@@ -1,16 +1,18 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response, RequestHandler } from "express";
 import { WEBSITE_URL } from "../utils/constants";
 import { DOCUMENTATION_URL } from "../utils/constants";
 import { logger } from "../utils/logger";
 import {
     CustomAPIError,
-    MongoDBCastError,
     MongoError,
     SequelizeForeignKeyConstraintError,
     SequelizeUniqueConstraintError,
     SequelizeValidationError,
     SequelizeValidationErrorItem,
     GenericErrors,
+    SequelizeDatabaseError,
+    HttpStatusCode,
 } from "../utils/customErrors";
 import { ValidationErrorItem } from "sequelize/types";
 
@@ -24,7 +26,7 @@ interface ServerHealthData {
 }
 
 // Function to generate the server health JSON response
-export function serverHealth(data: ServerHealthData): string {
+export function serverHealth(data: ServerHealthData): any {
     const healthInfo = {
         status: data.serverStatus,
         message: data.message,
@@ -36,7 +38,66 @@ export function serverHealth(data: ServerHealthData): string {
         uptime: process.uptime() + " seconds",
     };
 
-    return JSON.stringify(healthInfo, null, 2);
+    // return JSON.stringify(healthInfo, null, 2);
+    return healthInfo;
+}
+
+function handleMongoDBErrors(
+    err: MongoError,
+): { message: string; statusCode: number } | null {
+    if (err.name === "ValidationError" && "errors" in err) {
+        const message = Object.values(err.errors as GenericErrors)
+            .map((item) => (item as ValidationErrorItem).message)
+            .join(",");
+        return { message, statusCode: 400 };
+    }
+
+    if (err.code === 11000 && "keyValue" in err) {
+        const message = `Duplicate value entered for ${Object.keys(
+            err.keyValue as Record<string, unknown>,
+        ).join(", ")} field(s), please choose another value`;
+        return { message, statusCode: 400 };
+    }
+
+    if (err.name === "CastError" && "value" in err) {
+        const message = `No item found with id: ${err.value}`;
+        return { message, statusCode: 404 };
+    }
+
+    return null;
+}
+
+function handleSequelizeErrors(
+    err:
+        | SequelizeValidationError
+        | SequelizeUniqueConstraintError
+        | SequelizeForeignKeyConstraintError
+        | SequelizeDatabaseError,
+): { message: string; statusCode: number } | null {
+    if (err.name === "SequelizeValidationError" && "errors" in err) {
+        const message = Object.values(err.errors)
+            .map((item: SequelizeValidationErrorItem) => item.message)
+            .join(",");
+        return { message, statusCode: 400 };
+    }
+
+    if (err.name === "SequelizeUniqueConstraintError" && "errors" in err) {
+        const message = Object.values(err.errors)
+            .map((item: SequelizeValidationErrorItem) => item.message)
+            .join(",");
+        return { message, statusCode: 400 };
+    }
+
+    if (err.name === "SequelizeForeignKeyConstraintError" && "parent" in err) {
+        const message = err.parent.detail;
+        return { message, statusCode: 400 };
+    }
+
+    if (err.name === "SequelizeDatabaseError") {
+        return { message: err.message, statusCode: 400 };
+    }
+
+    return null;
 }
 
 export default class ServerController {
@@ -53,16 +114,14 @@ export default class ServerController {
         };
 
         const jsonResponse = serverHealth(data);
-        res.setHeader("Content-Type", "application/json");
-        res.send(jsonResponse);
+        // res.setHeader("Content-Type", "application/json");
+        res.status(200).json(jsonResponse);
     };
 
     static errorHandler(
-        this: void,
         err: CustomAPIError,
         req: Request,
         res: Response,
-        // next: RequestHandler,
     ): Response {
         logger.error("Error occurred:", {
             message: err.message,
@@ -77,91 +136,38 @@ export default class ServerController {
             message: err.message || "Ops, Something went wrong",
         };
 
-        // MongoDB ValidationError
-        if (err.name === "ValidationError" && "errors" in err) {
-            customError.message = Object.values(err.errors as GenericErrors)
-                .map((item) => (item as ValidationErrorItem).message)
-                .join(",");
-            customError.statusCode = 400;
+        // Handle MongoDB errors
+        const mongoError = handleMongoDBErrors(err as unknown as MongoError);
+        if (mongoError) {
+            customError.message = mongoError.message;
+            customError.statusCode = mongoError.statusCode as HttpStatusCode;
         }
 
-        // MongoDB Duplicate Key Error
-        if (
-            (err as unknown as MongoError).code === 11000 &&
-            "keyValue" in err
-        ) {
-            customError.message = `Duplicate value entered for ${Object.keys(err.keyValue as Record<string, unknown>).join(", ")} field(s), please choose another value`;
-            customError.statusCode = 400;
-        }
-
-        if (
-            (err as unknown as MongoError).code === 11000 &&
-            "keyValue" in err
-        ) {
-            customError.message = `Duplicate value entered for ${Object.keys(err.keyValue as Record<string, unknown>).join(", ")} field(s), please choose another value`;
-            customError.statusCode = 400;
-        }
-
-        // MongoDB CastError (Invalid ObjectId)
-        if (err.name === "CastError" && "value" in err) {
-            customError.message = `No item found with id: ${(err as MongoDBCastError).value}`;
-            customError.statusCode = 404;
-        }
-
-        // Sequelize Validation Error
-        if (err.name === "SequelizeValidationError" && "errors" in err) {
-            customError.message = Object.values(
-                (err as unknown as SequelizeValidationError).errors,
-            )
-                .map((item: SequelizeValidationErrorItem) => item.message)
-                .join(",");
-            customError.statusCode = 400;
-        }
-
-        // Sequelize Unique Constraint Error
-        if (err.name === "SequelizeUniqueConstraintError" && "errors" in err) {
-            customError.message = Object.values(
-                (err as unknown as SequelizeUniqueConstraintError).errors,
-            )
-                .map((item: SequelizeValidationErrorItem) => item.message)
-                .join(",");
-            customError.statusCode = 400;
-        }
-
-        // Sequelize Database Error
-        if (err.name === "SequelizeDatabaseError") {
-            customError.message = err.message;
-            customError.statusCode = 400;
-        }
-
-        // Sequelize Foreign Key Constraint Error
-        if (
-            err.name === "SequelizeForeignKeyConstraintError" &&
-            "parent" in err
-        ) {
-            customError.message = (
-                err as SequelizeForeignKeyConstraintError
-            ).parent.detail;
-            customError.statusCode = 400;
+        // Handle Sequelize errors
+        const sequelizeError = handleSequelizeErrors(
+            err as unknown as SequelizeValidationError,
+        );
+        if (sequelizeError) {
+            customError.message = sequelizeError.message;
+            customError.statusCode =
+                sequelizeError.statusCode as HttpStatusCode;
         }
 
         // Default case for general errors
-        if (customError.statusCode === 500) {
-            return res.status(500).json({
-                status: "error",
-                error: true,
-                message: "Ops, Something went wrong",
-            });
-        }
+        // if (customError.statusCode === 500) {
+        //     return res.status(500).json({
+        //         status: "error",
+        //         error: true,
+        //         message: "Ops, Something went wrong",
+        //     });
+        // }
 
-        return res.status(customError.statusCode).json({
-            status: customError.status,
-            error: customError.error,
-            message: customError.message,
-        });
+        res.setHeader("Content-Type", "application/json");
+        return res.status(customError.statusCode).json(customError);
     }
 
     static notFound(req: Request, res: Response): Response {
+        res.setHeader("Content-Type", "application/json");
         return res.status(404).json({
             status: "error",
             error: true,

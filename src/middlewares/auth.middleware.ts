@@ -31,8 +31,12 @@ async function authenticateUser(token: string): Promise<IUser> {
     return user;
 }
 
-function logAuthError(error: Error, req: Request): void {
-    logger.error("Authentication Error", {
+function logAuthError(
+    error: Error,
+    req: Request,
+    message: string = "Authentication Error",
+): void {
+    logger.error(message, {
         message: error.message,
         path: req.path,
         method: req.method,
@@ -57,16 +61,20 @@ function extractToken(req: Request): string {
 
 export const basicAuth = function () {
     return (req: Request, res: Response, next: NextFunction): void => {
-        const token = extractToken(req);
-
-        authenticateUser(token)
-            .then((user) => {
-                (req as AuthenticatedRequest).user = user;
-                next();
-            })
-            .catch((error) => {
-                logAuthError(error, req);
-                next(error);
-            });
+        try {
+            const token = extractToken(req);
+            authenticateUser(token)
+                .then((user) => {
+                    (req as AuthenticatedRequest).user = user;
+                    next();
+                })
+                .catch((error) => {
+                    logAuthError(error, req, "Error in Basic Auth");
+                    next(error);
+                });
+        } catch (error) {
+            logAuthError(error as Error, req, "Sync Error in Basic Auth");
+            next(error);
+        }
     };
 };

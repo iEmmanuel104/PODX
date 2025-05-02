@@ -46,7 +46,7 @@ async function startServer(): Promise<void> {
         });
     } catch (err) {
         // logger.info(err);
-        logger.error(err);
+        logger.error("Server Error", err);
 
         // Clean up Redis connection
         try {

@@ -1,5 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-type HttpStatusCode = 400 | 401 | 403 | 404 | 407 | 408 | 422 | 429 | 500 | 504;
+export type HttpStatusCode =
+    | 400
+    | 401
+    | 403
+    | 404
+    | 407
+    | 408
+    | 422
+    | 429
+    | 500
+    | 504;
 
 // custom errors for API
 export class CustomAPIError extends Error {

@@ -118,7 +118,7 @@ export default class UserController {
 
         if (hash === "true") {
             // Generate a new auth token with a unique hash
-            signature = await AuthUtil.generateTokenWithHash({
+            signature = AuthUtil.generateTokenWithHash({
                 type: "access",
                 user: {
                     id: userData.id,

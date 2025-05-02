@@ -71,21 +71,18 @@ app.use(
     }),
 );
 
-// server health check
-// app.get("/serverhealth", getServerHealth);
-
 app.use("/api/v0", router);
 app.use("/", serverRouter);
 // app.use(ServerController.notFound);
 app.use("*", (req, res) => {
-    res.status(404).json({
-        status: "error",
-        message: "Route not found",
-    });
+    ServerController.notFound(req, res);
 });
 
-app.use((err: CustomAPIError, req: Request, res: Response) => {
-    ServerController.errorHandler(err, req, res);
-});
+app.use(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    (err: CustomAPIError, req: Request, res: Response, next: NextFunction) => {
+        ServerController.errorHandler(err, req, res);
+    },
+);
 
 export default app;

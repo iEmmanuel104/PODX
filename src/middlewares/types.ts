@@ -8,7 +8,7 @@ export interface AuthenticatedRequest extends Request {
 export type AsyncController<T = Request> = (
     req: T,
     res: Response,
-    next?: NextFunction,
+    next: NextFunction,
 ) => Promise<void>;
 
 export type AuthenticatedAsyncController<T = AuthenticatedRequest> =
