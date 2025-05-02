@@ -8,7 +8,7 @@
 import { Request, Response } from "express";
 import { redisClient } from "../utils/redis";
 import { BadRequestError, InternalServerError } from "../utils/customErrors";
-// import { AuthenticatedRequest } from "../middlewares/authMiddleware";
+// import { AuthenticatedRequest } from "../middlewares/auth.middleware";
 import { Call } from "../models/Mongodb/call.model";
 import { logger } from "../utils/logger";
 import { validateDurationRequirement } from "../utils/validation";

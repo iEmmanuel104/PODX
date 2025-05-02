@@ -5,7 +5,7 @@
 import express, { Router } from "express";
 
 import CallsController from "../controllers/calls.controller";
-import { basicAuth } from "../middlewares/authMiddleware";
+import { basicAuth } from "../middlewares/auth.middleware";
 import { UploadImageFiles } from "../middlewares/storage.middleware";
 import {
     AsyncToSyncController,

@@ -1,6 +1,6 @@
 import express, { Router } from "express";
 import { TipService } from "../services/tip.service";
-import { basicAuth } from "../middlewares/authMiddleware";
+import { basicAuth } from "../middlewares/auth.middleware";
 import {
     AsyncToSyncController,
     AuthAsyncToSyncController,

@@ -1,6 +1,6 @@
 import express, { Router } from "express";
 import Huddle01Controller from "../controllers/huddle01.controller";
-import { basicAuth } from "../middlewares/authMiddleware";
+import { basicAuth } from "../middlewares/auth.middleware";
 import { AuthenticatedRequest } from "../middlewares/types";
 
 const router: Router = express.Router();

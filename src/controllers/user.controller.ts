@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import UserService from "../services/user.service";
 import { BadRequestError } from "../utils/customErrors";
-import { AuthenticatedRequest } from "../middlewares/authMiddleware";
+import { AuthenticatedRequest } from "../middlewares/auth.middleware";
 import { AuthUtil } from "../utils/token";
 import { logger } from "../utils/logger";
 // import { TipService } from '../services/tip.service';

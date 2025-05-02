@@ -4,7 +4,7 @@ import { Call } from "../../models/Mongodb/call.model";
 import { Huddle01Service } from "../../services/huddle01.service";
 // import { logger } from "../../utils/logger";
 import { NextFunction } from "express";
-import { AuthenticatedRequest } from "../../middlewares/authMiddleware";
+import { AuthenticatedRequest } from "../../middlewares/auth.middleware";
 import { IUser } from "../../models/Mongodb/user.model";
 import { PinataService } from "../../services/pinata.service";
 
@@ -24,7 +24,7 @@ jest.mock("@huddle01/server-sdk/auth", () => {
     };
 });
 
-jest.mock("../../middlewares/authMiddleware", () => ({
+jest.mock("../../middlewares/auth.middleware", () => ({
     basicAuth: jest.fn(
         (): ((
             req: AuthenticatedRequest,
