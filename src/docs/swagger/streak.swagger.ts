@@ -112,34 +112,3 @@
  *                       type: number
  *                       example: 75
  */
-
-/**
- * @swagger
- * /streak/sync-streamio:
- *   post:
- *     summary: Sync streaks with Stream.io data
- *     tags: [Streaks]
- *     responses:
- *       200:
- *         description: Streaks synced with Stream.io successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: "success"
- *                 message:
- *                   type: string
- *                   example: "Streaks synced with Stream.io successfully"
- *                 data:
- *                   type: object
- *                   properties:
- *                     callsProcessed:
- *                       type: number
- *                       example: 200
- *                     streaksUpdated:
- *                       type: number
- *                       example: 85
- */
