@@ -3,6 +3,7 @@ import swaggerUi from "swagger-ui-express";
 
 // Import our docs to make sure they're included
 import "../docs/swagger";
+import { NODE_ENV, ORIGIN } from "./constants";
 
 const options = {
     definition: {
@@ -17,19 +18,13 @@ const options = {
         },
         servers: [
             {
-                url:
-                    process.env.NODE_ENV === "production"
-                        ? "https://api.podx.fun/api/v0"
-                        : `http://localhost:${process.env.PORT || "8054"}/api/v0`,
-                description:
-                    process.env.NODE_ENV === "production"
-                        ? "Production Server"
-                        : "Development Server",
+                url: `${ORIGIN}/api/v0`,
+                description: NODE_ENV + "Server",
             },
-            {
-                url: "http://localhost:8090/api/v0",
-                description: "Alternative Development Server",
-            },
+            // {
+            //     url: "http://localhost:8090/api/v0",
+            //     description: "Alternative Development Server",
+            // },
             {
                 url: "/api/v0",
                 description: "Relative Path",
@@ -42,7 +37,7 @@ const options = {
                     scheme: "bearer",
                     bearerFormat: "JWT",
                     description:
-                        'Use the signature token returned from /user/validate endpoint. Add "Bearer " prefix before the token.',
+                        "Use the signature token returned from /user/validate endpoint. Add 'Bearer ' prefix before the token",
                 },
             },
         },

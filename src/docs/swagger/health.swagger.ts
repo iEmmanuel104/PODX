@@ -7,7 +7,7 @@
 
 /**
  * @swagger
- * /:
+ * /health:
  *   get:
  *     summary: Health check endpoint
  *     description: Returns the health status of the API server

@@ -116,7 +116,7 @@ export default class UserController {
 
         let signature = undefined;
 
-        if (hash === "true") {
+        if (hash === true) {
             // Generate a new auth token with a unique hash
             signature = AuthUtil.generateTokenWithHash({
                 type: "access",
@@ -127,7 +127,7 @@ export default class UserController {
             });
         }
 
-        logger.info("user data retrieved for: ", userData.username);
+        logger.info("user data retrieved for:", userData.username);
 
         res.status(200).json({
             status: "success",

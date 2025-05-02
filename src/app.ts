@@ -11,7 +11,6 @@ import cookieParser from "cookie-parser";
 import { specs, swaggerUi } from "./utils/swagger";
 import { ORIGIN } from "./utils/constants";
 import ServerController from "./controllers/server.controller";
-import serverRouter from "./routes/server.routes";
 import { CustomAPIError } from "./utils/customErrors";
 // import { poapManagementService } from './services/poap_management_service';
 // import corsOptions from "./utils/cors";
@@ -72,8 +71,7 @@ app.use(
 );
 
 app.use("/api/v0", router);
-app.use("/", serverRouter);
-// app.use(ServerController.notFound);
+
 app.use("*", (req, res) => {
     ServerController.notFound(req, res);
 });
