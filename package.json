@@ -33,6 +33,7 @@
         "@alchemy/aa-core": "^3.19.0",
         "@huddle01/react": "^2.4.1",
         "@huddle01/server-sdk": "^2.6.2",
+        "@nestjs/swagger": "^11.1.6",
         "@pinata/sdk": "^2.1.0",
         "@socket.io/redis-adapter": "^8.3.0",
         "@stream-io/node-sdk": "^0.4.4",

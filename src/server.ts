@@ -37,13 +37,13 @@ async function startServer(): Promise<void> {
             );
         });
 
-        process.on("SIGINT", () => {
-            logger.debug("Gracefully shutting down");
-            server.close(() => {
-                logger.info("Closed all connections");
-                process.exit(0);
-            });
-        });
+        // process.on("SIGINT", () => {
+        //     logger.debug("Gracefully shutting down");
+        //     server.close(() => {
+        //         logger.info("Closed all connections");
+        //         process.exit(0);
+        //     });
+        // });
     } catch (err) {
         // logger.info(err);
         logger.error("Server Error", err);

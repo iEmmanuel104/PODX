@@ -11,7 +11,10 @@ import {
     AsyncToSyncController,
     AuthAsyncToSyncController,
 } from "../middlewares/utils";
-import { validationMiddleware } from "../middlewares/validators.middleware";
+import {
+    parseFormData,
+    validationMiddleware,
+} from "../middlewares/validators.middleware";
 import { CreateCallDto } from "../controllers/dto/createCall.dto";
 // import { GenerateTokenDto } from "../controllers/dto/generateToken.dto";
 
@@ -21,8 +24,9 @@ const router: Router = express.Router();
 router.post(
     "/create",
     basicAuth(),
-    validationMiddleware(CreateCallDto),
     UploadImageFiles.single("image"),
+    parseFormData,
+    validationMiddleware(CreateCallDto),
     AuthAsyncToSyncController((req, res) =>
         CallsController.createCall(req, res),
     ),

@@ -10,11 +10,11 @@ import { config } from "dotenv";
 import meetingFactoryMetadata from "../contracts/artifacts/MeetingFactory_metadata.json";
 import meetingMetadata from "../contracts/artifacts/Meeting_metadata.json";
 import { logger } from "./logger";
+import { Hex } from "./types";
 
 // Load environment variables first
 config();
 
-type Hex = `0x${string}`;
 type EstimateGasResult = {
     preVerificationGas: bigint;
     verificationGasLimit: bigint;

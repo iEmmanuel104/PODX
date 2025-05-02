@@ -17,6 +17,7 @@ import { CustomAPIError } from "./utils/customErrors";
 
 const app: Express = express();
 
+app.use(express.json());
 app.use(
     expressWinston.logger({
         winstonInstance: logger,
@@ -27,7 +28,6 @@ expressWinston.requestWhitelist.push("body");
 expressWinston.responseWhitelist.push("body");
 app.use(helmet());
 app.use(mongoSanitize());
-app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 // app.use(cors(corsOptions));
 app.use(
